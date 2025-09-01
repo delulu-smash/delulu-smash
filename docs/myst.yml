@@ -1,0 +1,15 @@
+# See docs at: https://mystmd.org/guide/frontmatter
+version: 1
+project:
+  id: 9bc41b6b-707b-440a-8b62-48d611c97a70
+  # title:
+  # description:
+  # keywords: []
+  # authors: []
+  github: https://github.com/ksdaftari/deulu-little-mac
+  # To autogenerate a Table of Contents, run "myst init --write-toc"
+site:
+  template: book-theme
+  # options:
+  #   favicon: favicon.ico
+  #   logo: site_logo.png
