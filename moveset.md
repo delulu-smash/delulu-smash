@@ -6,6 +6,14 @@ All information below is sourced from [Ultimate Frame Data Site](https://ultimat
 
 ## Smash Attacks
 
+### Up Smash
+
+```{image} https://ultimateframedata.com/hitboxes/little_mac/LittleMacUSmash.gif
+    :width: 20%
+    :height: 250px
+    :align: center
+```
+
 ````{list-table}
 :header-rows: smash-attacks
 
