@@ -6,7 +6,7 @@ project:
 site:
   template: book-theme
   actions:
-      - title: Discord
+      - title: Mac Nation Discord
         url: https://discord.gg/8SnfJ8sS
   options:
     # TODO: favicon not working

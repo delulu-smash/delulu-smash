@@ -2,3 +2,18 @@
 :width: 50%
 Get up and running with MyST in Jupyter!
 :::
+
+
+- ledgetrapping (eg ledgemaker)
+   - distances of rolling from ledge on ach stage 
+   - frames of get up attack
+- ledge gaurding
+- On stage recovery (fast fall neutral air dodge)
+
+- blog with my training regiment (as talking about different ways to train)
+- each week, what is plan, what have learned
+
+- nair for getting out of tumble 
+
+- movement guide (gtad youtube link)
+

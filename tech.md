@@ -2,6 +2,8 @@
 
 ## Recovery
 
+### Off Stage
+
 ```{list-table}
 :header-rows: 1
 :label: tech-recovery
@@ -19,5 +21,6 @@
   - Improves horizontal distance can make back to ledge with [`Up-B`](tbd) 
   - [In Depth Video](
     https://www.youtube.com/watch?v=widRuJ29m2k)
-  - TBD
 ```
+
+### On Stage
