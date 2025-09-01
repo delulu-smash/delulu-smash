@@ -17,3 +17,8 @@ Get up and running with MyST in Jupyter!
 
 - movement guide (gtad youtube link)
 
+- add yoshi on shield
+
+- ways to get KO punch (whiff, uptilt reverse KO, etc)
+    - how to evade KO punch (so know how to whiff punish)
+
