@@ -2,14 +2,13 @@
 version: 1
 project:
   id: 9bc41b6b-707b-440a-8b62-48d611c97a70
-  # title:
-  # description:
-  # keywords: []
-  # authors: []
   github: https://github.com/ksdaftari/deulu-little-mac
-  # To autogenerate a Table of Contents, run "myst init --write-toc"
 site:
   template: book-theme
-  # options:
-  #   favicon: favicon.ico
-  #   logo: site_logo.png
+  actions:
+      - title: Discord
+        url: https://discord.gg/8SnfJ8sS
+  options:
+    # TODO: logo/favicon not working
+     favicon: favicon.ico
+     logo: https://static.wikia.nocookie.net/cpucs-tournament/images/2/2b/LittleMacIcon.png/revision/latest?cb=20190209011432

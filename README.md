@@ -4,6 +4,10 @@ Hi, I'm `Delulu` (aka Mac Daddy). A [Little Mac](https://www.ssbwiki.com/Little_
 
 GO MAC NATION GO!
 
+```{note}
+Super Smash Brother Ultimate (SSBU) is my first smash game and only started end of 2024, so though I do best to have accurate information, I am still learning a lot.
+```
+
 
 :::{figure} https://www.smashbros.com/assets_v2/img/fighter/little_mac/main8.png
 :::
