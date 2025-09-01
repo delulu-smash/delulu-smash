@@ -1,1 +1,3 @@
 # King Dedede
+
+## Quick Tips

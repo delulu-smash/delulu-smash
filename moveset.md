@@ -1,0 +1,27 @@
+# Move Set
+
+```{note}
+All information below is sourced from [Ultimate Frame Data Site](https://ultimateframedata.com/little_mac)
+```
+
+## Smash Attacks
+
+````{list-table}
+:header-rows: smash-attacks
+
+* - Name
+  - Hitbox
+* - `Up Smash`
+  - ```{image} https://ultimateframedata.com/hitboxes/little_mac/LittleMacUSmash.gif
+    :width: 50%
+    :height: 250px
+    :align: center
+    ```
+* - `Down Smash`
+  - ```{image} https://ultimateframedata.com/hitboxes/little_mac/LittleMacDSmash.gif
+    :width: 50%
+    :height: 250px
+    :align: center
+    ```
+````
+

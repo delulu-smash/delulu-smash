@@ -2,9 +2,9 @@
 
 ## Recovery
 
-```{list-table} This table title
+```{list-table}
 :header-rows: 1
-:label: example-table
+:label: tech-recovery
 
 * - Name
   - Uses

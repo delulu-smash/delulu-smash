@@ -1,0 +1,4 @@
+:::{iframe} https://www.youtube.com/embed/F3st8X0L1Ys
+:width: 50%
+Get up and running with MyST in Jupyter!
+:::
