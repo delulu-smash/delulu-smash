@@ -70,4 +70,6 @@ Get up and running with MyST in Jupyter!
 
 - general smash knowledge section (eg visual queues of DI, tumble, how long tumble lasts, etc)
 
+- shield hitbox shift (eg uptilt, up smash)
+
 
