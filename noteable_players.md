@@ -15,7 +15,7 @@ This is not meant to be an exhaustive list, but accumlation of players and match
 
 ## Lvl 7
 
-## Match Ups
+## Notable Matches
 
 ### vs Hunter ([Snake](snake))
 
