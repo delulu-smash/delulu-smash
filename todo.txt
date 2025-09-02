@@ -68,4 +68,6 @@ Get up and running with MyST in Jupyter!
 
 - roll canceled grab (as long as tethered samus)
 
+- general smash knowledge section (eg visual queues of DI, tumble, how long tumble lasts, etc)
+
 
