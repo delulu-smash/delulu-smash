@@ -1,6 +1,8 @@
 # Notable Players
 
-Below are Little Mac players I have learned a lot from. 
+```{note}
+This is not meant to be an exhaustive list, but accumlation of players and matches I have learned a lot from to date
+```
 
 ## Lvl 7
 

@@ -15,7 +15,7 @@ All information below is sourced from [Ultimate Frame Data Site](https://ultimat
 ```
 
 ````{list-table}
-:header-rows: smash-attacks
+:header-rows: 1
 
 * - Name
   - Hitbox

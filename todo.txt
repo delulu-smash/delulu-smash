@@ -55,4 +55,17 @@ Get up and running with MyST in Jupyter!
         - choosing random smash attacks that miss (vs optimal one for coverage)
     - what is counter measure?
 
+- mu burst range (explain range based on small battlefield visuals)
+
+
+- getting started 
+    - controller settings/layout
+
+- create specific youtube playlist per notable players
+- do double dair instead of dair jab for platform lock
+
+- get up from ledge (full hop SL for ZSS neutral B)
+
+- roll canceled grab (as long as tethered samus)
+
 
