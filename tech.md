@@ -24,3 +24,10 @@
 ```
 
 ### On Stage
+
+## Shield Break
+
+Can get shield break whose damage sums up `9`
+
+### Notable Comobs
+

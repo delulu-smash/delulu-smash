@@ -7,6 +7,7 @@ Get up and running with MyST in Jupyter!
 - ledgetrapping (eg ledgemaker)
    - distances of rolling from ledge on ach stage 
    - frames of get up attack
+   - set ups (what they take away/cover, look at trumpets SL example)
 - ledge gaurding
 - On stage recovery (fast fall neutral air dodge)
 
@@ -21,4 +22,37 @@ Get up and running with MyST in Jupyter!
 
 - ways to get KO punch (whiff, uptilt reverse KO, etc)
     - how to evade KO punch (so know how to whiff punish)
+
+- combos (flow chart)
+- recovery image 
+
+- ?should i distingisuh KO Kill Percent between ground vs plat and type of stage 
+- ?should percentage include color (so have the visual)
+
+- up B kill percents 
+- shield break 
+
+- MU & mac
+    - on shield (what safe, nothing, but eg up smash will avoid grab)
+    - what does MU want to do out of shield? 
+    - what MU safe on shield? 
+
+- why use differnet moves (eg why/when to use dash attack and when not)
+- training tips (eg how to train KO punch, trainign mod, settings - eg stale/etc
+
+- kill confirms
+
+- dtilt ledge flow chart (depending when need another dtilt, when should ftilt vs side B)
+
+- what can SL armour through vs not for each MU
+
+- review replays for things to do
+
+- improvement log:
+    - what are you consistenly loosing to:
+        - projectiles
+        - spam
+        - choosing random smash attacks that miss (vs optimal one for coverage)
+    - what is counter measure?
+
 
