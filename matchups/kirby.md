@@ -3,6 +3,7 @@
 ## Quick Tips
 
 ### Snapshot
+
 ```{list-table}
 * - **Size**
   - `Featherweight`
