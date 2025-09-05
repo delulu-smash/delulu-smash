@@ -72,4 +72,7 @@ Get up and running with MyST in Jupyter!
 
 - shield hitbox shift (eg uptilt, up smash)
 
+- file with map stats (height, blast zone), categorize plats as low, mid, high. also which ones good for mac and why 
+    - nice to see what ways to use Kalos plats 
+
 

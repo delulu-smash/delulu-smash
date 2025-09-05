@@ -4,6 +4,7 @@
 
 ### Off Stage
 
+% TODO: add source link for gif example
 ```{list-table}
 :header-rows: 1
 :label: tech-recovery
