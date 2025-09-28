@@ -1,4 +1,4 @@
-# Zero Suit Samus (ZSS)
+# Falco
 
 ## Quick Tips
 
@@ -6,9 +6,9 @@
 
 ```{list-table}
 * - **Size**
-  - `Heavyweight`
+  - `Lightweight`
 * - [**KO Dtilt Confirm**](https://docs.google.com/document/d/1IBm9XXNfuSaUf9lqbgayGD2ionZH5Ct3KtDLZrCOnok/edit?tab=t.0): 
-  - `52%-60%`
+  - `52%-72%`
 * - [**KO Kill Percent**](https://docs.google.com/spreadsheets/d/1Fht5zTeF1p6C-79gOIPfZCorS_AIDgmgTezSbnThcAg/edit?gid=0#gid=0): 
-  - `16%-18%`
+  - `17%-19%`
 ```

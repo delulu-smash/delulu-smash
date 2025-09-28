@@ -14,3 +14,6 @@
 ```
 
 % TODO: show gifs and exampels of gyro tech (gyro at ledge with SL)
+% TODO: note KO confirm with gyro (can be done quite far away)
+% TODO: add gif of that one gyro combo where lay down and hits back to you as. easy way to get fsmash
+% TODO: find easiest ways to get gyro off ground (dtilt is easy to mess up it feels)

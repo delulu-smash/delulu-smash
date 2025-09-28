@@ -12,3 +12,5 @@
 * - [**KO Kill Percent**](https://docs.google.com/spreadsheets/d/1Fht5zTeF1p6C-79gOIPfZCorS_AIDgmgTezSbnThcAg/edit?gid=0#gid=0): 
   - `18%-20%`
 ```
+
+% TODO: add notes from match up discord (eg rapid jab beats spin dash)

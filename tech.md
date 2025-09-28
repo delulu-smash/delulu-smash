@@ -60,11 +60,11 @@ Below details was to shift hurtbox so options like OOS grab whiff (usually by mo
 
 Getting consitent shield breaks, want follow below key points
 1. **Initial Pressure**: Create initial damage on shield via moves that are low commitement/safe on shield
-2. **Fault Advantage**: Enemy select an option out of initial pressure that gives you advantage (usually inform of whiff caused by [hurtbox shift](shield_hurtbox_shift))
+2. **Fault Advantage**: Enemy select an option out of initial pressure that gives you advantage (usually inform of whiff caused by [hurtbox shift](#shield_hurtbox_shift))
 3. **Breakpoint**: Attack that will break shield (usually caused by enemys many times going for shield after endlag of whiff)
 
 Below is example approach: 
-1. `Jab 1,2` > `Utitl` ([hurtbox shift](shield_hurtbox_shift))
+1. `Jab 1,2` > `Utitl` ([hurtbox shift](#shield_hurtbox_shift))
 2. Enemy whiff OOS grab
 3. `DAFSmah` to break shield
 

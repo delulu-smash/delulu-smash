@@ -1,4 +1,4 @@
-# Zero Suit Samus (ZSS)
+# Ness
 
 ## Quick Tips
 
@@ -6,9 +6,11 @@
 
 ```{list-table}
 * - **Size**
-  - `Heavyweight`
+  - `Middleweight`
 * - [**KO Dtilt Confirm**](https://docs.google.com/document/d/1IBm9XXNfuSaUf9lqbgayGD2ionZH5Ct3KtDLZrCOnok/edit?tab=t.0): 
-  - `52%-60%`
+  - `50%-89%`
 * - [**KO Kill Percent**](https://docs.google.com/spreadsheets/d/1Fht5zTeF1p6C-79gOIPfZCorS_AIDgmgTezSbnThcAg/edit?gid=0#gid=0): 
-  - `16%-18%`
+  - `20%-22%`
 ```
+
+% TODO: note tech of up B on PK fire (see how hit bettre/use safely)

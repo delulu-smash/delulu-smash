@@ -1,5 +1,5 @@
 # Daisy
 
 ```{note}
-See docs for [Peach](peach)
+See docs for [Peach](#peach)
 ```

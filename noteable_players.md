@@ -1,4 +1,4 @@
-# Notable Players
+# Noteable Players
 
 ```{note}
 This is not meant to be an exhaustive list, but accumlation of players and matches I have learned a lot from to date
@@ -15,9 +15,9 @@ This is not meant to be an exhaustive list, but accumlation of players and match
 
 ## Lvl 7
 
-## Notable Matches
+## Noteable Matches
 
-### vs Hunter ([Snake](snake))
+### vs Hunter ([Snake](#snake))
 
 :::{iframe} https://www.youtube.com/embed/zIUr2DspIdw?si=jWmPmuBxEIwySERU
 Full Match
