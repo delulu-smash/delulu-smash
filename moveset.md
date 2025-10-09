@@ -4,6 +4,10 @@
 All information below is sourced from [Ultimate Frame Data Site](https://ultimateframedata.com/little_mac)
 ```
 
+```{warning}
+This still work in progress/deciding if want to flesh out
+```
+
 ## Smash Attacks
 
 ### Up Smash
