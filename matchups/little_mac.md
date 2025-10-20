@@ -1,3 +1,4 @@
+(little_mac)=
 # Little Mac
 
 ## Quick Tips

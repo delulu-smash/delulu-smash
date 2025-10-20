@@ -1,5 +1,26 @@
 # Tech
 
+_For full playlist of Little Mac Tech videos click [here](https://youtube.com/playlist?list=PL2DqH_qi_iEnNJwOAsx73vltZpU9HyohZ&si=Uf28z9XChUWFkqTd)_
+
+## Tech Chases
+
+%TOOD: range, using opponent jump to see when get out of tumple and not tech
+%TODO: methodology doc so know how figure things in training mode
+% - using highest weight character per weight class 
+% - for tech, have oppoent set to DI out and up, and jump out of tumble (fastest option)
+% TODO: looks like dash attack only if no di
+```{list-table}
+:header-rows: 1
+
+* - Name
+  - How To
+* - `13%`
+  - `Dash Attack` (inner edge of low plat to mid stage)
+  - Platform
+
+```
+
+
 ## Recovery
 
 ### Off Stage

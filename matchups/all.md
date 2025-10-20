@@ -4,6 +4,8 @@
 This is purely generalized info across MUs, and may not be true for specific match up, refer to specific MU page for this
 ```
 
+## Quick Tips
+
 ### Snapshot
 
 %TODO: add rerecen links for MUs mentioned below
@@ -13,6 +15,19 @@ This is purely generalized info across MUs, and may not be true for specific mat
 * - [**KO Kill Percent**](https://docs.google.com/spreadsheets/d/1Fht5zTeF1p6C-79gOIPfZCorS_AIDgmgTezSbnThcAg/edit?gid=0#gid=0): 
   - `11%-35%`
 ```
+
+### Moveset
+
+(unstoppable_moves)=
+#### Unstoppable Moves
+
+Below are the only unstoppable moves in game:
+
+1. [Little Mac](little_mac) `KO Punch`
+2. [Ryu](ryu)/[Terry](terry) `Fully Charged Down B`
+3. [Kazuya](kazuya) 10 hit of `Jab` hit
+
+_Note: Unstoppable moves are only ones that can beat Little Mac's Smash Attack super armour_
 
 % TODO: see if want breakdowns per weight class (heavyweight vs light weight, etc)
 % TODO: visual/practical description of tech roll distnace (as not consistent for cast) https://discord.com/channels/232987534588641281/520847397404934145/1413331062058389616
