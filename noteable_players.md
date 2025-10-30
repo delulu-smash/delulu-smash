@@ -4,10 +4,11 @@
 This is not meant to be an exhaustive list, but accumlation of players and matches I have learned a lot from to date
 ```
 
+
 ::::{dropdown} Current Top 100 Little Mac (2025)
-:::{figure} https://i.redd.it/i0l2fdl5gj3c1.jpeg
-:::
+![2025 top little macs](./assets/2025_top_little_mac.jpg)
 ::::
+
 
 ```{list-table}
 :header-rows: 1
