@@ -1,3 +1,4 @@
+(lucas)=
 # Lucas
 
 ## Quick Tips
