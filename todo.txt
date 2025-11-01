@@ -75,6 +75,9 @@ Get up and running with MyST in Jupyter!
 - file with map stats (height, blast zone), categorize plats as low, mid, high. also which ones good for mac and why 
     - nice to see what ways to use Kalos plats 
 
+- Neutral jing is stated to be the key to earthbending. Fundamentally, neutral jing involves listening, though seemingly doing nothing, and waiting for the right moment to strike. 
+-https://avatar.fandom.com/wiki/Jing
+- document pacman strategy https://discord.com/channels/232987534588641281/361638569833660416/1433635742663311430
 
 note for projectileshint:   
 git config pull.rebase false  # merge
