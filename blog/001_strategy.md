@@ -44,6 +44,9 @@ We will describe how to practice:
 6. Mashing out of grab
 7. KO punch (gazelle, reverse KO punch, etc)
 
+Key Focus:
+1. Roll cancel grab and follow ups out of grab -> force opponents to not shield constantly (with our moves on shield, i consistently get punished or player hermits at ledge)
+
 ## Vod Review
 
 ### Alternis vs Shisui
@@ -93,3 +96,46 @@ Mac
 Lucas
 1. from ledge, jump can cover entire stage
 2. can airdodge as close to mid hieght (not far from plat), and react directional airdodge that will cover distance to other plat
+
+
+### Data Collection 
+
+[ssbu data](https://docs.google.com/spreadsheets/d/1Is8rHLPiFtvlj2t8kV5iy21-wIBidDW7bFYMzx6eJIU/edit?gid=0#gid=0) will aggregate data on, entire cast and their movesets such as:
+
+1. [Ultimate FrameData](https://ultimateframedata.com/smash#popup1)
+2. Mac specific data (Eg mac discord data on what can SL)
+
+This can be used to:
+1. Easily filter and fastly understand data that could help understand
+    1. Safer strategys
+    2. Understand why certain interactions are happening (eg is it something need to train to improve on or is physically not possible because of framedata)
+2. Programmatically create portions of these docs
+
+Should I document:
+1. KO kill confirm & dtilt true window 
+2. Quick bullet points on how to use data specifically for mac
+3. how document https://ultimateframedata.com/stats in consice way and how could be useful for ledge trapping strats
+4. tranlsate/add any stats to more visual queues/distance (Eg grab range translate to length of plat)
+    1. come up with visual distance (ways to easily tell by stage, using sb battlefield plat as base, and things like what move take to accurately get there the fastest, eg dash covers entire plat, for example to accurately up smash on plat landing when at edge of stage, need get in middle halves which dash will always overshoot the first half)
+5. directional airdodge distance (eg lucas airdodge can be over one SB plat and directional airdodge all the way to other plat, so dont want to commit to one plat if catching landing)
+6. burst range window
+7. areas off stage can cover vs not (should inform safe recovery paths)
+8. document dash turnaround (https://ultimateframedata.com/stats) but what does it mean (have glossary for this data so understand what means)
+9. Base line interpreation of frames (eg 3 frame move usually indicates combo break, dash/run speed to know if our walk speed faster, so walking is more prefferred strat)
+10. per move how can get out (eg jump vs neutral airdodge, etc), know for mac moves (so know what options opponent can chose) and other characters (so understand disadvantage, need to see if that true of move or combo string)
+
+
+### Ideas
+
+1. Strats on how to improve catching landings (ways to ensure know when person cant escape certain area of landing - ie you can react, predict landing, etc).
+2. Map out if end lag from lucas pk fire  is punishable from burst range. This will help break down movement completely (have to know range, frames of dash, run frame by distance, any lag before get out attack out of run, etc, understanding what frame buffer need to add to make practically, as cant expect to be frame perfect, eg when pk fire comes out when are we usually reacting, accuracy of stopping and getting hit out
+3. have some parts of docs auto generated from spreadshet and/or functions/variables from mac python library
+
+### Questions
+
+1. is turn around up Smash viable? if does that make from ledge to cover near SB plat possible to walk up Smash or dash turn around up smash to cover all options on reaction?
+
+
+### Notes
+
+1. this [link](https://www.twitch.tv/videos/2603960426?sr=a) at 1:57:46 has good example of SL ledge trap (using full hop side B to catch jump, then releasing for neutral get up)
