@@ -6,8 +6,9 @@ Below is centralized collection of resource links. Many of these are referenced 
 :header-rows: 1
 
 * - Link
-  - Description
+  - Description 
 * - [Litle Mac Tech Vid Playlist](https://youtube.com/playlist?list=PL2DqH_qi_iEnNJwOAsx73vltZpU9HyohZ&si=Uf28z9XChUWFkqTd)
+  - Full playlist of basic/advanced mac tech (PHYTO videos especially recommend)
 * - [Little Mac Stages](https://docs.google.com/presentation/d/101h82ucfb-J44eKyRZgF8bI3-F9_RpS4lfaFgKv2AIs/edit?slide=id.p#slide=id.p)
   - Goes pros and cons of stages
 * - [SL Armour Broken](https://docs.google.com/spreadsheets/d/1kpnXzwdspS1kR-rQWFm0l2GejtRfR_tmc-U6IA8JwRU/edit?gid=974091354#gid=974091354)
