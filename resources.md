@@ -11,6 +11,8 @@ Below is centralized collection of resource links. Many of these are referenced 
   - Full playlist of basic/advanced mac tech (PHYTO videos especially recommend)
 * - [Little Mac Stages](https://docs.google.com/presentation/d/101h82ucfb-J44eKyRZgF8bI3-F9_RpS4lfaFgKv2AIs/edit?slide=id.p#slide=id.p)
   - Goes pros and cons of stages
+* - [Little Mac Best Tournament Results](https://docs.google.com/document/d/1-zeb2lFPI-O0j2p3xlj6QxhQ6KzCTykiIu0MYGcc_jM/edit?tab=t.0)
+  - A doc documenting some of Little Mac's best tournament results (with notable victories)
 * - [SL Armour Broken](https://docs.google.com/spreadsheets/d/1kpnXzwdspS1kR-rQWFm0l2GejtRfR_tmc-U6IA8JwRU/edit?gid=974091354#gid=974091354)
   - For each character and their moves, whether SL armor is broken
 * - [KO Punch Kill Percent](https://docs.google.com/spreadsheets/d/1Fht5zTeF1p6C-79gOIPfZCorS_AIDgmgTezSbnThcAg/edit?gid=0#gid=0)
