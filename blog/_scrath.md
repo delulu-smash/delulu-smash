@@ -54,7 +54,7 @@ Below set up will help:
 
 I am a 33 year old who started playing Smash Utlimate start of 2025 and more seriously around April 2025. Smash Utlimate is my first smash game.
 
-My normal competitve outlet prior to Smash was ultimate frisbee, where I reached the higher level of the semi pro and club scene. My biggest accomplishment being part of the semi pro team that won the championship.
+My normal competitve outlet prior to Smash was ultimate frisbee, where I reached the higher level of the [semi pro] (UFA)(https://watchufa.com/) and club scene. My biggest accomplishment being part of the semi pro team that won the championship.
 
 I picked up smash as way to pass time after birth of my first daughter Lucia (nickname Lulu, my username `DeLulu` is playful homage to her.) I am also getting bit older where ultimate frisbee getting harder on body along just more life responsbilities, so wanted different hobby that hits lot of the parts I like of sports (eg mastery, competition, community).
 
@@ -64,7 +64,7 @@ I have always found Smash interesting as an outsider after watching the Smash Me
 
 ### Goals
 
-My overall goal for Smash, can be boiled down **"to be life long learner, constantly improving, fully mastering a single character (my choice being Little Mac), and document strategy & findings for Little Mac and Smash"**.
+My overall goal for Smash, can be boiled down to **"be life long learner, constantly improving, fully mastering a single character (my choice being Little Mac), and document strategy & findings for Little Mac and Smash"**.
 
 I will very likely not be able to be best at applying all of my findings/strategies, but helping document and inform is something I find fun.
 
@@ -95,32 +95,35 @@ The goals and philosophy above ensure consistent progress, which some key insigh
 
 #### Why No Competitive Aspirations?
 
-For someone that is putting lot of time and effort in the game, usually there is goal/desire to compete. There are few reason I do put: 
+For someone that is putting lot of time and effort in the game, usually there is goal/desire to compete. There are few reason I do not put this as goal or aspiration at all which are:f
 
 **1. Putting Winning/Competitive Goals First Hinders Progress**
 
 _From experience in other competitive sports (eg semi pro frisbee, high school football), whenever I put being best and moving up ranks/playing for best team/get to highest level as center of my goals it has always resulted in:_
 
-_1. Increase stress while playing, converging to blind to progress thinking and making the hobby/sport less fun. You put unecessary weight and need mindset that you can take positive/learning regardless of win or lose. _
-_2. Reduce amount of improvements, as you could still be "playing bad" and win. You need consistent incrumental improvement to make larger jumps, and too easy to get comfortable/think improving if things like "winning" is how determine if improving, over more concrete items like was i able to predict/read opponent better, etc. These things that need to improve are ones that can be determined/looked regardless of loss/win_
+1. _Increase stress while playing, converging to blind to progress thinking and making the hobby/sport less fun. You put unecessary weight and need mindset that you can take positive/learning regardless of win or lose._
 
-_Near end of life cycle of me playing any other competitive sport, I have had same experience, that at end I cared lot less about prestige/results and just dgafed and played for fun, to then end up having the played my best and many times having best competitive results I have had_
+2. _Reduce amount of improvements, as you could still be "playing bad" and win. You need consistent incrumental improvement to make larger jumps, and too easy to get comfortable/think improving if things like "winning" is how determine if improving, over more concrete items like was i able to predict/read opponent better, etc. These things that need to improve are ones that can be determined/looked regardless of loss/win. If you are doing things right you should actually be doing a lot of loosing, if you are winning a lot may be sign of not pushing yourself/not going against higher skilled opponents more frequently._
+
+_Near end of life cycle of me playing any other competitive sport, I have had same experience, that at end I cared lot less about prestige/results and just dgafed and played for fun, to then end up having the played my best and many times having best competitive results I have ever had_
 
 **2. Centering Goals Around Learning and Improving Will Lead to Competitive Results**
 
-_Building off of above, I have also learned something a bit counter intuitive, in that even if you have desire for competitive results, if you instead center goals/aspirations around learnings, the results will come from that and you will have lot more fun/less stress/effort doing so_
+_Building off of above, I have also learned something a bit counter intuitive, in that even if you have desire for competitive results, if you instead center goals/aspirations around learnings, the results will come from that and you will have lot more fun/less stress doing so_
 
 _The reason for this is to get compettitive results you need to improve you play to real high levels which does not happen by these large jumps but instead **consistent incrememntal improvements**, which you gain from learning/improvement goals._
+
+_This mindset inherently means you go with each match the enthusiasim you are going to learn something, improve startegicthic thinking, etc, regardless if win or loose (ie focusing on results)_
 
 **3. Have More Important Things To Focus On In My Life**
 
 _I have a hyper focused at times obssesive personality. And want to put guardrails in place to ensure I dont over focus/spend time on smash (whether that actively playing or thinking about playing when not)._
 
-_I have lot more life long fullfilling parts to my life, in my wife and kids, that I need to put effort and focus to.And what I have learned from my past, is I border on the obsessive if focused reaching certain competitive goals_
+_I have lot more life long fullfilling parts to my life, in my wife and kids, that I need to put effort and focus to. And what I have learned from my past, is I border on the obsessive if focused reaching certain competitive goals_
 
 _Obsession, not only not healthy for rest of my life, but also converges to the game not being fun and actually not even being sustainablly long term good competitively._
 
-_A wonderful secret about all of this though, is all of the information I have shared above, leads to conclusion that centering life more around family and long term happieness and carving out more smaller dedicated time to put towards smash will actually lead to the best competitive results/progress I could even expect_
+_A wonderful secret about all of this though, is all of the information I have shared above, leads to conclusion that centering life more around family and long term happieness and carving out more smaller dedicated time to put towards smash can actually lead to good competitive results/progress._
 
 
 

@@ -54,6 +54,8 @@ Below details way to recover when above stage (eg hit high above stage, in combo
 
 ## [Shield Pressure](https://youtu.be/cwinDb69Esc?si=pUCk5FbnTYBTJd5G)
 
+_See [link](https://youtu.be/cwinDb69Esc?si=pUCk5FbnTYBTJd5G) to in-depth video on info below_
+
 (shield_hurtbox_shift)=
 ### Hurtbox Shift
 
@@ -120,6 +122,14 @@ For Shield Break, damage must sum to `9`
 * - 1
   - `Jab 2` / `Jab 3`
 ```
+
+#### Shield Break Follow Ups
+
+Below are preferred follow ups when get shield break:
+
+1. If opponent at `~30%`, push enemu to edge of stage, and `Fully Charged Neutral B` should kill
+2. If opponent at `~TBD%`, anywhere on stage, `Fully Charged Neutral B` should kill
+3. if opponent less than `~30%`, `Fully Charged DAF-Smash` (as is most damage attack and can lead to tech situation)
 
 #### Common Combos
 

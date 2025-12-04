@@ -56,12 +56,15 @@ This still work in progress/deciding if want to flesh out
 ## Kill Confirms
 
 %TODO: see how want to break up between stage sizes, character weight classes 
+% NOTE: ensure order by location then by percent
 ```{list-table}
 :header-rows: 1
 
 * - Combos
+  - Location
   - Kill Percent
-* - `F-Smash` (End of Ledge)
+* - `F-Smash` End of Ledge
+  - End of Ledge
   - `TBD%`
 ```
 
