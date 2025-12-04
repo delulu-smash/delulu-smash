@@ -10,7 +10,7 @@ Below is centralized collection of resource links. Many of these are referenced 
 * - [Litle Mac Tech Vid Playlist](https://youtube.com/playlist?list=PL2DqH_qi_iEnNJwOAsx73vltZpU9HyohZ&si=Uf28z9XChUWFkqTd)
   - Full playlist of basic/advanced mac tech (PHYTO videos especially recommend)
 * - [Little Mac Stages](https://docs.google.com/presentation/d/101h82ucfb-J44eKyRZgF8bI3-F9_RpS4lfaFgKv2AIs/edit?slide=id.p#slide=id.p)
-  - Goes pros and cons of tournament legal stages
+  - Goes over pros and cons of tournament legal stages
 * - [Little Mac Best Tournament Results](https://docs.google.com/document/d/1-zeb2lFPI-O0j2p3xlj6QxhQ6KzCTykiIu0MYGcc_jM/edit?tab=t.0)
   - A doc documenting some of Little Mac's best tournament results (with notable victories)
 * - [SL Armour Broken](https://docs.google.com/spreadsheets/d/1kpnXzwdspS1kR-rQWFm0l2GejtRfR_tmc-U6IA8JwRU/edit?gid=974091354#gid=974091354)
@@ -32,6 +32,8 @@ below is full list of [Notable Players](notable_players) vods per MU
 
 * - Matchup
   - Playlist Link
-* - [Hero](hero)
+* - [Hero](#hero)
   - [Vs Hero Playlist](https://youtube.com/playlist?list=PL2DqH_qi_iEmT_D7xQ3HV-8RVoL71YL6T&si=fJ41XRe-O02P58Lo)
+* - [Snake](#snake)
+  - [vs Snake Playlist](https://youtube.com/playlist?list=PL2DqH_qi_iEnOTQaK4KHvcclhmPgvC6-H&si=b1YftqLPs0Lnrrny)
 ```

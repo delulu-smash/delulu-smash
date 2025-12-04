@@ -1,4 +1,4 @@
-(notable_players)=
+(notetable_players)=
 # Noteable Players
 
 ```{note}
@@ -67,13 +67,3 @@ This is not meant to be an exhaustive list, but accumlation of players and match
 * - Magic Trumpet Man
   - [Magic Trumpet Man Playlist](https://youtube.com/playlist?list=PL2DqH_qi_iEmE891SPPBdWOtpyxQS7xNd&si=YkhNDqJ6Xp_DDpU2)
 ```
-
-## Lvl 7
-
-## Noteable Matches
-
-### vs Hunter ([Snake](#snake))
-
-:::{iframe} https://www.youtube.com/embed/zIUr2DspIdw?si=jWmPmuBxEIwySERU
-Full Match
-:::
