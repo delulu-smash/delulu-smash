@@ -3,6 +3,7 @@ version: 1
 project:
   id: 9bc41b6b-707b-440a-8b62-48d611c97a70
   github: https://github.com/ksdaftari/deulu-little-mac
+  exclude: scratch/**
 site:
   template: book-theme
   actions:

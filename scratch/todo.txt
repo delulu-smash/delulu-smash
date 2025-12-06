@@ -92,3 +92,20 @@ hint:   git config pull.ff only       # fast-forward only
 - document resources per character like their documents, youtubers, etc, so easily have 
 resources to learn those characters indepth
 - summarize the smash mechanics and engine. detailed section along with snapshot (key points that many dont know or forget)
+- create database/python package so can easily analyze SBBU data which will allow
+  - link all data together (stage positions, character frame data). and take findings on specific MU and specific characteristics
+  of mac and use that, to do things on aggregate across cast? 
+  - understand aggregate characteristics of cast (min/max)
+  - try different data analysis visuals to see if notice patterns (eg are there better aggregate measures like median vs mean that more helpful to use)
+  - how can i use this for more general base gameplan
+  - how can start to categorize MUs
+  - scripts that can answer certain questions
+  - see if can recreate findings from data analysis (to perhaps even lead to ways to find more findings)
+- Start to document practical ways to understand frames, what psychological (eg decision making time, reaction time),
+    - in this start to see if can test what my general reaction speed is (get some personal data), so understand what
+    realistic for me
+    - what some heuristics that if here have X frame advantage, lag, etc what that means what practical can do 
+        - when something reactable vs need anticipate vs need to buffer
+        - use that youtube video on reaction vs anticipate (and what that means for inputs)
+        - what does it mean "That move is unreactable"
+        - how modify all this when think of online

@@ -33,3 +33,4 @@ _Note: Unstoppable moves are only ones that can beat Little Mac's Smash Attack s
 % TODO: visual/practical description of tech roll distnace (as not consistent for cast) https://discord.com/channels/232987534588641281/520847397404934145/1413331062058389616
 % TODO: see if want to add kill percents per plat type (given tech roll read to KO punch is really easy on plat, same reason uptilt up B easy one), i guess there would have to be consistent low percent move to cause tech for plat for this to be viable. knowing at least what is earliest percent to cause tech on plat is helpful
 % TODO: add framedata link for each character
+% TOOD: document character archetypes and characteristics as relates to how strategy may be similar for

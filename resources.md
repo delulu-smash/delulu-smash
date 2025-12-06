@@ -43,11 +43,11 @@ Below is centralized collection of resource links. Many of these are referenced 
   - Similar to Ultimate Frame Data but with larger detail (especially specific internal game data/parameters)
 * - [Ultimate Data Viewer](https://rubendal.github.io/ssbu/#/)
   - Undelrying game code as relates to character moves
-* - [Ultimate Data Viewer - Levels](https://rubendal.github.io/ssbu/#/Stage)
+* - [Ultimate Data Viewer - Stages](https://rubendal.github.io/ssbu/#/Stage)
   - Detailed data and layout (eg blastzones) of each level
 * - [Smash Calculator](https://rubendal.github.io/SSBU-Calculator/)
   - Allows to choose two characters and see how certain moves effect opponent (eg hitlag, if sends in tumble), changing parameters like opponents percent
-* - [Smash Level Compare](https://www.tournameta.com/stage-comparison/)
+* - [Smash Stage Compare](https://www.tournameta.com/stage-comparison/)
   - Visually compare differnet stages (eg blasts zones)
 * - [Smash Tube](https://smash-tube.com/en/)
   - Easily search youtbe smash vods (can filter on specific match ups and player)
