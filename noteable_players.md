@@ -5,11 +5,9 @@
 This is not meant to be an exhaustive list, but accumlation of players and matches I have learned a lot from to date
 ```
 
-
 ::::{dropdown} Current Top 100 Little Mac (2025)
 ![2025 top little macs](./assets/2025_top_little_mac.jpg)
 ::::
-
 
 ```{list-table}
 :header-rows: 1
@@ -58,8 +56,6 @@ This is not meant to be an exhaustive list, but accumlation of players and match
   - [LiiMac Playlist](https://youtube.com/playlist?list=PL2DqH_qi_iElqzB5IcIxCOZzrtCiQm_hw&si=0M1k-_kuQYuPc0ww)
 * - Sy#OKPG
   - [Sy#OKPG Playlist](https://youtube.com/playlist?list=PL2DqH_qi_iEk6BGxzdrm8B23EQg2eB5UX&si=3IL6jtkAGL4q6ZHy)
-* - Arelist
-  - [Arelist Playlist](https://youtube.com/playlist?list=PL2DqH_qi_iEl7OgUpXaoWhnLgQgtp6qlN&si=YG2N18n19XzGguMH)
 * - Arelist
   - [Arelist Playlist](https://youtube.com/playlist?list=PL2DqH_qi_iEl7OgUpXaoWhnLgQgtp6qlN&si=YG2N18n19XzGguMH)
 * - Alternis

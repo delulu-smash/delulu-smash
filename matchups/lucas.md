@@ -13,3 +13,5 @@
 * - [**KO Kill Percent**](https://docs.google.com/spreadsheets/d/1Fht5zTeF1p6C-79gOIPfZCorS_AIDgmgTezSbnThcAg/edit?gid=0#gid=0): 
   - `20%-22%`
 ```
+
+% TODO: log kill confirms
