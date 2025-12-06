@@ -1,4 +1,3 @@
 # Stages
 
-(small_battlefield)=
-## Small Battlefield
+![](/assets/legal_stages.png)

@@ -84,3 +84,11 @@ git config pull.rebase false  # merge
 hint:   git config pull.rebase true   # rebase
 hint:   git config pull.ff only       # fast-forward only
 
+
+- add to noteable player playlist ones link to smash tube (as will be mots up to date https://smash-tube.com/en/result.php?player1=Peanut&character1=%E3%83%AA%E3%83%88%E3%83%AB%E3%83%BB%E3%83%9E%E3%83%83%E3%82%AF&player2=&character2=&free_word=&region=&submit=#result)
+  - change perhaps my youtube collections to be ones have actually reviewed and deemed useful (did vod review on)
+  - do similar for match up
+  - my vods list are more to augment
+- document resources per character like their documents, youtubers, etc, so easily have 
+resources to learn those characters indepth
+- summarize the smash mechanics and engine. detailed section along with snapshot (key points that many dont know or forget)

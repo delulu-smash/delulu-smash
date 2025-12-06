@@ -49,6 +49,8 @@ Below is centralized collection of resource links. Many of these are referenced 
   - Allows to choose two characters and see how certain moves effect opponent (eg hitlag, if sends in tumble), changing parameters like opponents percent
 * - [Smash Level Compare](https://www.tournameta.com/stage-comparison/)
   - Visually compare differnet stages (eg blasts zones)
+* - [Smash Tube](https://smash-tube.com/en/)
+  - Easily search youtbe smash vods (can filter on specific match ups and player)
 ```
 
 ## SSBU Community & Tournaments
@@ -66,6 +68,8 @@ Below is centralized collection of resource links. Many of these are referenced 
   - Where can find and sign up for tournaments (offline & online)
 * - [Matchbox](https://smashpros.gg/)
   - It is like more competitive version of quickplay with tournament rules and rankings
+* - [Upsets.gg](https://upsets.gg/ssb-u/rankings?character=Little+Mac)
+  - Unofficial Little Mac Power Rankings 
 ```
 
 ## Match Ups Vods Playlists
