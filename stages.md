@@ -84,7 +84,12 @@ Important items to remember:
   - `230`
   - `147`
   - `130`
+* - [**Kalos**](https://rubendal.github.io/ssbu/#/Stage/Kalos%20Pok%C3%A9mon%20League)
+  - `245`
+  - `165`
+  - `145`
 ```
+
 
 ### Blastzone (Top)
 
@@ -105,6 +110,11 @@ Important items to remember:
   -
   - `163`
   - `150`
+* - [**Kalos**](https://rubendal.github.io/ssbu/#/Stage/Kalos%20Pok%C3%A9mon%20League)
+  - `192`
+  - 
+  - 
+  - `162`
 ```
 
 ### Plat Hieght
@@ -126,6 +136,10 @@ Important items to remember:
   - 
   - `27`
   - `41`
+* - [**Kalos**](https://rubendal.github.io/ssbu/#/Stage/Kalos%20Pok%C3%A9mon%20League)
+  - 
+  - 
+  - `30`
 ```
 
 ### Plat Length
@@ -145,6 +159,10 @@ Important items to remember:
   - 
   - `39`
   - `39`
+* - [**Kalos**](https://rubendal.github.io/ssbu/#/Stage/Kalos%20Pok%C3%A9mon%20League)
+  -
+  -
+  - `36`
 ```
 
 ### Plat Position
@@ -173,6 +191,13 @@ Important items to remember:
   - `-20`
   - `60`
   - `100`
+* - [**Kalos**](https://rubendal.github.io/ssbu/#/Stage/Kalos%20Pok%C3%A9mon%20League)
+  -
+  -
+  -
+  -
+  - `62`
+  - `97`
 ```
 
 ### General
@@ -195,6 +220,11 @@ Important items to remember:
   - `82`
   - `-123`
   - `-105`
+* - [**Kalos**](https://rubendal.github.io/ssbu/#/Stage/Kalos%20Pok%C3%A9mon%20League)
+  - `160`
+  - `80`
+  - `-118`
+  - `-85`
 ```
 
 
@@ -218,4 +248,5 @@ Important items to remember:
 %TODO: for example incin, given can walk and just want to stay out side burst range of side B
 % you want to have wider stage so dont unecessiarly get caught by edge of stage (and dash outside of range and follow up is quickest, compared to jumping and landing). It also stage that icin has less options to approach and evade (for this I may choose town city). use this MU thinking on characteristics/data that is good to log (so can come up with bans and preferred stages better)
 %TODO: low -> full hop, mid -> full hop waveland high -> double jump waveland
-%TODO: add wired plat & actual visuals (so can easily see make up of stage). use https://www.tournameta.com/stage-comparison/
+%TODO: add wired plat & actual visuals (so can easily see make up of stage). use https://www.tournameta.com/stage-comparison/ & compare against small battlefield. as small battlefield is baseline stage
+%TODO: how much distance does uptilt cover (can compare that to plat width)
