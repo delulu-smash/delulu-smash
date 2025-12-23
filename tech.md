@@ -37,7 +37,7 @@ _For full playlist of Little Mac Tech videos click [here](https://youtube.com/pl
 * - `High Ledge Grab`
   - At/slightly above ledge height, using [`Nair`](tbd) > [`Up-B`](tbd)
   - Increase distance can snap to ledge with full intangibility
-  - ![](././assets/high_ledge_grab.gif)
+  - ![](https://assets.delulu-smash.com/ssbu/IMG_0288.gif)
 * - `Ariel Boosted Rising Upper Cut`
   - [`Nair`](tbd) > [`Up-B`](tbd) to increase snap to ledge ([`Nair`](tbd) must be last move before [`Up-B`](tbd))
   - Improves horizontal distance can make back to ledge with [`Up-B`](tbd) 

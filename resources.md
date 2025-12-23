@@ -47,6 +47,8 @@ Below is centralized collection of resource links. Many of these are referenced 
   - Detailed data and layout (eg blastzones) of each level
 * - [Smash Calculator](https://rubendal.github.io/SSBU-Calculator/)
   - Allows to choose two characters and see how certain moves effect opponent (eg hitlag, if sends in tumble), changing parameters like opponents percent
+* - [Smash Data Docs](https://rubendal.github.io/SmashDocs/)
+  - Goes into some depth on the math within the game engine (like knockback, DI, etc)
 * - [Smash Stage Compare](https://www.tournameta.com/stage-comparison/)
   - Visually compare differnet stages (eg blasts zones)
 * - [Smash Tube](https://smash-tube.com/en/)
