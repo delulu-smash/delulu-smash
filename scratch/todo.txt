@@ -104,8 +104,31 @@ resources to learn those characters indepth
 - Start to document practical ways to understand frames, what psychological (eg decision making time, reaction time),
     - in this start to see if can test what my general reaction speed is (get some personal data), so understand what
     realistic for me
-    - what some heuristics that if here have X frame advantage, lag, etc what that means what practical can do 
+    - what some heuristics that if here have X fre ame advantage, lag, etc what that means what practical can do 
         - when something reactable vs need anticipate vs need to buffer
         - use that youtube video on reaction vs anticipate (and what that means for inputs)
         - what does it mean "That move is unreactable"
         - how modify all this when think of online
+- see ways to understand frames and aspects of games through pracitices including
+    - watching youtube vods at 0.25X speed, with frame by frame with pause and "." press 
+    - hitstun calculator and understanding fundamentally the disadvantage state and how calculate
+    frame advantage on own: https://www.reddit.com/r/SmashBrosUltimate/comments/qf3gzm/how_many_frames_of_hitstun_does_sora_fair2_have/
+    https://www.reddit.com/r/CrazyHand/comments/uqy0zm/is_there_a_tool_that_would_let_us_know_the_frame/
+    look at code of https://rubendal.github.io/SSBU-Calculator/
+    - nice images and math around game engine: https://rubendal.github.io/SmashDocs/
+- ssbu python package  
+    - base data layer -> quasi-database access to all possible smash ultimate data (stage data, frame data, etc)
+        - general data 
+        - mac specific data
+        - my own specifc additions (eg character categorization, eg archetyp, weight class, etc). so do filters/groupings 
+        to see patterns/etc
+    - calculators -> based on data different calculations, can wrap over things like: https://github.com/rubendal
+    - process/transformation data -> items that programmatically calculated from above data (if can neutral-B)
+    - why this layer:
+        - programmatically create portions of documentation
+        - investigation and exploration
+            - can easily script/explore findings across the entire cast
+            - 
+        - to normalize and easy to join/merge/work with many different sources of data
+
+1. add daily notes folder and hotkey so that can easily just write bunch of notes for day and sythesize later
