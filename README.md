@@ -1,3 +1,5 @@
+[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
+
 # DeLulu Smash
 
 This is suite of tools, documentation, blog, and packages to help me, [`DeLulu`](https://www.delulu-smash.com/) with Smash Bros.
