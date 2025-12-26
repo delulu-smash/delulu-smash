@@ -132,3 +132,12 @@ resources to learn those characters indepth
         - to normalize and easy to join/merge/work with many different sources of data
 
 1. add daily notes folder and hotkey so that can easily just write bunch of notes for day and sythesize later
+2. write "About Website" on set up, services (eg cloudflare, github, etc tech stack), use
+3. see how can upload videos to youtube fast via switch USB transfer and what shown in https://www.reddit.com/r/LittleMacMains/comments/j1mxq1/a_video_guide_on_how_to_transfer_smash_ultimate/
+
+
+repo
+1. move to docs folder
+2. start pkgs/sbbu folder 
+3. add work set up ( eg .vscode folder)
+4. play tools_ui folder (reflex)

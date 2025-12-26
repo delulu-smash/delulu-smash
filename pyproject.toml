@@ -1,9 +1,423 @@
+###############################################################################################
+# MAIN APP/PKG (DEPENDENCIES)
+###############################################################################################
 [project]
-name = "deulu-little-mac"
-version = "0.1.0"
-description = "Add your description here"
+name = "delulu-smash"
+# given this monorepo style and in practice more monolith, we opt for versioning
+# that is YYYY.MM.DD format to have more clear indication when out of date
+version = "2025.12.26"
+description = "All dependencies for main docs site, pkgs, and local developer tools"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "loguru>=0.7.3",
     "mystmd>=1.6.0",
+    "pre-commit>=4.5.1",
 ]
+
+# TODO: look into how uv does this (as think has own build system)
+[build-system]
+requires = ["setuptools>=64.0.0"]
+build-backend = "setuptools.build_meta"
+
+# per recommendation in https://setuptools.pypa.io/en/latest/userguide/pyproject_config.html#setuptools-specific-configuration
+# wanting to create clear distinction between package code and services
+[tool.setuptools.packages.find]
+where = ["pkgs"]
+include = [
+    "ssbu*",
+]
+
+# TODO: add ssbu cli
+# [project.scripts]
+# ssbu = "ssbu.cli.__main__:app"
+
+###############################################################################################
+# TESTING CONFIGURATION
+###############################################################################################
+# TODO: is pytest.ini_options deprecated?
+[tool.pytest.ini_options]
+# this is the base pytest configuration
+# additional configuration for use for qatests are stored within services/qatests/conftest.py
+# ensures that if test marked with @pytest.mark.xfail, if test passes will be seen as failure
+# (instead of pytest default which would considered XPASS)
+# we doing this so helps
+# 1. ensure doesn't hide false positives
+# 2. reminding of cleanup of clean up of @pytest.mark.xfail marker
+# see https://docs.pytest.org/en/reorganize-docs/new-docs/user/xfail.html#strict-parameter
+# for more details
+xfail_strict=true
+
+# trace with all the pytest traceback info (like on failed test)
+# see link https://docs.pytest.org/en/6.2.x/usage.html#modifying-python-traceback-printing
+# using the ipdb (https://github.com/gotcha/ipdb) as default debugger
+# can debug by adding --pdb to command line args
+# and will open on first failed assert
+# if want to debug easiest it write "breakpoint()""
+# where would like to set breakpoint
+# NOTE: below helps with:
+# 1. ensuring debugger is the more user friendly ipdb (instead of default)
+addopts = """
+--pdbcls=IPython.terminal.debugger:Pdb
+--ignore-glob=**/loadtest*/*
+--ignore-glob=**/locust*/*
+"""
+
+###############################################################################################
+# LINTER & FORMATTER CONFIGURATION
+###############################################################################################
+# general ruff config (global to formatter and linter)
+[tool.ruff]
+# ruff formatter defaults to 88
+# while more widely accepted standard of 120
+line-length = 120
+indent-width = 4
+# Allow imports relative to the "pkgs" directories.
+src = ["pkgs/*"]
+
+# format specific configs
+[tool.ruff.format]
+# Enable reformatting of code snippets in docstrings.
+docstring-code-format = true
+
+# linter specific configs
+[tool.ruff.lint]
+# TODO: remove auto fix of return None to just return (feels awkward)
+# definitions of rules can be found in: https://docs.astral.sh/ruff/rules/
+# we use extend-select so that we get defaults from ruff
+# fyi we use extend-select/extend-ignore, per recommendations in https://github.com/astral-sh/ruff/issues/465#issuecomment-1783684428?
+extend-select = [
+    # CODE STYLES
+        # isort auto formats imports)
+        "I",
+        # pycodestyle (ensure PEP 8 style)
+        "W",
+        # pep 8 naming (ensures following pep 8 style guide)
+        "N",
+        # pydocstyle (ensure docstrings are used when needed)
+        "D",
+        # TODO: ignore flake8-annotations if non-library files
+        # flake8-annotations (ensure using function type annotations when needed)
+        "ANN",
+        # flake8-import-conventions (ensure standard import conventions, eg pandas)
+        "ICN",
+        # flak8-pytest-style (ensure follows common pytest style conventions and eliminates common pytest mistakes)
+        "PT",
+        # flake8-quotes (ensure better styling when using quotes that is more readable)
+        "Q",
+        # flake8-return (common preferred styling when using return statements)
+        "RET",
+        # flake8-tidy-imports (TID)
+        "TID",
+        # flake8-todos
+        # only use specific ones as only want this to enforce bare minimum
+        # standardization which allows for easier file searching and readability
+        "TD001","TD004","TD005","TD006","TD007",
+        # refurb
+        # TODO: uncomment FURB once this moves out of preview mode
+        # "FURB",
+    # ERROR CHECKERS
+        # pyflakes (general checks)
+        "F",
+        # Error (general errors)
+        "E",
+        # maccabe (ensuring non-complex code structures)
+        "C90",
+        # flake8 bandit (security testing)
+        "S",
+        # flake8 blind except (ensuring not over generalized except - which would catch KeyboardInterupt, etc)
+        "BLE",
+        # flake8 bug bear (finds common python bugs)
+        "B",
+        # flake8 builtins (ensure not overwriting/etc python built ins)
+        "A",
+        # flake8 commas (ensuring proper use of commas, as can have unintended consequences like tuples)
+        "COM",
+        # flake8 comprehensions (checks common misuse and inefficient ways of using comprehensions)
+        "C4",
+        # flake-debugger (ensure not any left over breakpoints/debugging utilities)
+        "T10",
+        # flake8 implicit str concat (prevent implicit str concat which is prone for error)
+        "ISC",
+        # flake8-async (common async mistakes)
+        "ASYNC",
+        # flake8-boolean-trap (ensure have more clear use of booleans in function definitions)
+        "FBT",
+        # flake8-logging-format (common logging bugs/performance issues/etc)
+        "G",
+        # flake8-pie (common python mistakes)
+        "PIE",
+        # flake8-print (catches users leaving print statements which not usually on purpose)
+        "T20",
+        # flake8-self (common mistakes of classes and self)
+        "SLF",
+        # flake8-simplify (creating more concise code that is also at times more performant)
+        "SIM",
+        # flake8-type-checking (ensures if only using for type checking don't actually import which will cause performance issues)
+        "TCH",
+        # flake8-unused-arguments (ensure don't leave around function parameters that are not actually used - usually an error)
+        "ARG",
+        # flake8-use-pathlib (it is more preferred to use newer pathlib package than os.path)
+        "PTH",
+        # eradicate (reducing chance of commented out blocks)
+        "ERA",
+        # pandas-vet (fixing common pandas issues)
+        "PD",
+        # pygrep-hooks (additional misc lints)
+        "PGH",
+        # pylint (a large assortment of lints)
+        "PL",
+        # tryceratops (better try except blocks - reducing bugs and increasing readability)
+        "TRY",
+        # numpy lints
+        "NPY",
+        # flake8-logging (fixing common bugs with logging module)
+        # TODO: uncomment LOG once this moves out of preview mode
+        #"LOG",
+        # ruff specific rules
+        "RUF",
+    # NEW PYTHON VERSION CONVENTIONS
+        # pyupgrade (ensures using new standards in newer versions of python)
+        "UP",
+        # flake8 2020 (ensures using new python version standards for "sys" module
+        "YTT",
+]
+extend-ignore = [
+    # get false positives with loguru for now
+    # keep tabs on if fixed: https://github.com/astral-sh/ruff/issues/13390
+    "PLE1205",
+    # star arg unpacking, used throughout our db definitions
+    # TODO: review/see impact of changing (DSTRAT-14564)
+    "B026",
+    # below are lints that get taken care of by formatter/lint automatically
+    # and given we do format/lint on auto save having these add
+    # unnecessary verbosity to IDE
+    "W291", # Trailing whitespace
+    "W293", # Blank Line Contains whitespace
+    "ANN002", "ANN003", # type hints for args and kwargs
+    # allowing Any as though not ideal, sometimes is best place holder
+    # and some times is difficult to determine when more arbitrary function (eg init_session_state)
+    "ANN401",
+    # TODO: look into amount of effort for adhering to simpler code after checks are ported over
+    # (will be easier to see change in behavior)
+    "C901", # limits complexity of code
+    # allow f-strings with logging messages
+    "G004",
+    # ignore to allow `with open(...)`, especially as many suggestions from stackoverflow will still use
+    # requiring this is ends up being unnecessary (more nice to do)
+    "PTH123",
+    # public module/package docstrings aren't used by users often and only really need for modules expect
+    # users to use. having D104 just leads too bit much of annoyance of adding docstring for each module
+    # namely each __init__.py file
+    "D104", "D100",
+    # D203 (no-blank-line-before-class) is incompatible with D211 (one-blank-line-before-class)
+    # and prefer the condensed formatting of D211
+    "D203",
+    # D212 (multi-line-summary-second-line) is incompatible with D213 multi-line-summary-second-line
+    # and the vscode auto docstring extension implements D212
+    "D212",
+    # below are docstring formats that are nice if someone does,
+    # but not necessary and lead to friction when coding (bit too opinionated)
+    "D205", "D400", "D415", "D401",
+    # our apps don't worry about SQL injection as only used internally
+    # and many of our users it is easier to use raw sql
+    "S608",
+    # these quote styling already taken care of by formatter
+    # so will just add noise when linting
+    "Q000", "Q001", "Q002",
+    # "use of assert detected", assert is good convenience method, and code we use
+    # wont be using optimization flag (ie -O) and thus not worried about being ignored
+    "S101",
+    # forces ternary operator which makes code harder to read
+    "SIM108",
+    # "Two constants compared in a comparison", fails also when asserts have which is bit overkill
+    # and the lint rule is more stylistic in nature so find to just ignore
+    "PLR0133",
+    "PLR0912", # limits branches in code (would require major refactor)
+    # "Too many arguments in function definition"
+    # this is bit too restrictive check, that given sandbox feel of this library is fine to skip
+    "PLR0913",
+    "PLR0915", # limits number of statements
+    # many users like the stylistic choice of "return None" vs just "return"
+    # sometimes using former to show explicitly returning that vs the latter more of "break"
+    "RET501",
+    # Raising custom exception messages with native Exceptions is helpful; this rule is overly strict
+    "TRY003",
+    # currently COM812 is in conflict with formatter, recommended to disable via ruff warning
+    "COM812",
+    # " Avoid using the generic variable name `df` for DataFrames"
+    # is too restrictive and many times easier in function variables
+    "PD901",
+    # switches from list[0] to next(...) which is less readable/clear with current team habits
+    "RUF015",
+    # disallows boolean arguments and default boolean arguments from function signatures
+    "FBT001",
+    "FBT002",
+    # disallows variable assignments directly before `return`, which can decrease readability
+    "RET504",
+    # allow submodule aliasing as we do things like "import ssu.pytest as pytest"
+    "PLR0402",
+    # we are not doing works that needs cryptographic viewpoint
+    "S311",
+    # suggestion makes code harder to read, ie `["index", *other_chars]` instead of concatenation
+    "RUF005",
+    # Confusion between the two causes a loop that makes it impossible to pre-commit: TCH003 from Flake8 vs TC003 from Ruff
+    # (https://github.com/Dimensional-Tech/dad-ddsandbox/issues/180)
+    "TC003",
+    # Warns of Pandas 'pivot' being used rather than 'pivot_table' but does not distinguish between
+    # Polars vs Pandas dataframes
+    "PD010",
+    # import outside top level, inconsistent with lazy imports (must have recently been added/required as previously not needed)
+    "PLC0415"
+]
+# TODO: is tool.ruff.lint.extend-unfixable deprecated?
+extend-unfixable = [
+    # per recommendation in https://github.com/astral-sh/ruff/issues/9093
+    # ensure cant use multi line string implicit concat
+    # (as this is general error prone and hard to find bug,
+    # ie fat fingered not writing comma)
+    "ISC",
+    # many users use print statements when wanting additional
+    # output in tests (eg when using pytest). so want to make more explicit
+    # for users to choose if want (which would include noqa or remove)
+    # also with running auto fixes on save this is additionally desired
+    "T20",
+    # there are times that have commented out blocks when playing with code or just temporary
+    # though we don't recommend, auto-fixing could lead to poor user experience
+    # especially given we have auto-fix vscode configured on save
+    "ERA",
+    # auto-fixing and removing unused imports has lead to some headaches usually with
+    # me updating imports but just forgetting to update code, deleting unused imports because of
+    # ruff running on autosave
+    # are easy enough (and if truly don't want can run command line to clean up)
+    # pre-commit will flag anyways to manually fix if needed
+    "F401"
+    ]
+[tool.ruff.lint.per-file-ignores]
+# NOTE: for syntax on how to specify file patterns see: https://docs.rs/globset/latest/globset/#syntax
+# ensure not checking unused import (F401)
+# & unable to detect undefined names (F403)
+# for all __init__.py & __main__.py files
+# via https://stackoverflow.com/questions/8427701/how-to-ignore-pyflakes-errors-imported-but-unused-in-the-init-py-file
+"{__init__.py,__main__.py}" = ["F403"]
+# Do not check paths including tests directory
+# NOTE: add any non-packages folders (to relax requirements for code that is ok to
+# be more off the cuff and script like/adhoc
+# we do this explicitly as ideally most code would use all of our lints,
+# and opens up for some squads having more lint checks than others for their
+# squad specific folders
+"**/{tests,local,docs,services,pkgs/tutorial,pfm,ins,apl}/*" = [
+    # ignoring all the flake8-docstrings error codes we select
+    # as not to require docstrings for our tests
+    "D100", "D102", "D103", "D106", "D101",
+    # TODO: see if want to try to enforce annotations for scripts (is this too prescriptive)
+    #   at very least will be good to document the benefits of typing so users want to do
+    #   perhaps require for our platform repos
+    # only really care to require type annotations for our libraries
+    # as namely want for intellisense
+    "ANN",
+    # "magic-value-comparison" as many checks/scripts/etc use exact comparison
+    # and requiring this generally is bit heavy handed
+    "PLR2004",
+    # TODO: decide of maxes from pylint are too much for services
+    # eg PLR0913,PLR0916,PLR0912,PLR0914, etc
+    # moving to typing block helps performance of import but adds some unnecessary friction
+    "TCH001", "TCH002",
+    # nested with statements are common in streamlit
+    "SIM117", "SIM117",
+    # this is more nice to have for non-pkg code
+    "C403",
+    # used variable, needing to do because of polars.sql doesnt show as "being used"
+    "F841"
+    ]
+# calling out specific additional in local scratch work that is bit annoying
+"**/{local}/*" = [
+    "ERA001",
+    "T201"
+]
+# for cli apps there is common standards that are different than most lib code
+"**/{cli}/*" = [
+    # ignoring `print` found - as common to use print to get show on stdout
+    "T201",
+    # Check for method calls that initiate a subprocess without a shell.
+    # we ignore this as many false positive are given, almost all commands
+    # are more static in nature (so attack vector is not really there)
+    "S603",
+    # TODO: ideally would below but given this used purely internally
+    # not as much of worry at moment and not simple for each one
+    "S607"
+    ]
+"pkgs/ssbu/typing.py" = [
+    # allowing unused imports for typing modules
+    "F401",
+    ]
+"tests/*" = [
+    # Allow tests to create unused variables
+    "F841",
+    # Allow tests to create unused parameters (ie description in parametrized tests)
+    "ARG002",
+    # Allow assertion in exception (to ensure proper parts of errors are raised)
+    "PT017",
+    # Allow private member access, used to ensure proper attributes
+    "SLF001"
+    ]
+# configs for "ISC" rules
+[tool.ruff.lint.flake8-implicit-str-concat]
+# ensure cant use multi line string implicit concat
+# (as this is general error prone and hard to find bug,
+# ie fat fingered not writing comma)
+allow-multiline = false
+
+
+# configs for "PT" rules
+[tool.ruff.lint.flake8-pytest-style]
+fixture-parentheses = false
+mark-parentheses = false
+
+# configs for "TID" rules
+[tool.ruff.lint.flake8-tidy-imports]
+# Disallow all relative imports.
+ban-relative-imports = "all"
+[tool.ruff.lint.flake8-annotations]
+# getting typing write for star arg is difficult and not the most useful
+# so allowing typing.Any is easier convenience
+allow-star-arg-any = true
+
+# config for "I" rules
+[tool.ruff.lint.isort]
+# to not require quote annotations and ensure TCH can lint correctly we want
+# "PEP 563 - Postponed Evaluation of Annotations" to be default which basically requires this
+# import at top of every file
+# details on why needed seen in: https://dev.to/tiangolo/the-future-of-fastapi-and-pydantic-is-bright-3pbm
+# NOTE: once "PEP 563 - Postponed Evaluation of Annotations" is no longer needed this will be default behavior
+required-imports = ["from __future__ import annotations"]
+
+# config for "D"
+[tool.ruff.lint.pycodestyle]
+# maximum length allow for docstrings (this will be somewhat shorter than line-length
+# given where the indentation and length that is appropriate to make readable
+max-doc-length = 95
+
+# config for "D"
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+# TODO: see if need
+# [tool.ruff.lint.flake8-type-checking]
+# runtime-evaluated-base-classes = [
+#     "typer.Argument",
+#     "pydantic.BaseModel",
+#     # note: copy the pydantic ones for ssbu.pydantic wrapper
+#     # we just want to ensure works for both
+#     "ssbu.pydantic.BaseModel",
+#     "sqlalchemy.orm.DeclarativeBase"
+#     ]
+# runtime-evaluated-decorators = [
+#     "pydantic.validate_call",
+#     "pydantic.field_validator",
+#     # note: copy the pydantic ones for ssbu.pydantic wrapper
+#     # we just want to ensure works for both
+#     "ssbu.pydantic.validate_call",
+#     "ssbu.pydantic.field_validator",
+#     "attrs.define"
+#     ]

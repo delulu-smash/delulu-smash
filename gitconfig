@@ -1,0 +1,9 @@
+# gitconfig settings for this repo
+# see http://michaelwales.com/articles/make-gitconfig-work-for-you/
+# for more details
+
+# auto ignoring certain commits
+# to clean up git blame
+# (eg ignoring file formatting changes from black)
+[blame]
+	ignoreRevsFile = .git-blame-ignore-revs

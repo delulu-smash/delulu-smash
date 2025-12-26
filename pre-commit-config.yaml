@@ -1,0 +1,92 @@
+####################################################################################
+# !!! DO NOT EDIT - CORE MAINTAINERS ONLY !!!
+####################################################################################
+# TODO: for github actions using --output-format=github will be useful
+# see https://docs.astral.sh/ruff/integrations/#github-actions
+# curious how integrate this with pre-commit
+# TODO: see if for github can have pre-commit auto update (https://github.com/tiangolo/typer/pull/689)
+repos:
+##########################################
+# NON-PYTHON
+##########################################
+  ##########################################
+  # GENERAL
+  ##########################################
+- repo: git@github.com:pre-commit/pre-commit-hooks.git
+  rev: v4.5.0
+  hooks:
+    # from pre-commit-hooks
+    # know which language, id, entry, types to use
+    # via https://github.com/pre-commit/pre-commit-hooks/blob/master/.pre-commit-hooks.yaml
+    # check for files that contain merge conflict strings.
+    - id: check-merge-conflict
+    # ensures files that are too large cannot be committed,
+    # to reduce amount of storage on serve
+    # especially given Github has soft 1GB limit and hard 5GB limit
+    - id: check-added-large-files
+      args: ['--maxkb=300']
+  ##########################################
+  # LINTERS & FORMATTERS
+  ##########################################
+    ##########################################
+    # JSON
+    ##########################################
+    # lints json (ie ensures valid json)
+    - id: check-json
+    # NOTE: vscode and ipynb look like json but more json5 or other structure
+    # will fail to parse if don't ignore
+    # .vscode directory use non-standard json format that allows comments
+    # and "check-json" will error
+    # "docs/user_space/pfm/calcs/.*\.json" -> # Exclude all JSON files in the specified directory and its subdirectories
+      exclude: |
+        (?x)^(
+            .*\*.ipynb|
+            .vscode/.*|
+        )$
+    # formats json
+    - id: pretty-format-json
+      # ensuring prettifies json
+      # without re-sorting keys
+      # added --no-ensure-asci as when
+      # not specified was changing like "-" to "\u2013"
+      args: [--autofix, --no-sort-keys, --no-ensure-ascii]
+    # NOTE: vscode and ipynb look like json but more json5 or other structure
+    # will fail to parse if don't ignore
+    # "docs/user_space/pfm/calcs/.*\.json" -> # Exclude all JSON files in the specified directory and its subdirectories
+      exclude: |
+        (?x)^(
+            .*.ipynb|
+            .vscode/.*|
+        )$
+    ##########################################
+    # YAML
+    ##########################################
+    # lints yaml (ie ensures valid yaml)
+    - id: check-yaml
+##########################################
+# PYTHON
+##########################################
+  ##########################################
+  # LINTERS & FORMATTERS
+  ##########################################
+  # NOTE: below config informed by readme in https://github.com/astral-sh/ruff-pre-commit
+- repo: git@github.com:astral-sh/ruff-pre-commit.git
+  # ruff package version.
+  # NOTE: need to update periodically to match version vscode ruff extention ships with
+  # otherwise "onSave" edits will not be same as what pre-commit will be running
+  # see url :https://marketplace.visualstudio.com/items?itemName=charliermarsh.ruff
+  rev: v0.9.9
+  hooks:
+    # Initial lint and auto-fix
+    - id: ruff
+      types_or: [ python, pyi, jupyter ]
+      args: [ --fix ]
+    # format python code
+    - id: ruff-format
+      types_or: [ python, pyi, jupyter ]
+
+# Clearing output from ipynb
+- repo: git@github.com:kynan/nbstripout.git
+  rev: 0.7.1
+  hooks:
+    - id: nbstripout

@@ -1,4 +1,5 @@
 # This file was created automatically with `myst init --gh-pages` 🪄 💚
+# and modifcations for "docs" subfolder talked about in https://github.com/jupyter-book/mystmd/issues/1849
 
 name: MyST GitHub Pages Deploy
 on:
@@ -37,10 +38,11 @@ jobs:
         run: npm install -g mystmd
       - name: Build HTML Assets
         run: myst build --html
+        working-directory: ./docs
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './_build/html'
+          path: './docs/_build/html'
       - name: Deploy to GitHub Pages
         id: deployment
 

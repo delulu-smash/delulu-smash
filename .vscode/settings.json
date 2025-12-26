@@ -1,0 +1,119 @@
+// This serve as some base settings for users newer to vscode
+// along with configs specific to how linted/formated
+{
+	"autoDocstring.startOnNewLine": true,
+	// ensures git blame ignores specific commits (usually related to ones that
+	// where just doing autoformatting which can pollute the git blame)
+	"gitlens.advanced.blame.customArguments": [
+		"–ignore-revs-file",
+		".git-blame-ignore-revs"
+	],
+	// auto copying images (eg snippets) into markdown (following our docs file storage conventions)
+	// ie putting in .assets folder
+	// (for details see, https://stackoverflow.com/questions/75831497/how-can-i-paste-images-into-my-markdown-files-in-vs-code)
+	"markdown.copyFiles.destination": {
+		"/docs/**/*": ".assets/${documentBaseName}/"
+	},
+	// per recommendations in https://marketplace.visualstudio.com/items?itemName=charliermarsh.ruff
+	// allow for ruff to be auto applied when saving
+	// this is not only better developer experience but also
+	// limits the pre-commit errors that can just be auto fixed
+	"[python]": {
+	"editor.formatOnSave": true,
+	"editor.codeActionsOnSave": {
+		"source.organizeImports.ruff": "explicit",
+		"source.fixAll.ruff": "explicit"
+	},
+	"editor.defaultFormatter": "charliermarsh.ruff"
+	},
+	"notebook.formatOnSave.enabled": true,
+	"notebook.defaultFormatter": "charliermarsh.ruff",
+	// TODO: verify if this causes
+	// jupyter notebook cells to be delete on save
+	// it seems to be related likely to https://github.com/astral-sh/ruff-vscode/issues/461#issuecomment-2094254362
+	// but couldnt figure out what exactly causing (so commenting out for now)
+	"notebook.codeActionsOnSave": {
+		"source.fixAll.ruff": "explicit",
+		"source.organizeImports.ruff": "explicit"
+	},
+	//Pylance offers some better error checking and linting (especially around type checking)
+	"python.languageServer": "Pylance",
+	// certain Pylance rules are noise given how have ruff lint set up, we choose to ignore these
+	// via https://stackoverflow.com/questions/68209729/disable-specific-pylance-linting-messages-in-vs-code-settings-json-like-with-py
+	// for options see: https://github.com/microsoft/pyright/blob/main/docs/configuration.md#type-check-diagnostics-settings
+	// TODO: i am not seeing this get ignored properly
+	"python.analysis.diagnosticSeverityOverrides": {
+		// ruff lint we define cases when wild card imports are ok
+		"reportWildcardImportFromLibrary": "none"
+	},
+	//explicitly turning off auto import completions, as consistently imports incorrect
+	//or over imports (as seen also by discussions in: https://github.com/microsoft/pylance-release/issues/2344)
+	"python.analysis.autoImportCompletions": false,
+	//have found better to see full diffs as would see when commiting with git
+	//having this ignored by default has lead to hard to understand where differences are
+	//when happens to just be
+	"diffEditor.ignoreTrimWhitespace": false,
+	//most times accidnetly leave trailing whitespace when saving file,
+	//having this auto cleaned is nice
+	"files.trimTrailingWhitespace": true,
+	//ensures using common docstring standard (currently we use numpy)
+	"autoDocstring.docstringFormat": "numpy",
+	//this helps matplot lib plots look better and readable
+	"jupyter.themeMatplotlibPlots": true,
+	//have found this theme to be nicest in terms of color coding especially with many
+	//packages we use like pytest (others can be unreadable)
+	"terminalAllInOne.terminalTheme": "Spacemacs",
+	//makes it easier to reference lines within juptyer notebook (Esepcially if cell gets large)
+	"notebook.lineNumbers": "on",
+	//i found having on left makes easier to understand which terminal actually using
+	//which leads to less mistakes of using wrong terminal tabs
+	"terminal.integrated.tabs.location": "left",
+	//these myst extensions we use so want to ensure they are enabled
+	"myst.preview.extensions": [
+		"dollarmath",
+		"amsmath",
+		"deflist",
+		"tasklist",
+		"colon_fence"
+	],
+	// TODO: decide if still want below
+	"python.terminal.activateEnvInCurrentTerminal": true,
+	// for own libraries need below to ensure recognizes import per links below
+	// https://github.com/microsoft/python-language-server/blob/master/TROUBLESHOOTING.md#unresolved-import-warnings
+	// https://stackoverflow.com/a/57669739
+	"python.autoComplete.extraPaths": ["./pkgs"],
+	//the integrated pytest vscode is not that useful for how we use and set up (especially how we have pytest configured)
+	//better to just use terminal
+	"python.testing.promptToConfigure": false,
+	"python.testing.autoTestDiscoverOnSaveEnabled": false,
+	//though wont always use type checking for linting it is quite useful when coding
+	//and is usually the largest are of errors within a dynamic programming language like python
+	//we set to basic as if not start asking for more advanced features like stub files
+	//which are unecessary for our use cases and just add noise
+	"python.analysis.typeCheckingMode": "basic",
+	"ruff.nativeServer": "on",
+	// helps get proper import recognizition of our pacakges (eg in jupyter notebook)
+	"python.analysis.extraPaths": [
+		"./pkgs"
+	],
+	// just making this configuration explicitly as use of merge editor has only been confusing
+	// has been confusing up to now
+	"git.mergeEditor": false,
+	//this has been quite helpful in letting know if ahead/behind your current branch is
+	"git.autofetch": true,
+	//most users use jupyter as interactive python so this is better default
+	"jupyter.interactiveWindow.textEditor.executeSelection": true,
+	//sometimes other text will display, haivng error lens italisize makes this more clear
+	//from error
+	"errorLens.fontStyleItalic": true,
+	// ensures our own define code-snippets show at top of suggestions when `Ctrl+Space`
+	"editor.snippetSuggestions": "top",
+	// words to not spell check
+	"cSpell.ignoreWords": [
+		"ssbu",
+		"delulu",
+		"pkgs",
+		"mystmd"
+	]
+
+}
