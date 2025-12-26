@@ -1,6 +1,6 @@
 # DeLulu Smash
 
-This is suite of tools, documentation, blog, and packages to help me, [`DeLulu`](https://github.com/delulu-smash/delulu-smash/docs) with Smash Bros.
+This is suite of tools, documentation, blog, and packages to help me, [`DeLulu`](https://www.delulu-smash.com/) with Smash Bros.
 
 This follows a monorepo structure with following subcomponents
 
