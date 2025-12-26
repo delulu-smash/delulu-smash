@@ -1,0 +1,10 @@
+# file contains commits that should be ignore so
+# not to clutter git blame
+# run `git config blame.ignoreRevsFile .git-blame-ignore-revs`
+# to automatically have set for this git repo
+# see https://www.moxio.com/blog/43/ignoring-bulk-change-commits-with-git-blame
+# for more details
+
+# example below (the commit hash would be uncommented)
+## python ruff formatting
+# 8226fbe65c015639cc50adecb7b2f92b5fabf730

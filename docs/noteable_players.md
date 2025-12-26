@@ -6,7 +6,7 @@ This is not meant to be an exhaustive list, but accumlation of players and match
 ```
 
 ::::{dropdown} Current Top 100 Little Mac (2025)
-![2025 top little macs](./assets/2025_top_little_mac.jpg)
+![2025 top little macs](./.assets/2025_top_little_mac.jpg)
 ::::
 
 ```{list-table}

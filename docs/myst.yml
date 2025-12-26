@@ -13,3 +13,6 @@ site:
     # TODO: favicon not working
      favicon: favicon.ico
      logo: https://static.wikia.nocookie.net/cpucs-tournament/images/2/2b/LittleMacIcon.png/revision/latest?cb=20190209011432
+# TODO: add excludes global pattern so can have markdown files
+# that dont rendder in toc but can be used for templating/include directive
+# so can use same information in multiple files

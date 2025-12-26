@@ -1,0 +1,3 @@
+# allow for local docs that dont want to post on site
+* 
+!.gitignore

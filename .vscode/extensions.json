@@ -1,0 +1,24 @@
+
+{
+	"recommendations": [
+		"njpwerner.autodocstring",
+		"aaron-bond.better-comments",
+		"usernamehw.errorlens",
+		"be5invis.toml",
+		"codezombiech.gitignore",
+		"eamodio.gitlens",
+		"executablebookproject.myst-highlight",
+		//language server for python (autocomplete, type checking, etc)
+		"ms-python.vscode-pylance",
+		"ms-python.python",
+		"rangav.vscode-thunder-client",
+		"kevinrose.vsc-python-indent",
+		"charliermarsh.ruff",
+		"yasht.terminal-all-in-one",
+		"redhat.vscode-xml",
+		"mtxr.sqltools-driver-pg",
+		"donjayamanne.vscode-default-python-kernel",
+		"timonwong.shellcheck",
+		"streetsidesoftware.code-spell-checker"
+	]
+}

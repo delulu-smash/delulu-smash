@@ -1,15 +1,11 @@
-# Delulu - Little Mac
+# DeLulu Smash
 
-Hi, I'm [`DeLulu`](https://ksdaftari.github.io/deulu-little-mac/) (aka Mac Daddy). A [Little Mac](https://www.ssbwiki.com/Little_Mac_(SSBU)) main who is using this site to log what I have learned from own personal experience and larger Mac community. 
+This is suite of tools, documentation, blog, and packages to help me, [`DeLulu`](https://github.com/delulu-smash/delulu-smash/docs) with Smash Bros.
 
-Special thanks to `Mac Nation Discord`!
+This follows a monorepo structure with following subcomponents
 
-**GO MAC NATION GO!**
-
-```{note}
-Super Smash Brother Ultimate (SSBU) is my first smash game and only started playing of 2024 and taking seriously April 2025, so though I do best to have accurate information, I am still learning a lot.
-```
-
-
-:::{figure} https://www.smashbros.com/assets_v2/img/fighter/little_mac/main8.png
-:::
+| Folder                                                              | Description                                                                                                                       |
+|---------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------|
+| [`docs`](https://github.com/delulu-smash/delulu-smash/docs)         | contents for building main site: [delulu-smash.com](https://www.delulu-smash.com/), built with [myst engine](https://mystmd.org/) |
+| [`pkgs`](https://github.com/delulu-smash/delulu-smash/pkgs)         | contents python packages that aggregates and allows analysis on smash data (general and character specific)                       |
+| [`tools`](https://github.com/delulu-smash/delulu-smash/ui_tools) | contents for interactive tools, built with [reflex](https://reflex.dev/)                                                          |

@@ -1,0 +1,213 @@
+{
+    "codeblock":{
+        "prefix": ["codeblock"],
+        "body": [
+            "```${1|python,json,sql,markdown,bash|}",
+            "$2",
+            "```"
+        ],
+        "description": "Adds myst python executable code block",
+        "scope": "markdown"
+    },
+    "codecell":{
+        "prefix": ["codecell"],
+        "body": [
+            "```{code-cell} python",
+            "${1|:tags: [hide-input],:tags: [remove-input]|}",
+            "${2| ,:label: mylabel|}",
+            "$3",
+            "```"
+        ],
+        "description": "Adds myst python executable code block",
+        "scope": "markdown"
+    },
+    "setupcode":{
+        "prefix": ["setupcode"],
+        "body": [
+            "```{code-cell} python",
+            ":tags: [remove-input]",
+            "# global set up code, to re-use in other code-cells",
+            "$1",
+            "```"
+        ],
+        "description": "Adds myst python executable code block",
+        "scope": "markdown"
+    },
+    "dropdown":{
+        "prefix": ["dropdown"],
+        "body": [
+            "````{dropdown} ${1:Click to show}",
+            "$2",
+            "````"
+        ],
+        "description": "Adds myst dropdown",
+        "scope": "markdown"
+    },
+    "admonition":{
+        "prefix": ["admonition"],
+        "body": [
+            "````{${1|note,warning,important,tip,caution,danger,error,hint|}} $2 ",
+            "${3| ,:class: dropdown|}",
+            "$4",
+            "````"
+        ],
+        "description": "Adds myst admonition",
+        "scope": "markdown"
+    },
+    "link":{
+        "prefix": ["link"],
+        "body": [
+            "[$1]($2)"
+        ],
+        "description": "Adds myst link",
+        "scope": "markdown"
+    },
+    "table":{
+        "prefix": ["table"],
+        "body": [
+            "````{list-table} $1",
+            ":header-rows: 1",
+            "${2| ,:name: mylabel|}",
+            "* - Col1",
+            "  - Col2",
+            "* - Row1_1",
+            "  - Row1_2",
+            "* - Row2_1",
+            "  - Row2_2",
+            "````"
+        ],
+        "description": "Adds myst list table",
+        "scope": "markdown"
+    },
+    "ref":{
+        "prefix": ["ref"],
+        "body": [
+            "[$1](#$2)",
+        ],
+        "description": "Adds link to cross referenenced section",
+        "scope": "markdown"
+    },
+    "image":{
+        "prefix": ["image"],
+        "body": [
+            "![$1]($2)",
+        ],
+        "description": "Embeds image from file (eg png)",
+        "scope": "markdown"
+    },
+    "embed":{
+        "prefix": ["embed"],
+        "body": [
+            "![$1]($2)",
+        ],
+        "description": "Embeds item from file (eg png, label reference)",
+        "scope": "markdown"
+    },
+    "linebreak":{
+        "prefix": ["linebreak"],
+        "body": [
+            "---",
+        ],
+        "description": "Adds myst list table",
+        "scope": "markdown"
+    },
+    "math":{
+        "prefix": ["math"],
+        "body": [
+            "```{math}",
+            "${1| ,:name: mylabel|}",
+            "$2",
+            "```"
+        ],
+        "description": "Adds myst list table",
+        "scope": "markdown"
+    },
+    "toc":{
+        "prefix": ["toc"],
+        "body": [
+            "```{contents} Table of Contents",
+            ":depth: 3",
+            "```"
+        ],
+        "description": "Adds myst list table",
+        "scope": "markdown"
+    },
+    "csv":{
+        "prefix": ["csv"],
+        "body": [
+            "````{csv-table} $1",
+            ":header: $2",
+            "$3",
+            "````"
+        ],
+        "description": "Adds myst csv table",
+        "scope": "markdown"
+    },
+    "anchor":{
+        "prefix": ["anchor"],
+        "body": [
+            "($1)="
+        ],
+        "description": "Adds myst anchor reference",
+        "scope": "markdown"
+    },
+    "checklist":{
+        "prefix": ["checklist"],
+        "body": [
+            "- [ ] $1"
+        ],
+        "description": "Adds myst anchor reference",
+        "scope": "markdown"
+    },
+    "tabset":{
+        "prefix": ["tabset"],
+        "body": [
+            "``````{tab-set}",
+            "   `````{tab-item} ${1:Tab 1}",
+            "   ",
+            "   $2",
+            "   `````",
+            "",
+            "   `````{tab-item} ${3:Tab 2}",
+            "   ",
+            "   $4",
+            "   `````",
+            "``````"
+        ],
+        "description": "Adds myst anchor reference",
+        "scope": "markdown"
+    },
+    "config":{
+        "prefix": ["config"],
+        "body": [
+            "---",
+            "jupytext:",
+            "  formats: md:myst",
+            "  text_representation:",
+            "    extension: .md",
+            "    format_name: myst",
+            "kernelspec:",
+            "  display_name: Python",
+            "  language: python",
+            "  name: python",
+            "---"
+
+        ],
+        "description": "Adds myst anchor reference",
+        "scope": "markdown"
+    },
+    "toctree":{
+        "prefix": ["toctree"],
+        "body": [
+            "```{toctree}",
+            ":hidden:",
+            ":maxdepth: 2",
+            "",
+            "$1",
+            "```"
+        ],
+        "description": "Adds myst anchor reference",
+        "scope": "markdown"
+    },
+}
+
