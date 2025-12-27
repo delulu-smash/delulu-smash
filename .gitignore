@@ -2,6 +2,8 @@
 # Repo Specific
 #######################
 
+# hidden local mac files
+.DS_Store
 
 
 ########################
@@ -226,3 +228,4 @@ __marimo__/
 .streamlit/secrets.toml
 # MyST build outputs
 _build
+
