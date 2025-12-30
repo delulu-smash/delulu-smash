@@ -19,6 +19,10 @@
 		"mtxr.sqltools-driver-pg",
 		"donjayamanne.vscode-default-python-kernel",
 		"timonwong.shellcheck",
-		"streetsidesoftware.code-spell-checker"
+		"streetsidesoftware.code-spell-checker",
+		"mechatroner.rainbow-csv",
+		"janisdd.vscode-edit-csv",
+		"pkief.material-icon-theme",
+		"catppuccin.catppuccin-vsc",
 	]
 }
