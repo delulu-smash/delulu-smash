@@ -1,0 +1,841 @@
+stage,char,Ground,Platforms,Top Platform,Ledges,Side Platforms,Middle Platform,Out of Stage Side Platforms
+Battlefield,Mario,23,19,16,,,,
+Battlefield,Donkey Kong,32,28,25,,,,
+Battlefield,Link,25,21,18,,,,
+Battlefield,Samus / Dark Samus,27,23,20,,,,
+Battlefield,Yoshi,24,21,18,,,,
+Battlefield,Kirby,18,14,11,,,,
+Battlefield,Fox,17,13,10,,,,
+Battlefield,Pikachu,18,14,11,,,,
+Battlefield,Luigi,23,19,16,,,,
+Battlefield,Ness,22,18,15,,,,
+Battlefield,Captain Falcon,25,21,18,,,,
+Battlefield,Jigglypuff,14,10,7,,,,
+Battlefield,Peach / Daisy,21,17,14,,,,
+Battlefield,Bowser,35,31,28,,,,
+Battlefield,Ice Climbers,19,15,12,,,,
+Battlefield,Solo Popo,22,18,15,,,,
+Battlefield,Sheik,17,13,10,,,,
+Battlefield,Zelda,20,16,13,,,,
+Battlefield,Dr. Mario,23,19,16,,,,
+Battlefield,Pichu,12,8,5,,,,
+Battlefield,Falco,19,15,12,,,,
+Battlefield,Marth / Lucina,21,17,14,,,,
+Battlefield,Young Link,21,17,14,,,,
+Battlefield,Ganondorf,28,24,21,,,,
+Battlefield,Mewtwo,17,14,11,,,,
+Battlefield,Roy / Chrom,23,19,16,,,,
+Battlefield,Mr. Game & Watch,16,12,9,,,,
+Battlefield,Meta Knight,18,14,11,,,,
+Battlefield,Pit / Dark Pit,23,19,16,,,,
+Battlefield,Zero Suit Samus,18,14,11,,,,
+Battlefield,Wario,24,21,18,,,,
+Battlefield,Snake,25,22,19,,,,
+Battlefield,Ike,25,22,19,,,,
+Battlefield,Squirtle,16,12,9,,,,
+Battlefield,Ivysaur,23,19,16,,,,
+Battlefield,Charizard,29,25,22,,,,
+Battlefield,Diddy Kong,21,17,14,,,,
+Battlefield,Lucas,22,18,15,,,,
+Battlefield,Sonic,20,16,13,,,,
+Battlefield,King Dedede,32,28,25,,,,
+Battlefield,Olimar,18,14,11,,,,
+Battlefield,Lucario,22,18,15,,,,
+Battlefield,R.O.B.,26,22,19,,,,
+Battlefield,Toon Link,21,17,14,,,,
+Battlefield,Wolf,22,18,15,,,,
+Battlefield,Villager,22,18,15,,,,
+Battlefield,Mega Man,25,21,18,,,,
+Battlefield,Wii Fit Trainer,23,19,16,,,,
+Battlefield,Wii Fit Trainer + Deep breathing,26,22,19,,,,
+Battlefield,Rosalina & Luma,19,15,12,,,,
+Battlefield,Little Mac,21,17,14,,,,
+Battlefield,Greninja,20,16,13,,,,
+Battlefield,Palutena,21,17,14,,,,
+Battlefield,Pac-Man,22,18,15,,,,
+Battlefield,Robin,23,19,16,,,,
+Battlefield,Shulk,23,19,16,,,,
+Battlefield,Shulk Buster,12,8,5,,,,
+Battlefield,Shulk Jump,12,8,5,,,,
+Battlefield,Shulk Shield,117,109,100,,,,
+Battlefield,Shulk Smash,11,7,4,,,,
+Battlefield,Shulk Speed,23,19,16,,,,
+Battlefield,Bowser Jr.'s Cart,30,26,23,,,,
+Battlefield,Bowser Jr.'s Body,20,16,13,,,,
+Battlefield,Duck Hunt,20,16,13,,,,
+Battlefield,Ryu / Ken,26,22,19,,,,
+Battlefield,Cloud,24,20,17,,,,
+Battlefield,Corrin,23,19,16,,,,
+Battlefield,Bayonetta,19,15,12,,,,
+Battlefield,Inkling,22,18,15,,,,
+Battlefield,Ridley,26,22,19,,,,
+Battlefield,Simon/Richter,26,22,19,,,,
+Battlefield,King K. Rool,34,30,27,,,,
+Battlefield,Isabelle,21,17,14,,,,
+Battlefield,Incineroar,28,24,21,,,,
+Battlefield,Piranha Plant,27,23,20,,,,
+Battlefield,Joker,21,17,14,,,,
+Battlefield,The Hero,25,21,18,,,,
+Battlefield,Banjo & Kazooie,20,16,13,,,,
+Battlefield,Terry,27,23,20,,,,
+Battlefield,Byleth,23,19,16,,,,
+Battlefield,Min Min,28,24,20,,,,
+Battlefield,Mii Brawler,22,18,15,,,,
+Battlefield,Mii Swordfighter,24,20,17,,,,
+Battlefield,Mii Gunner,25,21,18,,,,
+Final Destination,Mario,21,,,,,,
+Final Destination,Donkey Kong,30,,,,,,
+Final Destination,Link,23,,,,,,
+Final Destination,Samus / Dark Samus,25,,,,,,
+Final Destination,Yoshi,22,,,,,,
+Final Destination,Kirby,16,,,,,,
+Final Destination,Fox,15,,,,,,
+Final Destination,Pikachu,16,,,,,,
+Final Destination,Luigi,21,,,,,,
+Final Destination,Ness,20,,,,,,
+Final Destination,Captain Falcon,23,,,,,,
+Final Destination,Jigglypuff,12,,,,,,
+Final Destination,Peach / Daisy,19,,,,,,
+Final Destination,Bowser,33,,,,,,
+Final Destination,Ice Climbers,17,,,,,,
+Final Destination,Solo Popo,20,,,,,,
+Final Destination,Sheik,15,,,,,,
+Final Destination,Zelda,18,,,,,,
+Final Destination,Dr. Mario,21,,,,,,
+Final Destination,Pichu,10,,,,,,
+Final Destination,Falco,17,,,,,,
+Final Destination,Marth / Lucina,19,,,,,,
+Final Destination,Young Link,19,,,,,,
+Final Destination,Ganondorf,26,,,,,,
+Final Destination,Mewtwo,15,,,,,,
+Final Destination,Roy / Chrom,21,,,,,,
+Final Destination,Mr. Game & Watxh,14,,,,,,
+Final Destination,Meta Knight,16,,,,,,
+Final Destination,Pit / Dark Pit,21,,,,,,
+Final Destination,Zero Suit Samus,16,,,,,,
+Final Destination,Wario,22,,,,,,
+Final Destination,Snake,23,,,,,,
+Final Destination,Ike,23,,,,,,
+Final Destination,Squirtle,14,,,,,,
+Final Destination,Ivysaur,21,,,,,,
+Final Destination,Charizard,27,,,,,,
+Final Destination,Diddy Kong,19,,,,,,
+Final Destination,Lucas,20,,,,,,
+Final Destination,Sonic,18,,,,,,
+Final Destination,King Dedede,30,,,,,,
+Final Destination,Olimar,16,,,,,,
+Final Destination,Lucario,20,,,,,,
+Final Destination,R.O.B.,24,,,,,,
+Final Destination,Toon Link,19,,,,,,
+Final Destination,Wolf,20,,,,,,
+Final Destination,Villager,20,,,,,,
+Final Destination,Mega Man,23,,,,,,
+Final Destination,Wii Fit Trainer,21,,,,,,
+Final Destination,Wii Fit Trainer + Deep breathing,24,,,,,,
+Final Destination,Rosalina & Luma,21,,,,,,
+Final Destination,Little Mac,19,,,,,,
+Final Destination,Greninja,18,,,,,,
+Final Destination,Palutena,19,,,,,,
+Final Destination,Pac-Man,20,,,,,,
+Final Destination,Robin,25,,,,,,
+Final Destination,Shulk,21,,,,,,
+Final Destination,Shulk Buster,10,,,,,,
+Final Destination,Shulk Jump,10,,,,,,
+Final Destination,Shulk Shield,113,,,,,,
+Final Destination,Shulk Smash,9,,,,,,
+Final Destination,Shulk Speed,21,,,,,,
+Final Destination,Bowser Jr.'s Cart,28,,,,,,
+Final Destination,Bowser Jr.'s body,18,,,,,,
+Final Destination,Duck Hunt,18,,,,,,
+Final Destination,Ryu / Ken,24,,,,,,
+Final Destination,Cloud,22,,,,,,
+Final Destination,Corrin,21,,,,,,
+Final Destination,Bayonetta,17,,,,,,
+Final Destination,Inkling,20,,,,,,
+Final Destination,Ridley,24,,,,,,
+Final Destination,Simon/Richter,24,,,,,,
+Final Destination,King K. Rool,32,,,,,,
+Final Destination,Isabelle,19,,,,,,
+Final Destination,Incineroar,26,,,,,,
+Final Destination,Piranha Plant,25,,,,,,
+Final Destination,Joker,19,,,,,,
+Final Destination,The Hero,23,,,,,,
+Final Destination,Banjo & Kazooie,18,,,,,,
+Final Destination,Terry,25,,,,,,
+Final Destination,Byleth,21,,,,,,
+Final Destination,Min Min,26,,,,,,
+Final Destination,Mii Brawler,20,,,,,,
+Final Destination,Mii Swordfighter,22,,,,,,
+Final Destination,Mii Gunner,23,,,,,,
+Pokémon Stadium 2,Mario,21,17,,,,,
+Pokémon Stadium 2,Donkey Kong,30,26,,,,,
+Pokémon Stadium 2,Link,23,19,,,,,
+Pokémon Stadium 2,Samus / Dark Samus,25,21,,,,,
+Pokémon Stadium 2,Yoshi,22,19,,,,,
+Pokémon Stadium 2,Kirby,16,13,,,,,
+Pokémon Stadium 2,Fox,15,11,,,,,
+Pokémon Stadium 2,Pikachu,16,12,,,,,
+Pokémon Stadium 2,Luigi,21,17,,,,,
+Pokémon Stadium 2,Ness,20,16,,,,,
+Pokémon Stadium 2,Captain Falcon,23,19,,,,,
+Pokémon Stadium 2,Jigglypuff,12,8,,,,,
+Pokémon Stadium 2,Peach / Daisy,19,15,,,,,
+Pokémon Stadium 2,Bowser,33,29,,,,,
+Pokémon Stadium 2,Ice Climbers,17,13,,,,,
+Pokémon Stadium 2,Solo Popo,20,16,,,,,
+Pokémon Stadium 2,Sheik,15,11,,,,,
+Pokémon Stadium 2,Zelda,18,14,,,,,
+Pokémon Stadium 2,Dr. Mario,21,17,,,,,
+Pokémon Stadium 2,Pichu,10,6,,,,,
+Pokémon Stadium 2,Falco,17,13,,,,,
+Pokémon Stadium 2,Marth / Lucina,19,15,,,,,
+Pokémon Stadium 2,Young Link,19,15,,,,,
+Pokémon Stadium 2,Ganondorf,26,22,,,,,
+Pokémon Stadium 2,Mewtwo,15,12,,,,,
+Pokémon Stadium 2,Roy / Chrom,21,17,,,,,
+Pokémon Stadium 2,Mr. Game & Watxh,14,10,,,,,
+Pokémon Stadium 2,Meta Knight,16,12,,,,,
+Pokémon Stadium 2,Pit / Dark Pit,21,17,,,,,
+Pokémon Stadium 2,Zero Suit Samus,16,12,,,,,
+Pokémon Stadium 2,Wario,22,19,,,,,
+Pokémon Stadium 2,Snake,23,20,,,,,
+Pokémon Stadium 2,Ike,23,20,,,,,
+Pokémon Stadium 2,Squirtle,14,10,,,,,
+Pokémon Stadium 2,Ivysaur,21,17,,,,,
+Pokémon Stadium 2,Charizard,27,23,,,,,
+Pokémon Stadium 2,Diddy Kong,19,15,,,,,
+Pokémon Stadium 2,Lucas,20,16,,,,,
+Pokémon Stadium 2,Sonic,18,14,,,,,
+Pokémon Stadium 2,King Dedede,30,26,,,,,
+Pokémon Stadium 2,Olimar,16,12,,,,,
+Pokémon Stadium 2,Lucario,20,16,,,,,
+Pokémon Stadium 2,R.O.B.,24,20,,,,,
+Pokémon Stadium 2,Toon Link,19,15,,,,,
+Pokémon Stadium 2,Wolf,20,16,,,,,
+Pokémon Stadium 2,Villager,20,16,,,,,
+Pokémon Stadium 2,Mega Man,23,19,,,,,
+Pokémon Stadium 2,Wii Fit Trainer,21,17,,,,,
+Pokémon Stadium 2,Wii Fit Trainer + Deep breathing,24,20,,,,,
+Pokémon Stadium 2,Rosalina & Luma,21,13,,,,,
+Pokémon Stadium 2,Little Mac,19,15,,,,,
+Pokémon Stadium 2,Greninja,18,14,,,,,
+Pokémon Stadium 2,Palutena,19,15,,,,,
+Pokémon Stadium 2,Pac-Man,20,16,,,,,
+Pokémon Stadium 2,Robin,25,17,,,,,
+Pokémon Stadium 2,Shulk,21,17,,,,,
+Pokémon Stadium 2,Shulk Buster,10,6,,,,,
+Pokémon Stadium 2,Shulk Jump,10,6,,,,,
+Pokémon Stadium 2,Shulk Shield,113,105,,,,,
+Pokémon Stadium 2,Shulk Smash,9,5,,,,,
+Pokémon Stadium 2,Shulk Speed,21,14,,,,,
+Pokémon Stadium 2,Bowser Jr.'s Cart,28,21,,,,,
+Pokémon Stadium 2,Bowser Jr.'s body,18,14,,,,,
+Pokémon Stadium 2,Duck Hunt,18,14,,,,,
+Pokémon Stadium 2,Ryu / Ken,24,20,,,,,
+Pokémon Stadium 2,Cloud,22,18,,,,,
+Pokémon Stadium 2,Corrin,21,17,,,,,
+Pokémon Stadium 2,Bayonetta,17,13,,,,,
+Pokémon Stadium 2,Inkling,20,16,,,,,
+Pokémon Stadium 2,Ridley,24,20,,,,,
+Pokémon Stadium 2,Simon/Richter,24,20,,,,,
+Pokémon Stadium 2,King K. Rool,32,28,,,,,
+Pokémon Stadium 2,Isabelle,19,12,,,,,
+Pokémon Stadium 2,Incineroar,26,22,,,,,
+Pokémon Stadium 2,Piranha Plant,25,21,,,,,
+Pokémon Stadium 2,Joker,19,15,,,,,
+Pokémon Stadium 2,The Hero,23,19,,,,,
+Pokémon Stadium 2,Banjo & Kazooie,18,14,,,,,
+Pokémon Stadium 2,Terry,25,21,,,,,
+Pokémon Stadium 2,Byleth,21,17,,,,,
+Pokémon Stadium 2,Min Min,26,21,,,,,
+Pokémon Stadium 2,Mii Brawler,20,16,,,,,
+Pokémon Stadium 2,Mii Swordfighter,22,18,,,,,
+Pokémon Stadium 2,Mii Gunner,23,19,,,,,
+Yoshi's Story,Mario,21,17,13,22,,,
+Yoshi's Story,Donkey Kong,30,26,22,31,,,
+Yoshi's Story,Link,23,19,25,24,,,
+Yoshi's Story,Samus / Dark Samus,25,21,17,26,,,
+Yoshi's Story,Yoshi,22,19,15,23,,,
+Yoshi's Story,Kirby,16,13,9,17,,,
+Yoshi's Story,Fox,15,11,7,16,,,
+Yoshi's Story,Pikachu,16,12,8,17,,,
+Yoshi's Story,Luigi,21,17,13,22,,,
+Yoshi's Story,Ness,20,16,12,21,,,
+Yoshi's Story,Captain Falcon,23,19,15,24,,,
+Yoshi's Story,Jigglypuff,12,8,4,13,,,
+Yoshi's Story,Peach / Daisy,19,15,11,20,,,
+Yoshi's Story,Bowser,33,29,25,34,,,
+Yoshi's Story,Ice Climbers,17,13,9,18,,,
+Yoshi's Story,Solo Popo,20,16,12,21,,,
+Yoshi's Story,Sheik,15,11,7,16,,,
+Yoshi's Story,Zelda,18,14,10,19,,,
+Yoshi's Story,Dr. Mario,21,17,13,22,,,
+Yoshi's Story,Pichu,10,6,2,11,,,
+Yoshi's Story,Falco,17,13,9,18,,,
+Yoshi's Story,Marth / Lucina,19,15,11,20,,,
+Yoshi's Story,Young Link,19,15,11,20,,,
+Yoshi's Story,Ganondorf,26,22,18,27,,,
+Yoshi's Story,Mewtwo,15,12,8,16,,,
+Yoshi's Story,Roy / Chrom,21,17,13,22,,,
+Yoshi's Story,Mr. Game & Watxh,14,10,6,15,,,
+Yoshi's Story,Meta Knight,16,12,8,17,,,
+Yoshi's Story,Pit / Dark Pit,21,17,13,22,,,
+Yoshi's Story,Zero Suit Samus,16,12,8,17,,,
+Yoshi's Story,Wario,22,19,15,23,,,
+Yoshi's Story,Snake,23,20,13,24,,,
+Yoshi's Story,Ike,23,20,16,24,,,
+Yoshi's Story,Squirtle,14,10,6,15,,,
+Yoshi's Story,Ivysaur,21,17,13,22,,,
+Yoshi's Story,Charizard,27,23,19,28,,,
+Yoshi's Story,Diddy Kong,19,15,11,20,,,
+Yoshi's Story,Lucas,20,16,12,21,,,
+Yoshi's Story,Sonic,18,14,10,19,,,
+Yoshi's Story,King Dedede,30,26,22,31,,,
+Yoshi's Story,Olimar,16,12,8,17,,,
+Yoshi's Story,Lucario,20,16,12,21,,,
+Yoshi's Story,R.O.B.,24,20,16,25,,,
+Yoshi's Story,Toon Link,19,15,11,20,,,
+Yoshi's Story,Wolf,20,16,12,21,,,
+Yoshi's Story,Villager,20,16,12,21,,,
+Yoshi's Story,Mega Man,23,19,15,24,,,
+Yoshi's Story,Wii Fit Trainer,21,17,13,22,,,
+Yoshi's Story,Wii Fit Trainer + Deep breathing,24,20,16,25,,,
+Yoshi's Story,Rosalina & Luma,21,13,9,22,,,
+Yoshi's Story,Little Mac,19,15,11,20,,,
+Yoshi's Story,Greninja,18,14,10,19,,,
+Yoshi's Story,Palutena,19,15,11,20,,,
+Yoshi's Story,Pac-Man,20,16,12,21,,,
+Yoshi's Story,Robin,25,17,13,26,,,
+Yoshi's Story,Shulk,21,17,13,22,,,
+Yoshi's Story,Shulk Buster,10,6,2,11,,,
+Yoshi's Story,Shulk Jump,10,6,2,11,,,
+Yoshi's Story,Shulk Shield,113,105,97,115,,,
+Yoshi's Story,Shulk Smash,9,5,1,10,,,
+Yoshi's Story,Shulk Speed,21,14,10,22,,,
+Yoshi's Story,Bowser Jr.'s Cart,28,21,17,29,,,
+Yoshi's Story,Bowser Jr.'s body,18,14,10,19,,,
+Yoshi's Story,Duck Hunt,18,14,10,19,,,
+Yoshi's Story,Ryu / Ken,24,20,16,25,,,
+Yoshi's Story,Cloud,22,18,14,23,,,
+Yoshi's Story,Corrin,21,17,13,22,,,
+Yoshi's Story,Bayonetta,17,13,9,18,,,
+Yoshi's Story,Inkling,20,16,12,21,,,
+Yoshi's Story,Ridley,24,20,16,25,,,
+Yoshi's Story,Simon/Richter,24,20,16,25,,,
+Yoshi's Story,King K. Rool,32,28,24,33,,,
+Yoshi's Story,Isabelle,19,12,8,20,,,
+Yoshi's Story,Incineroar,26,22,18,27,,,
+Yoshi's Story,Piranha Plant,25,21,17,26,,,
+Yoshi's Story,Joker,19,15,11,20,,,
+Yoshi's Story,The Hero,23,19,15,24,,,
+Yoshi's Story,Banjo & Kazooie,18,14,10,19,,,
+Yoshi's Story,Terry,25,21,17,26,,,
+Yoshi's Story,Byleth,21,17,13,22,,,
+Yoshi's Story,Min Min,26,21,17,27,,,
+Yoshi's Story,Mii Brawler,20,16,12,21,,,
+Yoshi's Story,Mii Swordfighter,22,18,14,23,,,
+Yoshi's Story,Mii Gunner,23,19,15,24,,,
+Lylat Cruise,Mario,21,,,22,18,17,
+Lylat Cruise,Donkey Kong,30,,,31,27,24,
+Lylat Cruise,Link,23,,,24,20,19,
+Lylat Cruise,Samus / Dark Samus,25,,,26,22,19,
+Lylat Cruise,Yoshi,22,,,23,19,19,
+Lylat Cruise,Kirby,16,,,17,13,13,
+Lylat Cruise,Fox,15,,,16,12,11,
+Lylat Cruise,Pikachu,16,,,17,13,12,
+Lylat Cruise,Luigi,21,,,22,18,17,
+Lylat Cruise,Ness,20,,,21,17,16,
+Lylat Cruise,Captain Falcon,23,,,24,20,19,
+Lylat Cruise,Jigglypuff,12,,,13,9,8,
+Lylat Cruise,Peach / Daisy,19,,,20,16,15,
+Lylat Cruise,Bowser,33,,,34,30,29,
+Lylat Cruise,Ice Climbers,17,,,18,14,13,
+Lylat Cruise,Solo Popo,20,,,21,17,16,
+Lylat Cruise,Sheik,15,,,16,12,11,
+Lylat Cruise,Zelda,18,,,19,15,14,
+Lylat Cruise,Dr. Mario,21,,,22,18,17,
+Lylat Cruise,Pichu,10,,,11,7,6,
+Lylat Cruise,Falco,17,,,18,14,13,
+Lylat Cruise,Marth / Lucina,19,,,20,17,15,
+Lylat Cruise,Young Link,19,,,20,17,15,
+Lylat Cruise,Ganondorf,26,,,27,23,22,
+Lylat Cruise,Mewtwo,15,,,16,12,12,
+Lylat Cruise,Roy / Chrom,21,,,22,18,17,
+Lylat Cruise,Mr. Game & Watxh,14,,,15,11,10,
+Lylat Cruise,Meta Knight,16,,,17,13,12,
+Lylat Cruise,Pit / Dark Pit,21,,,22,18,17,
+Lylat Cruise,Zero Suit Samus,16,,,17,15,12,
+Lylat Cruise,Wario,22,,,23,19,19,
+Lylat Cruise,Snake,23,,,24,20,20,
+Lylat Cruise,Ike,23,,,24,20,20,
+Lylat Cruise,Squirtle,14,,,15,11,10,
+Lylat Cruise,Ivysaur,21,,,22,18,17,
+Lylat Cruise,Charizard,27,,,28,24,23,
+Lylat Cruise,Diddy Kong,19,,,20,16,15,
+Lylat Cruise,Lucas,20,,,21,17,16,
+Lylat Cruise,Sonic,18,,,19,15,14,
+Lylat Cruise,King Dedede,30,,,31,27,26,
+Lylat Cruise,Olimar,16,,,17,15,12,
+Lylat Cruise,Lucario,20,,,21,17,16,
+Lylat Cruise,R.O.B.,24,,,25,21,20,
+Lylat Cruise,Toon Link,19,,,20,16,15,
+Lylat Cruise,Wolf,20,,,21,17,16,
+Lylat Cruise,Villager,20,,,21,17,16,
+Lylat Cruise,Mega Man,23,,,24,20,19,
+Lylat Cruise,Wii Fit Trainer,21,,,22,18,17,
+Lylat Cruise,Wii Fit Trainer + Deep breathing,24,,,25,21,20,
+Lylat Cruise,Rosalina & Luma,21,,,22,14,13,
+Lylat Cruise,Little Mac,19,,,20,16,15,
+Lylat Cruise,Greninja,18,,,19,15,14,
+Lylat Cruise,Palutena,19,,,20,16,15,
+Lylat Cruise,Pac-Man,20,,,21,17,16,
+Lylat Cruise,Robin,25,,,26,18,17,
+Lylat Cruise,Shulk,21,,,22,18,17,
+Lylat Cruise,Shulk Buster,10,,,11,7,6,
+Lylat Cruise,Shulk Jump,10,,,11,7,6,
+Lylat Cruise,Shulk Shield,113,,,115,107,105,
+Lylat Cruise,Shulk Smash,9,,,10,6,5,
+Lylat Cruise,Shulk Speed,21,,,22,18,14,
+Lylat Cruise,Bowser Jr.'s Cart,28,,,29,25,21,
+Lylat Cruise,Bowser Jr.'s body,18,,,19,15,14,
+Lylat Cruise,Duck Hunt,18,,,19,15,14,
+Lylat Cruise,Ryu / Ken,24,,,25,21,20,
+Lylat Cruise,Cloud,22,,,23,19,18,
+Lylat Cruise,Corrin,21,,,22,18,17,
+Lylat Cruise,Bayonetta,17,,,18,14,13,
+Lylat Cruise,Inkling,20,,,21,17,16,
+Lylat Cruise,Ridley,24,,,25,21,20,
+Lylat Cruise,Simon/Richter,24,,,25,21,20,
+Lylat Cruise,King K. Rool,32,,,33,29,28,
+Lylat Cruise,Isabelle,19,,,20,17,12,
+Lylat Cruise,Incineroar,26,,,27,23,22,
+Lylat Cruise,Piranha Plant,25,,,26,22,21,
+Lylat Cruise,Joker,19,,,20,16,15,
+Lylat Cruise,The Hero,23,,,24,20,19,
+Lylat Cruise,Banjo & Kazooie,18,,,19,15,14,
+Lylat Cruise,Terry,25,,,26,22,19,
+Lylat Cruise,Byleth,21,,,22,18,17,
+Lylat Cruise,Min Min,26,,,27,23,21,
+Lylat Cruise,Mii Brawler,20,,,21,17,16,
+Lylat Cruise,Mii Swordfighter,22,,,23,19,18,
+Lylat Cruise,Mii Gunner,23,,,24,20,19,
+Smashville,Mario,23,18,,,,,
+Smashville,Donkey Kong,32,27,,,,,
+Smashville,Link,25,20,,,,,
+Smashville,Samus / Dark Samus,27,22,,,,,
+Smashville,Yoshi,24,19,,,,,
+Smashville,Kirby,18,13,,,,,
+Smashville,Fox,17,12,,,,,
+Smashville,Pikachu,18,13,,,,,
+Smashville,Luigi,23,18,,,,,
+Smashville,Ness,22,17,,,,,
+Smashville,Captain Falcon,25,20,,,,,
+Smashville,Jigglypuff,14,9,,,,,
+Smashville,Peach / Daisy,21,16,,,,,
+Smashville,Bowser,35,30,,,,,
+Smashville,Ice Climbers,19,14,,,,,
+Smashville,Solo Popo,22,17,,,,,
+Smashville,Sheik,17,12,,,,,
+Smashville,Zelda,20,15,,,,,
+Smashville,Dr. Mario,23,18,,,,,
+Smashville,Pichu,12,7,,,,,
+Smashville,Falco,19,14,,,,,
+Smashville,Marth / Lucina,21,17,,,,,
+Smashville,Young Link,21,17,,,,,
+Smashville,Ganondorf,28,23,,,,,
+Smashville,Mewtwo,17,12,,,,,
+Smashville,Roy / Chrom,23,18,,,,,
+Smashville,Mr. Game & Watch,16,11,,,,,
+Smashville,Meta Knight,18,13,,,,,
+Smashville,Pit / Dark Pit,23,18,,,,,
+Smashville,Zero Suit Samus,18,15,,,,,
+Smashville,Wario,24,19,,,,,
+Smashville,Snake,25,20,,,,,
+Smashville,Ike,25,20,,,,,
+Smashville,Squirtle,16,11,,,,,
+Smashville,Ivysaur,23,18,,,,,
+Smashville,Charizard,29,24,,,,,
+Smashville,Diddy Kong,21,16,,,,,
+Smashville,Lucas,22,17,,,,,
+Smashville,Sonic,20,15,,,,,
+Smashville,King Dedede,32,27,,,,,
+Smashville,Olimar,18,15,,,,,
+Smashville,Lucario,22,17,,,,,
+Smashville,R.O.B.,26,21,,,,,
+Smashville,Toon Link,21,16,,,,,
+Smashville,Wolf,22,17,,,,,
+Smashville,Villager,22,17,,,,,
+Smashville,Mega Man,25,20,,,,,
+Smashville,Wii Fit Trainer,23,18,,,,,
+Smashville,Wii Fit Trainer + Deep breathing,26,21,,,,,
+Smashville,Rosalina & Luma,19,14,,,,,
+Smashville,Little Mac,21,16,,,,,
+Smashville,Greninja,20,15,,,,,
+Smashville,Palutena,21,16,,,,,
+Smashville,Pac-Man,22,17,,,,,
+Smashville,Robin,23,18,,,,,
+Smashville,Shulk,23,18,,,,,
+Smashville,Shulk Buster,12,7,,,,,
+Smashville,Shulk Jump,12,7,,,,,
+Smashville,Shulk Shield,117,107,,,,,
+Smashville,Shulk Smash,11,6,,,,,
+Smashville,Shulk Speed,23,18,,,,,
+Smashville,Bowser Jr.'s Cart,30,25,,,,,
+Smashville,Bowser Jr.'s Body,20,15,,,,,
+Smashville,Duck Hunt,20,15,,,,,
+Smashville,Ryu / Ken,26,21,,,,,
+Smashville,Cloud,24,19,,,,,
+Smashville,Corrin,23,18,,,,,
+Smashville,Bayonetta,19,14,,,,,
+Smashville,Inkling,22,17,,,,,
+Smashville,Ridley,26,21,,,,,
+Smashville,Simon/Richter,26,21,,,,,
+Smashville,King K. Rool,34,29,,,,,
+Smashville,Isabelle,21,17,,,,,
+Smashville,Incineroar,28,23,,,,,
+Smashville,Piranha Plant,27,22,,,,,
+Smashville,Joker,21,16,,,,,
+Smashville,The Hero,25,20,,,,,
+Smashville,Banjo & Kazooie,20,15,,,,,
+Smashville,Terry,27,22,,,,,
+Smashville,Byleth,23,18,,,,,
+Smashville,Min Min,28,23,,,,,
+Smashville,Mii Brawler,22,17,,,,,
+Smashville,Mii Swordfighter,24,19,,,,,
+Smashville,Mii Gunner,25,20,,,,,
+Town and City,Mario,23,,,,16,18,18
+Town and City,Donkey Kong,32,,,,23,27,27
+Town and City,Link,25,,,,18,20,20
+Town and City,Samus / Dark Samus,27,,,,18,22,22
+Town and City,Yoshi,24,,,,18,20,20
+Town and City,Kirby,18,,,,12,13,13
+Town and City,Fox,17,,,,10,12,12
+Town and City,Pikachu,18,,,,11,13,13
+Town and City,Luigi,23,,,,16,18,18
+Town and City,Ness,22,,,,15,17,17
+Town and City,Captain Falcon,25,,,,18,20,20
+Town and City,Jigglypuff,14,,,,7,9,9
+Town and City,Peach / Daisy,21,,,,14,16,16
+Town and City,Bowser,35,,,,28,30,30
+Town and City,Ice Climbers,19,,,,12,14,14
+Town and City,Solo Popo,22,,,,15,17,17
+Town and City,Sheik,17,,,,10,12,12
+Town and City,Zelda,20,,,,13,15,15
+Town and City,Dr. Mario,23,,,,16,18,18
+Town and City,Pichu,12,,,,5,7,7
+Town and City,Falco,19,,,,12,14,14
+Town and City,Marth / Lucina,21,,,,14,16,16
+Town and City,Young Link,21,,,,14,16,16
+Town and City,Ganondorf,28,,,,21,23,23
+Town and City,Mewtwo,17,,,,11,13,13
+Town and City,Roy / Chrom,23,,,,16,18,18
+Town and City,Mr. Game & Watch,16,,,,9,11,11
+Town and City,Meta Knight,18,,,,11,13,13
+Town and City,Pit / Dark Pit,23,,,,16,18,18
+Town and City,Zero Suit Samus,18,,,,11,13,13
+Town and City,Wario,24,,,,18,20,20
+Town and City,Snake,25,,,,19,21,21
+Town and City,Ike,25,,,,19,21,21
+Town and City,Squirtle,16,,,,9,11,11
+Town and City,Ivysaur,23,,,,16,18,18
+Town and City,Charizard,29,,,,22,24,24
+Town and City,Diddy Kong,21,,,,14,16,16
+Town and City,Lucas,22,,,,15,17,17
+Town and City,Sonic,20,,,,13,15,15
+Town and City,King Dedede,32,,,,25,27,27
+Town and City,Olimar,18,,,,11,13,13
+Town and City,Lucario,22,,,,15,17,17
+Town and City,R.O.B.,26,,,,19,21,21
+Town and City,Toon Link,21,,,,14,16,16
+Town and City,Wolf,22,,,,15,17,17
+Town and City,Villager,22,,,,15,17,17
+Town and City,Mega Man,25,,,,18,20,20
+Town and City,Wii Fit Trainer,23,,,,16,18,18
+Town and City,Wii Fit Trainer + Deep breathing,26,,,,19,21,21
+Town and City,Rosalina & Luma,19,,,,12,14,14
+Town and City,Little Mac,21,,,,14,16,16
+Town and City,Greninja,20,,,,13,15,15
+Town and City,Palutena,21,,,,14,16,16
+Town and City,Pac-Man,22,,,,15,17,17
+Town and City,Robin,23,,,,16,18,18
+Town and City,Shulk,23,,,,16,18,18
+Town and City,Shulk Buster,12,,,,5,7,7
+Town and City,Shulk Jump,12,,,,5,7,7
+Town and City,Shulk Shield,117,,,,104,107,107
+Town and City,Shulk Smash,11,,,,4,6,6
+Town and City,Shulk Speed,23,,,,13,18,18
+Town and City,Bowser Jr.'s Cart,30,,,,20,25,25
+Town and City,Bowser Jr.'s Body,20,,,,13,15,15
+Town and City,Duck Hunt,20,,,,13,15,15
+Town and City,Ryu / Ken,26,,,,19,21,21
+Town and City,Cloud,24,,,,17,19,19
+Town and City,Corrin,23,,,,16,18,18
+Town and City,Bayonetta,19,,,,12,14,14
+Town and City,Inkling,22,,,,15,17,17
+Town and City,Ridley,26,,,,19,21,21
+Town and City,Simon/Richter,26,,,,19,21,21
+Town and City,King K. Rool,34,,,,27,29,29
+Town and City,Isabelle,21,,,,11,13,13
+Town and City,Incineroar,28,,,,21,23,23
+Town and City,Piranha Plant,27,,,,20,22,22
+Town and City,Joker,21,,,,14,16,16
+Town and City,The Hero,25,,,,18,20,20
+Town and City,Banjo & Kazooie,20,,,,13,15,15
+Town and City,Terry,27,,,,18,22,22
+Town and City,Byleth,23,,,,16,18,18
+Town and City,Min Min,28,,,,21,23,23
+Town and City,Mii Brawler,22,,,,15,17,17
+Town and City,Mii Swordfighter,24,,,,17,19,19
+Town and City,Mii Gunner,25,,,,18,20,20
+Kalos Pokémon League,Mario,23,18,,,,,
+Kalos Pokémon League,Donkey Kong,32,27,,,,,
+Kalos Pokémon League,Link,25,20,,,,,
+Kalos Pokémon League,Samus / Dark Samus,27,22,,,,,
+Kalos Pokémon League,Yoshi,24,20,,,,,
+Kalos Pokémon League,Kirby,18,13,,,,,
+Kalos Pokémon League,Fox,17,12,,,,,
+Kalos Pokémon League,Pikachu,18,13,,,,,
+Kalos Pokémon League,Luigi,23,18,,,,,
+Kalos Pokémon League,Ness,22,17,,,,,
+Kalos Pokémon League,Captain Falcon,25,20,,,,,
+Kalos Pokémon League,Jigglypuff,14,9,,,,,
+Kalos Pokémon League,Peach / Daisy,21,16,,,,,
+Kalos Pokémon League,Bowser,35,30,,,,,
+Kalos Pokémon League,Ice Climbers,19,14,,,,,
+Kalos Pokémon League,Solo Popo,22,17,,,,,
+Kalos Pokémon League,Sheik,17,12,,,,,
+Kalos Pokémon League,Zelda,20,15,,,,,
+Kalos Pokémon League,Dr. Mario,23,18,,,,,
+Kalos Pokémon League,Pichu,12,7,,,,,
+Kalos Pokémon League,Falco,19,14,,,,,
+Kalos Pokémon League,Marth / Lucina,21,16,,,,,
+Kalos Pokémon League,Young Link,21,16,,,,,
+Kalos Pokémon League,Ganondorf,28,23,,,,,
+Kalos Pokémon League,Mewtwo,17,13,,,,,
+Kalos Pokémon League,Roy / Chrom,23,18,,,,,
+Kalos Pokémon League,Mr. Game & Watch,16,11,,,,,
+Kalos Pokémon League,Meta Knight,18,13,,,,,
+Kalos Pokémon League,Pit / Dark Pit,23,18,,,,,
+Kalos Pokémon League,Zero Suit Samus,18,13,,,,,
+Kalos Pokémon League,Wario,24,20,,,,,
+Kalos Pokémon League,Snake,25,21,,,,,
+Kalos Pokémon League,Ike,25,21,,,,,
+Kalos Pokémon League,Squirtle,16,11,,,,,
+Kalos Pokémon League,Ivysaur,23,18,,,,,
+Kalos Pokémon League,Charizard,29,24,,,,,
+Kalos Pokémon League,Diddy Kong,21,16,,,,,
+Kalos Pokémon League,Lucas,22,17,,,,,
+Kalos Pokémon League,Sonic,20,15,,,,,
+Kalos Pokémon League,King Dedede,32,27,,,,,
+Kalos Pokémon League,Olimar,18,13,,,,,
+Kalos Pokémon League,Lucario,22,17,,,,,
+Kalos Pokémon League,R.O.B.,26,21,,,,,
+Kalos Pokémon League,Toon Link,21,16,,,,,
+Kalos Pokémon League,Wolf,22,17,,,,,
+Kalos Pokémon League,Villager,22,17,,,,,
+Kalos Pokémon League,Mega Man,25,20,,,,,
+Kalos Pokémon League,Wii Fit Trainer,23,18,,,,,
+Kalos Pokémon League,Wii Fit Trainer + Deep breathing,26,21,,,,,
+Kalos Pokémon League,Rosalina & Luma,19,14,,,,,
+Kalos Pokémon League,Little Mac,21,16,,,,,
+Kalos Pokémon League,Greninja,20,15,,,,,
+Kalos Pokémon League,Palutena,21,16,,,,,
+Kalos Pokémon League,Pac-Man,22,17,,,,,
+Kalos Pokémon League,Robin,23,18,,,,,
+Kalos Pokémon League,Shulk,23,18,,,,,
+Kalos Pokémon League,Shulk Buster,12,7,,,,,
+Kalos Pokémon League,Shulk Jump,12,7,,,,,
+Kalos Pokémon League,Shulk Shield,117,107,,,,,
+Kalos Pokémon League,Shulk Smash,11,6,,,,,
+Kalos Pokémon League,Shulk Speed,23,18,,,,,
+Kalos Pokémon League,Bowser Jr.'s Cart,30,25,,,,,
+Kalos Pokémon League,Bowser Jr.'s Body,20,15,,,,,
+Kalos Pokémon League,Duck Hunt,20,15,,,,,
+Kalos Pokémon League,Ryu / Ken,26,21,,,,,
+Kalos Pokémon League,Cloud,24,19,,,,,
+Kalos Pokémon League,Corrin,23,18,,,,,
+Kalos Pokémon League,Bayonetta,19,14,,,,,
+Kalos Pokémon League,Inkling,22,17,,,,,
+Kalos Pokémon League,Ridley,26,21,,,,,
+Kalos Pokémon League,Simon/Richter,26,21,,,,,
+Kalos Pokémon League,King K. Rool,34,29,,,,,
+Kalos Pokémon League,Isabelle,21,13,,,,,
+Kalos Pokémon League,Incineroar,28,23,,,,,
+Kalos Pokémon League,Piranha Plant,27,22,,,,,
+Kalos Pokémon League,Joker,21,16,,,,,
+Kalos Pokémon League,The Hero,25,20,,,,,
+Kalos Pokémon League,Banjo & Kazooie,20,15,,,,,
+Kalos Pokémon League,Terry,27,22,,,,,
+Kalos Pokémon League,Byleth,23,18,,,,,
+Kalos Pokémon League,Min Min,28,23,,,,,
+Kalos Pokémon League,Mii Brawler,22,17,,,,,
+Kalos Pokémon League,Mii Swordfighter,24,19,,,,,
+Kalos Pokémon League,Mii Gunner,25,20,,,,,
+"Small
+Battlefield",Mario,21,19,,,,,
+"Small
+Battlefield",Donkey Kong,30,26,,,,,
+"Small
+Battlefield",Link,23,20,,,,,
+"Small
+Battlefield",Samus / Dark Samus,25,22,,,,,
+"Small
+Battlefield",Yoshi,22,20,,,,,
+"Small
+Battlefield",Kirby,16,14,,,,,
+"Small
+Battlefield",Fox,15,13,,,,,
+"Small
+Battlefield",Pikachu,16,14,,,,,
+"Small
+Battlefield",Luigi,21,18,,,,,
+"Small
+Battlefield",Ness,20,17,,,,,
+"Small
+Battlefield",Captain Falcon,23,20,,,,,
+"Small
+Battlefield",Jigglypuff,12,10,,,,,
+"Small
+Battlefield",Peach / Daisy,19,16,,,,,
+"Small
+Battlefield",Bowser,33,30,,,,,
+"Small
+Battlefield",Ice Climbers,17,15,,,,,
+"Small
+Battlefield",Solo Popo,20,17,,,,,
+"Small
+Battlefield",Sheik,15,13,,,,,
+"Small
+Battlefield",Zelda,18,15,,,,,
+"Small
+Battlefield",Dr. Mario,21,18,,,,,
+"Small
+Battlefield",Pichu,10,8,,,,,
+"Small
+Battlefield",Falco,17,15,,,,,
+"Small
+Battlefield",Marth / Lucina,19,16,,,,,
+"Small
+Battlefield",Young Link,19,16,,,,,
+"Small
+Battlefield",Ganondorf,26,23,,,,,
+"Small
+Battlefield",Mewtwo,15,14,,,,,
+"Small
+Battlefield",Roy / Chrom,21,18,,,,,
+"Small
+Battlefield",Mr. Game & Watch,14,12,,,,,
+"Small
+Battlefield",Meta Knight,16,14,,,,,
+"Small
+Battlefield",Pit / Dark Pit,21,18,,,,,
+"Small
+Battlefield",Zero Suit Samus,16,14,,,,,
+"Small
+Battlefield",Wario,22,20,,,,,
+"Small
+Battlefield",Snake,23,21,,,,,
+"Small
+Battlefield",Ike,23,21,,,,,
+"Small
+Battlefield",Squirtle,14,12,,,,,
+"Small
+Battlefield",Ivysaur,21,18,,,,,
+"Small
+Battlefield",Charizard,27,24,,,,,
+"Small
+Battlefield",Diddy Kong,19,16,,,,,
+"Small
+Battlefield",Lucas,20,17,,,,,
+"Small
+Battlefield",Sonic,18,16,,,,,
+"Small
+Battlefield",King Dedede,30,27,,,,,
+"Small
+Battlefield",Olimar,16,14,,,,,
+"Small
+Battlefield",Lucario,20,17,,,,,
+"Small
+Battlefield",R.O.B.,24,21,,,,,
+"Small
+Battlefield",Toon Link,19,16,,,,,
+"Small
+Battlefield",Wolf,20,17,,,,,
+"Small
+Battlefield",Villager,20,17,,,,,
+"Small
+Battlefield",Mega Man,23,20,,,,,
+"Small
+Battlefield",Wii Fit Trainer,21,18,,,,,
+"Small
+Battlefield",Wii Fit Trainer + Deep breathing,24,21,,,,,
+"Small
+Battlefield",Rosalina & Luma,21,15,,,,,
+"Small
+Battlefield",Little Mac,19,16,,,,,
+"Small
+Battlefield",Greninja,18,15,,,,,
+"Small
+Battlefield",Palutena,19,16,,,,,
+"Small
+Battlefield",Pac-Man,20,17,,,,,
+"Small
+Battlefield",Robin,25,18,,,,,
+"Small
+Battlefield",Shulk,21,18,,,,,
+"Small
+Battlefield",Shulk Buster,10,8,,,,,
+"Small
+Battlefield",Shulk Jump,10,8,,,,,
+"Small
+Battlefield",Shulk Shield,113,102,,,,,
+"Small
+Battlefield",Shulk Smash,9,6,,,,,
+"Small
+Battlefield",Shulk Speed,21,18,,,,,
+"Small
+Battlefield",Bowser Jr.'s Cart,28,25,,,,,
+"Small
+Battlefield",Bowser Jr.'s Body,18,15,,,,,
+"Small
+Battlefield",Duck Hunt,18,15,,,,,
+"Small
+Battlefield",Ryu / Ken,24,21,,,,,
+"Small
+Battlefield",Cloud,22,19,,,,,
+"Small
+Battlefield",Corrin,21,18,,,,,
+"Small
+Battlefield",Bayonetta,17,15,,,,,
+"Small
+Battlefield",Inkling,20,17,,,,,
+"Small
+Battlefield",Ridley,24,21,,,,,
+"Small
+Battlefield",Simon/Richter,24,21,,,,,
+"Small
+Battlefield",King K. Rool,32,29,,,,,
+"Small
+Battlefield",Isabelle,19,16,,,,,
+"Small
+Battlefield",Incineroar,26,23,,,,,
+"Small
+Battlefield",Piranha Plant,25,22,,,,,
+"Small
+Battlefield",Joker,19,16,,,,,
+"Small
+Battlefield",The Hero,23,20,,,,,
+"Small
+Battlefield",Banjo & Kazooie,18,15,,,,,
+"Small
+Battlefield",Terry,25,22,,,,,
+"Small
+Battlefield",Byleth,21,18,,,,,
+"Small
+Battlefield",Min Min,26,23,,,,,
+"Small
+Battlefield",Mii Brawler,20,17,,,,,
+"Small
+Battlefield",Mii Swordfighter,22,19,,,,,
+"Small
+Battlefield",Mii Gunner,23,20,,,,,
