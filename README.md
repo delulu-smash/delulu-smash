@@ -11,3 +11,17 @@ This follows a monorepo structure with following subcomponents
 | [`docs`](https://github.com/delulu-smash/delulu-smash/tree/main/docs)         | contents for building main site: [delulu-smash.com](https://www.delulu-smash.com/), built with [myst engine](https://mystmd.org/) |
 | [`pkgs`](https://github.com/delulu-smash/delulu-smash/tree/main/pkgs)         | contents python packages that aggregates and allows analysis on smash data (general and character specific)                       |
 | [`tools`](https://github.com/delulu-smash/delulu-smash/tree/main/tools) | contents for interactive tools, built with [reflex](https://reflex.dev/)                                                          |
+
+## How to run docs locally
+
+Ensure you have ffmpeg installed (per [instructions](https://mystmd.org/guide/figures#videos) for `.mov` conversion). For Mac run below if not
+
+```bash
+brew install ffmpeg
+```
+
+Below command will ensure have proper up to date requirements and run docs locally
+
+```bash
+uv run --directory=docs myst start
+```
