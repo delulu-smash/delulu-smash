@@ -4,6 +4,7 @@
 3. add and review extensions (one just added in this computer)
 4. set up budget alerts cloud flare
 5. see if image links on builds are consistent. eg gif :https://www.delulu-smash.com/build/83202a39d9e3712ac5bc34f531219316.gif from https://www.delulu-smash.com/tech/
+6. remove real names in authors, abd branxh peission only commit by delulu author
 
 # smash docs
 1. finish review and document controller setttings for progcc (check discord threads, eg adjusting deadzones, rapid fire?)
