@@ -306,7 +306,7 @@ extend-unfixable = [
 # we do this explicitly as ideally most code would use all of our lints,
 # and opens up for some squads having more lint checks than others for their
 # squad specific folders
-"**/{tests,local,docs,services,pkgs/tutorial,pfm,ins,apl}/*" = [
+"**/{tests,local,docs,services,scripts}/*" = [
     # ignoring all the flake8-docstrings error codes we select
     # as not to require docstrings for our tests
     "D100", "D102", "D103", "D106", "D101",
@@ -331,9 +331,10 @@ extend-unfixable = [
     "F841"
     ]
 # calling out specific additional in local scratch work that is bit annoying
-"**/{local}/*" = [
+"**/{local,scripts}/*" = [
     "ERA001",
-    "T201"
+    "T201",
+    "BLE001"
 ]
 # for cli apps there is common standards that are different than most lib code
 "**/{cli}/*" = [
