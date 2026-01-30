@@ -33,8 +33,8 @@
 	// it seems to be related likely to https://github.com/astral-sh/ruff-vscode/issues/461#issuecomment-2094254362
 	// but couldnt figure out what exactly causing (so commenting out for now)
 	"notebook.codeActionsOnSave": {
-		"source.fixAll.ruff": "explicit",
-		"source.organizeImports.ruff": "explicit"
+		"notebook.source.fixAll.ruff": "explicit",
+		"notebook.source.organizeImports.ruff": "explicit"
 	},
 	//Pylance offers some better error checking and linting (especially around type checking)
 	"python.languageServer": "Pylance",
