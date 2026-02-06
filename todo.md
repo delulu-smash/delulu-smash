@@ -18,3 +18,4 @@
     1. move obs staged files within this folder gitignored
     2. cli to ffmpeg cli code snippet to gif (so can just watch video and enter time stamps)
     3. way to upload to R2 cloud
+    4. use https://github.com/tokland/youtube-upload to be able to upload vods (can do conventions by folder and file name to add tags)

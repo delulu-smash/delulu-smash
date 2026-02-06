@@ -1,3 +1,14 @@
 # allow for local docs that dont want to post on site
-* 
+
+
+# Ignore everything
+*
+
+# But unignore the .gitignore file itself
 !.gitignore
+
+# And unignore all .gitkeep files
+!*.gitkeep
+
+# And unignore all directories, so the unignore rules can apply inside them
+!*/

@@ -14,10 +14,12 @@ This follows a monorepo structure with following subcomponents
 
 ## How to run docs locally
 
-Ensure you have ffmpeg installed (per [instructions](https://mystmd.org/guide/figures#videos) for `.mov` conversion). For Mac run below if not
+Ensure you have ffmpeg installed (per [instructions](https://mystmd.org/guide/figures#videos) for `.mov` conversion).
 
+
+For Linux
 ```bash
-brew install ffmpeg
+sudo pacman -S ffmpeg
 ```
 
 Below command will ensure have proper up to date requirements and run docs locally
