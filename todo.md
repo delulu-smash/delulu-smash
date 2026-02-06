@@ -12,3 +12,9 @@
 3. see how handle pokemon_trainer & aeiges
 4. is there way to calculate KO kill percent and dtilt KO confirm from engine
 5 read posts from https://x.com/Ruben_dal (creator of website)
+
+# efficency
+1. create cli tool
+    1. move obs staged files within this folder gitignored
+    2. cli to ffmpeg cli code snippet to gif (so can just watch video and enter time stamps)
+    3. way to upload to R2 cloud

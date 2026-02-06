@@ -4,3 +4,6 @@
 2. icin airdodge after uptilt didnt have to move to reach
 1. fair to condition DK to up B earlier which if notice can counter later
 1. up smash at 0 on plat cause tech situation true Ko kil
+
+
+

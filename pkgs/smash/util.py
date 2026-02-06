@@ -14,17 +14,17 @@ def package_reload(parent_module: ModuleType | str) -> None:
     all its underlying sub files/submodules that package may be importing
 
     ```python
-    import ssbu.util
+    import smash.util
 
     import pandas as pd
 
-    ssbu.util.package_reload(pd)
+    smash.util.package_reload(pd)
 
 
-    import ssbu.logging
-    import ssbu.util
+    import smash.logging
+    import smash.util
 
-    ssbu.util.package_reload(ssbu)
+    smash.util.package_reload(smash)
     ```
     """
     # below inspired from https://stackoverflow.com/questions/35640590/how-do-i-reload-a-python-submodule
