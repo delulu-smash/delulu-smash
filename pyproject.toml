@@ -13,6 +13,7 @@ dependencies = [
     "loguru>=0.7.3",
     "mystmd>=1.6.0",
     "pre-commit>=4.5.1",
+    "typer>=0.21.1",
 ]
 
 # TODO: look into how uv does this (as think has own build system)
@@ -25,12 +26,12 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools.packages.find]
 where = ["pkgs"]
 include = [
-    "ssbu*",
+    "smash*",
 ]
 
-# TODO: add ssbu cli
-# [project.scripts]
-# ssbu = "ssbu.cli.__main__:app"
+# TODO: add smash cli
+[project.scripts]
+smash = "smash.cli.__main__:app"
 
 ###############################################################################################
 # TESTING CONFIGURATION
@@ -348,7 +349,7 @@ extend-unfixable = [
     # not as much of worry at moment and not simple for each one
     "S607"
     ]
-"pkgs/ssbu/typing.py" = [
+"pkgs/smash/typing.py" = [
     # allowing unused imports for typing modules
     "F401",
     ]
@@ -408,17 +409,17 @@ convention = "numpy"
 # runtime-evaluated-base-classes = [
 #     "typer.Argument",
 #     "pydantic.BaseModel",
-#     # note: copy the pydantic ones for ssbu.pydantic wrapper
+#     # note: copy the pydantic ones for smash.pydantic wrapper
 #     # we just want to ensure works for both
-#     "ssbu.pydantic.BaseModel",
+#     "smash.pydantic.BaseModel",
 #     "sqlalchemy.orm.DeclarativeBase"
 #     ]
 # runtime-evaluated-decorators = [
 #     "pydantic.validate_call",
 #     "pydantic.field_validator",
-#     # note: copy the pydantic ones for ssbu.pydantic wrapper
+#     # note: copy the pydantic ones for smash.pydantic wrapper
 #     # we just want to ensure works for both
-#     "ssbu.pydantic.validate_call",
-#     "ssbu.pydantic.field_validator",
+#     "smash.pydantic.validate_call",
+#     "smash.pydantic.field_validator",
 #     "attrs.define"
 #     ]

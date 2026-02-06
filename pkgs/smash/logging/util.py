@@ -3,13 +3,13 @@ from __future__ import annotations
 import time
 from typing import Any
 
-from ssbu.logging import logger
+from smash.logging import logger
 
 __all__ = ["log", "timeit", "toggle_logger"]
 
 # TODO: see if still need
 LOG_SCOPES = [
-    "ssbu",
+    "smash",
     # NOTE: below needed for apps like streamlit
     # as when run `streamlit run app.py`, __name__ = "__main__"
     "__main__",
