@@ -1,6 +1,8 @@
 (stages)=
 # Stages
 
+![](https://assets.delulu-smash.com/ssbu/legal_stages.png)
+
 ## Snapshot
 
 1. Highest Blastzone (upB kills ~TBD)
@@ -22,19 +24,19 @@ Characterstics of stage that are good to understand:
 * - State
   - Notes
 * - `Advantage`
-  - 
+  -
     1. Distance from top blastzone (ground/plat), for `UpB` kill confirms
     2. Width of stage, for opportunities for grounded tech situations
     3. Distance from side blastzone (ledge/plat), for kill confirms like `SideB`
     4. Hieght of plats, for how early can get plat tech situations
     5. Ability to shark and follow up opponents landing (eg `USmash` below plat)
 * - `Disadvantage`
-  - 
+  -
     1. If have extra recovery routes (eg wall jump, land on plat instead having to grab ledge)
     2. Ability to tech spikes (eg Kalos wall)
     3. Does opponent like to kill from top or side, and how helps/hurts that
 * - `Neutral`
-  - 
+  -
     1. Does plat(s) make hard to contest and be camped
     2. Does stage make hard/help to close distance (eg projectiles)
     3. Does width help create more whiff punish situations (eg more stage to evade burst options)
@@ -73,7 +75,7 @@ Important items to remember:
 :header-rows: 1
 
 * - Stage
-  - Center 
+  - Center
   - Ledge
   - Side Plat Edge
 * - [**Small Battlefield**](https://rubendal.github.io/ssbu/#/Stage/Small%20Battlefield)
@@ -97,14 +99,14 @@ Important items to remember:
 :header-rows: 1
 
 * - Stage
-  - Ground 
+  - Ground
   - Low Plat
   - Mid Plat
   - High Plat
 * - [**Small Battlefield**](https://rubendal.github.io/ssbu/#/Stage/Small%20Battlefield)
   - `180`
   - `156`
-  - 
+  -
 * - [**Town & City**](https://rubendal.github.io/ssbu/#/Stage/Town%20&%20City)
   - `190`
   -
@@ -112,8 +114,8 @@ Important items to remember:
   - `150`
 * - [**Kalos**](https://rubendal.github.io/ssbu/#/Stage/Kalos%20Pok%C3%A9mon%20League)
   - `192`
-  - 
-  - 
+  -
+  -
   - `162`
 ```
 
@@ -125,20 +127,20 @@ Important items to remember:
 :header-rows: 1
 
 * - Stage
-  - Low Plat 
+  - Low Plat
   - Mid Plat
   - High Plat
 * - [**Small Battlefield**](https://rubendal.github.io/ssbu/#/Stage/Small%20Battlefield)
   - `24`
   -
-  - 
+  -
 * - [**Town & City**](https://rubendal.github.io/ssbu/#/Stage/Town%20&%20City)
-  - 
+  -
   - `27`
   - `41`
 * - [**Kalos**](https://rubendal.github.io/ssbu/#/Stage/Kalos%20Pok%C3%A9mon%20League)
-  - 
-  - 
+  -
+  -
   - `30`
 ```
 
@@ -148,15 +150,15 @@ Important items to remember:
 :header-rows: 1
 
 * - Stage
-  - Low Plat 
+  - Low Plat
   - Mid Plat
   - High Plat
 * - [**Small Battlefield**](https://rubendal.github.io/ssbu/#/Stage/Small%20Battlefield)
   - `35`
-  - 
-  - 
+  -
+  -
 * - [**Town & City**](https://rubendal.github.io/ssbu/#/Stage/Town%20&%20City)
-  - 
+  -
   - `39`
   - `39`
 * - [**Kalos**](https://rubendal.github.io/ssbu/#/Stage/Kalos%20Pok%C3%A9mon%20League)
@@ -171,22 +173,22 @@ Important items to remember:
 :header-rows: 1
 
 * - Stage
-  - Low Plat (Inner) 
-  - Low Plat (Outer) 
-  - Mid Plat (Inner) 
-  - Mid Plat (Outer) 
+  - Low Plat (Inner)
+  - Low Plat (Outer)
+  - Mid Plat (Inner)
+  - Mid Plat (Outer)
   - High Plat (Inner)
   - High Plat (Outer)
 * - [**Small Battlefield**](https://rubendal.github.io/ssbu/#/Stage/Small%20Battlefield)
   - `23`
   - `58`
-  - 
-  - 
-  - 
-  - 
+  -
+  -
+  -
+  -
 * - [**Town & City**](https://rubendal.github.io/ssbu/#/Stage/Town%20&%20City)
-  - 
-  - 
+  -
+  -
   - `20`
   - `-20`
   - `60`
@@ -205,8 +207,8 @@ Important items to remember:
 ```{list-table}
 :header-rows: 1
 
-* - Stage 
-  - Width 
+* - Stage
+  - Width
   - Center to Ledge
   - Bottom Blastzone
   - Meteor Blastzone
@@ -233,7 +235,7 @@ Important items to remember:
 %TODO: platform hieghts, how far from blastzone for inner (if tech roll in on plat?)
 %TODO: note stage size (as this helps with more room for tech chase, less room to camp)
 %TODO: note what up B kills earliest (based on distance from plat to blast zone and when tech situation happens and kill percent)
-%TODO: see if plat hieght for high vs medium plats is same? 
+%TODO: see if plat hieght for high vs medium plats is same?
 %TODO: note if requires wavelanding and what implications of that is?
 %TODO: how distinguish kill confrims (eg town city top side plat tech away side B)
 %TODO: note kill power based on dtilt side B and uptilt up B
@@ -244,7 +246,7 @@ Important items to remember:
 % eg Low plats allow for more evasive monveours, when no plats is adventagous, etc
 % are all plat widths the same?
 %TODO: what are consequences because incur X amount of additional frames of lag for wavelanding (eg ability to put our shield, what follows ups not available, )
-%TODO: any unirversal truths on MU if requires full hop 
+%TODO: any unirversal truths on MU if requires full hop
 %TODO: for example incin, given can walk and just want to stay out side burst range of side B
 % you want to have wider stage so dont unecessiarly get caught by edge of stage (and dash outside of range and follow up is quickest, compared to jumping and landing). It also stage that icin has less options to approach and evade (for this I may choose town city). use this MU thinking on characteristics/data that is good to log (so can come up with bans and preferred stages better)
 %TODO: low -> full hop, mid -> full hop waveland high -> double jump waveland
