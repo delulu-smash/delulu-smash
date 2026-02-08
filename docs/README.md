@@ -11,7 +11,7 @@ Super Smash Brother Ultimate (SSBU) is my first smash game and only started play
 ```
 
 
-:::{figure} https://www.smashbros.com/assets_v2/img/fighter/little_mac/main8.png
+:::{figure} https://assets.delulu-smash.com/ssbu/little_mac_profile_pic.png
 :::
 
 
