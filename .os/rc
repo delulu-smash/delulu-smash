@@ -1,0 +1,11 @@
+# Personal bashrc config
+# adds to existing omarchy ~./bashrc
+
+# TODO; add "uvx os" alias
+
+# Configure to default open in delulu-smash repo
+# NOTE: Only change directory if this is an interactive shell
+# and we are currently in the home directory
+if [[ $- == *i* ]] && [[ "$PWD" == "$HOME" ]]; then
+    cd $HOME/Desktop/repos/delulu-smash
+fi

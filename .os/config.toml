@@ -1,0 +1,14 @@
+packages = [
+    # vscode
+    "code"
+]
+# options: vscode, nvim, sublime
+# NOTE: configure to sublime so when open file in file explorer have fast to open editor
+editor = "sublime"
+keybindings = [
+    {"shortcut": "SUPER TBD", "name": "Vscode", "cmd":"TBD"}
+]
+# NOTE: use dashboardicons.com > select PNG option
+web_apps = [
+    {"name":"Smash", "url": "TBD","icon_png": "TBD"}
+]
