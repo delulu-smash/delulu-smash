@@ -19,3 +19,11 @@
     2. cli to ffmpeg cli code snippet to gif (so can just watch video and enter time stamps)
     3. way to upload to R2 cloud
     4. use https://github.com/tokland/youtube-upload to be able to upload vods (can do conventions by folder and file name to add tags)
+    5. adding cli options to publish changes easy (ie commit, add all, see status of changes, etc)
+
+
+
+
+# Bowser
+
+1. go to long stage with not high plats (as he can just walk and cover landings easily), high plats easy kill
