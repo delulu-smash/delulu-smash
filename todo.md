@@ -24,6 +24,3 @@
 
 
 
-# Bowser
-
-1. go to long stage with not high plats (as he can just walk and cover landings easily), high plats easy kill
