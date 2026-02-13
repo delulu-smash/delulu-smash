@@ -45,5 +45,9 @@ jobs:
           path: './docs/_build/html'
       - name: Deploy to GitHub Pages
         id: deployment
-
         uses: actions/deploy-pages@v4
+      - name: Send custom message to Discord
+        uses: appleboy/discord-action@v1.2.0
+        with:
+          webhook_url: ${{ secrets.DISCORD_WEBHOOK }}
+          message: "A new commit has been pushed to the ${{ github.repository }} repository!"

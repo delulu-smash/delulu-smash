@@ -1,4 +1,4 @@
-# Personal bashrc config
+# Personal bashrc config (ie what run when terminal opens)
 # adds to existing omarchy ~./bashrc
 
 # TODO; add "uvx os" alias
@@ -7,5 +7,7 @@
 # NOTE: Only change directory if this is an interactive shell
 # and we are currently in the home directory
 if [[ $- == *i* ]] && [[ "$PWD" == "$HOME" ]]; then
-    cd $HOME/Desktop/repos/delulu-smash
+    cd $HOME/repos/delulu-smash
 fi
+
+alias os='uv run $HOME/repos/delulu-smash/.os/cli.py'
