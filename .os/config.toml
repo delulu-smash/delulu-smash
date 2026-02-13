@@ -1,3 +1,4 @@
+theme = "cattpucinn"
 packages = [
     # vscode
     "code"
