@@ -1,6 +1,6 @@
 # Delulu - Little Mac
 
-Hi, I'm [`DeLulu`](https://www.delulu-smash.com/) (aka Mac Daddy). A [Little Mac](https://www.ssbwiki.com/Little_Mac_(SSBU)) main who is using this site to log what I have learned from own personal experience and larger Mac community.
+Hi, I'm [`DeLulu`](https://www.delulu-smash.com/) (aka Mac Daddy, Mac GOAT). The greatest [Little Mac](https://www.ssbwiki.com/Little_Mac_(SSBU)) main of all time who is using this site to log what I have learned from own personal experience and larger Mac community.
 
 Special thanks to `Mac Nation Discord`!
 
@@ -13,6 +13,7 @@ Super Smash Brother Ultimate (SSBU) is my first smash game and only started play
 
 :::{figure} https://assets.delulu-smash.com/ssbu/little_mac_profile_pic.png
 :::
+
 
 
 
