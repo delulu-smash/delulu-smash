@@ -115,3 +115,9 @@ What does this mean for neutral.
 
 1. Early heavy use of counter in disadvantage but also neutral. It missed lot
 2. Relied lot more on up smash and uptilt to start advantage, liked large space to burst option like dash attack
+
+
+## Retrospective
+
+1. Prior to vod review, my style for neural on Yoshi was more Tarakatori's style
+2. to (1), though after watching, it is style that feels bit more high risk high reward. Lvl 7, approach feels more consistent.
