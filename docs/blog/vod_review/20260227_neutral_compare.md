@@ -1,4 +1,4 @@
-# Comparing Neutral
+# 2026-02-27 Comparing Neutral
 
 ## Goal
 
@@ -66,12 +66,14 @@ What does this mean for neutral.
 * - [1:01](https://youtu.be/9YjS0lscqwE?si=8T8eQODB6I_t5xa2&t=61)
   - Use of plat camping/as form of movement though fine, need to be careful with jump as Yoshi easily can hit while in air
 * - [1:15](https://youtu.be/9YjS0lscqwE?si=CcSu0jbxxi4YMjo5&t=75)
-- Good ledge trap sequence. Especially given most of Yoshis get back to ledge options are reactable
+  - Good ledge trap sequence. Especially given most of Yoshis get back to ledge options are reactable
 * - [1:33](https://youtu.be/9YjS0lscqwE?si=uYDWi1SLf-Q0cHqP&t=93)
   - use of roll to ensure not under Yoshi
 * - [3:35](https://youtu.be/9YjS0lscqwE?si=GbFHg_5-Ctv1svka&t=215)
   - Upsmash when Yoshi air super armour and reversaled. When use to hit and when (eg when in Yoshi) important as can put you in disadvantage
 ````
+
+
 
 #### Review
 
