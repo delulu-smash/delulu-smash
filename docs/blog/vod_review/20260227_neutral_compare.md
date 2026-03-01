@@ -1,3 +1,4 @@
+(vod_review_comparing_neutral)=
 # 2026-02-27 Comparing Neutral
 
 ## Goal
@@ -121,3 +122,18 @@ What does this mean for neutral.
 
 1. Prior to vod review, my style for neural on Yoshi was more Tarakatori's style
 2. to (1), though after watching, it is style that feels bit more high risk high reward. Lvl 7, approach feels more consistent.
+
+
+### Notes
+1. Yoshi armour lasts whole time air until legs stop moving
+  1. dash attack will break usually given enough not back (can check via calculator depending on rage and staleness)
+2. Dtilt use was largely also because can hurtbox shift against his moves
+3. How Lvl 7 forumlated gameplan:
+  1. What move does Yoshi need to kill me?
+    1. dont want back air, minimize to like dash attack and jab?
+  1. fine being in corner as long as infront of
+  2. Will run up to shield and roll/dash away because yoshi main OOS is nair and upair. Most characters used to hitting
+  3. use UAF Smash to make them change timing as they need to start advantage from ariel attack
+  4. Changed move attacked with based on if want stage control
+  5. Would think if hits needs to be "first" or "second" (ie super armour)
+  6. Used lot of uaf smash when drop from plat because likes to ariel and we will tank
