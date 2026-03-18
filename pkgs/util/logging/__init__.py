@@ -3,8 +3,9 @@ from __future__ import annotations  # noqa: A005
 # below allows us to use streamlit as base and we can overwrite/enhance/extend/configure/etc
 # on top of the loguru library
 from loguru import logger
-from smash.logging.util import *
-from smash.logging.util import toggle_logger
+
+from util.logging.util import *
+from util.logging.util import toggle_logger
 
 # TODO: decide if this good idea
 logger.toggle = toggle_logger

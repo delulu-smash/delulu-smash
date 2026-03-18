@@ -1,0 +1,29 @@
+# 2026-03-18 Vod Review Format
+
+## Goal
+
+To experiment with good template for vod review
+
+We do this by taking vod reviews notes from season Mac vet and document here
+
+## Vod Review
+
+[2026-03-06 vs Dark Pitt (Glory, 1-2) KMLocal](https://www.youtube.com/watch?v=ue6pQ9R-Yhg)
+
+::::{grid} 1 1 2 3
+
+:::{card}
+:header: Text content ✏️
+Structure books with text files and Jupyter Notebooks with minimal configuration.
+:::
+
+:::{card}
+:header: MyST Markdown ✨
+Write MyST Markdown to create enriched documents with publication-quality features.
+:::
+
+:::{card}
+:header: Executable content 🔁
+Execute notebook cells, store results, and insert outputs across pages.
+:::
+::::
