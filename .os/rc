@@ -1,7 +1,7 @@
 # Personal bashrc config (ie what run when terminal opens)
 # adds to existing omarchy ~./bashrc
 
-# TODO; add "uvx os" alias
+# TODO: add "uvx os" alias
 
 # Configure to default open in delulu-smash repo
 # NOTE: Only change directory if this is an interactive shell
@@ -11,3 +11,4 @@ if [[ $- == *i* ]] && [[ "$PWD" == "$HOME" ]]; then
 fi
 
 alias os='uv run $HOME/repos/delulu-smash/.os/cli.py'
+alias dsu='uv run dsu'

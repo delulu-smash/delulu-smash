@@ -1,4 +1,5 @@
 # tech stack
+0. adding reflex tool that can make creating gif snippets, preview nd upload to r2 really easy and fast (and shortcut to omarchy hotkey)
 1. see if should have CODEOWNERS
 2. see if should have gitattributes (and adding pre-commit check git lfs)
 3. add and review extensions (one just added in this computer)

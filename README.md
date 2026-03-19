@@ -25,5 +25,19 @@ sudo pacman -S ffmpeg
 Below command will ensure have proper up to date requirements and run docs locally
 
 ```bash
-uv run --directory=docs myst start
+dsu docs run
+```
+
+## How to upgrade dependencies
+
+[To update all packages](https://docs.astral.sh/uv/concepts/projects/sync/#syncing-development-dependencies)
+
+```bash
+uv lock --upgrade
+```
+
+## How to run reflex tools site locally
+
+```bash
+uv run --directory=tools/smash reflex run
 ```

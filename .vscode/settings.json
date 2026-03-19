@@ -36,7 +36,7 @@
 		"notebook.source.fixAll.ruff": "explicit",
 		"notebook.source.organizeImports.ruff": "explicit"
 	},
-	//Pylance offers some better error checking and linting (especially around type checking)
+	//Astral's Ty offers some better error checking and linting (especially around type checking)
 	"python.languageServer": "None",
 	// certain Pylance rules are noise given how have ruff lint set up, we choose to ignore these
 	// via https://stackoverflow.com/questions/68209729/disable-specific-pylance-linting-messages-in-vs-code-settings-json-like-with-py

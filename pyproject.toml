@@ -10,11 +10,13 @@ version = "0.0.0"
 description = "All dependencies for main docs site, pkgs, and local developer tools"
 readme = "README.md"
 requires-python = ">=3.13"
+# NOTE: we do not add mystmd as creates this app
+# likes to more strictly pin and have issues like https://github.com/jupyter-book/mystmd/issues/2082
 dependencies = [
     "ipykernel>=7.2.0",
     "loguru>=0.7.3",
-    "mystmd>=1.6.0",
     "pre-commit>=4.5.1",
+    "reflex>=0.8.28",
     "typer>=0.21.1",
 ]
 
@@ -34,7 +36,8 @@ include = [
 
 # TODO: add smash cli
 [project.scripts]
-util = "util.cli.__main__:app"
+# NOTE: dsu is "delulu smash utils"
+dsu = "util.cli.__main__:app"
 
 ###############################################################################################
 # TESTING CONFIGURATION
