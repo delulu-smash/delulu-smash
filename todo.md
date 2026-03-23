@@ -1,5 +1,5 @@
 # tech stack
-0. adding reflex tool that can make creating gif snippets, preview nd upload to r2 really easy and fast (and shortcut to omarchy hotkey)
+0. adding reflex tool that can make creating gif snippets, preview nd upload to r2 really easy and fast (and shortcut to omarchy hotkey). try using AGENT.md so can make most of tool with AI
 1. see if should have CODEOWNERS
 2. see if should have gitattributes (and adding pre-commit check git lfs)
 3. add and review extensions (one just added in this computer)
@@ -22,6 +22,7 @@
     4. use https://github.com/tokland/youtube-upload to be able to upload vods (can do conventions by folder and file name to add tags)
     5. adding cli options to publish changes easy (ie commit, add all, see status of changes, etc)
 
-
+# house keeping
+1. change author and git history to have smash.delulu3i4@gmail.com (instead of personal email)
 
 

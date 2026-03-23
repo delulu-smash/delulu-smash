@@ -6,4 +6,9 @@
 1. up smash at 0 on plat cause tech situation true Ko kil
 
 
+:::{iframe} https://www.youtube.com/embed/F3st8X0L1Ys
+:width: 100%
+Get up and running with MyST in Jupyter!
+:::
+
 
