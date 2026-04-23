@@ -21,8 +21,3 @@
     3. way to upload to R2 cloud
     4. use https://github.com/tokland/youtube-upload to be able to upload vods (can do conventions by folder and file name to add tags)
     5. adding cli options to publish changes easy (ie commit, add all, see status of changes, etc)
-
-# house keeping
-1. change author and git history to have smash.delulu3i4@gmail.com (instead of personal email)
-
-

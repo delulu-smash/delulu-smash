@@ -1,14 +1,14 @@
-# Resources 
+# Resources
 
 ## General Mac Resources
 
-Below is centralized collection of resource links. Many of these are referenced and/or information included throughout rest of docs. 
+Below is centralized collection of resource links. Many of these are referenced and/or information included throughout rest of docs.
 
 ```{list-table}
 :header-rows: 1
 
 * - Link
-  - Description 
+  - Description
 * - [Litle Mac Tech Vid Playlist](https://youtube.com/playlist?list=PL2DqH_qi_iEnNJwOAsx73vltZpU9HyohZ&si=Uf28z9XChUWFkqTd)
   - Full playlist of basic/advanced mac tech (PHYTO videos especially recommend)
 * - [Little Mac Stages](https://docs.google.com/presentation/d/101h82ucfb-J44eKyRZgF8bI3-F9_RpS4lfaFgKv2AIs/edit?slide=id.p#slide=id.p)
@@ -22,9 +22,9 @@ Below is centralized collection of resource links. Many of these are referenced 
 * - [Dtilt KO True Confirm](https://docs.google.com/document/d/1IBm9XXNfuSaUf9lqbgayGD2ionZH5Ct3KtDLZrCOnok/edit?tab=t.0)
   - For each MU, percent winodw Dtilt > KO Punch is true
 * - [Platform Tech Percents](https://docs.google.com/spreadsheets/d/1-JUhPbHset55frtVmJSOUVRbCGFCVpS6vHNYpJEH1r8/edit?gid=0#gid=0)
-  - For each MU, percents D-throw, U-tilt, D-tilt, UAFSmash will cause platform tech 
+  - For each MU, percents D-throw, U-tilt, D-tilt, UAFSmash will cause platform tech
 * - [Ledge Trump Follow Up per MU](https://docs.google.com/spreadsheets/d/1gSXmgwsrfxGR43-VFmUNhEYw1GOEYFe-4w-isNTKe0U/edit?usp=drivesdk)
-  - For each MU, when ledged trumped how can follow up. 
+  - For each MU, when ledged trumped how can follow up.
   **Note**: "drop normal in", ledge drop (because some characters get trumped so high you might have to ledge jump). In means towards the stage. Normal means a normal input haymaker (some require wave bounced haymaker).
 ```
 
@@ -34,7 +34,7 @@ Below is centralized collection of resource links. Many of these are referenced 
 :header-rows: 1
 
 * - Link
-  - Description 
+  - Description
 * - [Smash Wiki](https://www.ssbwiki.com/Super_Smash_Bros._Ultimate)
   - Good documentation on differnet aspects of smash (Eg mechanics)
 * - [Ultimate Frame Data](https://ultimateframedata.com/smash#)
@@ -53,6 +53,8 @@ Below is centralized collection of resource links. Many of these are referenced 
   - Visually compare differnet stages (eg blasts zones)
 * - [Smash Tube](https://smash-tube.com/en/)
   - Easily search youtbe smash vods (can filter on specific match ups and player)
+* - [MU Best/Worst Stages](https://www.ssbu-stage-guides.com/)
+  - Community voted ranked stages for each MU (note good starting point but sample size is low, and will want to look at opponents super major stage selection for better picture)
 ```
 
 ## SSBU Community & Tournaments
@@ -61,7 +63,7 @@ Below is centralized collection of resource links. Many of these are referenced 
 :header-rows: 1
 
 * - Link
-  - Description 
+  - Description
 * - [Smash Discords](https://smashcords.com/smash-5)
   - Easily find differnet discord servers for matchmaking, local tourney, character (eg [Mac Nation](https://discord.gg/8SnfJ8sS))
 * - [SuperMajor](https://www.supermajor.gg/)
@@ -71,7 +73,7 @@ Below is centralized collection of resource links. Many of these are referenced 
 * - [Matchbox](https://smashpros.gg/)
   - It is like more competitive version of quickplay with tournament rules and rankings
 * - [Upsets.gg](https://upsets.gg/ssb-u/rankings?character=Little+Mac)
-  - Unofficial Little Mac Power Rankings 
+  - Unofficial Little Mac Power Rankings
 ```
 
 ## Match Ups Vods Playlists
