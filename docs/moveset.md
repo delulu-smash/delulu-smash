@@ -32,6 +32,9 @@ Neutral B (also referred to as Straight Lunge, SL for short).
 ::::
 :::::
 
+```{image} https://assets.delulu-smash.com/ssbu/IMG_0288.gif
+```
+
 
 other text here other text here other text here other text here other text here other text here other text here other text here other text here other text here other text here other text here other text here other text here other text here other text here other text here other text here other text here other text here other text here other text here other text here other text here other text here other text here other text here other text here other text here other text here other text here other text here other text here
 
