@@ -21,3 +21,27 @@
     3. way to upload to R2 cloud
     4. use https://github.com/tokland/youtube-upload to be able to upload vods (can do conventions by folder and file name to add tags)
     5. adding cli options to publish changes easy (ie commit, add all, see status of changes, etc)
+
+
+
+JustJoshMac twitch feedback
+
+1. how do i convince my opponent to not jump as much?
+1. how do i convince my opponent not to shield
+1. eg ike ariel super safe on block and positive on hit
+
+as mac,
+how to change pace of how to hit shield
+1. cant parry attacks that are within 4 frames of each other (Eg cant parry 2 hit of ftilt)
+1. eg can jab one two three bowser (where jab hit shield, jab 2 breaks up b)
+1. can cancel tilt with crouch (eg jab jab crouch)
+
+all about threat bubble. he did feel quite threatened by my mac. just so dont know what attack going to be (only that close to me and that im scared)
+
+think of attacks to take based on stage control
+
+nair cross up on link shield is good
+
+ariel counter has larger hitbox than grounded, so like ike up B at ledge better to jump counter
+
+see feedback in https://www.twitch.tv/justjoshmac (he had some tips specific mac data and how can be used that hadnt seen before)
