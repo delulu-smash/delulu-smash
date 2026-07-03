@@ -1,15 +1,18 @@
-theme = "cattpucinn"
+# TODO: think of doing theme configuration to severance one
+# theme = "cattpucinn"
 packages = [
     # vscode
     "code"
 ]
 # options: vscode, nvim, sublime
 # NOTE: configure to sublime so when open file in file explorer have fast to open editor
-editor = "sublime"
+# TODO: decide on editor
+# editor = "sublime"
 keybindings = [
     {"shortcut": "SUPER TBD", "name": "Vscode", "cmd":"TBD"}
 ]
+# TODO: make web app configurations
 # NOTE: use dashboardicons.com > select PNG option
-web_apps = [
-    {"name":"Smash", "url": "TBD","icon_png": "TBD"}
-]
+# web_apps = [
+#     {"name":"Smash", "url": "TBD","icon_png": "TBD"}
+# ]

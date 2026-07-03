@@ -25,3 +25,37 @@ Rules:
 Enforcement:
 - Do not omit attribution for generated content.
 - If comment syntax is ambiguous, use the safest valid format for that file type.
+
+# Purpose Header Requirement
+
+When generating a new code or script file, include a concise purpose header near the top of the file.
+
+Requirements:
+- Keep it short (2-5 lines total).
+- Explain what the file does and the intended usage context.
+- Include key runtime details only when relevant (for example output location, trigger/keybind, required dependencies).
+- Do not add obvious or redundant comments.
+- For edits to existing files, add or improve a purpose header only if missing and if it materially improves clarity.
+
+# Repository Structure
+
+Use this repo structure as default context when interpreting user requests and making edits.
+
+- `docs/`: Source content for the Smash Ultimate website, built with MyST/Myst engine. Preserve documentation structure and publishing intent.
+- `.os/`: Personal machine/bootstrap tooling and installation docs for the user's Linux/Omarchy setup. This folder is for reusable PC setup and local tooling, not Smash-specific product code.
+- `pkgs/`: Reusable Python package code for scripting, automation, and analysis.
+- `tools/`: Interactive application code, including the Reflex-based app(s).
+- `local/`: Local-only scratch files, generated outputs, experiments, and machine-specific artifacts. Treat this folder as fully git-ignored by default and do not recommend committing from it unless the user explicitly asks to change that policy.
+
+Deferred ideas:
+- Use `local/ai_ideas.md` as a lightweight backlog for brief Copilot suggestions or repo-organization ideas that are not being implemented yet but should be easy to revisit later.
+
+Git hygiene:
+- Preserve the rule that `local/` is fully ignored in git unless the user explicitly changes that policy.
+- Avoid suggesting tracked source-of-truth files inside `local/` when another repo area would be more appropriate.
+
+Path portability:
+- For personal machine scripts, keybindings, and setup docs, prefer `$HOME`-relative paths over hardcoded usernames when the path is intended to work across the user's Linux machines.
+
+Domain note:
+- In this repo, "Smash Ultimate" refers to Nintendo's video game Super Smash Bros. Ultimate.

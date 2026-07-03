@@ -45,3 +45,5 @@ nair cross up on link shield is good
 ariel counter has larger hitbox than grounded, so like ike up B at ledge better to jump counter
 
 see feedback in https://www.twitch.tv/justjoshmac (he had some tips specific mac data and how can be used that hadnt seen before)
+
+install https://github.com/features/ai/github-app

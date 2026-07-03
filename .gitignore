@@ -5,6 +5,9 @@
 # hidden local mac files
 .DS_Store
 
+# local-only scratch and generated artifacts
+local/
+
 
 ########################
 # Basic Python Gitignore
