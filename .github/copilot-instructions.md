@@ -34,6 +34,7 @@ Requirements:
 - Keep it short (2-5 lines total).
 - Explain what the file does and the intended usage context.
 - Include key runtime details only when relevant (for example output location, trigger/keybind, required dependencies).
+- For shell scripts, include a concise CLI run example when it helps clarify usage.
 - Do not add obvious or redundant comments.
 - For edits to existing files, add or improve a purpose header only if missing and if it materially improves clarity.
 
