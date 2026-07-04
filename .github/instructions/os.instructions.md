@@ -8,6 +8,7 @@ applyTo: ".os/**"
 
 - `.os/` is for personal PC setup, bootstrap workflows, and reusable machine tooling.
 - This folder is not Smash-specific product code by default.
+- Prefer placing keybinding-target scripts under `.os/scripts/keybindings/` to make intent discoverable.
 - Favor portability across the user's Linux machines, especially Omarchy-based systems.
 - Prefer `$HOME`-relative paths over hardcoded `/home/<user>` paths when writing scripts, keybindings, or setup examples intended to work on multiple machines.
 - Keep setup assumptions explicit: dependencies, output paths, and intended usage should be easy to recover later.

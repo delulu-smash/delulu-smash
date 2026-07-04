@@ -16,6 +16,11 @@ Common examples for this folder:
 - Bootstrap or install helpers for local tools.
 - Notes about PC-specific assumptions, dependencies, and setup steps.
 
+Recommended layout for script discoverability:
+
+- `.os/scripts/keybindings/`: scripts intended to be called directly by Omarchy/Hyprland keybinds.
+- `.os/scripts/`: other machine helper scripts not directly bound to keyboard shortcuts.
+
 Current files of interest:
 
 - `.os/screenrecord.sh`: Omarchy/Hyprland-friendly region recording toggle script.

@@ -57,5 +57,8 @@ Git hygiene:
 Path portability:
 - For personal machine scripts, keybindings, and setup docs, prefer `$HOME`-relative paths over hardcoded usernames when the path is intended to work across the user's Linux machines.
 
+OS script organization:
+- For Omarchy/Hyprland keybinding-target scripts, prefer placing them under `.os/scripts/keybindings/` so their purpose is obvious to both humans and AI.
+
 Domain note:
 - In this repo, "Smash Ultimate" refers to Nintendo's video game Super Smash Bros. Ultimate.
