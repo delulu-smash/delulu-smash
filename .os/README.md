@@ -23,7 +23,7 @@ Recommended layout for script discoverability:
 
 Current files of interest:
 
-- `.os/screenrecord.sh`: Omarchy/Hyprland-friendly region recording toggle script.
+- `.os/scripts/keybindings/screenrecord.sh`: Omarchy/Hyprland-friendly region recording toggle script.
 - `.os/cli.py`: Local OS/bootstrap helper entry point.
 - `.os/config.toml` and `.os/rc`: machine setup configuration.
 

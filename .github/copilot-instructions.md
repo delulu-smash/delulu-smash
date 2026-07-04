@@ -34,7 +34,7 @@ Requirements:
 - Keep it short (2-5 lines total).
 - Explain what the file does and the intended usage context.
 - Include key runtime details only when relevant (for example output location, trigger/keybind, required dependencies).
-- For shell scripts, include a concise CLI run example when it helps clarify usage.
+- For shell scripts and Python Typer CLI scripts, include a concise CLI run example when it helps clarify usage.
 - Do not add obvious or redundant comments.
 - For edits to existing files, add or improve a purpose header only if missing and if it materially improves clarity.
 
@@ -60,6 +60,10 @@ Path portability:
 
 OS script organization:
 - For Omarchy/Hyprland keybinding-target scripts, prefer placing them under `.os/scripts/keybindings/` so their purpose is obvious to both humans and AI.
+
+Script implementation pattern:
+- For shell-based automation in this repo, prefer a paired layout: a Python Typer CLI script plus a same-name shell wrapper in the same folder.
+- The shell wrapper should stay thin and call the Python script via `uv run`, unless the user explicitly asks for shell-only or Python-only.
 
 Domain note:
 - In this repo, "Smash Ultimate" refers to Nintendo's video game Super Smash Bros. Ultimate.
