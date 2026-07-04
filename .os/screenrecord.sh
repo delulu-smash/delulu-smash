@@ -222,6 +222,15 @@ if [[ -z "$GEOMETRY" ]]; then
     exit 0
 fi
 
+# Countdown delay after region selection so you can switch back and unpause video.
+START_DELAY="${SCREENRECORD_START_DELAY_SECONDS:-3}"
+if [[ "$START_DELAY" -gt 0 ]]; then
+    for (( i=START_DELAY; i>0; i-- )); do
+        notify-send "Screen Recorder" "Starting in ${i}..." -t 900 -i video-x-generic
+        sleep 1
+    done
+fi
+
 TIMESTAMP=$(date +%Y-%m-%d_%H-%M-%S)
 if [[ "$MODE" == "save" ]]; then
     OUTPUT_FILE="$SAVE_DIR/snippet_$TIMESTAMP.mp4"
