@@ -29,7 +29,7 @@ sudo pacman -S ffmpeg
 Below command will ensure have proper up to date requirements and run docs locally
 
 ```bash
-dsu docs run
+ds docs run
 ```
 
 ## How to upgrade dependencies
@@ -44,4 +44,10 @@ uv lock --upgrade
 
 ```bash
 uv run --directory=tools/smash reflex run
+```
+
+## How to run docs
+
+```bash
+ds docs run
 ```

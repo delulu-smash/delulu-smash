@@ -2,6 +2,7 @@
 # MAIN APP/PKG (DEPENDENCIES)
 ###############################################################################################
 [project]
+# NOTE: pkg is "ds" (for delulu smash)
 name = "delulu-smash"
 # TODO: see if want format below
 # given this monorepo style and in practice more monolith, we opt for versioning
@@ -30,14 +31,12 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools.packages.find]
 where = ["pkgs"]
 include = [
-    "ssbu*",
-    "util*"
+    "ds*",
 ]
 
 # TODO: add smash cli
 [project.scripts]
-# NOTE: dsu is "delulu smash utils"
-dsu = "util.cli.__main__:app"
+ds = "ds.cli.__main__:app"
 
 ###############################################################################################
 # TESTING CONFIGURATION

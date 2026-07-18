@@ -10,3 +10,9 @@ applyTo: "pkgs/**"
 - Favor clean module boundaries, reusable abstractions, and library-style APIs over one-off scripts.
 - Keep package changes independent from local machine assumptions unless a package is explicitly meant to handle them.
 - Prefer testable utilities and stable interfaces for analysis and automation code.
+
+## `ds` CLI Conventions
+
+- For commands under `pkgs/ds/cli/`, use Typer for CLI definitions.
+- For command/process execution under `pkgs/ds/cli/`, use `run_cmd` from `ds.cli.util`.
+- Keep `pkgs/ds/cli/` command patterns separate from OS automation patterns under `.os/`.

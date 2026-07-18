@@ -3,7 +3,7 @@ from __future__ import annotations
 import time
 from typing import Any
 
-from util.logging import logger
+from ds.util.logging import logger
 
 __all__ = ["log", "timeit", "toggle_logger"]
 

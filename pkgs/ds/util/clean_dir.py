@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from util.logging import logger
+from ds.util.logging import logger
 
 
 def remove_files(filename: str, target_directory: str, dry_run: bool) -> None:

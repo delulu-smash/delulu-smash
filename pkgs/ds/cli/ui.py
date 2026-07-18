@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import typer
-from util.cli.util import run_cmd
-from util.const import REPO_DIR
+from ds.cli.util import run_cmd
+from ds.util.const import REPO_DIR
 
 __all__ = ["ui_app"]
 

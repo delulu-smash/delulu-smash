@@ -11,4 +11,4 @@ if [[ $- == *i* ]] && [[ "$PWD" == "$HOME" ]]; then
 fi
 
 alias os='uv run $HOME/repos/delulu-smash/.os/cli.py'
-alias dsu='uv run dsu'
+alias ds='uv run ds'
