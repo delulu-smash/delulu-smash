@@ -6,6 +6,11 @@
 4. set up budget alerts cloud flare
 5. see if image links on builds are consistent. eg gif :https://www.delulu-smash.com/build/83202a39d9e3712ac5bc34f531219316.gif from https://www.delulu-smash.com/tech/
 6. remove real names in authors, abd branxh peission only commit by delulu author
+7. adding integrations with
+    1. openai (eg df query function)
+    2. discord (so have commands and scrape character channels)
+    3. reflex UI (that use the ai)
+8. ai templates for the coding (where stated goals and behaviors/way that is best to describe to AI, it like template for github issue ticket)
 
 # smash docs
 1. finish review and document controller setttings for progcc (check discord threads, eg adjusting deadzones, rapid fire?)
