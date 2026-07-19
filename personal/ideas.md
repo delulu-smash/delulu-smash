@@ -16,3 +16,5 @@
 2. recreate pkgs via AI so can get the styling and such down so can move faster with AI later
 3. skill files for python (so has proper linting and formatting that uv uses, and start to document my style, perhaps make representative scirpt and have AI tell what think style is and edit with it via conversation and explanation)
 4. create MCP server for my library? https://code.visualstudio.com/docs/agent-customization/mcp-servers?referrer=in-product
+5. using litellm (https://docs.litellm.ai/docs/proxy/ui) to test which ai is better (claude may be better as can cache prompts which useful if loading lot of skill files). Ideally i could have it read from existing skill and prompt files so the repo AI and app AI stay aligned
+    1. prompt caching https://docs.litellm.ai/docs/completion/prompt_caching
