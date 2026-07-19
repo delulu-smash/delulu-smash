@@ -11,7 +11,7 @@ df = pl.DataFrame(
     }
 )
 
-print(ds.ai.sql(df, "Get all users older than 30 who live in Chicago."))
+print(ds.ai.sql(df, "Get all people older than 30 who live in Chicago."))
 _df = ds.ai.sql(df, "Get average & standard deviation of age")
 print(_df.ai)
 print(_df)

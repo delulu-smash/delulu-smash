@@ -5,9 +5,10 @@ from pathlib import Path
 
 from ds.ai.sql import *
 from ds.ai.util import *
+from ds.util.const import REPO_DIR
 
 
-def _load_openai_key_from_file(path: str | Path = "openai.secret") -> str | None:
+def _load_openai_key_from_file() -> str | None:
     """Load OpenAI API key from a gitignored local file (if present).
 
     The file may contain a raw key, or a KEY=VALUE pair (for example
@@ -17,9 +18,7 @@ def _load_openai_key_from_file(path: str | Path = "openai.secret") -> str | None
     if os.environ.get("OPENAI_API_KEY"):
         return os.environ["OPENAI_API_KEY"]
 
-    p = Path(path)
-    if not p.exists():
-        return None
+    p = Path(REPO_DIR) / "openai.secret"
 
     raw = p.read_text(encoding="utf-8").strip()
     # Support KEY=VALUE lines
