@@ -14,6 +14,29 @@
 	"markdown.copyFiles.destination": {
 		"/docs/**/*": ".assets/${documentBaseName}/"
 	},
+
+	// Settings for the paste-image extension (mushan.vscode-paste-image)
+	"pasteImage.path": "${fileDirname}/.assets/${fileBasenameNoExtension}/${pasteFileName}",
+	"pasteImage.basePath": "${fileDirname}",
+	"pasteImage.insertPattern": "![](${path})",
+	"pasteImage.forceUnixStylePath": true,
+
+	// filename pattern (some extensions support this)
+	"pasteImage.filename": "${fileBasenameNoExtension}_${date:yyyyMMddHHmmss}_${counter}.png",
+	// alternate key some forks use
+	"pasteImage.rootPath": "${fileDirname}",
+
+
+	// Additional settings to support other paste-image extensions / variants
+	// For 'zoumo.paste-image' or similar
+	"pasteImage.defaultPath": "${fileDirname}/.assets/${fileBasenameNoExtension}/${pasteFileName}",
+	// For 'vscode-paste-image' style (some versions use this key)
+	"vscode-paste-image.path": "${fileDirname}/.assets/${fileBasenameNoExtension}/${fileName}",
+	"vscode-paste-image.basePath": "${fileDirname}",
+	"vscode-paste-image.insertPattern": "![](${filePath})",
+	// filename pattern used by some variants
+	"vscode-paste-image.filename": "${fileBasenameNoExtension}_${date:yyyyMMddHHmmss}_${counter}.png",
+	"vscode-paste-image.rootPath": "${fileDirname}",
 	// per recommendations in https://marketplace.visualstudio.com/items?itemName=charliermarsh.ruff
 	// allow for ruff to be auto applied when saving
 	// this is not only better developer experience but also
