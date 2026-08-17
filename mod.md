@@ -26,10 +26,26 @@ All mods recommended are ones that are wifi safe (ie Nintendo won't detect when 
 
 * - Link
   - File
-* - Row1_1
-  - Row1_2
-* - Row2_1
-  - Row2_2
+* - [Atmosphere (Latest Release)](https://github.com/atmosphere-nx/atmosphere/releases)
+  - `atmosphere....zip`
+* - [Hekate (Latest Release)](https://github.com/CTCaer/hekate/releases)
+  - `hekate_ctcaer_...zip`
+* - [OmniRCM (Latest Release)](https://github.com/DefenderOfHyrule/OmniRCM/releases/tag/v1.1.1)
+  - `OmniRCM-osx.zip` (Mac OS) (follow [instructions](https://switch.hacks.guide/user_guide/rcm/sending_payload?tab=macos) to use)
+* - [SD Preparation](https://switch.hacks.guide/user_guide/all/sd_preparation)
+  - `hekate_ipl.ini` file (ie referenced as "hekate config file")
+* - Acropolis (Latest Release)](https://github.com/Raytwo/ARCropolis/releases/)
+  - `release.zip`
+* - [Skyline (Latest Release)](https://github.com/skyline-dev/skyline/releases)
+  - `skyline.zip`
+* - [Nro Hook (Latest Release)](https://github.com/ultimate-research/nro-hook-plugin/releases)
+  - `libnro_hook.nro`
+* - [Smashline (Latest Release)](https://github.com/HDR-Development/smashline/releases)
+  - `libsmashline_plugin.nro`
+* - [ImgUI Smash (Latest Release)](https://github.com/Coolsonickirby/imgui-smash/releases)
+  - `libimgui_smash.nro`
+* - [SSBU PIA Interface (Latest Release)](https://github.com/project-ultelier/ssbu-pia-interface/releases/tag/v1.2.0)
+  - `libssbu_pia_manager.nro`
 ````
 
 # Steps
@@ -42,27 +58,34 @@ All mods recommended are ones that are wifi safe (ie Nintendo won't detect when 
 * - 0
   - Ensure have [pre requisites](#pre-requisites)
 * - 1
-  - Plug micro SD card into computer
+  - Ensure micro SD was in switch turned on (so has `Nintendo` folder)
+* - 2
+  - Remove micro SD from switch and plug micro SD card into computer
+* - Ste3p
+  - In Downloads, Move  in `hekate_ctcaer` folder and copy `hekate...bin` file to desktop & move `bootloader` folder to root of micro SD
+* - 4
+  -  In Downloads, Move `hekate_ipl.ini` file to `bootloader` folder of micro SD (NOTE: may have downloaded with `.txt` extension, ensure just `.ini` at end of file)
+* - 5
+  -  In Downloads, Move `atmosphere` folder (from Acropolis) into micro SD (when prompted merge, don't replace)
+* - 6
+  -  In Downloads, Move `exefs` folder (from Skyline), into micro SD `atmopshere/contents/01006A800016E000` folder (the `01006A800016E000` represents the smash ultimate game id)
+* - 7
+  -  In Downloads, Move `atmosphere` folder (from Training Mod Pack) into micro SD (when prompted merge, don't replace)
+* - 8
+  -  In Downloads, Move `atmosphere` folder (from SSBU Online Deluxe) into micro SD (when prompted merge, don't replace)
 * - Step
-  - Go to [Atmosphere (Latest Release)](https://github.com/atmosphere-nx/atmosphere/releases), download `atmosphere....zip`, move contents to micro SD card
-* - Step
-  - Go to [Hekate (Latest Release)](https://github.com/CTCaer/hekate/releases), download `hekate_ctcaer_...zip` move contents to micro SD card
-* - Step
-  - Go to [TegraRcmGUI (Latest Release)](https://github.com/eliboa/TegraRcmGUI/releases), download `TegraRcmGUI_....zip` (will be software use to install mods to switch)
-* - Step
-  - Go to [SD Preparation](https://switch.hacks.guide/user_guide/all/sd_preparation), click `hekate_ipl.ini` file (ie referenced as "hekate config file")
-* - Step
-  - Go to [Acropolis (Latest Release)](https://github.com/Raytwo/ARCropolis/releases/), download `release.zip`, move contents to micro SD card, hit "Merge" in prompt (not replace)
-* - Step
-  - Go to [Skyline (Latest Release)](https://github.com/skyline-dev/skyline/releases), download `skyline.zip`, move contents to micro SD card,
-* - Step
-  - Move contents of Step 3 into micro SD cards `atmosphere/contents/01006A800016E000` (Note: `01006A800016E000` is the smash ultimate game id)
-* - Step
-  - in micro SD, at root (ie outside of `atmosphere` folder), create folder `ultimate/mods`
-* - Step
-  - Go to [Ultimate Training Mod Pack (Latest Version)](https://github.com/jugeeya/UltimateTrainingModpack/releases#release-beta (ie release after `beta` release)), download `TrainingModpack.zip`
-* - Step
-  - Go to [SSBU Online Deluxe (Latest Release)](https://github.com/saad-script/ssbu-online-deluxe/releases/tag/v1.3.0), download  `ssbu-online-deluxe-....zip`
+  -  In Downloads, Move all `.nro` files into micro SD `atmopshere/contents/01006A800016E000/skyline/plugins` folder
+* - 9
+  - Eject micro SD, Turn off swtich (ie hold power mode and select "Turn Off"), and put micro SD in switch
+* - 10
+  - Put RCM jig into right joycon slot, slide all the way down
+* - 1
+  - Boot up RCM mode via `+ Volume` + `Power Button` for 3 seconds
+* - Open OmniRCM app on computer and plugin swtich via USB-C, Toggle `Auto-Inject on Connect` & select `hekate`, press `Inject Payload` (you should see switch boot up with Nyx)
+* - 12
+  - On Switch, after putting time and date, hit `Launch`, selecting `Atmosphere Sysmmc` option (switch should launch normally)
+* - 13
+  - Select "Smash Ultimate", should see "New Mods detected" pop up, click "yes"
 ````
 
 # Smash Ultimate Mods
@@ -74,13 +97,15 @@ All mods recommended are ones that are wifi safe (ie Nintendo won't detect when 
   - Description
 * - [Skins](https://gamebanana.com/mods/cats/3330)
   - Cosmetic changes to skins/alts of characters (broken down by character), see [vod](https://youtu.be/HRqm3SEH-Fs?si=6UnDAirbChRJBqTh&t=873) how to add
-* - Row2_1
-  - Row2_2
+* - Ultimate Training Mod Pack (Latest Version)](https://github.com/jugeeya/UltimateTrainingModpack/releases#release-beta)
+  - Better improved training mod (to download, go to first release after `beta`, download `TrainingModpack.zip`)
+* - [SSBU Online Deluxe (Latest Release)](https://github.com/saad-script/ssbu-online-deluxe/releases/tag/v1.3.0)
+  - Allows ofr online arenas to feel like offline (download `ssbu-online-deluxe-....zip`)
 ````
 
 # References
 
-````{list-table} `
+````{list-table}
 :header-rows: 1
 
 * - Link

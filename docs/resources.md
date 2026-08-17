@@ -55,6 +55,8 @@ Below is centralized collection of resource links. Many of these are referenced 
   - Easily search youtbe smash vods (can filter on specific match ups and player)
 * - [MU Best/Worst Stages](https://www.ssbu-stage-guides.com/)
   - Community voted ranked stages for each MU (note good starting point but sample size is low, and will want to look at opponents super major stage selection for better picture)
+* - [Smash Ultimate Mod Tools](https://smashultimatetools.com/index.php?page=prcFighterParam&id=prcFighterParam)
+  - For mods, but has interesting game engine stats on character (eg walk & run acceleration)
 ```
 
 ## SSBU Community & Tournaments
