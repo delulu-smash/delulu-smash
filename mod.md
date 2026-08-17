@@ -117,3 +117,7 @@ All mods recommended are ones that are wifi safe (ie Nintendo won't detect when 
 * - [Full Switch Mod Guide](https://switch.hacks.guide)
   - Full community guide for modding switch in technical detail
 ````
+
+# Appendix
+
+![OmniRCM](image.png)
