@@ -1,3 +1,5 @@
+# TODO: change things so works with omarchy 4.0 new dotfiles
+# https://omarchy.org/manual/dotfiles/
 # TODO: think of doing theme configuration to severance one
 # theme = "cattpucinn"
 packages = [
