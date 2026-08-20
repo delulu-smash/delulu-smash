@@ -7,6 +7,10 @@
 
 # Smash Package and Tooling
 1. use AI to convert smash utlimate data site code to python (with tests, documentation, etc, do this one on specific branch so perhaps can easily trash)
+2. have a labbing tool, where has
+    1. easy information eg fastest mash options MU has
+    2. auto links to staging folder, so can easily view vid recorded (and go frame by frame), option to make gif (store in cloud flare)
+    3. any other things that would make fast to document
 
 # AI
 1. learning more on skills (eg looks like github copilot downloaded skills on own like files below

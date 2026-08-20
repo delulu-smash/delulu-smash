@@ -86,6 +86,19 @@ Path portability:
 OS script organization:
 - For Omarchy/Hyprland keybinding-target scripts, prefer placing them under `.os/scripts/keybindings/` so their purpose is obvious to both humans and AI.
 
+Omarchy environment:
+- The user runs Omarchy 4.0.0-1 (Omarchy 4); use its Lua-based Hyprland configuration conventions.
+
+AI memory policy:
+- Do not create or update user-wide persistent memory (`/memories/`) by default.
+- Store repository-specific environment facts and AI guidance in version-controlled repository files, such as `.os/config.toml` and this instruction file.
+- Only write user-wide persistent memory when the user explicitly asks for it.
+
+Personal AI idea notes:
+- When the user explicitly says to "remember this for later", "save this idea", "make a note of this", or gives an equivalent request, create or update a concise Markdown note in `personal/ai/`.
+- Before creating a note, check `personal/ai/` for an existing note on the same idea and update it instead of creating a duplicate.
+- Treat these notes as personal reference material, not approved implementation work. Include the idea, its relevant context, and concrete next steps when known.
+
 Script implementation pattern:
 - For shell-based automation in this repo, prefer a paired layout: a Python Typer CLI script plus a same-name shell wrapper in the same folder.
 - The shell wrapper should stay thin and call the Python script via `uv run`, unless the user explicitly asks for shell-only or Python-only.
