@@ -22,3 +22,4 @@
 4. create MCP server for my library? https://code.visualstudio.com/docs/agent-customization/mcp-servers?referrer=in-product
 5. using litellm (https://docs.litellm.ai/docs/proxy/ui) to test which ai is better (claude may be better as can cache prompts which useful if loading lot of skill files). Ideally i could have it read from existing skill and prompt files so the repo AI and app AI stay aligned
     1. prompt caching https://docs.litellm.ai/docs/completion/prompt_caching
+6. using pydnatic-ai to create a smash ai agent, which will have cli prompt tool and reflex ui forhttps://youtu.be/PY7xIxybYNc?is=NV3bopZXPFyjVJM6 
