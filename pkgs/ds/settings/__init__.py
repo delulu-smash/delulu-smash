@@ -5,6 +5,8 @@ import os
 import keyring
 from pydantic import BaseModel, SecretStr
 
+__all__ = ["get_settings"]
+
 KEYRING_SERVICE_NAME: str = "delulu-smash"
 
 
@@ -42,6 +44,11 @@ def init_settings() -> Settings:
     if openai_api_key:
         os.environ["OPENAI_API_KEY"] = openai_api_key
     return Settings(openai_api_key=openai_api_key)
+
+
+def get_settings() -> Settings:
+    """Return the current global settings (always up to date after set_settings())"""
+    return SETTINGS
 
 
 SETTINGS: Settings = init_settings()
