@@ -90,9 +90,16 @@ Omarchy environment:
 - The user runs Omarchy 4.0.0-1 (Omarchy 4); use its Lua-based Hyprland configuration conventions.
 
 AI memory policy:
+- Rationale: this repo is worked on from multiple computers, and the `/memories/` tool's user-wide memory is local
+  to a single machine, so anything useful there would be invisible on the other machines. Repo-tracked files travel
+  with the repo everywhere via git, which is why they're preferred.
 - Do not create or update user-wide persistent memory (`/memories/`) by default.
-- Store repository-specific environment facts and AI guidance in version-controlled repository files, such as `.os/config.toml` and this instruction file.
-- Only write user-wide persistent memory when the user explicitly asks for it.
+- When the user says "remember this" / "AI remember" for something about this repo (conventions, structure,
+  gotchas, workflow preferences), do not write it to the `/memories/` tool. Instead, capture it in version-controlled
+  repository files: this instructions file, the relevant scoped `.github/instructions/*.instructions.md` file, a
+  skill, or `.os/config.toml` for machine setup facts.
+- Only write to the `/memories/` tool when the user explicitly asks for that specific mechanism (eg says "memory
+  tool" or "cross-session memory" by name), rather than a general "remember" request.
 
 Personal AI idea notes:
 - When the user explicitly says to "remember this for later", "save this idea", "make a note of this", or gives an equivalent request, create or update a concise Markdown note in `personal/ai/`.

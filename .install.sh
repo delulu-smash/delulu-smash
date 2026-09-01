@@ -11,3 +11,4 @@
 uv sync
 pre-commit install
 # TODO: add install for ffmpeg (see readme)
+# TOOD ensure git-lfs is set up and installed
