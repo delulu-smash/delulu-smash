@@ -24,5 +24,6 @@
 		"pkief.material-icon-theme",
 		"mushan.vscode-paste-image",
 		"catppuccin.catppuccin-vsc",
+		"astral-sh.ty",
 	]
 }

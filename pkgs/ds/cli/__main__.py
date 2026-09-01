@@ -7,6 +7,7 @@ from __future__ import annotations
 import typer
 from ds.cli.docs import docs_app
 from ds.cli.publish import publish_cmd
+from ds.cli.settings import settings_app
 from ds.cli.ui import ui_app
 
 app = typer.Typer(
@@ -16,6 +17,6 @@ app = typer.Typer(
 )
 app.command(name="publish")(publish_cmd)
 
-
 app.add_typer(docs_app, name="docs")
 app.add_typer(ui_app, name="ui")
+app.add_typer(settings_app, name="settings")
