@@ -15,6 +15,7 @@ from __future__ import annotations
 # TOOD: need to get datatypes of parquet files (all str, and some are like 4/6/2)
 # may want to think if want pydantic classes that return from it/establish what should scrape?
 # TODO: have temp/ folder that stores parquet and SmashRawDb so can query easily
+# TOOD: run through every character (as was just made based on little mac)
 import httpx2
 import polars as pl
 from bs4 import BeautifulSoup, Tag

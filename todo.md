@@ -11,6 +11,7 @@
     2. discord (so have commands and scrape character channels)
     3. reflex UI (that use the ai)
 8. ai templates for the coding (where stated goals and behaviors/way that is best to describe to AI, it like template for github issue ticket)
+9. add exeperimental folder ai instructions (and overview when add things there)
 
 # smash docs
 1. finish review and document controller setttings for progcc (check discord threads, eg adjusting deadzones, rapid fire?)
