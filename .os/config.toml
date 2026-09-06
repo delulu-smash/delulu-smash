@@ -8,13 +8,15 @@ omarchy_version = "4.0.0"
 packages = [
     # vscode
     "code"
+    ## wf-recorder  ffmpeg wl-clipboard libnotify
 ]
 # options: vscode, nvim, sublime
 # NOTE: configure to sublime so when open file in file explorer have fast to open editor
 # TODO: decide on editor
 # editor = "sublime"
 keybindings = [
-    { shortcut = "SUPER + SHIFT + Z", name = "Screenshot", cmd = "omarchy screenshot" }
+    { shortcut = "SUPER + SHIFT + Z", name = "Screenshot", cmd = "omarchy screenshot" },
+    { shortcut = "SUPER + SHIFT + V", name = "Vscode: delulu-smash", cmd = "code $HOME/repos/delulu-smash" }
 ]
 # TODO: make web app configurations
 # NOTE: use dashboardicons.com > select PNG option
@@ -24,4 +26,4 @@ keybindings = [
 # TOOD: add config for clock header
 # nvim ~/.config/omarchy/shell.json
 # "format": "dddd M/d HH:mm",
-#
+# ensure zed integrated with 1passwrod via https://docs.zen-browser.app/guides/1password

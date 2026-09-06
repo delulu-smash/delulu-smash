@@ -43,3 +43,5 @@ and see differences, so can vibe code and edit project as those get updates
 8. review code and have rewrite so can be own package, and see code quality, and have skill that develops embedding my personal coding principals (research other skill files)
 9. have way to modes for each resource (eg api, database, etc), ability to create own
 10. publish this as open source pypi package so i can use for work
+6. try out https://github.com/features/ai/github-app?utm_source=copilot-cli-nudge (and see how compares to just vscode or github cli)
+7. look at omarchy video on how create own branding, and have it be the mac icon have as favcon for my delulu smash site
