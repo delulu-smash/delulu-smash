@@ -32,10 +32,14 @@ DEFAULT_CLIPBOARD_FORMAT = os.environ.get("SCREENRECORD_CLIPBOARD_FORMAT", "gif"
 
 
 def notify(message: str, *, icon: str = "video-x-generic", timeout_ms: int | None = None) -> None:
-    if shutil.which("notify-send") is None:
+    omarchy = shutil.which("omarchy")
+    if omarchy is not None:
+        command = [omarchy, "notification", "send", "--app-name", "screenrecord", "Screen Recorder", message]
+    elif shutil.which("notify-send") is not None:
+        command = ["notify-send", "Screen Recorder", message, "-i", icon]
+    else:
         return
 
-    command = ["notify-send", "Screen Recorder", message, "-i", icon]
     if timeout_ms is not None:
         command.extend(["-t", str(timeout_ms)])
     subprocess.run(command, check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -218,6 +222,7 @@ def stop_recording() -> None:
             if convert_mp4_to_gif(last_path, gif_path):
                 last_path.unlink(missing_ok=True)
 
+                # Discord accepts a GIF file reference on paste, but not raw image/gif clipboard bytes.
                 if copy_clip_path(gif_path):
                     schedule_cleanup(gif_path, CLEANUP_AFTER_SECONDS)
                     notify(f"Copied GIF reference to clipboard (temp auto-delete in {CLEANUP_AFTER_SECONDS}s)")

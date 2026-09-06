@@ -104,7 +104,7 @@ All mods recommended are ones that are wifi safe (ie Nintendo won't detect when 
 ````
 
 # References
-
+%TODO: add https://github.com/saad-script/ssbu-emu-optimizer
 ````{list-table}
 :header-rows: 1
 
