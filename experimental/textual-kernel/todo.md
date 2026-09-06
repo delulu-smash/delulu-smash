@@ -24,6 +24,12 @@
 21. have some look at performance (eg is way does autocomplete for database sustainable, what if database updates)
 22. have read only vs edit mode (so saves from executing non-select statements by default with visual indicator)
 23. ?add pagination to data tables (esp SQL can get big)
+24. if error comes back, ability to have AI resolve (eg had SQL error)
+25. if cycle through modes, make it blank, but if recycle to previous mode have what previously there
+26. use pydantic-autocomplete (current drop down covers the entire cell)
+27. terminal mode, show (like do with sql), information (like git branch, cwd, etc)
+28. lets see if already code editor widget (because things like when typ "(" auto adds the other paranthesis)
+29. try converting to UV backend (See why claude code had hatchling)
 
 # agent file structure or suggester
 
