@@ -89,6 +89,21 @@ Before editing files in one of these folders, read the matching file below for d
 | `tools/**`  | @.agents/instructions/tools.md                                        |
 | `local/**`  | @.agents/instructions/local.md                                        |
 
+## Spec Folders (Monorepo)
+
+Several independent projects in this monorepo keep their own `spec/` folder documenting design/behavior:
+
+- `pkgs/ds/calc/spec/`
+- `experimental/textual-kernel/spec/`
+
+Before doing non-trivial work inside one of these subprojects, read every `spec/*.md` file found in:
+
+1. the subproject's own directory, and
+2. each ancestor directory between it and this repo root
+
+so specs that apply broadly (not just at the subproject's own level) don't get missed. When a new project grows
+its own `spec/` folder, add it to the list above.
+
 ## Subagent Workflows (`.agents/agents/`)
 
 These are documented personas/workflows to adopt when a task matches their trigger, since this harness may not
@@ -101,6 +116,36 @@ support a dedicated custom-subagent file format:
 
 - `.agents/skills/` contains downloaded and custom skill packs (eg via `uvx library-skills --all`). Consult the
   relevant `SKILL.md` under there when a task matches its domain (Pydantic AI agents, Typer, Logfire, etc.).
+
+## Cross-Provider Compatibility
+
+This repo is meant to work the same way regardless of which AI coding tool is doing the work (GitHub Copilot,
+Claude Code, Codex, others later). The convention that makes that possible: `.agents/` holds the actual,
+provider-agnostic content, and every provider-specific integration point is a thin reference into it rather than
+a duplicate copy.
+
+- **Instructions**: root `AGENTS.md` and root `CLAUDE.md` are each a one-line `@.agents/agents.md` /
+  `@AGENTS.md` import (see their own file contents) — all real instruction content lives in this file
+  (`.agents/agents.md`) and the scoped guidance it links to. `.github/copilot-instructions.md` is the one known
+  exception today (a full duplicate, not a reference, since Copilot's own instructions format doesn't support
+  cross-file imports the same way) — keep it in sync by hand if a change here matters for Copilot specifically,
+  rather than assuming it updates itself.
+- **Skills**: `.agents/skills/` (managed by the `library-skills` tool, see
+  `.agents/skills/library-skills/SKILL.md`) is the agnostic source. `uvx library-skills --all` (no `--claude`)
+  keeps it current after adding/updating a package that bundles skills. Provider-specific skill directories point
+  at it with a single directory-level symlink rather than per-skill copies or per-skill symlinks — eg
+  `.claude/skills` is literally `ln -s ../.agents/skills .claude/skills`, so anything added to or removed from
+  `.agents/skills/` is immediately visible to that provider with no separate sync step. (Claude Code has no
+  native setting to point skill discovery at an arbitrary directory as of this writing — `skillsPaths` /
+  `skillsDirectories` are open feature requests upstream — so the symlink is the workaround, chosen over
+  `library-skills`' own `--claude` per-skill-symlink mode for zero ongoing maintenance; the tradeoff is it
+  bypasses whatever per-skill Claude-compatibility filtering that tool does, exposing everything in
+  `.agents/skills/` to Claude Code sight-unseen.) When wiring up a new provider's own skills directory, prefer
+  the same single-symlink shape unless that provider can't follow symlinks, in which case fall back to
+  `uvx library-skills install --claude --all --yes --copy`-style per-skill copies for that provider only.
+
+When adding support for a new AI tool/provider, follow the same shape: a minimal provider-specific stub file or
+directory that references `.agents/` content, never a second copy of it.
 
 ## Deferred Ideas
 
