@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from pydantic_ai import Agent
 from pydantic_ai_harness import Coder
 
+__all__ = ["agent"]
 # agent = Agent("openai:gpt-5.6-sol", capabilities=[Coder()])
 agent = Agent("openai:gpt-5.6-sol")
 
