@@ -242,6 +242,8 @@ class Cell(Vertical):
         switching a cell's mode (``set_mode``) automatically switches what
         Tab/live-typing complete against, no separate rewiring needed.
         """
+        if self.mode == "ai":
+            return []
         if self.mode == "sql":
             return sql_completion.complete(source, line, column, self.kernel.sql_schema())
         return completion.complete(source, line, column, self.kernel.namespace)
@@ -250,8 +252,12 @@ class Cell(Vertical):
         """Same mode-dispatch as ``_complete``, for the same reason: SQL's
         trigger rule (space counts, see ``sql_completion.is_trigger_char``)
         differs from Python's (jedi's, ``completion.is_trigger_char``), and
-        it needs to switch the moment a cell's mode does.
+        it needs to switch the moment a cell's mode does. AI mode is prose,
+        not code, so it never triggers a popup at all -- Python's jedi
+        completions against the kernel namespace made no sense there.
         """
+        if self.mode == "ai":
+            return False
         if self.mode == "sql":
             return sql_completion.is_trigger_char(ch)
         return completion.is_trigger_char(ch)

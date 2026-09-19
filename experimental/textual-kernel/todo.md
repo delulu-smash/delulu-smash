@@ -33,6 +33,8 @@
 30. improve progress bar to be better cosmetic https://textual.textualize.io/blog/2022/11/24/spinners-and-progress-bars-in-textual/
 31. see if we want external image link to fetch and render or just store locally (originally ai didnt fetch on own)
 32. should we implement full image protocol in https://euporie.readthedocs.io/en/latest/pages/installation.html#kitty-s-terminal-graphics-protocol
+33. having AI chat autocomplete (with markdown snippets, if could use vscode settings)
+34. ways to have AI save checkpoints in git so can easily revert
 
 # agent file structure or suggester
 
