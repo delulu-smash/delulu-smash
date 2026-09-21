@@ -5,7 +5,7 @@
 This is not meant to be an exhaustive list, but accumlation of players and matches I have learned a lot from to date
 ```
 
-::::{dropdown} Current Top 100 Little Mac (2025)
+::::{dropdown} Current Top 100 Little Mac
 ![Current Top 100 Little Macs](https://assets.delulu-smash.com/ssbu/current_top_little_macs.jpg)
 ::::
 
