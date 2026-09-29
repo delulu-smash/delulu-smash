@@ -154,7 +154,7 @@ One of three cell modes (Python, shell, [SQL](#sql-mode)), cycled with
   (`Cell.PYTHON_ICON` / `Cell.TERMINAL_ICON` / `Cell.SQL_ICON` in `cell.py`,
   all from the Devicons set: `nf-dev-python` U+E73C, `nf-dev-terminal`
   U+E795, `nf-dev-database` U+E706 — see
-  [spec/aesthetics.md](spec/aesthetics.md) for why they're kept to one icon
+  [spec/experimental/textual-kernel/aesthetics.md](../../spec/experimental/textual-kernel/aesthetics.md) for why they're kept to one icon
   set) rather than plain text or emoji — see [Run](#run) above for
   installing one. **Requires the terminal to actually be running a Nerd
   Font**, or these render as tofu/empty boxes — not something the app

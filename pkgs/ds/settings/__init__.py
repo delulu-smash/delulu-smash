@@ -14,11 +14,13 @@ class OpenApiKey(SecretStr):
     """OpenAI API key (more user friendly printed secret)"""
 
     def _display(self) -> str:
-        # print with first 15 characters rest * (no longer than 30 characters)
+        # Show the first 15 and last 4 characters (no longer than 30 characters),
+        # which show up on the openai dashbaord
         secret_value = self.get_secret_value()
         if len(secret_value) > 30:
-            return f"{secret_value[:15]}{'*' * 15}"
-        return f"{secret_value[:15]}{'*' * (len(secret_value) - 15)}"
+            return f"{secret_value[:15]}{'*' * 11}{secret_value[-4:]}"
+        suffix_start = max(15, len(secret_value) - 4)
+        return f"{secret_value[:15]}{'*' * max(0, len(secret_value) - 19)}{secret_value[suffix_start:]}"
 
 
 # TODO: look at use of https://pydantic.dev/docs/validation/latest/concepts/pydantic_settings/

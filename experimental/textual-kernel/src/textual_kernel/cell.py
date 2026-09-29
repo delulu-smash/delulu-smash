@@ -178,14 +178,14 @@ class Cell(Vertical):
     SHELL_PREFIX = "!"
     # Nerd Font glyphs, all from the same Devicons set (nf-dev-*) so the
     # three modes read as one coherent icon family rather than a grab-bag of
-    # sets -- see spec/aesthetics.md. Requires the terminal to actually be
+    # sets -- see spec/experimental/textual-kernel/aesthetics.md. Requires the terminal to actually be
     # running a Nerd Font -- see "JetBrainsMono Nerd Font Mono" set up for
     # VSCode's integrated terminal via terminal.integrated.fontFamily in
     # settings.json.
     PYTHON_ICON = ""
     TERMINAL_ICON = ""
     SQL_ICON = ""
-    # Devicons has no "AI"/robot concept at all, so per spec/aesthetics.md's
+    # Devicons has no "AI"/robot concept at all, so per spec/experimental/textual-kernel/aesthetics.md's
     # "only reach for a different set if that set doesn't have the concept"
     # this one glyph comes from Material Design Icons instead (nf-md-robot).
     AI_ICON = "󰚩"

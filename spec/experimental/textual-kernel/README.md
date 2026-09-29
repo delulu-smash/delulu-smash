@@ -1,7 +1,7 @@
 # spec
 
 Design requirements and constraints for textual-kernel, kept separate from the
-top-level `README.md` (which documents what's actually built). One file per
+project's own `experimental/textual-kernel/README.md` (which documents what's actually built). One file per
 concern, written before or alongside the implementation so intent doesn't only
 live in commit messages or our heads.
 
@@ -15,5 +15,5 @@ live in commit messages or our heads.
   shared display pipeline instead of a bespoke widget per feature.
 
 When a spec item is fully satisfied and stable, its content should end up
-reflected in the top-level `README.md` too — the spec says what must hold,
+reflected in the project's `README.md` too — the spec says what must hold,
 the README says what does.

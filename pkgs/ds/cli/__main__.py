@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import typer
+from ds.cli.ai import ai_app
 from ds.cli.data import data_app
 from ds.cli.docs import docs_app
 from ds.cli.publish import publish_cmd
@@ -22,3 +23,4 @@ app.add_typer(docs_app, name="docs")
 app.add_typer(ui_app, name="ui")
 app.add_typer(settings_app, name="settings")
 app.add_typer(data_app, name="data")
+app.add_typer(ai_app, name="ai")

@@ -89,20 +89,23 @@ Before editing files in one of these folders, read the matching file below for d
 | `tools/**`  | @.agents/instructions/tools.md                                        |
 | `local/**`  | @.agents/instructions/local.md                                        |
 
-## Spec Folders (Monorepo)
+## Specs (`spec/`)
 
-Several independent projects in this monorepo keep their own `spec/` folder documenting design/behavior:
+All design/behavior specs live in a single root `spec/` folder that mirrors the repo's directory structure, the
+same way a root Python `tests/` folder mirrors the source tree. The spec for `<path>` lives at `spec/<path>/`:
 
-- `pkgs/ds/calc/spec/`
-- `experimental/textual-kernel/spec/`
+- `pkgs/ds/calc/` → `spec/pkgs/ds/calc/`
+- `experimental/textual-kernel/` → `spec/experimental/textual-kernel/`
 
-Before doing non-trivial work inside one of these subprojects, read every `spec/*.md` file found in:
+Before doing non-trivial work on files under `<path>`, read every file in `spec/<path>/` plus the files sitting
+directly in each ancestor spec folder up to `spec/` itself (eg for `pkgs/ds/calc/foo.py`: `spec/pkgs/ds/calc/`,
+then `spec/pkgs/ds/`, `spec/pkgs/`, `spec/`), so broader specs aren't missed. Don't read sibling spec folders
+(eg `spec/experimental/` when working in `pkgs/`) unless the task spans them.
 
-1. the subproject's own directory, and
-2. each ancestor directory between it and this repo root
-
-so specs that apply broadly (not just at the subproject's own level) don't get missed. When a new project grows
-its own `spec/` folder, add it to the list above.
+Conventions:
+- Never create a `spec/` folder inside a subproject; add a mirrored folder under root `spec/` instead.
+- Spec folders may hold supporting non-Markdown files (eg `spec/pkgs/ds/calc/library.py` as a reference model).
+- Link to specs from code/READMEs by their full repo path (eg `spec/experimental/textual-kernel/aesthetics.md`).
 
 ## Subagent Workflows (`.agents/agents/`)
 
