@@ -105,6 +105,8 @@ then `spec/pkgs/ds/`, `spec/pkgs/`, `spec/`), so broader specs aren't missed. Do
 Conventions:
 - Never create a `spec/` folder inside a subproject; add a mirrored folder under root `spec/` instead.
 - Spec folders may hold supporting non-Markdown files (eg `spec/pkgs/ds/calc/library.py` as a reference model).
+- Skip `todo.md` files anywhere under `spec/` when loading spec context; they're the user's personal backlog
+  notes, not specs, and shouldn't be treated as requirements. Only read them if the user explicitly asks.
 - Link to specs from code/READMEs by their full repo path (eg `spec/experimental/textual-kernel/aesthetics.md`).
 
 ## Subagent Workflows (`.agents/agents/`)
@@ -202,6 +204,23 @@ directory that references `.agents/` content, never a second copy of it.
   shell wrapper in the same folder.
 - The shell wrapper should stay thin and call the Python script via `uv run`, unless the user explicitly asks for
   shell-only or Python-only.
+
+## Linting
+
+Lint rules live in root `pyproject.toml` (`[tool.ruff]`) and run through the pre-commit hooks in
+`.pre-commit-config.yaml`.
+
+- Before finishing a task that changed Python, or before committing: stage your changes (`git add`), then run
+  `uv run ds lint run` (exactly what `git commit` runs, auto-fixes included). If it reports that hooks modified
+  files, run it once more; only what still fails is a real error. Use `uv run ds lint run --all-files` to check
+  without staging.
+- `uv run ds lint file <path>` is a fast, report-only check of specific files (no auto-fixes, unused imports
+  ignored). Claude Code runs it automatically after every Python edit via `.agents/hooks/post_edit_lint.sh`
+  (wired up in `.claude/settings.json`).
+- Fix lint errors only in code you touched, not pre-existing ones elsewhere in the file, unless asked.
+- If a rule genuinely doesn't fit a specific line, add a targeted `# noqa: CODE` with a short reason rather than
+  contorting the code or retrying repeatedly.
+- `experimental/` is temporarily excluded from ruff linting (see `[tool.ruff.lint] exclude`).
 
 ## Domain Note
 

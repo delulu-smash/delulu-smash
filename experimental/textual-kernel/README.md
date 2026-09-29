@@ -49,8 +49,10 @@ uv run textual-kernel
   it does nothing in your terminal, use `F5` instead.
 - `Ctrl+N` — insert a new empty cell after the focused one, in the same mode
 - `Ctrl+D` — delete the focused cell
-- `Ctrl+J` — cycle the focused cell's mode: Python → shell → SQL → Python
-  (see [Shell mode](#shell-mode) and [SQL mode](#sql-mode) below)
+- `Ctrl+J` — cycle the focused cell's mode: AI → Python → shell → Smash →
+  AI (see [Shell mode](#shell-mode) and [Smash mode](#smash-mode) below).
+  [SQL mode](#sql-mode) is temporarily hidden from the cycle — add `"sql"`
+  back to `Cell.MODES` (`cell.py`) to re-enable it
 - `Ctrl+Q` — quit
 
 ## Run in a browser
@@ -174,9 +176,41 @@ One of three cell modes (Python, shell, [SQL](#sql-mode)), cycled with
   about bash, and typing a shell command would otherwise pop up bogus
   Python completions and steal that same `Enter` keypress to accept one).
 
-Either way, each shell run gets its own subprocess — not a persistent shell
-— so `cd` and env var changes don't carry over between cells, matching
-Jupyter/IPython's own `!` behavior rather than a real integrated shell.
+Either way, commands run in **one persistent bash session** per kernel
+(`shell.py`'s `ShellSession`, held by `Kernel.shell_session`) — so `cd`,
+`export`, shell variables and functions carry over between cells, like
+Python variables do in the kernel namespace. The session starts in the
+delulu-smash repo root (found via `git rev-parse --show-toplevel` from the
+package's own location, whatever directory the app was launched from). A
+shell-mode cell's badge shows the session's current directory (where the
+command will run).
+
+The session runs on a pseudo-terminal, so commands behave as in a real
+terminal, including ones that ask for input:
+
+- **Output streams in live**, stdout and stderr merged (as in a terminal).
+  The run happens in a worker, so the UI stays responsive, and there's no
+  timeout — long commands (eg a package install) are fine.
+- **An input line appears under the output** while the command runs, and
+  takes focus: type a reply and press `Enter` to send it (a `sudo`
+  password, a `[Y/n]`, anything `read` asks for). While the command reads a
+  password (the terminal has echo off, as `sudo`/`ssh`/`read -s` set it),
+  the input line masks what you type.
+- **`Ctrl+C`** in the input line interrupts the command, as in a terminal:
+  the rest of that cell's command is abandoned (exit code 130), but the
+  session and its cwd/env survive. **`Ctrl+D`** sends end-of-input (for
+  `cat` and the like) — inside the input line these override the app's own
+  `Ctrl+C` (quit) and `Ctrl+D` (delete cell).
+- When the command finishes, focus moves on to the next cell as usual (if
+  the input line still had focus).
+- A cell that runs `exit` ends the session; the next shell cell starts a
+  fresh one in the same directory (env vars are lost).
+- Full-screen programs (`vim`, `less`, `htop`) still don't work — cell
+  output is a scrollback log, not a screen — so pagers are forced to `cat`.
+
+POSIX only (Linux/macOS). On Windows, where there's no pty, each command
+falls back to its own subprocess, IPython `!`-style: no persistence, no
+input, 60s timeout.
 
 **Bash syntax highlighting**: `theme.py`'s `EVERFOREST_TEXT_AREA.syntax_styles`
 was built against Python's tree-sitter captures (`python.scm`); bash's own
@@ -192,16 +226,13 @@ color (`ls --color=always`, `grep --color=always`, `git -c color.ui=always
 status`, ...) renders with its real colors instead of raw escape codes or
 plain text.
 
-This only covers commands that *emit* ANSI in the first place. Since our
-subprocess is a plain pipe rather than a pty, most tools auto-detect that
-and disable their own coloring by default (`isatty()` is false) — same as
-piping to `less` or a file. Giving the subprocess a real pty so tools
-self-color unprompted was considered too, but rejected here: it merges
-stdout/stderr into one stream (losing today's separate error styling),
-risks hangs on anything that starts expecting interactive input once it
-thinks it has a real terminal, and breaks full-screen programs (`less`,
-`vim`, `htop`) that assume cursor-addressable display rather than a
-scrollback log.
+Since the shell session runs on a pty, tools see a real terminal and color
+their own output unprompted. (An earlier version used plain pipes and
+rejected a pty for merging stdout/stderr, hanging on commands that wait for
+input, and breaking full-screen programs. The first is accepted now, as a
+real terminal does the same; the input line and `Ctrl+C` fix the second;
+the third still holds, see above.) The Windows subprocess fallback still
+uses pipes, so it relies on the forced-color env vars in `kernel.py`.
 
 ## SQL mode
 
@@ -335,6 +366,30 @@ A few refinements on top of that base heuristic:
   never end in a space, so Python cells are unaffected: accepting there
   stays quiet, same as before.
 
+## Smash mode
+
+SQL mode pointed at the repo's real Super Smash Bros. Ultimate data instead
+of the sample sqlite database — an addition to SQL mode, not a replacement
+(SQL mode still queries the sample database, though it's temporarily hidden
+from the `Ctrl+J` cycle). Same multi-line editor, SQL highlighting, schema-aware
+autocomplete, and `DataTable` output as SQL mode, and the same database
+icon (`nf-dev-database`); its own accent color (`$success`) tells them apart.
+
+Queries run against `Kernel.smash_db`, a `ds.data.SmashDb` — every
+`pkgs/ds/data/*.parquet` file registered as a table named by its filename
+(`char`, `framedata`, ...) in a Polars `SQLContext`, so the SQL dialect is
+Polars' rather than SQLite's. The connection badge reads `SmashDb`. Autocomplete's table/column candidates come from
+`SmashDb.tables()`/`table_schema()` (parquet footer metadata only, no rows
+read), through the same `sql.introspect_schema()` → `sql_completion.py`
+path as SQL mode; `sql.py` just has a `SmashDb` case alongside its `sqlite3`
+ones. `CREATE TABLE x AS SELECT ...` works and shows up in completion
+immediately, but only lives in memory for the session — the parquet files
+are never written.
+
+The parquet files are stored in Git LFS — without `git lfs pull` they're
+just pointer files, and every query fails with a parquet read error (and
+autocomplete offers no tables, since unreadable tables are skipped).
+
 ## Display
 
 Like Jupyter, the value of a trailing bare expression is shown as `Out[n]`.
@@ -346,7 +401,10 @@ code path):
 - `polars.DataFrame` / `polars.Series` and `pandas.DataFrame` / `pandas.Series`
   render as a real Textual [`DataTable`](https://textual.textualize.io/widgets/data_table/)
   — scrollable, zebra-striped, capped at 500 rows / 50 columns, with a
-  "`n` of `total` rows" caption when truncated. Click/Tab into the table and
+  "`n` of `total` rows" caption when truncated. Each column header shows its
+  dtype dimmed under the name, like polars' own repr (polars' short names —
+  `i64`, `str`, `list[f64]` — or pandas' `int64`/`object`), so SQL and Smash
+  query results show their types too. Click/Tab into the table and
   press `Ctrl+C` to copy — via `CopyableDataTable` in `cell.py`, since
   `DataTable` has no `Ctrl+C` of its own. It tries the dataframe's *own*
   native clipboard export first (polars' `write_clipboard()` / pandas'

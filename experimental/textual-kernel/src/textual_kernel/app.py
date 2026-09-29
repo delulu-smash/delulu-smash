@@ -45,9 +45,7 @@ class NotebookApp(App):
     async def on_mount(self) -> None:
         await self.add_cell(focus=True)
 
-    async def add_cell(
-        self, *, focus: bool = False, after: Cell | None = None, mode: str = "ai"
-    ) -> Cell:
+    async def add_cell(self, *, focus: bool = False, after: Cell | None = None, mode: str = "ai") -> Cell:
         cell = Cell(self.kernel)
         container = self.query_one("#cells", VerticalScroll)
         if after is None:
@@ -79,7 +77,17 @@ class NotebookApp(App):
         if cell is None:
             return
         await cell.run_cell()
+        if cell.shell_running:
+            # A shell command still running (maybe waiting for input) --
+            # focus stays on it; on_cell_shell_finished moves on once it's done.
+            return
+        await self._advance_from(cell)
 
+    async def on_cell_shell_finished(self, message: Cell.ShellFinished) -> None:
+        if message.had_focus and message.cell.is_attached:
+            await self._advance_from(message.cell)
+
+    async def _advance_from(self, cell: Cell) -> None:
         cells = list(self.query(Cell))
         if cell is cells[-1]:
             await self.add_cell(focus=True, mode=cell.mode)

@@ -2,8 +2,8 @@
 """Jupyter-style rich display for a cell's return value.
 
 ``dataframe_view`` recognizes common dataframe types and returns plain
-(columns, rows, total_row_count) data for the caller to feed into a Textual
-``DataTable``. ``image_view`` recognizes a ``PIL.Image.Image`` and passes it
+(columns, dtypes, rows, total_row_count) data for the caller to feed into a
+Textual ``DataTable``. ``image_view`` recognizes a ``PIL.Image.Image`` and passes it
 straight through for the caller to feed into ``textual_image``'s ``Image``
 widget (see ``cell.py``), which itself picks the terminal's best available
 graphics protocol (Kitty Graphics Protocol, Sixel, or a Unicode halfblock
@@ -41,7 +41,8 @@ MAX_COLS = 50
 FETCH_TIMEOUT_SECONDS = 10.0
 MAX_REMOTE_IMAGE_BYTES = 10 * 1024 * 1024
 
-DataFrameView = tuple[list[str], list[tuple[Any, ...]], int]
+# (column names, dtype labels -- one per column, rows, total row count)
+DataFrameView = tuple[list[str], list[str], list[tuple[Any, ...]], int]
 
 # ``![alt](link)`` -- ``link`` captured whole (including an optional
 # ``"title"`` after the path/URL, which real Markdown allows) since only
@@ -59,7 +60,7 @@ def to_renderable(value: Any) -> RenderableType | None:
 
 
 def dataframe_view(value: Any) -> DataFrameView | None:
-    """Return (columns, rows, total_row_count) for known dataframe types."""
+    """Return (columns, dtypes, rows, total_row_count) for known dataframe types."""
     for builder in (_polars_view, _pandas_view):
         view = builder(value)
         if view is not None:
@@ -80,8 +81,20 @@ def _polars_view(value: Any) -> DataFrameView | None:
 
     head = value.head(MAX_ROWS)
     columns = list(head.columns)[:MAX_COLS]
+    dtypes = [_polars_dtype_label(dtype) for dtype in head.dtypes[:MAX_COLS]]
     rows = [tuple(_cell_str(v) for v in row[:MAX_COLS]) for row in head.rows()]
-    return columns, rows, value.height
+    return columns, dtypes, rows, value.height
+
+
+def _polars_dtype_label(dtype: Any) -> str:
+    """Polars' own short dtype names (``i64``, ``str``, ``list[f64]``) --
+    what its repr prints under each column header. ``_string_repr`` is
+    private, so fall back to the full name (``Int64``) if it ever goes away.
+    """
+    try:
+        return dtype._string_repr()
+    except AttributeError:
+        return str(dtype)
 
 
 def _pandas_view(value: Any) -> DataFrameView | None:
@@ -96,12 +109,10 @@ def _pandas_view(value: Any) -> DataFrameView | None:
         return None
 
     head = value.head(MAX_ROWS)
-    columns = list(head.columns)[:MAX_COLS]
-    rows = [
-        tuple(_cell_str(v) for v in row[:MAX_COLS])
-        for row in head.itertuples(index=False, name=None)
-    ]
-    return columns, rows, len(value)
+    columns = [str(column) for column in head.columns[:MAX_COLS]]
+    dtypes = [str(dtype) for dtype in head.dtypes.iloc[:MAX_COLS]]
+    rows = [tuple(_cell_str(v) for v in row[:MAX_COLS]) for row in head.itertuples(index=False, name=None)]
+    return columns, dtypes, rows, len(value)
 
 
 def image_view(value: Any) -> PILImage | None:
@@ -208,9 +219,10 @@ async def fetch_remote_image(url: str) -> PILImage | None:
 
     body = bytearray()
     try:
-        async with httpx2.AsyncClient(
-            timeout=FETCH_TIMEOUT_SECONDS, follow_redirects=True, max_redirects=3
-        ) as client, client.stream("GET", url) as response:
+        async with (
+            httpx2.AsyncClient(timeout=FETCH_TIMEOUT_SECONDS, follow_redirects=True, max_redirects=3) as client,
+            client.stream("GET", url) as response,
+        ):
             response.raise_for_status()
             async for chunk in response.aiter_bytes():
                 body.extend(chunk)

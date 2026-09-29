@@ -8,6 +8,7 @@ import typer
 from ds.cli.ai import ai_app
 from ds.cli.data import data_app
 from ds.cli.docs import docs_app
+from ds.cli.lint import lint_app
 from ds.cli.publish import publish_cmd
 from ds.cli.settings import settings_app
 from ds.cli.ui import ui_app
@@ -15,7 +16,7 @@ from ds.cli.ui import ui_app
 app = typer.Typer(
     # some locals contains user passwrods so want ensure dont
     # to CLI
-    # pretty_exceptions_enable=False
+    # pretty_exceptions_enable=False  # noqa: ERA001 -- kept as a ready-to-enable option
 )
 app.command(name="publish")(publish_cmd)
 
@@ -24,3 +25,4 @@ app.add_typer(ui_app, name="ui")
 app.add_typer(settings_app, name="settings")
 app.add_typer(data_app, name="data")
 app.add_typer(ai_app, name="ai")
+app.add_typer(lint_app, name="lint")

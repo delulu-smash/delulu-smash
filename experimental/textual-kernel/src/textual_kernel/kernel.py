@@ -11,22 +11,28 @@ IPython/Jupyter's interactive behavior.
 from __future__ import annotations
 
 import ast
+import asyncio
 import contextlib
 import io
 import os
 import sqlite3
 import subprocess
 import traceback
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from typing import Any, Awaitable, Callable
+from typing import Any
 
 import ds.ai
+import ds.data
 
-from . import sql
+from . import shell, sql
 
+# Only for the one-subprocess-per-command fallback (Windows, see
+# ``_run_shell_subprocess``) -- the pty session has no timeout, since Ctrl+C
+# can interrupt it and long commands (eg a package install) are normal there.
 SHELL_TIMEOUT_SECONDS = 60
 
-# subprocess.run's pipes aren't a tty, so most CLI tools' color "auto" mode
+# The fallback subprocess's pipes aren't a tty, so most CLI tools' color "auto" mode
 # (isatty() checks) silently disables itself -- these are the env vars tools
 # commonly accept as an explicit override instead, so a shell cell's output
 # still gets the same colors it would in a real terminal:
@@ -37,7 +43,9 @@ SHELL_TIMEOUT_SECONDS = 60
 # PAGER/GIT_PAGER/MANPAGER are pinned to `cat` because faking "this is a
 # terminal" also makes git/man believe a pager is safe to launch -- with no
 # real terminal attached to page through, that would just hang until
-# SHELL_TIMEOUT_SECONDS instead of returning output.
+# SHELL_TIMEOUT_SECONDS instead of returning output. The pty session (a real
+# terminal) needs the pager overrides for the same reason: the cell output is
+# a scrollback log, not a screen a pager can take over.
 _SHELL_COLOR_ENV = {
     "CLICOLOR_FORCE": "1",
     "CLICOLOR": "1",
@@ -48,6 +56,24 @@ _SHELL_COLOR_ENV = {
     "GIT_PAGER": "cat",
     "MANPAGER": "cat",
 }
+
+
+def _repo_root() -> str:
+    """The delulu-smash repo root -- where shell cells start, regardless of
+    which directory the app was launched from. Found via git from this
+    file's own location (it lives inside the repo), falling back to the
+    launch directory if that fails (eg git missing).
+    """
+    try:
+        return subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            cwd=os.path.dirname(os.path.abspath(__file__)),
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.strip()
+    except (OSError, subprocess.CalledProcessError):
+        return os.getcwd()
 
 
 @dataclass
@@ -70,12 +96,32 @@ class Kernel:
         # later is a one-line swap, not a rewrite.
         self.sql_connection = sqlite3.connect(":memory:")
         sql.seed_sample_database(self.sql_connection)
+        # The repo's real Smash data (``ds.data``'s parquet tables), for
+        # smash-mode cells -- a second, independent SQL target alongside the
+        # sample sqlite database above, not a replacement for it. Every
+        # ``sql_*``/``run_sql`` method below takes an optional
+        # ``connection`` to pick between the two (default: sqlite).
+        self.smash_db = ds.data.init_db()
         # pydantic-ai's own message objects, accumulated across ``run_ai``
         # calls (like ``namespace`` for Python) so later AI cells see the
         # full conversation so far, not just their own prompt.
         self.ai_history: list = []
+        # One persistent bash for every shell cell (see shell.py), so cd/env
+        # carry over between cells like variables do in ``namespace``.
+        self.shell_root = _repo_root()
+        self.shell_session = (
+            shell.ShellSession({**os.environ, **_SHELL_COLOR_ENV, "TERM": "xterm-256color"}, cwd=self.shell_root)
+            if shell.PTY_SUPPORTED
+            else None
+        )
 
-    def sql_connection_info(self) -> tuple[str, str]:
+    def shell_cwd(self) -> str:
+        """The shell session's working directory (where the next shell cell
+        runs) -- surfaced in shell-mode cells' badge.
+        """
+        return self.shell_session.cwd if self.shell_session is not None else self.shell_root
+
+    def sql_connection_info(self, connection: Any = None) -> tuple[str, str]:
         """``(engine, target)`` read straight off ``sql_connection`` itself
         (see ``sql.describe_connection``) -- surfaced by the UI (Cell's
         SQL-mode connection badge) so it's visible what a query is actually
@@ -83,16 +129,17 @@ class Kernel:
         ``sql_connection`` for a different driver later and this reflects
         it automatically.
         """
-        return sql.describe_connection(self.sql_connection)
+        return sql.describe_connection(connection or self.sql_connection)
 
-    def sql_schema(self) -> dict[str, list[str]]:
+    def sql_schema(self, connection: Any = None) -> dict[str, list[str]]:
         """``{table: [column, ...]}`` read straight off ``sql_connection``
         (see ``sql.introspect_schema``) -- the candidate pool for SQL-mode
         completion (``sql_completion.py``). Re-queried on every call rather
-        than cached: cheap against an in-memory sample database, and always
-        reflects any DDL a cell has actually run.
+        than cached: cheap against an in-memory sample database (and against
+        ``smash_db``, where it only reads each parquet file's footer), and
+        always reflects any DDL a cell has actually run.
         """
-        return sql.introspect_schema(self.sql_connection)
+        return sql.introspect_schema(connection or self.sql_connection)
 
     def run(self, code: str) -> CellResult:
         self.execution_count += 1
@@ -129,15 +176,59 @@ class Kernel:
         result.stderr = stderr.getvalue()
         return result
 
-    def run_shell(self, command: str) -> CellResult:
-        """Run ``command`` in a subshell (IPython-style ``!`` escape).
+    async def run_shell(self, command: str, *, on_output: Callable[[str], Awaitable[None]] | None = None) -> CellResult:
+        """Run ``command`` in the persistent shell session (see shell.py).
 
-        Not a persistent shell -- each call gets a fresh subprocess, so
-        ``cd``/env var changes don't carry over between cells.
+        Async, like ``run_ai``: a command can run for minutes or sit waiting
+        for input (a ``sudo`` password), and the UI has to stay responsive
+        meanwhile -- both to show output as it streams in via ``on_output``
+        and to accept the input (``send_shell_input``) or Ctrl+C
+        (``interrupt_shell``) it's waiting for. Output is stdout and stderr
+        merged, as in a real terminal.
         """
         self.execution_count += 1
         result = CellResult(execution_count=self.execution_count)
 
+        if self.shell_session is None:
+            return await asyncio.to_thread(self._run_shell_subprocess, command, result, self.shell_root)
+
+        try:
+            output, status = await self.shell_session.run(command, on_output=on_output)
+        except OSError as exc:
+            result.error = str(exc)
+            return result
+
+        result.stdout = output
+        if status is None:
+            result.error = "[shell exited -- the next shell cell starts a new one]"
+        elif status != 0:
+            result.error = f"[exit code {status}]"
+        return result
+
+    def send_shell_input(self, text: str) -> None:
+        if self.shell_session is not None:
+            self.shell_session.send_input(text)
+
+    def send_shell_eof(self) -> None:
+        if self.shell_session is not None:
+            self.shell_session.send_eof()
+
+    def interrupt_shell(self) -> None:
+        if self.shell_session is not None:
+            self.shell_session.interrupt()
+
+    def shell_input_is_hidden(self) -> bool:
+        """Whether the running command is reading a password (terminal echo
+        off) -- the UI masks its input field while this is True.
+        """
+        return self.shell_session is not None and self.shell_session.input_is_hidden()
+
+    @staticmethod
+    def _run_shell_subprocess(command: str, result: CellResult, cwd: str) -> CellResult:
+        """Fallback where there's no pty (Windows): a fresh subprocess per
+        command, IPython ``!``-style -- ``cd``/env changes don't carry over
+        and nothing can prompt for input.
+        """
         try:
             proc = subprocess.run(
                 command,
@@ -145,7 +236,9 @@ class Kernel:
                 capture_output=True,
                 text=True,
                 timeout=SHELL_TIMEOUT_SECONDS,
+                cwd=cwd,
                 env={**os.environ, **_SHELL_COLOR_ENV},
+                check=False,
             )
             result.stdout = proc.stdout
             result.stderr = proc.stderr
@@ -155,25 +248,22 @@ class Kernel:
             result.error = f"[timed out after {SHELL_TIMEOUT_SECONDS}s]"
         except OSError as exc:
             result.error = str(exc)
-
         return result
 
-    def run_sql(self, query: str) -> CellResult:
+    def run_sql(self, query: str, connection: Any = None) -> CellResult:
         self.execution_count += 1
         result = CellResult(execution_count=self.execution_count)
-        outcome = sql.execute(self.sql_connection, query)
+        outcome = sql.execute(connection or self.sql_connection, query)
         result.stdout = outcome.stdout
         result.value = outcome.value
         result.result_repr = outcome.result_repr
         result.error = outcome.error
         return result
 
-    async def run_ai(
-        self, prompt: str, *, on_delta: Callable[[str], Awaitable[None]] | None = None
-    ) -> CellResult:
+    async def run_ai(self, prompt: str, *, on_delta: Callable[[str], Awaitable[None]] | None = None) -> CellResult:
         """One turn of an AI chat cell, streamed from ``ds.ai.agent``.
 
-        Async (unlike ``run``/``run_shell``/``run_sql``) since a real model
+        Async (unlike ``run``/``run_sql``) since a real model
         call is network-latency-bound rather than near-instant -- awaiting
         it keeps the rest of the UI responsive while a response streams in
         server-side, instead of blocking Textual's event loop.

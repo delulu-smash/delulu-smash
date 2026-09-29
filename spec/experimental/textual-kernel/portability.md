@@ -159,6 +159,25 @@ Two mechanisms, each covering the gap the other leaves (`cell.py`,
 No single mechanism covers both cases, so keep both with the native path
 tried first and OSC 52 as fallback, as done today.
 
+## shell session (pty)
+
+Shell-mode cells run in one persistent bash on a pseudo-terminal
+(`shell.py`), which is what makes `cd`/env persistence, live output, and
+answering prompts (`sudo` passwords, `[Y/n]`) possible. Dependencies:
+
+- `pty`/`termios`/`fcntl` (POSIX only) and `bash` on `PATH`. On Windows,
+  `shell.PTY_SUPPORTED` is False and `Kernel` falls back to one plain
+  subprocess per command: no persistence, no input, 60s timeout.
+- Claiming the pty as the child's controlling terminal (`TIOCSCTTY`), so
+  `/dev/tty` -- what `sudo` and the like open to prompt -- is the pty.
+  Verified on Linux; macOS supports the same ioctl but hasn't been tested.
+- Password masking reads the terminal's echo flag (`termios` on the pty
+  master) rather than matching prompt text, so it works for any program and
+  any locale's prompt wording.
+- `Ctrl+C`/`Ctrl+D` are bound on the shell input line itself, so while it
+  has focus they reach the running command (interrupt / end of input)
+  instead of the App's quit / delete-cell bindings.
+
 ## process
 
 When adding a new interactive feature, check whether it depends on a

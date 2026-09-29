@@ -96,6 +96,9 @@ docstring-code-format = true
 
 # linter specific configs
 [tool.ruff.lint]
+# TEMPORARY: skip linting (not formatting) for experimental/ prototypes while they're in flux --
+# remove to lint them again
+exclude = ["experimental/**"]
 # TODO: remove auto fix of return None to just return (feels awkward)
 # definitions of rules can be found in: https://docs.astral.sh/ruff/rules/
 # we use extend-select so that we get defaults from ruff

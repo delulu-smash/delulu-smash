@@ -29,7 +29,9 @@ frameworks, databases -- not agents), so per the rule above it pulls
 `nf-md-robot` from Material Design Icons instead. Still one glyph from one
 set, chosen once and reused, not a grab-bag -- if a fifth mode later also
 needs something Devicons doesn't have, it should join AI mode in MDI rather
-than pulling from a third set.
+than pulling from a third set. Smash mode reuses SQL mode's `nf-dev-database`
+(`SMASH_ICON = SQL_ICON`) rather than a Smash-specific glyph: both are
+database modes, and the accent color is what distinguishes them.
 
 This is also why these are glyphs and not real inline images (see
 `portability.md`'s fonts/glyphs section for why Material Icon Theme's own
@@ -52,9 +54,10 @@ is focused (existing behavior, unchanged by adding a third mode) so "this
 cell has focus" stays the one visual fact you can never mistake for
 anything else.
 
-Practically: adding a fourth mode later means picking whichever theme role
-hasn't been claimed yet ($error and $success remain free), not inventing a
-new color. If every role is eventually claimed, that itself is a signal
+Practically: adding a new mode later means picking whichever theme role
+hasn't been claimed yet, not inventing a new color. AI mode has since taken
+`$error` and Smash mode `$success`, so every role is now claimed -- see
+below. If every role is eventually claimed, that itself is a signal
 the mode list has grown past what a single accent-color-per-mode scheme can
 distinguish -- worth revisiting the scheme, not just picking a hex value
 that happens to look different enough.

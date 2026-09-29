@@ -53,3 +53,6 @@ ariel counter has larger hitbox than grounded, so like ike up B at ledge better 
 see feedback in https://www.twitch.tv/justjoshmac (he had some tips specific mac data and how can be used that hadnt seen before)
 
 install https://github.com/features/ai/github-app
+
+
+❯ could we have skill or way to tell ai run lints and make corrections. our lints are via
