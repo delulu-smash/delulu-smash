@@ -29,6 +29,13 @@
     1. querying smashdb (need general SQL capability, smash database schema knowledge)
     2. ability to have smash knoweledge base that reads appropriate docs with additional
     specific AI items (eg what synonms are there, etc - may need to separate from base vs deep)
+10. create smash documents that aggregates documentation through web and discord, bet verified and cleaned up (and make clear that is like smash ultimate, not other smash games)
+    1. pull from character discord channels (research them and report findings)
+    2. pull from labbing and other twitter accounts
+    3. pull from smash wiki's
+    4. above should a smash research skill that also knows how to condense the information and edit the relevant markdown files
+    5. treat this as the capability SmashKnowledge (need to see perhaps if need base vs indpeth)? how does it learn efficiently without taking too much of context window?
+    do we need vector database (see https://pydantic.dev/docs/ai/guides/embeddings/)
 
 # TUI
 1. create own AI Tui
