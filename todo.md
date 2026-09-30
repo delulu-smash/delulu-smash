@@ -54,3 +54,6 @@ see feedback in https://www.twitch.tv/justjoshmac (he had some tips specific mac
 
 install https://github.com/features/ai/github-app
 
+TODO: results of SL armour against DK  dont match spreadsheet (think may be how scaling armour and damage for 1v1).
+    add damage along output, and assume 1v1 so display that way
+
