@@ -5,11 +5,12 @@ from pydantic import BaseModel
 from pydantic_ai import Agent
 from pydantic_ai_harness import Coder  # noqa: F401  # used by the commented-out Coder agent below
 
+from ds.ai.knowledge import knowledge_capability
 from ds.ai.smashdb import smashdb_capability
 
 __all__ = ["agent"]
 # agent = Agent("openai:gpt-5.6-sol", capabilities=[Coder()])  # noqa: ERA001  # alt config
-agent = Agent("openai:gpt-5.6-sol", capabilities=[smashdb_capability])
+agent = Agent("openai:gpt-5.6-sol", capabilities=[knowledge_capability, smashdb_capability])
 
 
 class Person(BaseModel):

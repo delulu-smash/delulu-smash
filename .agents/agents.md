@@ -121,6 +121,10 @@ support a dedicated custom-subagent file format:
 
 - `.agents/skills/` contains downloaded and custom skill packs (eg via `uvx library-skills --all`). Consult the
   relevant `SKILL.md` under there when a task matches its domain (Pydantic AI agents, Typer, Logfire, etc.).
+- `.agents/skills/smash-research/` (hand-authored) — use when researching Smash Ultimate knowledge from external
+  links (SmashWiki, Discord, Twitter, etc.) and writing it into `docs/` (eg `docs/mechanics/`).
+- `.agents/skills/docs-writing/` (hand-authored) — use when writing or editing any page under `docs/` (MyST
+  syntax, compact tables, page structure).
 
 ## Cross-Provider Compatibility
 
@@ -235,3 +239,27 @@ Lint rules live in root `pyproject.toml` (`[tool.ruff]`) and run through the pre
 ## Domain Note
 
 - In this repo, "Smash Ultimate" refers to Nintendo's video game Super Smash Bros. Ultimate.
+
+## Smash Knowledge: `docs/` First, Flag Discrepancies
+
+When answering or researching any Smash Ultimate question, `docs/` is the user's reviewed knowledge base and the
+default answer. General AI knowledge and external sources still matter (the user is still learning), so they
+supplement `docs/` rather than being thrown away.
+
+- **Check `docs/` first.** Grep the topic and its synonyms (page frontmatter `keywords` lists them). When it
+  covers the question, answer from it and cite the file (`docs/...md:line`).
+- **Flag any disagreement; never resolve it silently.** If your general knowledge, SmashDb, or an external source
+  contradicts `docs/`, keep the `docs/` answer as the primary one and add a **Discrepancy** note with:
+  - what `docs/` says, with file:line
+  - what the other source says, and where it comes from
+  - how confident you are in each
+  - a quick way to settle it, eg a training-mode lab setup
+- **Fill gaps openly.** If `docs/` doesn't cover something, answer from general knowledge or research. Label it as
+  not from `docs/`, say how confident you are, and offer to add it.
+- **Weigh `docs/` claims unequally.** Claims marked unverified in `% research:` lines, or sitting next to TODOs,
+  are weaker than lab-backed or sourced ones. Say so when that matters.
+- **Don't edit `docs/` to "fix" a discrepancy** unless the user asks. Report it and let them decide.
+- **Staging isn't knowledge.** `local/staging/` holds raw, unreviewed captures (wiki text, Discord threads). Never
+  answer from it; it only feeds the research/curation workflow into `docs/`.
+- Details: `.agents/skills/smash-research/SKILL.md` ("Using docs/ vs other knowledge"). Overall design (layers,
+  retrieval, staging, evals): `spec/pkgs/ds/ai/knowledge_base.md`.

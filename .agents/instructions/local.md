@@ -8,3 +8,5 @@
 - Do not assume content here is canonical product code or intended for long-term version control unless the user explicitly says so.
 - Favor reversible, low-risk edits and avoid spreading local assumptions into reusable packages or app code.
 - If something in `local/` becomes important or reusable, suggest promoting it into a better-scoped repo area.
+- `local/staging/` holds raw Smash research captures (see `.agents/skills/smash-research/SKILL.md`, "Staging").
+  Keep them untouched apart from the frontmatter header and `status` updates.

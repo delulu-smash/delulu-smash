@@ -36,6 +36,7 @@
     4. above should a smash research skill that also knows how to condense the information and edit the relevant markdown files
     5. treat this as the capability SmashKnowledge (need to see perhaps if need base vs indpeth)? how does it learn efficiently without taking too much of context window?
     do we need vector database (see https://pydantic.dev/docs/ai/guides/embeddings/)
+11. having preffered references for researching (so we can note trusted resources, eg twitter accounts, etc )
 
 # TUI
 1. create own AI Tui

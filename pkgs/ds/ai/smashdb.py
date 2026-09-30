@@ -14,12 +14,21 @@ import re
 from functools import cache
 
 import polars as pl
-from pydantic_ai import ModelRetry
+from pydantic import BaseModel, Field
+from pydantic_ai import ModelRetry, Tool
 from pydantic_ai.capabilities import Capability
 
 from ds.data.db import SmashDb, init_db
 
-__all__ = ["find_character", "get_move_framedata", "list_moves", "query_smashdb", "smashdb_capability"]
+__all__ = [
+    "Character",
+    "MoveRef",
+    "find_character",
+    "get_move_framedata",
+    "list_moves",
+    "query_smashdb",
+    "smashdb_capability",
+]
 
 # cap on rows handed back to the model, so a broad query doesn't flood its context
 MAX_ROWS = 200
@@ -48,6 +57,20 @@ MOVE_ALIASES = {
     "uthrow": "Up Throw",
     "dthrow": "Down Throw",
 }
+
+
+class Character(BaseModel):
+    """One roster entry (a row of SmashDb's char table)."""
+
+    id: str = Field(description="Character id used by other tools and framedata.char_id, eg little_mac")
+    name: str = Field(description="Display name, eg Little Mac")
+
+
+class MoveRef(BaseModel):
+    """A move that has frame data for a character."""
+
+    category: str = Field(description="Move group, eg Ground Attacks, Aerial Attacks, Grabs / Throws")
+    move: str = Field(description="Move name as used by get_move_framedata, eg Forward Air")
 
 
 _INSTRUCTIONS = """\
@@ -102,7 +125,7 @@ def _normalize_move(move: str) -> str:
     return MOVE_ALIASES.get(key, m)
 
 
-def find_character(query: str = "") -> list[dict]:
+def find_character(query: str = "") -> list[Character]:
     """Search the character roster by id or display name (case-insensitive substring).
 
     Args:
@@ -115,17 +138,18 @@ def find_character(query: str = "") -> list[dict]:
             pl.col("id").str.contains(q.replace(" ", "_"), literal=True)
             | pl.col("name").str.to_lowercase().str.contains(q, literal=True)
         )
-    return chars.to_dicts()
+    return [Character(**row) for row in chars.select("id", "name").to_dicts()]
 
 
-def list_moves(character: str) -> list[dict]:
+def list_moves(character: str) -> list[MoveRef]:
     """List every move (with its category) that has frame data for a character.
 
     Args:
         character: character id or name, eg 'mario', 'Little Mac'.
     """
     char_id = _resolve_char_id(character)
-    return _framedata_df().filter(pl.col("char_id") == char_id).select("category", "move").to_dicts()
+    moves = _framedata_df().filter(pl.col("char_id") == char_id).select("category", "move")
+    return [MoveRef(**row) for row in moves.to_dicts()]
 
 
 def get_move_framedata(character: str, move: str) -> list[dict]:
@@ -184,7 +208,14 @@ smashdb_capability = Capability(
     id="smashdb",
     description="Smash Ultimate database: character roster and per-move frame data.",
     instructions=_instructions,
-    tools=[find_character, list_moves, get_move_framedata, query_smashdb],
+    # fixed-shape results get models + return schemas; framedata/SQL rows stay dicts since
+    # their columns vary per query (see .agents/instructions/pkgs.md, pydantic-ai section)
+    tools=[
+        Tool(find_character, include_return_schema=True),
+        Tool(list_moves, include_return_schema=True),
+        get_move_framedata,
+        query_smashdb,
+    ],
     # deferred: schema + tool defs only enter context once a Smash question comes up
     defer_loading=True,
 )

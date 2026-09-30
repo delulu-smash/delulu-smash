@@ -38,7 +38,7 @@ Below is centralized collection of resource links. Many of these are referenced 
 * - [Smash Wiki](https://www.ssbwiki.com/Super_Smash_Bros._Ultimate)
   - Good documentation on differnet aspects of smash (Eg mechanics)
 * - [Ultimate Frame Data](https://ultimateframedata.com/smash#)
-  - Best quick reference for of frame data, hitboxes, and general stats on entire cast
+  - Best quick reference for of frame data, hitboxes, and general stats on entire cast, to understand how to read see [about](https://ultimateframedata.com/smash#popup1) & [vod](https://www.youtube.com/watch?v=Q1kH6SkgXSA0)
 * - [Ultimate Hitbox Data](https://ultimate-hitboxes.com/)
   - Similar to Ultimate Frame Data but with larger detail (especially specific internal game data/parameters)
 * - [Ultimate Data Viewer](https://rubendal.github.io/ssbu/#/)

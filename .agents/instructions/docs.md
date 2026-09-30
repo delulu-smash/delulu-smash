@@ -8,3 +8,4 @@
 - Prefer edits that fit content publishing workflows over application architecture patterns.
 - Treat "Smash Ultimate" as Nintendo's Super Smash Bros. Ultimate unless the user says otherwise.
 - When adding structure, optimize for maintainable documentation and site generation clarity.
+- Follow `.agents/skills/docs-writing/SKILL.md` when writing or editing any page

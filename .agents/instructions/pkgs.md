@@ -50,3 +50,28 @@ table (primary key, foreign keys, grain), not as an arbitrary data dump.
 - Use `httpx2` (Pydantic's actively maintained continuation of `httpx`, same API) as the HTTP client, not `httpx`.
 - Before writing any new scraper, verify whether the target site is static HTML or JS-rendered (fetch raw HTML and
   check for the data) before assuming a headless browser is needed.
+
+## pydantic-ai Conventions
+
+Applies to pydantic-ai tools, capabilities and agents (eg `pkgs/ds/ai/`). Reference implementations:
+`pkgs/ds/ai/knowledge.py`, `pkgs/ds/ai/smashdb.py`.
+
+- **Return Pydantic models from tools whose results have a fixed shape**, not `dict` / `list[dict]`. Give
+  every non-obvious field a `Field(description=...)`. For example, `list_docs -> list[DocInfo]` and
+  `find_character -> list[Character]`.
+- **Send return schemas for model-returning tools.** Register them as `Tool(fn, include_return_schema=True)` in
+  the capability's `tools=[...]`. Return schemas are off by default, and without one the model only learns the
+  result shape by calling the tool.
+- **Dicts are fine when the columns vary per call.** Examples: arbitrary SQL results (`query_smashdb`), or
+  polars rows where empty columns are dropped (`get_move_framedata`). Say what the keys mean in the tool
+  docstring instead.
+- **Return `str` when the model needs text as-is**, eg line-numbered doc text for `path:line` citations
+  (`read_doc`).
+- **Tool docstrings are the model's only guidance for arguments.** Document every argument (the `Args:` section
+  becomes the parameter descriptions), with an example value.
+- **Validation errors:** raise `ModelRetry` with an actionable message (valid ids, available headings) rather
+  than returning an error value.
+- **Keep results small:** cap row and character counts (eg `MAX_ROWS`, `MAX_SEARCH_HITS`) so a broad call
+  doesn't flood the context window.
+- **Package domain tools as a `Capability`** with `defer_loading=True`, so its instructions and tool
+  definitions only enter context when relevant.
