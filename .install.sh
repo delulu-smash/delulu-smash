@@ -13,8 +13,7 @@
 set -euo pipefail
 
 uv sync
-# pre-commit is a project dependency (pyproject.toml), so it lives in .venv, not on PATH
-uv run pre-commit install
+# pre-commit is in the pyproject.toml dev group (installed by `uv sync` by default)
 # TODO: add install for ffmpeg (see readme)
 
 # git-lfs: data files (eg pkgs/ds/data/*.parquet, see .gitattributes) are stored in LFS -- without it

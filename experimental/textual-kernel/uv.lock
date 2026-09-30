@@ -713,6 +713,9 @@ requires-dist = [
     { name = "typer", specifier = ">=0.21.1" },
 ]
 
+[package.metadata.requires-dev]
+dev = [{ name = "pytest", specifier = ">=9.1.1" }]
+
 [[package]]
 name = "distlib"
 version = "0.4.3"

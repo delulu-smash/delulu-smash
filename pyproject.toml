@@ -22,7 +22,6 @@ dependencies = [
     "litellm>=1.93.0",
     "loguru>=0.7.3",
     "polars>=1.42.1",
-    "pre-commit>=4.5.1",
     "pydantic>=2.13.4",
     "pydantic-ai>=2.31.1",
     "pydantic-ai-harness>=0.24.0",
@@ -47,6 +46,13 @@ include = [
 # TODO: add smash cli
 [project.scripts]
 ds = "ds.cli.__main__:app"
+
+# developer-only tooling (installed by default with `uv sync`, skipped with `--no-dev`)
+[dependency-groups]
+dev = [
+    "pre-commit>=4.5.1",
+    "pytest>=9.1.1",
+]
 
 ###############################################################################################
 # TESTING CONFIGURATION
@@ -419,11 +425,6 @@ max-doc-length = 95
 # config for "D"
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"
-
-[dependency-groups]
-dev = [
-    "pytest>=9.1.1",
-]
 
 # TODO: see if need
 # [tool.ruff.lint.flake8-type-checking]

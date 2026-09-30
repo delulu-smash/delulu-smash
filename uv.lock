@@ -556,7 +556,6 @@ dependencies = [
     { name = "litellm" },
     { name = "loguru" },
     { name = "polars" },
-    { name = "pre-commit" },
     { name = "pydantic" },
     { name = "pydantic-ai" },
     { name = "pydantic-ai-harness" },
@@ -567,6 +566,7 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "pre-commit" },
     { name = "pytest" },
 ]
 
@@ -580,7 +580,6 @@ requires-dist = [
     { name = "litellm", specifier = ">=1.93.0" },
     { name = "loguru", specifier = ">=0.7.3" },
     { name = "polars", specifier = ">=1.42.1" },
-    { name = "pre-commit", specifier = ">=4.5.1" },
     { name = "pydantic", specifier = ">=2.13.4" },
     { name = "pydantic-ai", specifier = ">=2.31.1" },
     { name = "pydantic-ai-harness", specifier = ">=0.24.0" },
@@ -590,7 +589,10 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-dev = [{ name = "pytest", specifier = ">=9.1.1" }]
+dev = [
+    { name = "pre-commit", specifier = ">=4.5.1" },
+    { name = "pytest", specifier = ">=9.1.1" },
+]
 
 [[package]]
 name = "distlib"

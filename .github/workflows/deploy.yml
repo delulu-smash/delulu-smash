@@ -27,6 +27,26 @@ concurrency:
   group: 'pages'
   cancel-in-progress: false
 jobs:
+  # Runs .pre-commit-config.yaml hooks (ruff, json/yaml checks, nbstripout) in CI, mirroring what
+  # pre-commit/action does (that action is maintenance-only; its README points to pre-commit.ci).
+  # Separate job so lint failures are reported without blocking the docs deploy.
+  lint:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      # hook repos in .pre-commit-config.yaml use SSH URLs; CI has no SSH key, so clone over HTTPS instead
+      - name: Rewrite GitHub SSH URLs to HTTPS
+        run: git config --global url."https://github.com/".insteadOf "git@github.com:"
+      # cache hook environments like pre-commit/action does, keyed on the config
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-3|${{ hashFiles('.pre-commit-config.yaml') }}
+      - name: Run pre-commit hooks
+        run: uvx pre-commit run --all-files --show-diff-on-failure --color=always
   deploy:
     environment:
       name: github-pages
