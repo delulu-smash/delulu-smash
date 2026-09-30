@@ -85,7 +85,7 @@ Known conflicts / gotchas (running list — add to this as we find more):
   other free letters (`a c d e k u v w x y z`) and a widget's bindings shadow
   the App's while the editor has focus. Not yet checked against VSCode's
   intercept list on Windows/Linux (`Ctrl+O` is its "Open File" there);
-  `Ctrl+G` (AI debug toggle) was picked the same way (a left-index home reach
+  `Ctrl+G` (debug toggle) was picked the same way (a left-index home reach
   per `usability.md`, BEL `0x07` in raw mode, which nothing else here uses).
   Also not checked against VSCode, where `Ctrl+G` is "Go to Line";
   `Ctrl+J` (current `cycle_mode` binding — cycles a cell python → shell →

@@ -55,8 +55,8 @@ uv run textual-kernel
   back to `Cell.MODES` (`cell.py`) to re-enable it
 - `Ctrl+O` — copy the focused cell's **o**utput to the clipboard (see
   [Copying output](#copying-output))
-- `Ctrl+G` — toggle the AI debug trace under AI replies (see
-  [AI debug trace](#ai-debug-trace))
+- `Ctrl+G` — toggle debug mode: the debug trace under AI replies (see
+  [Debug trace](#debug-trace))
 - `Ctrl+Q` — quit
 
 ## Run in a browser
@@ -446,7 +446,7 @@ counts until it exits and an AI reply until it has finished streaming,
 including every tool call. It's hidden while a run is in progress and when
 the cell's mode changes (`Cell._finish_run` / `_format_duration`, `cell.py`).
 
-## AI debug trace
+## Debug trace
 
 `Ctrl+G` toggles a collapsible `▶ debug · 3 requests · 1 capability load ·
 1 tool call` section under every AI reply, including replies that already ran.
@@ -462,7 +462,7 @@ at 1500 chars each; the full messages stay in `Kernel.ai_history`.
   `capture_run_messages` so a *failed* run still shows how far it got.
   Rendering is in `ai_debug.py`.
 - The section is always built and hidden by CSS; the toggle only flips an
-  `-ai-debug` class on `#cells`. That rule lives in `NotebookApp.CSS`, not
+  `-debug` class on `#cells`. That rule lives in `NotebookApp.CSS`, not
   `Cell.DEFAULT_CSS`, because Textual scopes a widget's default CSS to that
   widget, so an ancestor selector like `#cells` never matches from inside it.
 

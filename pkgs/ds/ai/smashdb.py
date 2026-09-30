@@ -18,6 +18,7 @@ from pydantic import BaseModel, Field
 from pydantic_ai import ModelRetry, Tool
 from pydantic_ai.capabilities import Capability
 
+from ds.ai.table import TableResult
 from ds.data.db import SmashDb, init_db
 
 __all__ = [
@@ -79,6 +80,8 @@ ultimateframedata.com). Always ground answers in tool results rather than memory
 doesn't have it, say so.
 Prefer get_move_framedata / list_moves / find_character; use query_smashdb for cross-character or
 aggregate questions.
+get_move_framedata / query_smashdb return a TableResult: read its `csv` (header + rows) and check
+`truncated`. basedamage is listed WITHOUT the 1v1 damage multiplier (x1.2 in 1v1 matches).
 Frame data values are strings: '--' means not applicable, 'a/b' lists per-hitbox values (see
 whichhitbox), and activeframes like '5—7' are frame ranges. 'advantage' is frame advantage on
 shield (negative = punishable).
@@ -152,7 +155,7 @@ def list_moves(character: str) -> list[MoveRef]:
     return [MoveRef(**row) for row in moves.to_dicts()]
 
 
-def get_move_framedata(character: str, move: str) -> list[dict]:
+def get_move_framedata(character: str, move: str) -> TableResult:
     """Get frame data (startup, active frames, on-shield advantage, damage...) for a move.
 
     Matches the move name exactly first, then falls back to a case-insensitive substring
@@ -172,16 +175,16 @@ def get_move_framedata(character: str, move: str) -> list[dict]:
     if rows.height == 0:
         raise ModelRetry(f"No move matching {move!r} for {char_id}. Moves are: {moves['move'].to_list()}")
     # drop all-null columns (eg landinglag on ground moves) to keep the answer focused
-    return rows.select([c for c in rows.columns if rows[c].null_count() < rows.height]).to_dicts()
+    return TableResult.from_df(rows.select([c for c in rows.columns if rows[c].null_count() < rows.height]))
 
 
-def query_smashdb(sql: str) -> list[dict]:
+def query_smashdb(sql: str) -> TableResult:
     """Run a read-only SQL SELECT against SmashDb for questions other tools can't answer.
 
     Eg ranking or comparing moves across characters. Tables are described in the instructions.
     Frame-data columns are strings with values like '--', '10/17', '4 (Gold: 3)', so use
     TRY_CAST(startup AS INT) (null when not a plain number) for numeric comparisons.
-    Returns at most 200 rows.
+    Returns at most 200 rows (`truncated` says if more matched).
 
     Args:
         sql: a single SELECT (or WITH ... SELECT) statement.
@@ -193,7 +196,7 @@ def query_smashdb(sql: str) -> list[dict]:
         df = _db().sql(stmt)
     except Exception as e:  # polars raises several SQL/compute error types; hand them all back to the model
         raise ModelRetry(f"SQL error: {e}") from e
-    return df.head(MAX_ROWS).to_dicts()
+    return TableResult.from_df(df, max_rows=MAX_ROWS)
 
 
 def _instructions() -> str:
@@ -208,13 +211,13 @@ smashdb_capability = Capability(
     id="smashdb",
     description="Smash Ultimate database: character roster and per-move frame data.",
     instructions=_instructions,
-    # fixed-shape results get models + return schemas; framedata/SQL rows stay dicts since
-    # their columns vary per query (see .agents/instructions/pkgs.md, pydantic-ai section)
+    # fixed-shape results -> models; tables -> TableResult (compact CSV, .to_df() later)
+    # see .agents/instructions/pkgs.md, pydantic-ai section
     tools=[
         Tool(find_character, include_return_schema=True),
         Tool(list_moves, include_return_schema=True),
-        get_move_framedata,
-        query_smashdb,
+        Tool(get_move_framedata, include_return_schema=True),
+        Tool(query_smashdb, include_return_schema=True),
     ],
     # deferred: schema + tool defs only enter context once a Smash question comes up
     defer_loading=True,

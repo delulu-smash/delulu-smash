@@ -200,7 +200,7 @@ class Cell(Vertical):
         display: block;
     }
     /* Same look as the connection-info badge; shown by NotebookApp.CSS
-       while the AI debug toggle (Ctrl+G) is on. */
+       while the debug toggle (Ctrl+G) is on. */
     Cell .debug-badge {
         width: auto;
         color: $text-muted;

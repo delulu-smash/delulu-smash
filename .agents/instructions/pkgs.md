@@ -7,6 +7,8 @@
 - Favor clean module boundaries, reusable abstractions, and library-style APIs over one-off scripts.
 - Keep package changes independent from local machine assumptions unless a package is explicitly meant to handle them.
 - Prefer testable utilities and stable interfaces for analysis and automation code.
+- **Polars only for DataFrames:** library interfaces accept and return `polars.DataFrame`, never pandas and
+  never a union of both. Callers convert themselves. See `spec/pkgs/dataframes.md`.
 
 ## `ds` CLI Conventions
 
@@ -62,9 +64,15 @@ Applies to pydantic-ai tools, capabilities and agents (eg `pkgs/ds/ai/`). Refere
 - **Send return schemas for model-returning tools.** Register them as `Tool(fn, include_return_schema=True)` in
   the capability's `tools=[...]`. Return schemas are off by default, and without one the model only learns the
   result shape by calling the tool.
-- **Dicts are fine when the columns vary per call.** Examples: arbitrary SQL results (`query_smashdb`), or
-  polars rows where empty columns are dropped (`get_move_framedata`). Say what the keys mean in the tool
-  docstring instead.
+- **Return tables as `TableResult`** (`ds.ai.table`), not `list[dict]` or a DataFrame. This covers query
+  results, per-move frame data, and anything with many rows or columns that vary per call.
+  - Build it with `TableResult.from_df(df, max_rows=...)`. The model reads compact CSV (about 1/3 the tokens
+    of JSON records), plus `rows`/`total_rows`/`truncated`.
+  - Python gets the exact DataFrame back with `.to_df()`, dtypes included.
+  - `tables_from_messages(result.all_messages())` pulls every table out of an agent run. It also works on
+    messages loaded back from JSON.
+  - A raw DataFrame can't be returned from a tool: pydantic-ai fails to serialize it.
+  - Register these tools with `include_return_schema=True` too.
 - **Return `str` when the model needs text as-is**, eg line-numbered doc text for `path:line` citations
   (`read_doc`).
 - **Tool docstrings are the model's only guidance for arguments.** Document every argument (the `Args:` section

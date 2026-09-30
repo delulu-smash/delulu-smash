@@ -98,6 +98,16 @@ cases:
     metadata: {topic: stale_moves, source: docs/mechanics/stale_moves.md, trap: unverified}
     evaluators:
       - Contains: {value: stale_moves.md}
+  - name: damage_1v1_default
+    inputs: How much damage does Little Mac's jab 1 do?
+    expected_output: >-
+      1.8% in a 1v1 (1.5% base damage x the 1.2 1v1 multiplier). The answer assumes 1v1 by default and shows the
+      listed base value alongside.
+    metadata: {topic: damage_multiplier, source: SmashDb framedata}
+  - name: damage_doubles_no_multiplier
+    inputs: In doubles, how much damage does Little Mac's jab 1 do?
+    expected_output: 1.5% (base damage; the 1.2x multiplier only applies in 1v1).
+    metadata: {topic: damage_multiplier, source: SmashDb framedata}
 evaluators:
   - LLMJudge:
       rubric: >-

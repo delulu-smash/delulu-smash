@@ -10,7 +10,23 @@ from ds.ai.smashdb import smashdb_capability
 
 __all__ = ["agent"]
 # agent = Agent("openai:gpt-5.6-sol", capabilities=[Coder()])  # noqa: ERA001  # alt config
-agent = Agent("openai:gpt-5.6-sol", capabilities=[knowledge_capability, smashdb_capability])
+# TODO: transfer specific smash ultimate engine items to docs/smashDb (eg 1v1 base multiplier)
+# always-on (capabilities are deferred), so match assumptions apply to every answer
+_INSTRUCTIONS = """\
+Assume a competitive Super Smash Bros. Ultimate 1v1 (singles) match unless the user says otherwise (eg doubles,
+FFA, 3+ players). In 1v1 the game multiplies all damage by 1.2x:
+- Frame-data damage (SmashDb basedamage, ultimateframedata) is listed WITHOUT this multiplier, so multiply by 1.2
+  for any 1v1 damage number or damage calc (combo damage, KO percents, armor thresholds, etc).
+- Show the 1v1 value first and the listed base value alongside it, eg "Jab 1: 1.8% in 1v1 (1.5% base)", so the
+  user can check it against the source.
+- The multiplier stacks with other modifiers (eg stale moves): 1v1 damage = base x 1.2 x staleness factor.
+- If the user mentions doubles, FFA or 3+ players, drop the 1.2x and say so."""
+
+agent = Agent(
+    "openai:gpt-5.6-sol",
+    instructions=_INSTRUCTIONS,
+    capabilities=[knowledge_capability, smashdb_capability],
+)
 
 
 class Person(BaseModel):

@@ -24,7 +24,7 @@ class NotebookApp(App):
     /* Here, not in Cell.DEFAULT_CSS: a widget's default CSS is scoped to
        that widget, so an ancestor selector like #cells never matches there.
        CSS-driven so toggling also reveals traces of replies already run. */
-    #cells.-ai-debug Cell .ai-debug, #cells.-ai-debug Cell.-ai .debug-badge {
+    #cells.-debug Cell .ai-debug, #cells.-debug Cell.-ai .debug-badge {
         display: block;
     }
     """
@@ -35,7 +35,7 @@ class NotebookApp(App):
         Binding("ctrl+d", "delete_cell", "Delete cell"),
         Binding("ctrl+j", "cycle_mode", "Cycle cell mode"),
         Binding("ctrl+o", "copy_output", "Copy output"),
-        Binding("ctrl+g", "toggle_ai_debug", "AI debug"),
+        Binding("ctrl+g", "toggle_debug", "Debug"),
         Binding("ctrl+q", "quit", "Quit"),
     ]
 
@@ -120,13 +120,13 @@ class NotebookApp(App):
         if cell is not None:
             cell.copy_output()
 
-    def action_toggle_ai_debug(self) -> None:
+    def action_toggle_debug(self) -> None:
         """Show/hide the collapsible debug trace (tool calls, capability
         loads, retries) under every AI reply, plus a "debug" badge next to
         each AI cell's icon as the on/off indicator -- CSS-driven, see
         ``.ai-debug`` / ``.debug-badge`` in ``Cell.DEFAULT_CSS``.
         """
-        self.query_one("#cells", VerticalScroll).toggle_class("-ai-debug")
+        self.query_one("#cells", VerticalScroll).toggle_class("-debug")
 
     def action_delete_cell(self) -> None:
         cells = list(self.query(Cell))
