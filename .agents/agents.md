@@ -210,14 +210,24 @@ directory that references `.agents/` content, never a second copy of it.
 Lint rules live in root `pyproject.toml` (`[tool.ruff]`) and run through the pre-commit hooks in
 `.pre-commit-config.yaml`.
 
-- Before finishing a task that changed Python, or before committing: stage your changes (`git add`), then run
+- Before finishing a task that changed Python, or before committing: stage the files you changed, then run
   `uv run ds lint run` (exactly what `git commit` runs, auto-fixes included). If it reports that hooks modified
-  files, run it once more; only what still fails is a real error. Use `uv run ds lint run --all-files` to check
-  without staging.
+  files, run it once more; only what still fails is a real error.
+- **Lint scope: fix only the files `uv run ds lint run` reports.** Fix every error it lists in those files, since
+  the commit hook checks whole files, including errors that were already there. Edit another file only when a
+  reported file's fix actually requires it (eg a rename that other imports must follow). Don't fix lint in any
+  other file, even if you notice errors there, unless the user explicitly asks.
+- **Never run `uv run ds lint run --all-files`** unless the user explicitly asks. It isn't a read-only check: it
+  runs the auto-fixing hooks (`ruff --fix`, `ruff-format`, `nbstripout`, `pretty-format-json`) on *every* file
+  in the repo, silently rewriting dozens of unrelated files (import order, formatting, stripped notebook
+  outputs). For a report-only check of specific files, use `uv run ds lint file <path>`.
+- Stage files by explicit path (`git add path/to/file.py`), never a whole directory or `git add -A`. That way
+  unrelated worktree changes (including hook auto-fixes) don't get pulled into the lint scope. If a hook
+  auto-fixes a file you didn't mean to change, restore it (`git restore --source=HEAD --staged --worktree <path>`)
+  rather than committing or "fixing" it.
 - `uv run ds lint file <path>` is a fast, report-only check of specific files (no auto-fixes, unused imports
   ignored). Claude Code runs it automatically after every Python edit via `.agents/hooks/post_edit_lint.sh`
   (wired up in `.claude/settings.json`).
-- Fix lint errors only in code you touched, not pre-existing ones elsewhere in the file, unless asked.
 - If a rule genuinely doesn't fit a specific line, add a targeted `# noqa: CODE` with a short reason rather than
   contorting the code or retrying repeatedly.
 - `experimental/` is temporarily excluded from ruff linting (see `[tool.ruff.lint] exclude`).

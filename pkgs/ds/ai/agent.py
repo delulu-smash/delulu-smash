@@ -1,16 +1,15 @@
 from __future__ import annotations
 
-import os
-import random
-
 import polars as pl
 from pydantic import BaseModel
 from pydantic_ai import Agent
-from pydantic_ai_harness import Coder
+from pydantic_ai_harness import Coder  # noqa: F401  # used by the commented-out Coder agent below
+
+from ds.ai.smashdb import smashdb_capability
 
 __all__ = ["agent"]
-# agent = Agent("openai:gpt-5.6-sol", capabilities=[Coder()])
-agent = Agent("openai:gpt-5.6-sol")
+# agent = Agent("openai:gpt-5.6-sol", capabilities=[Coder()])  # noqa: ERA001  # alt config
+agent = Agent("openai:gpt-5.6-sol", capabilities=[smashdb_capability])
 
 
 class Person(BaseModel):
@@ -19,7 +18,8 @@ class Person(BaseModel):
     city: str
 
 
-@agent.tool_plain
+# NOTE: below serves as example
+# @agent.tool_plain
 def get_data(name: str) -> list[Person]:
     """Returns the data for the given name"""
     df = pl.DataFrame(

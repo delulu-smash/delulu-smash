@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import time
 from typing import Any
 
 from rich.markdown import Markdown
@@ -11,9 +12,10 @@ from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
 from textual.message import Message
 from textual.widget import Widget
-from textual.widgets import DataTable, Input, LoadingIndicator, Static
+from textual.widgets import Collapsible, DataTable, Input, LoadingIndicator, Static
 
-from . import completion, sql_completion
+from . import ai_debug, completion, sql_completion
+from .clipboard import copy_text
 from .completion import Completion
 from .display import (
     ImageRef,
@@ -34,6 +36,18 @@ from .kitty_image import KittyImage
 # below -- they work in macOS Terminal.app, at the cost of not working over
 # SSH/remote sessions the way OSC 52 does.
 _NATIVE_CLIPBOARD_METHODS = ("write_clipboard", "to_clipboard")
+
+
+def _format_duration(seconds: float) -> str:
+    """Execution-time badge text: '0.4ms', '120ms', '3.25s', '2m 05s'."""
+    if seconds < 0.001:
+        return f"{seconds * 1000:.1f}ms"
+    if seconds < 1:
+        return f"{seconds * 1000:.0f}ms"
+    if seconds < 60:
+        return f"{seconds:.2f}s"
+    minutes, secs = divmod(int(seconds), 60)
+    return f"{minutes}m {secs:02d}s"
 
 
 class CopyableDataTable(DataTable):
@@ -77,7 +91,7 @@ class CopyableDataTable(DataTable):
         # First line only: a label also carries the dtype line under the name.
         header = "\t".join(column.label.plain.split("\n")[0] for column in self.ordered_columns)
         rows = ("\t".join(str(value) for value in self.get_row_at(index)) for index in range(self.row_count))
-        self.app.copy_to_clipboard("\n".join([header, *rows]))
+        copy_text(self.app, "\n".join([header, *rows]))
 
 
 class ShellInput(Input):
@@ -176,6 +190,24 @@ class Cell(Vertical):
     Cell .connection-info.-visible {
         display: block;
     }
+    Cell .exec-time {
+        width: auto;
+        color: $text-muted;
+        margin: 0 0 0 1;
+        display: none;
+    }
+    Cell .exec-time.-visible {
+        display: block;
+    }
+    /* Same look as the connection-info badge; shown by NotebookApp.CSS
+       while the AI debug toggle (Ctrl+G) is on. */
+    Cell .debug-badge {
+        width: auto;
+        color: $text-muted;
+        text-style: italic;
+        margin: 0 0 0 1;
+        display: none;
+    }
     Cell TextArea, Cell TextArea:focus {
         height: auto;
         max-height: 20;
@@ -206,6 +238,12 @@ class Cell(Vertical):
     }
     Cell .shell-stdin.-visible {
         display: block;
+    }
+    /* Always built under an AI reply but hidden; shown by NotebookApp.CSS
+       while its debug toggle (Ctrl+G) is on. */
+    Cell .ai-debug {
+        display: none;
+        margin: 0 0 1 0;
     }
     Cell .cell-output LoadingIndicator {
         height: 1;
@@ -283,6 +321,10 @@ class Cell(Vertical):
         self.execution_count: int | None = None
         self.shell_running = False
         """True while a shell command started from this cell is running."""
+        self._last_result: CellResult | None = None
+        """What the cell's output area is currently showing -- the source for
+        ``copy_output``. ``None`` while nothing (or a still-running command's
+        partial output) is shown."""
         self.mode = "python"
         self._icons = {
             "python": self.PYTHON_ICON,
@@ -313,11 +355,17 @@ class Cell(Vertical):
         )
         self._prompt = Static(self.PYTHON_ICON, classes="prompt")
         self._connection_info = Static("", classes="connection-info")
+        self._debug_badge = Static("debug", classes="debug-badge")
+        self._exec_time = Static("", classes="exec-time")
+        self._run_started: float | None = None
+        """``perf_counter()`` when the current run began; read by
+        ``_finish_run``, which is also where shell/AI runs end (after their
+        output finished streaming), so the time covers the whole run."""
         self._output = Vertical(classes="cell-output")
         self._stdin = ShellInput(kernel, classes="shell-stdin")
 
     def compose(self) -> ComposeResult:
-        yield Horizontal(self._prompt, self._connection_info, classes="prompt-row")
+        yield Horizontal(self._prompt, self._connection_info, self._debug_badge, self._exec_time, classes="prompt-row")
         yield self.editor
         yield self._completion_popup
         yield self._output
@@ -405,6 +453,8 @@ class Cell(Vertical):
             self._connection_info.remove_class("-visible")
 
         self._completion_popup.hide()
+        self._last_result = None
+        self._exec_time.remove_class("-visible")
         await self._output.remove_children()
         self._output.set_class(False, "-visible")
 
@@ -427,6 +477,9 @@ class Cell(Vertical):
         text = self.editor.text
         if not text.strip():
             return
+        self._last_result = None
+        self._run_started = time.perf_counter()
+        self._exec_time.remove_class("-visible")
 
         if self.mode == "shell":
             await self._run_shell(text)
@@ -544,12 +597,55 @@ class Cell(Vertical):
         self.execution_count = result.execution_count
         self._prompt.update(prompt)
         self._prompt.add_class("-ran")
+        self._last_result = result
+        if self._run_started is not None:
+            self._exec_time.update(_format_duration(time.perf_counter() - self._run_started))
+            self._exec_time.add_class("-visible")
+            self._run_started = None
 
         await self._output.remove_children()
         widgets = await self._build_output_widgets(result)
         if widgets:
             await self._output.mount_all(widgets)
         self._output.set_class(bool(widgets), "-visible")
+
+    def copy_output(self) -> None:
+        """Copy this cell's output to the clipboard (``Ctrl+O``, see ``NotebookApp``).
+
+        A dataframe result goes through its table's own copy (full dataframe
+        via native export, else visible rows as TSV) so it pastes into a
+        spreadsheet; anything else is copied as plain text -- stdout, the
+        result (an AI reply as its raw markdown), stderr and any error.
+        """
+        if self._last_result is None:
+            self.app.notify("No output to copy", timeout=2)
+            return
+        table = next(iter(self._output.query(CopyableDataTable)), None)
+        if table is not None:
+            table.action_copy_table()
+            return
+        text = self._output_text(self._last_result)
+        if not text:
+            self.app.notify("No output to copy", timeout=2)
+            return
+        copy_text(self.app, text)
+        self.app.notify("Copied output to clipboard", timeout=2)
+
+    @staticmethod
+    def _output_text(result: CellResult) -> str:
+        """Plain-text form of what ``_build_output_widgets`` shows, ANSI
+        escapes stripped (shell output is often colored).
+        """
+        parts: list[str] = []
+        if result.stdout:
+            parts.append(Text.from_ansi(result.stdout).plain.rstrip("\n"))
+        if result.result_repr is not None:
+            parts.append(result.value if isinstance(result.value, str) else result.result_repr)
+        if result.stderr:
+            parts.append(Text.from_ansi(result.stderr).plain.rstrip("\n"))
+        if result.error:
+            parts.append(result.error.rstrip("\n"))
+        return "\n".join(parts)
 
     async def _build_output_widgets(self, result: CellResult) -> list[Widget]:
         widgets: list[Widget] = []
@@ -583,6 +679,15 @@ class Cell(Vertical):
                 rich_value = to_renderable(result.value)
                 content = rich_value if rich_value is not None else result.result_repr
                 widgets.append(Static(content, classes="output-text"))
+
+        if self.mode == "ai" and result.ai_messages:
+            widgets.append(
+                Collapsible(
+                    Static(ai_debug.render(result.ai_messages), classes="ai-debug-trace"),
+                    title=ai_debug.summary(result.ai_messages),
+                    classes="ai-debug",
+                )
+            )
 
         if result.stderr:
             widgets.append(

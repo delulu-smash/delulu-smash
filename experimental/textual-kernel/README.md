@@ -53,6 +53,10 @@ uv run textual-kernel
   AI (see [Shell mode](#shell-mode) and [Smash mode](#smash-mode) below).
   [SQL mode](#sql-mode) is temporarily hidden from the cycle — add `"sql"`
   back to `Cell.MODES` (`cell.py`) to re-enable it
+- `Ctrl+O` — copy the focused cell's **o**utput to the clipboard (see
+  [Copying output](#copying-output))
+- `Ctrl+G` — toggle the AI debug trace under AI replies (see
+  [AI debug trace](#ai-debug-trace))
 - `Ctrl+Q` — quit
 
 ## Run in a browser
@@ -416,10 +420,51 @@ code path):
   `App.copy_to_clipboard` (OSC 52), which is the reverse tradeoff: works
   over SSH, but not in macOS Terminal.app. Either way, a small toast
   (`App.notify`) confirms what was copied.
+
+### Copying output
+
+`Ctrl+O` (from anywhere in a cell, editor included) copies that cell's whole
+output. A dataframe result goes through the same `CopyableDataTable` copy as
+above. Anything else is copied as plain text: stdout, the result (an AI
+reply as its raw markdown source, so it pastes with headings/code fences
+intact), stderr and any error, with shell ANSI colors stripped
+(`Cell.copy_output`, `cell.py`). Text goes through `clipboard.copy_text`:
+the OS clipboard tool first (`pbcopy` / `wl-copy` / `xclip` / `xsel` /
+`clip.exe`, skipped over SSH, where it would fill the *remote* clipboard),
+then OSC 52 as the fallback. The table TSV fallback uses the same helper.
 - Anything already Rich-renderable (implements `__rich__` /
   `__rich_console__`, e.g. a `rich.table.Table` you build yourself) is
   passed straight through into a `Static`.
 - Everything else falls back to plain `repr()`, same as before.
+
+## Execution time
+
+After a cell runs, its prompt row shows how long it took (eg `251ms`,
+`3.25s`, `2m 05s`), next to any cwd/connection/`debug` badge. It's
+wall-clock time from submit until the output is final, so a shell command
+counts until it exits and an AI reply until it has finished streaming,
+including every tool call. It's hidden while a run is in progress and when
+the cell's mode changes (`Cell._finish_run` / `_format_duration`, `cell.py`).
+
+## AI debug trace
+
+`Ctrl+G` toggles a collapsible `▶ debug · 3 requests · 1 capability load ·
+1 tool call` section under every AI reply, including replies that already ran.
+While it's on, every AI cell shows a `debug` badge next to its icon (like
+shell mode's cwd badge). Expanded, the section lists the run in order: each model request (model, input/output
+tokens), capability loads (`load_capability`), tool calls with their
+arguments, tool results, retries (eg a SmashDb tool rejecting an unknown
+move, with the message the model got back) and thinking. Values are capped
+at 1500 chars each; the full messages stay in `Kernel.ai_history`.
+
+- The trace comes from pydantic-ai's own messages for that turn
+  (`CellResult.ai_messages`, set in `Kernel.run_ai`), captured with
+  `capture_run_messages` so a *failed* run still shows how far it got.
+  Rendering is in `ai_debug.py`.
+- The section is always built and hidden by CSS; the toggle only flips an
+  `-ai-debug` class on `#cells`. That rule lives in `NotebookApp.CSS`, not
+  `Cell.DEFAULT_CSS`, because Textual scopes a widget's default CSS to that
+  widget, so an ancestor selector like `#cells` never matches from inside it.
 
 ## Notes / next steps
 

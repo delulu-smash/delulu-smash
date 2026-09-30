@@ -19,11 +19,12 @@ import sqlite3
 import subprocess
 import traceback
 from collections.abc import Awaitable, Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 import ds.ai
 import ds.data
+from pydantic_ai import capture_run_messages
 
 from . import shell, sql
 
@@ -84,6 +85,9 @@ class CellResult:
     value: Any = None
     result_repr: str | None = None
     error: str | None = None
+    ai_messages: list[Any] = field(default_factory=list)
+    """AI cells only: this run's own pydantic-ai messages (not earlier
+    turns'), for the debug trace under the reply -- see ``ai_debug``."""
 
 
 class Kernel:
@@ -279,16 +283,22 @@ class Kernel:
         self.execution_count += 1
         result = CellResult(execution_count=self.execution_count)
 
-        try:
-            async with ds.ai.agent.run_stream(prompt, message_history=self.ai_history) as stream:
-                async for delta in stream.stream_text(delta=True):
-                    if on_delta is not None:
-                        await on_delta(delta)
-                output = await stream.get_output()
-                self.ai_history = stream.all_messages()
-        except Exception:
-            result.error = traceback.format_exc()
-            return result
+        # capture_run_messages so a failed run (a tool raising, retries
+        # exhausted) still has its trace -- that's when the debug view
+        # matters most. It includes the history passed in, hence the slice.
+        with capture_run_messages() as captured:
+            try:
+                async with ds.ai.agent.run_stream(prompt, message_history=self.ai_history) as stream:
+                    async for delta in stream.stream_text(delta=True):
+                        if on_delta is not None:
+                            await on_delta(delta)
+                    output = await stream.get_output()
+                    result.ai_messages = stream.new_messages()
+                    self.ai_history = stream.all_messages()
+            except Exception:
+                result.error = traceback.format_exc()
+                result.ai_messages = captured[len(self.ai_history) :]
+                return result
 
         result.value = output
         result.result_repr = str(output)
