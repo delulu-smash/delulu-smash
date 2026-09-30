@@ -92,6 +92,13 @@ attribution comment right after the frontmatter.
 - **Put your own interpretation under its own labeled heading** (eg `## Practical takeaways`), separate from
   sourced facts. Mark computed numbers as *Derived*.
 - **End with the Sources dropdown and `% research:` comments** (see below).
+- **Code depends on some pages.** Before changing a page:
+  - read its `% research: code:` lines, and run `grep -rn "docs-source: <page path>" pkgs tests`
+  - update the tagged code in the same change, then run `uv run pytest tests/`
+  - don't rename or remove a `:label:` that code points to without updating the tags and `test_docs_sync.py`
+  - keep sync-tested numbers one per table cell
+
+  Convention: `.agents/instructions/pkgs.md` ("Docs-Derived Code").
 - **Glossary:** when a page introduces a term, alias or shorthand, add a row to `docs/glossary.md` (Term /
   Also called / Meaning / See) linking back to the page. AI search expands questions through this table.
 - **Placement:** engine mechanics go in `docs/mechanics/`, matchups in `docs/matchups/<character>.md`, and
@@ -127,13 +134,15 @@ they're greppable. Record the following:
 
 | What | Example |
 |---|---|
-| Source version | `ssbwiki Stale_Moves revid=2039011 pulled=2026-09-29` |
+| Source version (`revid` = the wiki's edit number, see `.agents/skills/smash-research/sources.md`) | `ssbwiki Stale_Moves revid=2039011 pulled=2026-09-29` |
 | Staged raw copy (one line per file, directly under its source's line) | `staged: local/staging/wiki/2026-09-29_ssbwiki_stale-moves.md (machine-local)` |
 | Non-versioned source | `discord #mac-labs author=<name> date=2026-09-01 link=<message url>` |
 | Scope kept / dropped | `dropped Melee/Brawl specifics, controversy` |
 | Inherited behavior | `knockback rule inherited from SSB4 ("generally unchanged")` |
 | Resolved conflicts | `items: Ultimate section overrides general section` |
 | Unverified claims | `unverified: shield 0.85x` |
+| Code that depends on this page (see pkgs "Docs-Derived Code") | `code: pkgs/ds/calc/stale.py (REDUCTORS <- stale-reductors) -- sync-tested in tests/ds/calc/test_docs_sync.py` |
+| Open discrepancy (see `docs/scratch/discrepancies.md`) | `discrepancy D-006 (needs-lab) -- docs/scratch/discrepancies.md` |
 | Lab setup | `lab: vs Mario 0%, stale moves OFF, no DI, 2026-09-30` |
 
 **When editing an existing page:**

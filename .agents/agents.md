@@ -259,6 +259,9 @@ supplement `docs/` rather than being thrown away.
 - **Weigh `docs/` claims unequally.** Claims marked unverified in `% research:` lines, or sitting next to TODOs,
   are weaker than lab-backed or sourced ones. Say so when that matters.
 - **Don't edit `docs/` to "fix" a discrepancy** unless the user asks. Report it and let them decide.
+- **Log discrepancies instead of blocking.** Record conflicts and unverified claims in
+  `docs/scratch/discrepancies.md` with a provisional value, and keep working. The user resolves them later with
+  the AI (procedure at the top of that file).
 - **Staging isn't knowledge.** `local/staging/` holds raw, unreviewed captures (wiki text, Discord threads). Never
   answer from it; it only feeds the research/curation workflow into `docs/`.
 - Details: `.agents/skills/smash-research/SKILL.md` ("Using docs/ vs other knowledge"). Overall design (layers,

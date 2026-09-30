@@ -24,6 +24,8 @@ __all__ = ["DocInfo", "SearchHit", "knowledge_capability", "list_docs", "read_do
 DOCS_DIR = REPO_DIR / "docs"
 # not part of the published site / knowledge base (build output, scratch, test pages)
 EXCLUDED_DIRS = {"_build", "scratch", "local"}
+# files in excluded dirs the agent should still see (research discrepancies it may cite)
+INCLUDED_FILES = {"scratch/discrepancies.md"}
 # caps on what's handed back to the model, so a broad search/read doesn't flood its context
 MAX_SEARCH_HITS = 30
 MAX_READ_CHARS = 20_000
@@ -99,10 +101,11 @@ def _parse_page(file: Path) -> _Page:
 
 @cache
 def _pages() -> tuple[_Page, ...]:
-    files = (
-        f for f in sorted(DOCS_DIR.rglob("*.md")) if not EXCLUDED_DIRS.intersection(f.relative_to(DOCS_DIR).parts[:-1])
-    )
-    return tuple(_parse_page(f) for f in files)
+    def included(f: Path) -> bool:
+        rel = f.relative_to(DOCS_DIR)
+        return rel.as_posix() in INCLUDED_FILES or not EXCLUDED_DIRS.intersection(rel.parts[:-1])
+
+    return tuple(_parse_page(f) for f in sorted(DOCS_DIR.rglob("*.md")) if included(f))
 
 
 def _page(path: str) -> _Page:

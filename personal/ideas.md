@@ -37,6 +37,11 @@
     5. treat this as the capability SmashKnowledge (need to see perhaps if need base vs indpeth)? how does it learn efficiently without taking too much of context window?
     do we need vector database (see https://pydantic.dev/docs/ai/guides/embeddings/)
 11. having preffered references for researching (so we can note trusted resources, eg twitter accounts, etc ), and ensure know how to update any AI code that was made from that research/docs (eg pkgs stale function, so update in research propegates properly)
+12. look how deep research does this. Because things like how should do research, if change should mean redo all research/reanalyze what had previous done (and just how mechnaically set up researching with AI more properly, so can get up to date info, know clarifications need to look into, etc)
+13. how to get research from youtube videos, is there way to get transcript or information (perhpas using gemini or some other AI trained and use distillation way of using my AI to ask their AI what video says)?
+14. how make answer macs SL armour question in consistent and meaningful way (eg nice table visualization, highlighting pragmatic items, eg ones that dont need to
+keep track of how staled players move is, whether a move on average likely be stale, eg they spam and hit shield a lot)
+15. teach AI how to write docs properly, the moveset.md good example where duplicating information, using specific AI reference information, not specific to little mac and general org of docs, etc
 
 # TUI
 1. create own AI Tui

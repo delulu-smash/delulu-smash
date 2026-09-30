@@ -83,3 +83,32 @@ Applies to pydantic-ai tools, capabilities and agents (eg `pkgs/ds/ai/`). Refere
   doesn't flood the context window.
 - **Package domain tools as a `Capability`** with `defer_loading=True`, so its instructions and tool
   definitions only enter context when relevant.
+
+## Docs-Derived Code
+
+Code whose values or rules come from Smash facts in `docs/` (constants, thresholds, rules like "grabs ignore
+armor") is linked to the docs in both directions, so readers see where a value came from and docs edits find the
+code to update. Plain logic doesn't need this.
+
+- **Tag it in code**, on the line(s) above the constant or function, pointing to a MyST label (stable across
+  rewording, unlike headings or line numbers):
+
+  ```python
+  # docs-source: docs/moveset.md#sl-armor-modifiers (sync-tested)
+  SHORT_HOP_ATTACK_MULTIPLIER = 0.85
+  ```
+  - The tag is `docs-source:`, not `docs:`, because ruff's ERA001 reads `# docs: docs/...` as commented-out
+    code.
+  - Use `# docs-source: none yet (...)` for a fact that has no docs page yet.
+  - **No discrepancy tags in code.** Whether a value is provisional is tracked only in `docs/`: the page's
+    `% research: discrepancy D-###` lines and `docs/scratch/discrepancies.md`. Resolving one changes the docs,
+    and the rule below then leads to the code.
+- **Back-link on the docs page:** one `% research: code: <file> (<names> <- <label>) -- sync-tested in <test>`
+  line per file that depends on it.
+- **Sync-test numbers:** put the number in its own cell of a labelled list-table and assert it in
+  `tests/ds/calc/test_docs_sync.py` with `ds.util.docs.docs_table("<label>")`. A docs edit then fails
+  `uv run pytest tests/` and names the constant.
+- **When a docs page changes** (edited directly or by resolving a discrepancy), find the code built on it with
+  `grep -rn "docs-source: docs/<page>.md" pkgs tests` plus the page's `% research: code:` lines, update it in
+  the same change, and run `uv run pytest tests/`.
+

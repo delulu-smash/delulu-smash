@@ -420,6 +420,11 @@ max-doc-length = 95
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"
 
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
+
 # TODO: see if need
 # [tool.ruff.lint.flake8-type-checking]
 # runtime-evaluated-base-classes = [

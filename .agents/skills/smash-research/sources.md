@@ -9,6 +9,16 @@ How to get the full text from each common source. Add to this file whenever a ne
 - **Fetch raw wikitext, not the rendered page:**
   `curl -sL "https://www.ssbwiki.com/index.php?title=<Page_Name>&action=raw"`
   The raw text keeps game-scope templates that summarizing fetchers lose.
+- **`revid` (revision ID):** SmashWiki runs on MediaWiki (like Wikipedia), and every saved edit to any page
+  gets a new, wiki-wide increasing number. `revid=2024710` in a `% research:` line means "this page exactly as
+  it was at edit #2024710", the version our notes came from.
+  - **Get the current one:** `https://www.ssbwiki.com/api.php?action=query&prop=revisions&titles=<Page>&rvprop=ids|timestamp&format=json`
+  - **View that exact version:** `https://www.ssbwiki.com/index.php?oldid=<revid>`, which works even after
+    later edits.
+  - **What changed since:** `https://www.ssbwiki.com/index.php?diff=cur&oldid=<revid>`, or
+    `api.php?action=compare&fromrev=<revid>&torev=<newer>` for the API.
+  - **Staleness check:** if the page's current revid is higher than ours, it has been edited since we pulled
+    it. Read the diff, not the whole page.
 - **Game templates in wikitext:** `{{SSBU|X}}` is Ultimate, `{{SSB4|X}}` is Smash 4, `{{SSBB|X}}` is Brawl,
   `{{SSBM|X}}` is Melee, `{{SSB|X}}` is 64.
 - **Page layout:** series-wide pages usually have general sections followed by `===Specifics in ''<Game>''===`

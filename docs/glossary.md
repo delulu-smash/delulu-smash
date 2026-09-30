@@ -28,6 +28,18 @@ tags:
   - Also called
   - Meaning
   - See
+* - **Straight Lunge**
+  - SL, neutral B (Little Mac), nb
+  - Little Mac's charging punch. Damage-based armor while charging
+  - [Straight Lunge armor](moveset.md#sl-armor)
+* - **Damage-based armor**
+  - SL armor, heavy armor
+  - Takes the damage but no knockback from hits at or below a damage threshold
+  - [Straight Lunge armor](moveset.md#sl-armor)
+* - **Short hop attack**
+  - SH attack, short hop aerial (jump + attack)
+  - Aerial done by pressing jump and attack together. Deals `0.85×` damage
+  - [Straight Lunge armor](moveset.md#sl-armor)
 * - **Stale moves**
   - staling, stale-move negation, SMN, repetition effect
   - Moves deal less damage the more often and more recently they've connected

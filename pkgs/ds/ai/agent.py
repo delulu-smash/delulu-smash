@@ -6,12 +6,15 @@ from pydantic_ai import Agent
 from pydantic_ai_harness import Coder  # noqa: F401  # used by the commented-out Coder agent below
 
 from ds.ai.knowledge import knowledge_capability
+from ds.ai.little_mac import little_mac_capability
+from ds.ai.mechanics import mechanics_capability
 from ds.ai.smashdb import smashdb_capability
 
 __all__ = ["agent"]
 # agent = Agent("openai:gpt-5.6-sol", capabilities=[Coder()])  # noqa: ERA001  # alt config
 # TODO: transfer specific smash ultimate engine items to docs/smashDb (eg 1v1 base multiplier)
 # always-on (capabilities are deferred), so match assumptions apply to every answer
+# docs-source: none yet (no 1v1 multiplier docs page; 1.2 also in ds.calc.modifiers)
 _INSTRUCTIONS = """\
 Assume a competitive Super Smash Bros. Ultimate 1v1 (singles) match unless the user says otherwise (eg doubles,
 FFA, 3+ players). In 1v1 the game multiplies all damage by 1.2x:
@@ -25,7 +28,7 @@ FFA, 3+ players). In 1v1 the game multiplies all damage by 1.2x:
 agent = Agent(
     "openai:gpt-5.6-sol",
     instructions=_INSTRUCTIONS,
-    capabilities=[knowledge_capability, smashdb_capability],
+    capabilities=[knowledge_capability, smashdb_capability, mechanics_capability, little_mac_capability],
 )
 
 

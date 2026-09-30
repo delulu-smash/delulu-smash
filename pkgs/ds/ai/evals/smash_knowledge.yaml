@@ -108,6 +108,28 @@ cases:
     inputs: In doubles, how much damage does Little Mac's jab 1 do?
     expected_output: 1.5% (base damage; the 1.2x multiplier only applies in 1v1).
     metadata: {topic: damage_multiplier, source: SmashDb framedata}
+  - name: sl_armor_dk_overview
+    inputs: What moves of Donkey Kong can Little Mac's neutral B armor through?
+    expected_output: >-
+      A per-hitbox list. Uncharged Straight Lunge tanks jab 1/2, down tilt, up B and aerial down B hits fresh;
+      forward tilt (8/9), up tilt (10), dash attack (12/9), side B (10) and the aerials only after enough stales
+      (eg dash attack early after 5, up tilt after 3); forward smash and up smash never (uncharged). Fully charged
+      SL tanks most tilts/aerials fresh. Notes the 1v1 multiplier doesn't change the result.
+    metadata: {topic: sl_armor, source: pkgs/ds/ai/little_mac.py}
+  - name: sl_armor_stale_count
+    inputs: How many times does DK need to use early dash attack before uncharged Straight Lunge armors it?
+    expected_output: 5 times in a row (12% x 0.62085 = 7.45% <= 8%); fresh it deals 12.6% and breaks the armor.
+    metadata: {topic: sl_armor, source: pkgs/ds/ai/little_mac.py}
+  - name: sl_armor_1v1_trap
+    inputs: In a 1v1, does the 1.2x damage multiplier make DK's jab 2 break Little Mac's uncharged neutral B armor?
+    expected_output: >-
+      No. Jab 2 (6%) is tanked; the 1v1 multiplier scales the armor threshold too (8% -> 9.6%), so it doesn't
+      change what Straight Lunge armors.
+    metadata: {topic: sl_armor, source: docs/moveset.md, trap: 1v1-multiplier}
+  - name: stale_damage_calc
+    inputs: How much damage does a 12% move do after being used 3 times in a row, in a 1v1?
+    expected_output: About 10.77% (12 x 0.7482 staleness = 8.98%, x 1.2 in 1v1).
+    metadata: {topic: stale_moves, source: pkgs/ds/ai/mechanics.py}
 evaluators:
   - LLMJudge:
       rubric: >-

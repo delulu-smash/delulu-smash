@@ -29,6 +29,8 @@ baseline), and `local/staging/` (raw captures, never answered from directly).
 5. **Cross-check** numbers against `docs/`, SmashDb (`ds.ai.smashdb` / `pkgs/ds/data`) or a second source
    when you can. If sources conflict, record both claims and who says what. Never silently pick one. If the
    conflict is with `docs/`, report it as a discrepancy and don't overwrite `docs/` without the user's OK.
+   Log every conflict or unverified claim in the register (see "Discrepancies") and continue with the
+   provisional value.
 6. **Write or update the page** following the `docs-writing` skill. Keep the source's facts separate from
    your own interpretations.
 7. **Document sources** using the docs-writing standard (see "Sources (required standard)"). Every research
@@ -43,13 +45,44 @@ baseline), and `local/staging/` (raw captures, never answered from directly).
     `status: discarded` with a reason in `notes` if nothing was worth keeping.
 11. **Report back:** what you kept, what you dropped as out of scope, and anything unverified or conflicting.
 
+## Discrepancies (`docs/scratch/discrepancies.md`)
+
+When sources conflict, or a claim is single-source or derived and needs checking, **log it and keep going**.
+Never block the current task waiting on the user.
+
+1. **Pick a provisional value** with these defaults, in order:
+   - `docs/` (user-reviewed) wins
+   - datamined current-patch data (SmashDb / ultimateframedata) beats community sheets and posts
+   - a sourced mechanic rule (eg SmashWiki) beats numbers derived from someone's spreadsheet
+   - otherwise take the more conservative value, and say which
+2. **Add an entry** to `docs/scratch/discrepancies.md` using the next unused `D-###`, following the format and
+   conventions at the top of that file: Affects, Claims (value + source + date), Why they might differ, To
+   settle, Provisional, Resolution. In **To settle**, give a concrete test with the expected reading for each
+   claim, and reuse the file's "Lab basics" setup instead of repeating it.
+3. **Add a pointer line** `% research: discrepancy D-### (<status>) -- docs/scratch/discrepancies.md` to each
+   affected docs page.
+4. **Use the provisional value** in the work. When an answer depends on it, mention the ID (eg "12% per SmashDb,
+   see D-001").
+5. **Finish with one line** listing new IDs, eg "logged D-008, D-009 for later".
+
+**"Resolve D-###" / "review discrepancies":**
+- Read the entry, the user's `Notes (you):` bullets, and any linked `docs/scratch/lab/*.md` notes (these are
+  first-class `Lab:` sources).
+- Update the docs under **Affects** first. Then, for each changed page, update the code that cites it
+  (`grep -rn "docs-source: docs/<page>.md" pkgs tests`, and the page's `% research: code:` lines), and run
+  `uv run pytest tests/`. Code never carries discrepancy tags.
+- Fill in **Resolution** with the date, the decision and the evidence.
+- Set the status and update the page pointers.
+- Add an eval case if the AI could get it wrong again.
+- For a review session, group open `needs-lab` entries into one training-mode plan.
+
 ## Staging (`local/staging/`)
 
 Raw captures live here. It's git-ignored and machine-local by choice: Discord messages are other people's
 words, and the repo may be public.
 
 - **Path:** `local/staging/<kind>/<YYYY-MM-DD>_<source>_<slug>.md`, where `<kind>` is `wiki`, `discord`,
-  `twitter`, `video` or `notes`. Eg `local/staging/wiki/2026-09-29_ssbwiki_stale-moves.md`.
+  `twitter`, `video`, `sheets` (spreadsheet tabs as CSV) or `notes`. Eg `local/staging/wiki/2026-09-29_ssbwiki_stale-moves.md`.
 - **Content:** YAML frontmatter, then the raw content untouched (no cleanup, no summarizing):
 
   ```yaml
@@ -85,6 +118,16 @@ words, and the repo may be public.
 Also:
 - **Later statements override earlier ones.** Ultimate sections often revise a general rule (eg items).
   Resolve these before writing.
+- **"Super Smash Bros." is ambiguous: it can mean the whole series or the N64 game (Smash 64).** Use context
+  to decide:
+  - A section or table heading that names one game among others (eg `===''[[Super Smash Bros.]]''===` next to
+    Melee/Brawl/Ultimate headings) is usually the N64 game.
+  - Wording like "the series", "all games", or wikitext `{{b|Super Smash Bros.|series}}` means the series.
+  - Otherwise read the surrounding paragraph for which games it compares.
+
+  Before using a number, check which game's section, table or paragraph it sits in, not just that it matched
+  a keyword. Eg the Short hop page's 0.85× short-hop-attack modifier is in the Ultimate paragraph of
+  "Mechanics", but a `0.85` also appears in the N64 "Short hop heights" table.
 - **Watch for Ultimate-only content** mentioned in passing, such as DLC characters (Kazuya, Pyra/Mythra, Steve)
   or Training Mode toggles.
 - **Numbers from Smash 4 are wrong for Ultimate** unless the source says they're unchanged. This is especially

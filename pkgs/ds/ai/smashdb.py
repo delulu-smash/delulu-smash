@@ -28,6 +28,7 @@ __all__ = [
     "get_move_framedata",
     "list_moves",
     "query_smashdb",
+    "resolve_char_id",
     "smashdb_capability",
 ]
 
@@ -103,7 +104,7 @@ def _framedata_df() -> pl.DataFrame:
     return _db().sql("select * from framedata")
 
 
-def _resolve_char_id(character: str) -> str:
+def resolve_char_id(character: str) -> str:
     """Map a user-given character (id, display name, or partial name) to one char.id."""
     chars = _char_df()
     q = character.strip().lower()
@@ -150,7 +151,7 @@ def list_moves(character: str) -> list[MoveRef]:
     Args:
         character: character id or name, eg 'mario', 'Little Mac'.
     """
-    char_id = _resolve_char_id(character)
+    char_id = resolve_char_id(character)
     moves = _framedata_df().filter(pl.col("char_id") == char_id).select("category", "move")
     return [MoveRef(**row) for row in moves.to_dicts()]
 
@@ -165,7 +166,7 @@ def get_move_framedata(character: str, move: str) -> TableResult:
         character: character id or name, eg 'mario', 'Little Mac'.
         move: move name, eg 'Forward Air', 'fair', 'Jab 1', 'Up B'.
     """
-    char_id = _resolve_char_id(character)
+    char_id = resolve_char_id(character)
     moves = _framedata_df().filter(pl.col("char_id") == char_id)
     name = _normalize_move(move)
     exact = moves.filter(pl.col("move").str.to_lowercase() == name.lower())

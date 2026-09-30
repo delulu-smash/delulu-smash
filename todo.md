@@ -54,12 +54,3 @@ see feedback in https://www.twitch.tv/justjoshmac (he had some tips specific mac
 
 install https://github.com/features/ai/github-app
 
-
-
-
-❯ i would like to teach AI to use stale move information. specifically want to be able to answer questions like "What moves of donkey kong can mac's neutral B will amrour through", to do this let me know suggestions but I believe want to break up this capability by
-  having tools for:
-  1. way to know how staling affect damage output of move (ensure we have information on that calculation so can reference if user wants more detail)
-  2. specific little mac about whether the move will
-
-  if AI can infer more of this (eg based on docs and framedata tool that already have), and this doesnt have much benefit let me know
