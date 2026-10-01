@@ -110,6 +110,10 @@ class Kernel:
         # calls (like ``namespace`` for Python) so later AI cells see the
         # full conversation so far, not just their own prompt.
         self.ai_history: list = []
+        # ``(mode, text)`` of cells removed by the app's Ctrl+L clear, oldest
+        # first, so Up-arrow recall (``Cell._history_candidates``) still
+        # reaches them, like a terminal's history surviving ``clear``.
+        self.cleared_inputs: list[tuple[str, str]] = []
         # One persistent bash for every shell cell (see shell.py), so cd/env
         # carry over between cells like variables do in ``namespace``.
         self.shell_root = _repo_root()

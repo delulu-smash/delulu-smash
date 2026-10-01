@@ -414,10 +414,9 @@ class Cell(Vertical):
             return []
         siblings = [child for child in self.parent.children if isinstance(child, Cell)]
         index = siblings.index(self)
+        live = [(sibling.mode, sibling.editor.text) for sibling in siblings[:index]]
         return [
-            sibling.editor.text
-            for sibling in reversed(siblings[:index])
-            if sibling.mode == self.mode and sibling.editor.text.strip()
+            text for mode, text in reversed(self.kernel.cleared_inputs + live) if mode == self.mode and text.strip()
         ]
 
     async def cycle_mode(self) -> None:

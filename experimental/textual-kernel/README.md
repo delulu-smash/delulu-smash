@@ -60,7 +60,8 @@ uv run textual-kernel
 - `Ctrl+L` — clear, like a terminal's `clear`/`Ctrl+L`: removes every
   other cell and the focused cell's output, keeping its text. Kernel state
   (variables, shell `cd`) survives, so it's a clear, not a restart. A cell
-  with a shell command still running is left alone
+  with a shell command still running is left alone. Up-arrow
+  [history recall](#history-recall) still reaches the cleared inputs
 - `Ctrl+Q` — quit
 
 ## Run in a browser
@@ -142,7 +143,10 @@ The recall pool (`Cell._history_candidates` in `cell.py`) is prior cells'
 text **in the same mode only** — a shell cell's `Up` recalls past shell
 commands, not Python code or SQL queries — read live off the sibling cells'
 current text rather than a separate logged history, so editing a cell above
-is immediately reflected the next time recall reaches it.
+is immediately reflected the next time recall reaches it. Cells removed by
+the `Ctrl+L` clear are still recallable: their text is archived on the kernel
+(`Kernel.cleared_inputs`) and recall continues into it after the live cells,
+the way a terminal's history outlives `clear`.
 
 ## Shell mode
 

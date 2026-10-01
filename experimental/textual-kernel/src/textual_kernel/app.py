@@ -134,12 +134,15 @@ class NotebookApp(App):
         focused one and reset its output, keeping its text (like ``Ctrl+L``
         keeping the line being typed). Kernel state is untouched -- a
         clear, not a restart. Cells with a shell command still running are
-        kept, since removing one would orphan the command mid-run.
+        kept, since removing one would orphan the command mid-run. Removed
+        cells' text is archived on the kernel so Up-arrow recall still
+        reaches it.
         """
         cells = list(self.query(Cell))
         keep = self._focused_cell() or cells[-1]
         for cell in cells:
             if cell is not keep and not cell.shell_running:
+                self.kernel.cleared_inputs.append((cell.mode, cell.editor.text))
                 await cell.remove()
         if not keep.shell_running:
             await keep.clear_output()
