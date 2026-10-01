@@ -93,6 +93,10 @@ Known conflicts / gotchas (running list — add to this as we find more):
   everywhere except Windows/Linux inside VSCode's integrated terminal (see
   the platform-conditional note above) — accepted knowingly, not
   overlooked.
+  `Ctrl+L` (clear) matches the terminal/readline "clear screen" convention.
+  It sends form feed (`0x0C`), which no other key shares. It isn't in
+  `TextArea`'s claimed set, and VSCode passes it through to the terminal so
+  the shell's own clear works there.
 
 ### host apps that embed a terminal (VSCode, etc.)
 

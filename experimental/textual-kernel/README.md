@@ -57,6 +57,10 @@ uv run textual-kernel
   [Copying output](#copying-output))
 - `Ctrl+G` — toggle debug mode: the debug trace under AI replies (see
   [Debug trace](#debug-trace))
+- `Ctrl+L` — clear, like a terminal's `clear`/`Ctrl+L`: removes every
+  other cell and the focused cell's output, keeping its text. Kernel state
+  (variables, shell `cd`) survives, so it's a clear, not a restart. A cell
+  with a shell command still running is left alone
 - `Ctrl+Q` — quit
 
 ## Run in a browser

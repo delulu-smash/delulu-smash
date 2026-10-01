@@ -36,6 +36,7 @@ class NotebookApp(App):
         Binding("ctrl+j", "cycle_mode", "Cycle cell mode"),
         Binding("ctrl+o", "copy_output", "Copy output"),
         Binding("ctrl+g", "toggle_debug", "Debug"),
+        Binding("ctrl+l", "clear_all", "Clear"),
         Binding("ctrl+q", "quit", "Quit"),
     ]
 
@@ -127,6 +128,23 @@ class NotebookApp(App):
         ``.ai-debug`` / ``.debug-badge`` in ``Cell.DEFAULT_CSS``.
         """
         self.query_one("#cells", VerticalScroll).toggle_class("-debug")
+
+    async def action_clear_all(self) -> None:
+        """Terminal-``clear`` for the notebook: remove every cell but the
+        focused one and reset its output, keeping its text (like ``Ctrl+L``
+        keeping the line being typed). Kernel state is untouched -- a
+        clear, not a restart. Cells with a shell command still running are
+        kept, since removing one would orphan the command mid-run.
+        """
+        cells = list(self.query(Cell))
+        keep = self._focused_cell() or cells[-1]
+        for cell in cells:
+            if cell is not keep and not cell.shell_running:
+                await cell.remove()
+        if not keep.shell_running:
+            await keep.clear_output()
+        keep.editor.focus()
+        keep.scroll_visible()
 
     def action_delete_cell(self) -> None:
         cells = list(self.query(Cell))

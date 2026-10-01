@@ -439,10 +439,6 @@ class Cell(Vertical):
         self.editor.language = self._languages[self.mode]
         self.editor.single_line_submit = self.mode == "shell"
 
-        self.execution_count = None
-        self._prompt.remove_class("-ran")
-        self._prompt.update(self._icons[self.mode])
-
         if self.mode in self.SQL_MODES:
             engine, target = self.kernel.sql_connection_info(self._sql_connection())
             self._connection_info.update(f"{engine} · {target}" if target else engine)
@@ -453,6 +449,17 @@ class Cell(Vertical):
             self._connection_info.remove_class("-visible")
 
         self._completion_popup.hide()
+        await self.clear_output()
+
+    async def clear_output(self) -> None:
+        """Drop the shown output, run count and exec time, keeping the
+        editor's text and mode -- what ``set_mode`` and the app's ``Ctrl+L``
+        clear both reset to.
+        """
+        # TODO: see if we want the "clear" keybinding (Ctrl+L) to also clear the AI session.
+        self.execution_count = None
+        self._prompt.remove_class("-ran")
+        self._prompt.update(self._icons[self.mode])
         self._last_result = None
         self._exec_time.remove_class("-visible")
         await self._output.remove_children()
