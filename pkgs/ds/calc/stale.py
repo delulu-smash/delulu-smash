@@ -22,14 +22,14 @@ __all__ = [
 ]
 
 # reduction per stale-queue position (1 = most recent), Ultimate values
-# docs-source: docs/mechanics/stale_moves.md#stale-reductors (sync-tested)
+# ds::docs-source: docs/mechanics/stale_moves.md#stale-reductors (sync-tested)
 REDUCTORS: tuple[float, ...] = (0.09, 0.08545, 0.07635, 0.0679, 0.05945, 0.05035, 0.04255, 0.03345, 0.025)
 QUEUE_SIZE = len(REDUCTORS)
 # damage multiplier for a move that isn't in the queue at all
-# docs-source: docs/mechanics/stale_moves.md#stale-multipliers (sync-tested)
+# ds::docs-source: docs/mechanics/stale_moves.md#stale-multipliers (sync-tested)
 FRESHNESS_BONUS = 1.05
 # a queue slot filled by a shield hit only counts this fraction of its reductor
-# docs-source: docs/mechanics/stale_moves.md#stale-multipliers (sync-tested)
+# ds::docs-source: docs/mechanics/stale_moves.md#stale-multipliers (sync-tested)
 SHIELD_REDUCTOR_FACTOR = 0.85
 
 

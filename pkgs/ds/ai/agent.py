@@ -14,7 +14,7 @@ __all__ = ["agent"]
 # agent = Agent("openai:gpt-5.6-sol", capabilities=[Coder()])  # noqa: ERA001  # alt config
 # TODO: transfer specific smash ultimate engine items to docs/smashDb (eg 1v1 base multiplier)
 # always-on (capabilities are deferred), so match assumptions apply to every answer
-# docs-source: none yet (no 1v1 multiplier docs page; 1.2 also in ds.calc.modifiers)
+# ds::docs-source: none yet (no 1v1 multiplier docs page; 1.2 also in ds.calc.modifiers)
 _INSTRUCTIONS = """\
 Assume a competitive Super Smash Bros. Ultimate 1v1 (singles) match unless the user says otherwise (eg doubles,
 FFA, 3+ players). In 1v1 the game multiplies all damage by 1.2x:

@@ -15,18 +15,18 @@ __all__ = [
 ]
 
 # damage taken in matches started with exactly 2 players and items off
-# docs-source: docs/moveset.md#sl-armor-thresholds (1v1 column = threshold x this; sync-tested)
+# ds::docs-source: docs/moveset.md#sl-armor-thresholds (1v1 column = threshold x this, tested)
 ONE_V_ONE_MULTIPLIER = 1.2
 # aerials from a "short hop attack" (jump + attack together); a normal short hop aerial is 1x
-# docs-source: docs/moveset.md#sl-armor-modifiers (sync-tested)
+# ds::docs-source: docs/moveset.md#sl-armor-modifiers (sync-tested)
 SHORT_HOP_ATTACK_MULTIPLIER = 0.85
 # damage at full charge for most smash attacks
-# docs-source: docs/moveset.md#sl-armor-modifiers (sync-tested)
+# ds::docs-source: docs/moveset.md#sl-armor-modifiers (sync-tested)
 SMASH_FULL_CHARGE_MULTIPLIER = 1.4
 SMASH_ATTACKS = ("Forward Smash", "Up Smash", "Down Smash")
 
 # smash attacks that only reach 1.2x at full charge; None = all of that character's smashes
-# docs-source: docs/moveset.md#smash-charge-exceptions (sync-tested)
+# ds::docs-source: docs/moveset.md#smash-charge-exceptions (sync-tested)
 _SMASH_1_2X: dict[str, tuple[str, ...] | None] = {
     "bayonetta": None,
     "mega_man": ("Forward Smash",),

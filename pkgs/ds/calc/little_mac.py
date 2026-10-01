@@ -3,7 +3,7 @@
 # Purpose: Little Mac calcs. straight_lunge_armor(): for each opponent hitbox, whether
 #          Straight Lunge (neutral B) armor tanks it fresh, only after N stales, or never.
 # Rules + sources: "Straight Lunge armor" section of docs/moveset.md (open questions are noted
-#          there, see its `% research: discrepancy` lines).
+#          there, see its `% ds::discrepancy:` lines).
 # ---------------------------------------------------------------------------
 from __future__ import annotations
 
@@ -15,15 +15,15 @@ from ds.calc.stale import min_stales
 __all__ = ["SL_ARMOR_FULL_CHARGE", "SL_ARMOR_UNCHARGED", "armor_result", "straight_lunge_armor"]
 
 # damage-based armor thresholds in base damage (1v1 multiplier scales damage + threshold alike)
-# docs-source: docs/moveset.md#sl-armor-thresholds (sync-tested)
+# ds::docs-source: docs/moveset.md#sl-armor-thresholds (sync-tested)
 SL_ARMOR_UNCHARGED = 8.0
 SL_ARMOR_FULL_CHARGE = 14.0
 # grabs ignore armor (throws only hit the grabbed opponent); dodges don't hit
-# docs-source: docs/moveset.md#sl-armor-modifiers (Grabs row)
+# ds::docs-source: docs/moveset.md#sl-armor-modifiers (Grabs row)
 _SKIPPED_CATEGORIES = ("Grabs / Throws", "Dodges / Rolls")
 
 
-# docs-source: docs/moveset.md#sl-armor-modifiers (tie rule row)
+# ds::docs-source: docs/moveset.md#sl-armor-modifiers (tie rule row)
 def armor_result(damage: float | None, threshold: float) -> str:
     """'fresh', 'after N stales', 'never', or 'not computed' (damage unknown).
 
@@ -43,7 +43,7 @@ def armor_result(damage: float | None, threshold: float) -> str:
     return f"after {k} stale" + ("s" if k > 1 else "")
 
 
-# docs-source: docs/moveset.md#sl-armor-modifiers (short hop attack, full charge rows)
+# ds::docs-source: docs/moveset.md#sl-armor-modifiers (short hop attack, full charge rows)
 def _variants(char_id: str, category: str, move: str, damage: float | None) -> list[tuple[str, float | None]]:
     """The normal hit plus variants frame data leaves out (short hop attack, charged smash)."""
     variants: list[tuple[str, float | None]] = [("normal", damage)]

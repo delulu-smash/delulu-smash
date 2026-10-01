@@ -23,8 +23,8 @@ get resolved later. Tracked in git, but not published (`docs/scratch/**` is excl
    and then:
    - updates the affected places listed under **Affects** (docs pages, SmashDb notes, code constants)
    - records the **Resolution** with evidence and date
-   - flips the page pointers (`% research: discrepancy D-00X (resolved)`)
-   - updates code built on the changed pages (tagged `docs-source:` in code) and re-runs the tests
+   - removes the page pointers (`% ds::discrepancy: D-00X`) from the affected pages
+   - updates code built on the changed pages (tagged `ds::docs-source:` in code) and re-runs the tests
    - adds an eval case when it's a fact the AI could get wrong again
 4. **Disagree with a provisional value?** Say so in your notes. It will be revisited in the same pass.
 
@@ -156,7 +156,7 @@ Most entries are settled by reading exact damage numbers in Training Mode. The s
 - **Affects:**
   - `docs/moveset.md` (`sl-armor-modifiers` table)
   - `docs/glossary.md` ("Short hop attack" row)
-  - code built on those rows: `docs-source:` tags in `pkgs/ds/calc/modifiers.py` and
+  - code built on those rows: `ds::docs-source:` tags in `pkgs/ds/calc/modifiers.py` and
     `pkgs/ds/calc/little_mac.py`, plus the tests in `tests/ds/calc/`
 - **Claims:**
   - **0.85× applies to aerials performed in a short hop, in Ultimate:**

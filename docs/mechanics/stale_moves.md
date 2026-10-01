@@ -310,41 +310,41 @@ Training Mode, **Stale Moves ON**, CPU standing still:
 - Grab not entering the queue, per-hit jab counting, rapid jab counting: **not sourced**, lab to confirm
 :::
 
-% research: ssbwiki Stale_Moves revid=2039011 pulled=2026-09-29 (raw wikitext via action=raw)
-% research: staged: local/staging/wiki/2026-09-29_ssbwiki_stale-moves.md (machine-local)
-% research: ssbwiki Pummel revid=2062540 pulled=2026-09-30
-% research: staged: local/staging/wiki/2026-09-30_ssbwiki_pummel.md (machine-local)
-% research: ssbwiki Zelda_(SSBU)/Pummel revid=1942223 pulled=2026-09-30
-% research: staged: local/staging/wiki/2026-09-30_ssbwiki_zelda-ssbu_pummel.md (machine-local)
-% research: ssbwiki Lucario_(SSBU)/Pummel revid=2023392 pulled=2026-09-30
-% research: staged: local/staging/wiki/2026-09-30_ssbwiki_lucario-ssbu_pummel.md (machine-local)
-% research: ssbwiki King_K._Rool_(SSBU)/Pummel revid=1656296 pulled=2026-09-30
-% research: staged: local/staging/wiki/2026-09-30_ssbwiki_king-k-rool-ssbu_pummel.md (machine-local)
-% research: ssbwiki King_K._Rool_(SSBU)/Neutral_attack revid=1932779 pulled=2026-09-30
-% research: staged: local/staging/wiki/2026-09-30_ssbwiki_king-k-rool-ssbu_neutral-attack.md (machine-local)
-% research: ssbwiki Terry_(SSBU)/Forward_throw revid=1716987 pulled=2026-09-30
-% research: staged: local/staging/wiki/2026-09-30_ssbwiki_terry-ssbu_forward-throw.md (machine-local)
-% research: ssbwiki Wii_Fit_Trainer_(SSBU) revid=2056310 pulled=2026-09-30
-% research: staged: local/staging/wiki/2026-09-30_ssbwiki_wii-fit-trainer-ssbu.md (machine-local)
-% research: ssbwiki Little_Mac_(SSBU) revid=2060038 pulled=2026-09-30
-% research: staged: local/staging/wiki/2026-09-30_ssbwiki_little-mac-ssbu.md (machine-local)
-% research: ssbwiki Little_Mac_(SSBU)/Pummel revid=1712946 pulled=2026-09-30
-% research: staged: local/staging/wiki/2026-09-30_ssbwiki_little-mac-ssbu_pummel.md (machine-local)
-% research: ssbwiki Little_Mac_(SSBU)/Neutral_attack revid=1932619 pulled=2026-09-30
-% research: staged: local/staging/wiki/2026-09-30_ssbwiki_little-mac-ssbu_neutral-attack.md (machine-local)
-% research: checked SmashWiki Grab, Throw, Grab_release, Neutral_attack pages: no Ultimate stale-queue info (Throw only covers Brawl chain grabs)
-% research: derived: grab not queued (deals no damage; general rule "only moves that connect/deal damage stale")
-% research: derived: refresh table computed from reductor table (1 - sum of remaining slots)
-% research: Lucario page says "each pummel that's interrupted" enters the queue and that "some pummels might not help ... due to being too quick"; unclear meaning, treated as "each pummel = 1 entry"
-% research: unverified: per-hit jab entries, rapid jab counting, grab not queued -> lab test dropdown on page
-% research: discrepancy D-006 (needs-lab) -- docs/scratch/discrepancies.md
-% research: dodge staling as a separate system: general knowledge (Little Mac page mentions defensive options stale), not from the stale-queue sources
-% research: code: pkgs/ds/calc/stale.py (REDUCTORS <- stale-reductors; FRESHNESS_BONUS, SHIELD_REDUCTOR_FACTOR <- stale-multipliers) -- sync-tested in tests/ds/calc/test_docs_sync.py
-% research: code: pkgs/ds/ai/mechanics.py (stale_damage tool cites this page)
-% research: glossary terms added to docs/glossary.md; eval cases in pkgs/ds/ai/evals/smash_knowledge.yaml
-% research: kept all-games, "Brawl onward", "Smash 4 onward" and "Specifics in Ultimate" content
-% research: dropped 64 system, Melee/Brawl specifics, controversy, "prior to SSB4" grab aerials, SSB4 customization mode
-% research: knockback 30% rule inherited from SSB4 section (wiki: Ultimate "generally unchanged from SSB4")
-% research: items conflict resolved in favor of Ultimate section (only battering-item swings enter queue)
-% research: unverified: shield 0.85x (single datamine), knockback 30% for Ultimate specifically
-% research: discrepancy D-007 (open) -- docs/scratch/discrepancies.md
+% ds::research: ssbwiki Stale_Moves revid=2039011 pulled=2026-09-29 (raw wikitext via action=raw)
+% ds::research: staged: local/staging/wiki/2026-09-29_ssbwiki_stale-moves.md (machine-local)
+% ds::research: ssbwiki Pummel revid=2062540 pulled=2026-09-30
+% ds::research: staged: local/staging/wiki/2026-09-30_ssbwiki_pummel.md (machine-local)
+% ds::research: ssbwiki Zelda_(SSBU)/Pummel revid=1942223 pulled=2026-09-30
+% ds::research: staged: local/staging/wiki/2026-09-30_ssbwiki_zelda-ssbu_pummel.md (machine-local)
+% ds::research: ssbwiki Lucario_(SSBU)/Pummel revid=2023392 pulled=2026-09-30
+% ds::research: staged: local/staging/wiki/2026-09-30_ssbwiki_lucario-ssbu_pummel.md (machine-local)
+% ds::research: ssbwiki King_K._Rool_(SSBU)/Pummel revid=1656296 pulled=2026-09-30
+% ds::research: staged: local/staging/wiki/2026-09-30_ssbwiki_king-k-rool-ssbu_pummel.md (machine-local)
+% ds::research: ssbwiki King_K._Rool_(SSBU)/Neutral_attack revid=1932779 pulled=2026-09-30
+% ds::research: staged: local/staging/wiki/2026-09-30_ssbwiki_king-k-rool-ssbu_neutral-attack.md (machine-local)
+% ds::research: ssbwiki Terry_(SSBU)/Forward_throw revid=1716987 pulled=2026-09-30
+% ds::research: staged: local/staging/wiki/2026-09-30_ssbwiki_terry-ssbu_forward-throw.md (machine-local)
+% ds::research: ssbwiki Wii_Fit_Trainer_(SSBU) revid=2056310 pulled=2026-09-30
+% ds::research: staged: local/staging/wiki/2026-09-30_ssbwiki_wii-fit-trainer-ssbu.md (machine-local)
+% ds::research: ssbwiki Little_Mac_(SSBU) revid=2060038 pulled=2026-09-30
+% ds::research: staged: local/staging/wiki/2026-09-30_ssbwiki_little-mac-ssbu.md (machine-local)
+% ds::research: ssbwiki Little_Mac_(SSBU)/Pummel revid=1712946 pulled=2026-09-30
+% ds::research: staged: local/staging/wiki/2026-09-30_ssbwiki_little-mac-ssbu_pummel.md (machine-local)
+% ds::research: ssbwiki Little_Mac_(SSBU)/Neutral_attack revid=1932619 pulled=2026-09-30
+% ds::research: staged: local/staging/wiki/2026-09-30_ssbwiki_little-mac-ssbu_neutral-attack.md (machine-local)
+% ds::research: checked SmashWiki Grab, Throw, Grab_release, Neutral_attack pages: no Ultimate stale-queue info (Throw only covers Brawl chain grabs)
+% ds::research: derived: grab not queued (deals no damage; general rule "only moves that connect/deal damage stale")
+% ds::research: derived: refresh table computed from reductor table (1 - sum of remaining slots)
+% ds::research: Lucario page says "each pummel that's interrupted" enters the queue and that "some pummels might not help ... due to being too quick"; unclear meaning, treated as "each pummel = 1 entry"
+% ds::research: unverified: per-hit jab entries, rapid jab counting, grab not queued -> lab test dropdown on page
+% ds::discrepancy: D-006
+% ds::research: dodge staling as a separate system: general knowledge (Little Mac page mentions defensive options stale), not from the stale-queue sources
+% ds::research: code: pkgs/ds/calc/stale.py (REDUCTORS <- stale-reductors; FRESHNESS_BONUS, SHIELD_REDUCTOR_FACTOR <- stale-multipliers) -- sync-tested in tests/ds/calc/test_docs_sync.py
+% ds::research: code: pkgs/ds/ai/mechanics.py (stale_damage tool cites this page)
+% ds::research: glossary terms added to docs/glossary.md; eval cases in pkgs/ds/ai/evals/smash_knowledge.yaml
+% ds::research: kept all-games, "Brawl onward", "Smash 4 onward" and "Specifics in Ultimate" content
+% ds::research: dropped 64 system, Melee/Brawl specifics, controversy, "prior to SSB4" grab aerials, SSB4 customization mode
+% ds::research: knockback 30% rule inherited from SSB4 section (wiki: Ultimate "generally unchanged from SSB4")
+% ds::research: items conflict resolved in favor of Ultimate section (only battering-item swings enter queue)
+% ds::research: unverified: shield 0.85x (single datamine), knockback 30% for Ultimate specifically
+% ds::discrepancy: D-007

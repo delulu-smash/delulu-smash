@@ -55,13 +55,13 @@ easy to debug.
 Defined in `.agents/skills/docs-writing/SKILL.md`, section "Sources (required standard)":
 
 - **Dropdown (people):** a collapsed `:::{dropdown} Sources` at the end of each page.
-- **`% research:` lines (AI):** source version (eg SmashWiki `revid`), scope kept or dropped, inherited
+- **`% ds::research:` lines (AI):** source version (eg SmashWiki `revid`), scope kept or dropped, inherited
   behavior, resolved conflicts, unverified claims, and the staged raw copy's path.
 
 ## Staging lifecycle (`local/staging/`)
 
 ```
-capture  →  distill (smash-research skill)  →  user review  →  docs/ + Sources + % research:  →  mark processed
+capture  →  distill (smash-research skill)  →  user review  →  docs/ + Sources + % ds::research:  →  mark processed
 ```
 
 - **Layout:** `local/staging/<kind>/<YYYY-MM-DD>_<source>_<slug>.md`, where `<kind>` is `wiki`, `discord`,
@@ -72,7 +72,7 @@ capture  →  distill (smash-research skill)  →  user review  →  docs/ + Sou
 - **Machine-local by choice:** Discord messages are other people's words, and the repo may be public.
   Consequences:
   - Staging doesn't sync between machines.
-  - `% research:` lines mark staged paths "(machine-local)".
+  - `% ds::research:` lines mark staged paths "(machine-local)".
   - Sources that can be re-fetched (SmashWiki by `revid`) don't depend on the staged copy.
 - **Not the same as `local/assets/staging`,** which is `ds.util.const.STAGING_ASSETS_DIR`, for media assets.
 
@@ -89,7 +89,7 @@ capture  →  distill (smash-research skill)  →  user review  →  docs/ + Sou
 
 - **Stale moves:** the first topic run end-to-end.
   - raw wikitext is staged
-  - `docs/mechanics/stale_moves.md` is written with Sources and `% research:` lines
+  - `docs/mechanics/stale_moves.md` is written with Sources and `% ds::research:` lines
   - glossary rows are added
   - 8 eval cases exist
 - **Evals:** not yet run.

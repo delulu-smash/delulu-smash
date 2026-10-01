@@ -25,7 +25,7 @@ __all__ = ["little_mac_capability", "straight_lunge_armor"]
 
 SL_ARMOR_DOC = "docs/moveset.md"  # "Straight Lunge armor" section
 
-# docs-source: docs/moveset.md#sl-armor (instructions summarize it; numbers from ds.calc)
+# ds::docs-source: docs/moveset.md#sl-armor (instructions summarize it; numbers from ds.calc)
 
 _INSTRUCTIONS = f"""\
 For whether Little Mac's neutral B (Straight Lunge, SL) armor tanks an opponent's moves, call straight_lunge_armor

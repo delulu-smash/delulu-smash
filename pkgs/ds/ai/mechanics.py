@@ -15,7 +15,7 @@ from ds.calc.stale import FRESHNESS_BONUS, REDUCTORS, SHIELD_REDUCTOR_FACTOR, st
 
 __all__ = ["StaleDamage", "mechanics_capability", "stale_damage"]
 
-# docs-source: docs/mechanics/stale_moves.md (tool output cites it; numbers from ds.calc)
+# ds::docs-source: docs/mechanics/stale_moves.md (tool output cites it; numbers from ds.calc)
 STALE_DOC = "docs/mechanics/stale_moves.md"
 
 _INSTRUCTIONS = f"""\

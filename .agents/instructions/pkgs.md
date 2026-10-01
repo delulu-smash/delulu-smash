@@ -94,21 +94,22 @@ code to update. Plain logic doesn't need this.
   rewording, unlike headings or line numbers):
 
   ```python
-  # docs-source: docs/moveset.md#sl-armor-modifiers (sync-tested)
+  # ds::docs-source: docs/moveset.md#sl-armor-modifiers (sync-tested)
   SHORT_HOP_ATTACK_MULTIPLIER = 0.85
   ```
-  - The tag is `docs-source:`, not `docs:`, because ruff's ERA001 reads `# docs: docs/...` as commented-out
-    code.
-  - Use `# docs-source: none yet (...)` for a fact that has no docs page yet.
+  - Uses the repo's `ds::` tag prefix (see `.agents/agents.md`, "Repo Tag Prefix"). A bonus: ruff's ERA001
+    reads a plain `# docs: docs/...` as commented-out code, but `ds::` isn't valid Python, so it's never
+    flagged.
+  - Use `# ds::docs-source: none yet (...)` for a fact that has no docs page yet.
   - **No discrepancy tags in code.** Whether a value is provisional is tracked only in `docs/`: the page's
-    `% research: discrepancy D-###` lines and `docs/scratch/discrepancies.md`. Resolving one changes the docs,
+    `% ds::discrepancy: D-###` lines (ID only) and `docs/scratch/discrepancies.md`. Resolving one changes the docs,
     and the rule below then leads to the code.
-- **Back-link on the docs page:** one `% research: code: <file> (<names> <- <label>) -- sync-tested in <test>`
+- **Back-link on the docs page:** one `% ds::research: code: <file> (<names> <- <label>) -- sync-tested in <test>`
   line per file that depends on it.
 - **Sync-test numbers:** put the number in its own cell of a labelled list-table and assert it in
   `tests/ds/calc/test_docs_sync.py` with `ds.util.docs.docs_table("<label>")`. A docs edit then fails
   `uv run pytest tests/` and names the constant.
 - **When a docs page changes** (edited directly or by resolving a discrepancy), find the code built on it with
-  `grep -rn "docs-source: docs/<page>.md" pkgs tests` plus the page's `% research: code:` lines, update it in
+  `grep -rn "ds::docs-source: docs/<page>.md" pkgs tests` plus the page's `% ds::research: code:` lines, update it in
   the same change, and run `uv run pytest tests/`.
 

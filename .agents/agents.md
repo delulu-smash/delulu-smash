@@ -236,6 +236,21 @@ Lint rules live in root `pyproject.toml` (`[tool.ruff]`) and run through the pre
   contorting the code or retrying repeatedly.
 - `experimental/` is temporarily excluded from ruff linting (see `[tool.ruff.lint] exclude`).
 
+## Repo Tag Prefix (`ds::`)
+
+Every machine-readable tag created for this repo (comments that AI and tools search for) starts with `ds::`, so
+`grep -rn "ds::" .` lists them all and a plain word in normal text never matches by accident.
+
+| Tag | Where | Meaning | Defined in |
+|---|---|---|---|
+| `% ds::research:` | `docs/` pages (MyST comment) | Provenance: source versions, staged copies, scope, code that depends on the page | `.agents/skills/docs-writing/SKILL.md` |
+| `% ds::discrepancy: D-###` | `docs/` pages (MyST comment) | Page is affected by an **unresolved** entry in `docs/scratch/discrepancies.md`. ID only; removed when resolved | `.agents/skills/docs-writing/SKILL.md` |
+| `# ds::docs-source:` | code (`pkgs/`, tests) | Value or rule comes from a docs page/label | `.agents/instructions/pkgs.md` ("Docs-Derived Code") |
+
+- **New tag types** use the same `ds::<name>:` shape. Add a row here and define the details where the tag is
+  used.
+- **Discrepancy status lives only in `docs/`.** Code carries `ds::docs-source:` only.
+
 ## Domain Note
 
 - In this repo, "Smash Ultimate" refers to Nintendo's video game Super Smash Bros. Ultimate.
@@ -256,7 +271,7 @@ supplement `docs/` rather than being thrown away.
   - a quick way to settle it, eg a training-mode lab setup
 - **Fill gaps openly.** If `docs/` doesn't cover something, answer from general knowledge or research. Label it as
   not from `docs/`, say how confident you are, and offer to add it.
-- **Weigh `docs/` claims unequally.** Claims marked unverified in `% research:` lines, or sitting next to TODOs,
+- **Weigh `docs/` claims unequally.** Claims marked unverified in `% ds::research:` lines, or sitting next to TODOs,
   are weaker than lab-backed or sourced ones. Say so when that matters.
 - **Don't edit `docs/` to "fix" a discrepancy** unless the user asks. Report it and let them decide.
 - **Log discrepancies instead of blocking.** Record conflicts and unverified claims in

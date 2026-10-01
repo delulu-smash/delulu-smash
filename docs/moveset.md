@@ -117,29 +117,29 @@ Partial charge is somewhere in between. How it ramps isn't known yet (to lab).
 - Grabs ignore armor: [SmashWiki: Armor](https://www.ssbwiki.com/Armor) — pulled 2026-09-30
 :::
 
-% research: ultimateframedata little_mac neutral B notes: "starts at 8% (9.6% in 1v1) and builds to 14% (16.8% in 1v1) on max charge release"
-% research: ssbwiki Straight_Lunge revid=2024710 pulled=2026-09-30
-% research: staged: local/staging/wiki/2026-09-30_ssbwiki_straight-lunge.md (machine-local)
-% research: ssbwiki 1v1_multiplier revid=1984616 pulled=2026-09-30
-% research: staged: local/staging/wiki/2026-09-30_ssbwiki_1v1-multiplier.md (machine-local)
-% research: ssbwiki Short_hop revid=2038420 pulled=2026-09-30 (0.85x is in the Ultimate paragraph of Mechanics, NOT the N64 heights table)
-% research: staged: local/staging/wiki/2026-09-30_ssbwiki_short-hop.md (machine-local)
-% research: ssbwiki Smash_attack revid=2062630 pulled=2026-09-30
-% research: staged: local/staging/wiki/2026-09-30_ssbwiki_smash-attack.md (machine-local)
-% research: SL Armour sheet (live, no version) pulled=2026-09-30
-% research: staged: local/staging/sheets/2026-09-30_sl-armour-sheet_read-me.md (machine-local)
-% research: staged: local/staging/sheets/2026-09-30_sl-armour-sheet_dk.md (machine-local)
-% research: ssbwiki Armor revid=2024771 pulled=2026-09-30 ("Grab hitboxes ignore all [armor]")
-% research: staged: local/staging/wiki/2026-09-30_ssbwiki_armor.md (machine-local)
-% research: code: pkgs/ds/calc/little_mac.py (SL_ARMOR_UNCHARGED, SL_ARMOR_FULL_CHARGE <- sl-armor-thresholds; armor_result tie rule, _SKIPPED_CATEGORIES, _variants <- sl-armor-modifiers) -- sync-tested in tests/ds/calc/test_docs_sync.py
-% research: code: pkgs/ds/calc/modifiers.py (SHORT_HOP_ATTACK_MULTIPLIER, SMASH_FULL_CHARGE_MULTIPLIER <- sl-armor-modifiers; _SMASH_1_2X <- smash-charge-exceptions; ONE_V_ONE_MULTIPLIER <- sl-armor-thresholds 1v1 column) -- sync-tested in tests/ds/calc/test_docs_sync.py
-% research: code: pkgs/ds/ai/little_mac.py (capability instructions describe this section)
-% research: discrepancy D-001 (open) -- docs/scratch/discrepancies.md
-% research: discrepancy D-002 (open) -- docs/scratch/discrepancies.md
-% research: discrepancy D-003 (open) -- docs/scratch/discrepancies.md
-% research: discrepancy D-004 (open) -- docs/scratch/discrepancies.md
-% research: discrepancy D-005 (open) -- docs/scratch/discrepancies.md
-% research: discrepancy D-008 (needs-lab) -- docs/scratch/discrepancies.md
+% ds::research: ultimateframedata little_mac neutral B notes: "starts at 8% (9.6% in 1v1) and builds to 14% (16.8% in 1v1) on max charge release"
+% ds::research: ssbwiki Straight_Lunge revid=2024710 pulled=2026-09-30
+% ds::research: staged: local/staging/wiki/2026-09-30_ssbwiki_straight-lunge.md (machine-local)
+% ds::research: ssbwiki 1v1_multiplier revid=1984616 pulled=2026-09-30
+% ds::research: staged: local/staging/wiki/2026-09-30_ssbwiki_1v1-multiplier.md (machine-local)
+% ds::research: ssbwiki Short_hop revid=2038420 pulled=2026-09-30 (0.85x is in the Ultimate paragraph of Mechanics, NOT the N64 heights table)
+% ds::research: staged: local/staging/wiki/2026-09-30_ssbwiki_short-hop.md (machine-local)
+% ds::research: ssbwiki Smash_attack revid=2062630 pulled=2026-09-30
+% ds::research: staged: local/staging/wiki/2026-09-30_ssbwiki_smash-attack.md (machine-local)
+% ds::research: SL Armour sheet (live, no version) pulled=2026-09-30
+% ds::research: staged: local/staging/sheets/2026-09-30_sl-armour-sheet_read-me.md (machine-local)
+% ds::research: staged: local/staging/sheets/2026-09-30_sl-armour-sheet_dk.md (machine-local)
+% ds::research: ssbwiki Armor revid=2024771 pulled=2026-09-30 ("Grab hitboxes ignore all [armor]")
+% ds::research: staged: local/staging/wiki/2026-09-30_ssbwiki_armor.md (machine-local)
+% ds::research: code: pkgs/ds/calc/little_mac.py (SL_ARMOR_UNCHARGED, SL_ARMOR_FULL_CHARGE <- sl-armor-thresholds; armor_result tie rule, _SKIPPED_CATEGORIES, _variants <- sl-armor-modifiers) -- sync-tested in tests/ds/calc/test_docs_sync.py
+% ds::research: code: pkgs/ds/calc/modifiers.py (SHORT_HOP_ATTACK_MULTIPLIER, SMASH_FULL_CHARGE_MULTIPLIER <- sl-armor-modifiers; _SMASH_1_2X <- smash-charge-exceptions; ONE_V_ONE_MULTIPLIER <- sl-armor-thresholds 1v1 column) -- sync-tested in tests/ds/calc/test_docs_sync.py
+% ds::research: code: pkgs/ds/ai/little_mac.py (capability instructions describe this section)
+% ds::discrepancy: D-001
+% ds::discrepancy: D-002
+% ds::discrepancy: D-003
+% ds::discrepancy: D-004
+% ds::discrepancy: D-005
+% ds::discrepancy: D-008
 % TODO: lab the threshold ramp between uncharged and full charge (see TODO in pkgs/ds/ai/little_mac.py)
 
 ::::{grid}

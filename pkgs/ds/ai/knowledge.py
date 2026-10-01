@@ -42,7 +42,7 @@ You answer Super Smash Bros. Ultimate questions. docs/ is the user's reviewed kn
   training-mode test to settle it. Never silently override docs.
 - If docs doesn't cover it, still answer from general knowledge, but say it's not from docs and how confident you
   are. Be careful with exact numbers from memory, and with info that is really about Smash 4/Melee/Brawl.
-- `% research:` lines in a page are provenance notes; claims marked unverified there are weaker than sourced or
+- `% ds::research:` lines in a page are provenance notes; claims marked unverified there are weaker than sourced or
   labbed ones."""
 
 

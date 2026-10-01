@@ -10,7 +10,7 @@ How to get the full text from each common source. Add to this file whenever a ne
   `curl -sL "https://www.ssbwiki.com/index.php?title=<Page_Name>&action=raw"`
   The raw text keeps game-scope templates that summarizing fetchers lose.
 - **`revid` (revision ID):** SmashWiki runs on MediaWiki (like Wikipedia), and every saved edit to any page
-  gets a new, wiki-wide increasing number. `revid=2024710` in a `% research:` line means "this page exactly as
+  gets a new, wiki-wide increasing number. `revid=2024710` in a `% ds::research:` line means "this page exactly as
   it was at edit #2024710", the version our notes came from.
   - **Get the current one:** `https://www.ssbwiki.com/api.php?action=query&prop=revisions&titles=<Page>&rvprop=ids|timestamp&format=json`
   - **View that exact version:** `https://www.ssbwiki.com/index.php?oldid=<revid>`, which works even after
@@ -26,7 +26,7 @@ How to get the full text from each common source. Add to this file whenever a ne
 - **Character pages:** `<Character>_(SSBU)` is the Ultimate page. Move subpages look like
   `<Character>_(SSBU)/<Move>`.
 - **`<ref>` tags** point to the original evidence (datamine tweets, videos). Copy them into the page's Sources
-  dropdown and `% research:` lines (docs-writing standard).
+  dropdown and `% ds::research:` lines (docs-writing standard).
 
 ## Frame data
 
