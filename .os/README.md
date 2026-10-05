@@ -24,6 +24,8 @@ Recommended layout for script discoverability:
 Current files of interest:
 
 - `.os/scripts/keybindings/screenrecord.sh`: Omarchy/Hyprland-friendly region recording toggle script.
+- `.os/scripts/keybindings/textual-kernel.sh`: launches the `experimental/textual-kernel` TUI (bound to `SUPER + SHIFT + J`, launch-or-focus).
+- `.os/scripts/keybindings/claude-delulu.sh`: opens Claude Code in this repo, continuing the last session (bound to `SUPER + SHIFT + A`, replacing ChatGPT, launch-or-focus).
 - `.os/cli.py`: Local OS/bootstrap helper entry point.
 - `.os/config.toml` and `.os/rc`: machine setup configuration.
 
