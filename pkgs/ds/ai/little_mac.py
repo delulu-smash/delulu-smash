@@ -44,6 +44,8 @@ def _db() -> SmashDb:
     return init_db()
 
 
+# TODO: need to fix this as Ike numbers not confirming https://discord.com/channels/1517997920941772800/1518082318936440882/1557129103096680588
+# also has additional info not on ultimate frame data (eg get up attack, mistech attack, etc)
 def straight_lunge_armor(character: str) -> TableResult:
     """Whether Little Mac's Straight Lunge (neutral B) armor tanks each of a character's hits.
 
