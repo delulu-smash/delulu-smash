@@ -9,6 +9,7 @@ from ds.ai.knowledge import knowledge_capability
 from ds.ai.little_mac import little_mac_capability
 from ds.ai.mechanics import mechanics_capability
 from ds.ai.smashdb import smashdb_capability
+from ds.ai.supermajor import supermajor_capability
 
 __all__ = ["agent"]
 # agent = Agent("openai:gpt-5.6-sol", capabilities=[Coder()])  # noqa: ERA001  # alt config
@@ -28,7 +29,13 @@ FFA, 3+ players). In 1v1 the game multiplies all damage by 1.2x:
 agent = Agent(
     "openai:gpt-5.6-sol",
     instructions=_INSTRUCTIONS,
-    capabilities=[knowledge_capability, smashdb_capability, mechanics_capability, little_mac_capability],
+    capabilities=[
+        knowledge_capability,
+        smashdb_capability,
+        mechanics_capability,
+        little_mac_capability,
+        supermajor_capability,
+    ],
 )
 
 

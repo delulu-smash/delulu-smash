@@ -3,22 +3,107 @@
 # Purpose: Scrape a player's character usage (eg "Last 6 Months") and starter/counterpick
 # stage usage from a supermajor.gg player page. The page is server-rendered Next.js: the
 # stats live in its embedded RSC payload (`self.__next_f.push`), so plain httpx2 works.
-# Usage: `player_usage(url)` with a player page url (see `scripts/supermajor_usage.py`).
+# Usage: `player_usage("DeLulu")` with a tag, player id or page url
+# (see `scripts/supermajor_usage.py`).
 # ---------------------------------------------------------------------------
+# TODO: normalize the character_id to what database has
+#
+# Site notes: context the code doesn't show (findings, decisions, dead ends), as of Oct 2026.
+# Re-check against the live site if parsing breaks.
+#
+# How the site behaves:
+# - Only `?id=S...` picks a player; the name in the url is ignored, and a name-only url
+#   (eg /ultimate/player/Lukedub) loads but has no player data. Hence tag -> id needs search.
+# - There's no __NEXT_DATA__ blob; the JSON sits in the RSC chunks. Some sections appear
+#   twice (duplicated chunks), which is why lookups take the first match.
+# - Stage stats aren't split by period and the site doesn't say what range they cover; don't
+#   label them all-time (the agent did once, so ds.ai.supermajor instructions forbid it).
+#   starters + counters don't add up to `all` (DeLulu: 47 + 23 vs 113 games), unexplained.
+# - Low-activity players can have no character/stage data at all (eg Lukedub, 1 event): empty
+#   results are real, not a parse bug.
+# - No robots.txt (the url just returns a page). Terms of service not reviewed.
+#
+# Decisions:
+# - Browser User-Agent on purpose: the user didn't want requests to announce a scraper.
+# - Returns pydantic models, not polars: the user wanted structured objects (also what the
+#   agent tools need). Convert with pl.DataFrame([m.model_dump() for m in ...]) if needed.
+# - Tag search: the homepage "Search for a player" box is client-side only (no form; tried
+#   /search?q=, /ultimate/search?q=, /ultimate/players?search= -> all 404). It calls the
+#   Supabase edge function `player-search-v2` with the site's public anon key. Options weighed:
+#   ids only (no key), a headless browser driving the search box (rejected: heavy dependency
+#   for one lookup), or calling the API with the key. The user chose the API.
+# - Key handling: Claude Code's safety check blocked (1) hardcoding the key in this file and
+#   (2) staging a file containing it, so it lives only in the git-ignored
+#   pkgs/ds/settings/.env (`Settings.supermajor_anon_key`). Each machine needs that line added
+#   (or $SUPERMAJOR_ANON_KEY); without it tag search errors clearly, ids/urls still work. To
+#   find the key again (eg after a rotation): grep the page's /_next/static/chunks/*.js for
+#   the `createBrowserClient(<supabase url>, "<key>")` call. Never commit it.
+# - Duplicate tags: exact case, then any case, then most events wins; `PlayerLookup` records
+#   which (`match_type`, `tied_matches`) because the user wanted it visible for debugging.
+#
+# Known gaps / next steps:
+# - Search results look capped at 25 ("Luke" returns exactly 25), so a low-event player with a
+#   very common tag may not be findable by tag; use their id.
+# - The TODO above: supermajor character ids (eg A1297) don't match SmashDb char ids
+#   (eg little_mac) yet.
+# - Not parsed yet but on the page: `winrate_contexts` (overall/vs ranked/vs seeds win rates)
+#   and tournament placements.
 from __future__ import annotations
 
 import json
 import re
+from typing import Literal
 
 import httpx2
 from pydantic import BaseModel, Field
+
+from ds.settings import ENV_FILE, get_settings
 
 # A regular desktop Chrome UA, so requests look like a normal browser visit
 USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
 LAST_6_MONTHS = "Last 6 Mo"  # the page's own key; the UI shows it as "Last 6 Months"
 ALL_TIME = "All Time"
 
+PLAYER_URL = "https://www.supermajor.gg/ultimate/player/player?id={player_id}"  # the site ignores the name part
+_PLAYER_ID_RE = re.compile(r"^S\d{4,}$")  # same check the site's own JS uses for start.gg player ids
+
+# Tag search: the site's search box calls this Supabase edge function from the browser, with
+# the public "anon" key shipped in the site's JS bundle (`Settings.supermajor_anon_key`)
+_SEARCH_URL = "https://slpurukxtnleofuopadw.supabase.co/functions/v1/player-search-v2"
+
 _PUSH_RE = re.compile(r"self\.__next_f\.push\(\[1,(\"(?:[^\"\\]|\\.)*\")\]\)")
+
+
+class PlayerMatch(BaseModel):
+    """One player from a supermajor.gg tag search"""
+
+    player_id: str = Field(description="supermajor.gg player id, eg 'S4734338'")
+    tag: str
+    country: str | None = None
+    state: str | None = None
+    num_events: int = Field(0, description="Events attended; search results are sorted by this")
+
+    @property
+    def url(self) -> str:
+        """Player page url on supermajor.gg"""
+        return PLAYER_URL.format(player_id=self.player_id)
+
+
+MatchType = Literal["url", "player_id", "tag_exact", "tag_any_case"]
+
+
+class PlayerLookup(BaseModel):
+    """How a `player_usage` input was resolved to a player page (for debugging)"""
+
+    query: str = Field(description="The input as given: tag, player id or url")
+    match_type: MatchType = Field(
+        description="url / player_id: used as given; tag_exact: same-case tag match; "
+        + "tag_any_case: no same-case match, matched ignoring case"
+    )
+    url: str = Field(description="Player page url that was fetched")
+    player: PlayerMatch | None = Field(None, description="Picked search result (tag lookups only)")
+    tied_matches: int = Field(1, description="Players matching at the same level; >1 means most events won")
+    search_results: int | None = Field(None, description="Total search results (tag lookups only)")
 
 
 class CharacterUsage(BaseModel):
@@ -58,6 +143,70 @@ class PlayerUsage(BaseModel):
     starters: StageStats = Field(description="Game 1 (starter) stages; not split by period on the page")
     counters: StageStats = Field(description="Counterpick stages; not split by period on the page")
     all_stages: StageStats = Field(description="Every game with stage data, any category")
+    lookup: PlayerLookup | None = Field(None, description="How the player was found; None from parse_player_usage")
+
+
+def search_players(tag: str) -> list[PlayerMatch]:
+    """Search supermajor.gg Ultimate players by tag (substring, any case), most events first
+
+    Needs `Settings.supermajor_anon_key` ($SUPERMAJOR_ANON_KEY or `pkgs/ds/settings/.env`).
+    """
+    secret = get_settings().supermajor_anon_key
+    if secret is None:
+        hint = "or pass a player id / page url instead"
+        raise ValueError(f"tag search needs SUPERMAJOR_ANON_KEY in {ENV_FILE} or the environment; {hint}")
+    key = secret.get_secret_value()
+    resp = httpx2.post(
+        _SEARCH_URL,
+        headers={
+            "User-Agent": USER_AGENT,
+            "apikey": key,
+            "Authorization": f"Bearer {key}",
+        },
+        json={"sport": "ultimate", "searchTerm": tag, "searchMode": "all-players", "limitToOldRankings": False},
+        timeout=30,
+    )
+    resp.raise_for_status()
+    return [PlayerMatch.model_validate(p) for p in resp.json()["data"]]
+
+
+def pick_player(tag: str, matches: list[PlayerMatch]) -> PlayerLookup:
+    """Pick the player for `tag` from search results: exact-case match first, then any case
+
+    Tags aren't unique, so among equal matches the one with the most events wins
+    (`tied_matches` says how many there were). Raises `ValueError` if no result has this tag.
+    """
+    tiers: list[tuple[MatchType, list[PlayerMatch]]] = [
+        ("tag_exact", [m for m in matches if m.tag == tag]),
+        ("tag_any_case", [m for m in matches if m.tag.casefold() == tag.casefold()]),
+    ]
+    for match_type, hits in tiers:
+        if hits:
+            best = max(hits, key=lambda m: m.num_events)
+            return PlayerLookup(
+                query=tag,
+                match_type=match_type,
+                url=best.url,
+                player=best,
+                tied_matches=len(hits),
+                search_results=len(matches),
+            )
+    similar = ", ".join(m.tag for m in matches[:10]) or "none"
+    raise ValueError(f"no supermajor.gg player tagged {tag!r}; similar tags: {similar}")
+
+
+def is_tag(player: str) -> bool:
+    """Whether `player` is a tag to search for, rather than a player id or page url"""
+    return not (player.startswith(("http://", "https://")) or _PLAYER_ID_RE.match(player))
+
+
+def resolve_player(player: str) -> PlayerLookup:
+    """Resolve a tag (eg 'Lukedub'), player id (eg 'S4734338') or page url to a player page"""
+    if is_tag(player):
+        return pick_player(player, search_players(player))
+    if _PLAYER_ID_RE.match(player):
+        return PlayerLookup(query=player, match_type="player_id", url=PLAYER_URL.format(player_id=player))
+    return PlayerLookup(query=player, match_type="url", url=player)
 
 
 def fetch_player_page(url: str) -> str:
@@ -135,6 +284,14 @@ def parse_player_usage(html: str, period: str = LAST_6_MONTHS) -> PlayerUsage:
     )
 
 
-def player_usage(url: str, period: str = LAST_6_MONTHS) -> PlayerUsage:
-    """Fetch a supermajor.gg player page: character usage for `period`, plus stage usage"""
-    return parse_player_usage(fetch_player_page(url), period)
+def player_usage(player: str, period: str = LAST_6_MONTHS) -> PlayerUsage:
+    """Character usage for `period` plus stage usage of a supermajor.gg player
+
+    Args:
+        player: a tag (eg 'Lukedub'; see `pick_player` for duplicate tags), a player id
+            (eg 'S4734338') or a player page url.
+        period: `LAST_6_MONTHS` or `ALL_TIME`, for the character list.
+    """
+    lookup = resolve_player(player)
+    usage = parse_player_usage(fetch_player_page(lookup.url), period)
+    return usage.model_copy(update={"lookup": lookup})

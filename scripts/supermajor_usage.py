@@ -4,16 +4,26 @@
 # supermajor.gg page (via ds.data.raw.supermajor).
 #
 # Example CLI Commands:
-#   1. Last 6 Months:   uv run scripts/supermajor_usage.py "https://www.supermajor.gg/ultimate/player/DeLulu?id=S4734338"
-#   2. All Time:        uv run scripts/supermajor_usage.py "<player url>" --all-time
-#   3. Raw JSON:        uv run scripts/supermajor_usage.py "<player url>" --json
+#   0. By tag:          uv run scripts/supermajor_usage.py Lukedub
+#   1. By player id:    uv run scripts/supermajor_usage.py S4734338
+#   2. By page url:     uv run scripts/supermajor_usage.py "https://www.supermajor.gg/ultimate/player/DeLulu?id=S4734338"
+#   3. All Time:        uv run scripts/supermajor_usage.py S4734338 --all-time
+#   4. Raw JSON:        uv run scripts/supermajor_usage.py S4734338 --json
+#   5. List tag matches: uv run scripts/supermajor_usage.py Luke --list
 # ---------------------------------------------------------------------------
 from __future__ import annotations
 
 from typing import Annotated
 
 import typer
-from ds.data.raw.supermajor import ALL_TIME, LAST_6_MONTHS, StageStats, player_usage
+from ds.data.raw.supermajor import (
+    ALL_TIME,
+    LAST_6_MONTHS,
+    PlayerLookup,
+    StageStats,
+    player_usage,
+    search_players,
+)
 from rich import print as rprint
 
 app = typer.Typer()
@@ -25,17 +35,37 @@ def _print_stages(title: str, stats: StageStats) -> None:
         rprint(f"  {s.stage:<20} {s.usage_pct:5.1f}%  ({s.games} games)")
 
 
+def _print_lookup(lookup: PlayerLookup | None) -> None:
+    if lookup is None or lookup.player is None:
+        return
+    m = lookup.player
+    where = "-".join(x for x in (m.country, m.state) if x) or "?"
+    note = f"; {lookup.tied_matches - 1} other player(s) tie, see --list" if lookup.tied_matches > 1 else ""
+    rprint(f"[dim]{m.tag} ({m.player_id}, {where}, {m.num_events} events) via {lookup.match_type}{note}[/dim]")
+
+
 @app.command()
 def main(
-    url: Annotated[str, typer.Argument(help="supermajor.gg player page url")],
+    player: Annotated[str, typer.Argument(help="Tag (eg Lukedub), player id (eg S4734338) or page url")],
     all_time: Annotated[bool, typer.Option("--all-time", help="All Time instead of Last 6 Months")] = False,
     as_json: Annotated[bool, typer.Option("--json", help="Print the PlayerUsage model as JSON")] = False,
+    list_matches: Annotated[bool, typer.Option("--list", help="List players matching the tag, with ids")] = False,
 ) -> None:
     """Print each character's and stage's usage % for a supermajor.gg player."""
-    usage = player_usage(url, ALL_TIME if all_time else LAST_6_MONTHS)
+    if list_matches:
+        for m in search_players(player):
+            where = "-".join(x for x in (m.country, m.state) if x) or "?"
+            rprint(f"  {m.player_id:<10} {m.tag:<20} {where:<7} {m.num_events} events")
+        return
+    try:
+        usage = player_usage(player, ALL_TIME if all_time else LAST_6_MONTHS)
+    except ValueError as e:
+        rprint(f"[red]{e}[/red]")
+        raise typer.Exit(1) from e
     if as_json:
         rprint(usage.model_dump_json(indent=2))
         return
+    _print_lookup(usage.lookup)
     rprint(f"[bold]Characters[/bold] ({usage.period})")
     for c in usage.characters:
         rprint(f"  {c.character:<20} {c.usage_pct:5.1f}%  ({c.games} games)")

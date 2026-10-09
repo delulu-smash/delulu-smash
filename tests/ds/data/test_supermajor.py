@@ -8,7 +8,14 @@ from __future__ import annotations
 import json
 
 import pytest
-from ds.data.raw.supermajor import ALL_TIME, LAST_6_MONTHS, parse_player_usage
+from ds.data.raw.supermajor import (
+    ALL_TIME,
+    LAST_6_MONTHS,
+    PlayerMatch,
+    parse_player_usage,
+    pick_player,
+    resolve_player,
+)
 
 
 def _stage(sid: str, name: str, short: str, played: int, rate: float) -> dict:
@@ -85,3 +92,26 @@ def test_empty_period() -> None:
 def test_unknown_period_lists_available() -> None:
     with pytest.raises(ValueError, match="Last 6 Mo"):
         parse_player_usage(_page(_DATA), "Last Year")
+
+
+def test_resolve_player() -> None:
+    by_id = resolve_player("S2884234")
+    assert (by_id.match_type, by_id.url.endswith("?id=S2884234")) == ("player_id", True)
+    url = "https://www.supermajor.gg/ultimate/player/DeLulu?id=S4734338"
+    assert (resolve_player(url).match_type, resolve_player(url).url) == ("url", url)
+
+
+def test_pick_player_prefers_exact_case_then_most_events() -> None:
+    matches = [
+        PlayerMatch(player_id="S1", tag="Luke", num_events=167),
+        PlayerMatch(player_id="S2", tag="Luke", num_events=75),
+        PlayerMatch(player_id="S3", tag="luke", num_events=500),
+        PlayerMatch(player_id="S4", tag="Lukedub", num_events=1),
+    ]
+    exact = pick_player("Luke", matches)
+    assert (exact.match_type, exact.player.player_id, exact.tied_matches) == ("tag_exact", "S1", 2)
+    any_case = pick_player("LUKE", matches)
+    assert (any_case.match_type, any_case.player.player_id, any_case.tied_matches) == ("tag_any_case", "S3", 3)
+    assert any_case.search_results == 4
+    with pytest.raises(ValueError, match="similar tags"):
+        pick_player("Lu", matches)

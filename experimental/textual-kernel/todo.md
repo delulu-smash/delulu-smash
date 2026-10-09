@@ -36,6 +36,7 @@
 33. having AI chat autocomplete (with markdown snippets, if could use vscode settings)
 34. ways to have AI save checkpoints in git so can easily revert
 
+
 # agent file structure or suggester
 
 1. redesign agent instructions so claude code and github copilot both keep working off one shared structure
