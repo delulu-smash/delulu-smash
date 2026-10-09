@@ -32,14 +32,27 @@
 #   Supabase edge function `player-search-v2` with the site's public anon key. Options weighed:
 #   ids only (no key), a headless browser driving the search box (rejected: heavy dependency
 #   for one lookup), or calling the API with the key. The user chose the API.
-# - Key handling: Claude Code's safety check blocked (1) hardcoding the key in this file and
-#   (2) staging a file containing it, so it lives only in the git-ignored
-#   pkgs/ds/settings/.env (`Settings.supermajor_anon_key`). Each machine needs that line added
-#   (or $SUPERMAJOR_ANON_KEY); without it tag search errors clearly, ids/urls still work. To
-#   find the key again (eg after a rotation): grep the page's /_next/static/chunks/*.js for
-#   the `createBrowserClient(<supabase url>, "<key>")` call. Never commit it.
+# - Key handling: the key is committed below (`_SUPABASE_ANON_KEY`) on purpose. It's the public
+#   Supabase anon key every visitor's browser gets (it only allows what anonymous visitors can
+#   do), issued 2023-01, expiring 2033-01 per its own JWT `exp`. Earlier it lived in a
+#   git-ignored settings .env, but needing it copied to every machine wasn't worth it for a
+#   public value. Claude Code's safety check blocks an AI from writing or staging it, so the
+#   user pastes it in by hand (see "Updating the search key" below).
 # - Duplicate tags: exact case, then any case, then most events wins; `PlayerLookup` records
 #   which (`match_type`, `tied_matches`) because the user wanted it visible for debugging.
+#
+# Updating the search key (when tag search fails with "search key rejected", HTTP 401/403):
+# 1. Open https://www.supermajor.gg/ultimate/player/DeLulu?id=S4734338 and list the
+#    /_next/static/chunks/*.js urls in its HTML; download them.
+# 2. Grep them for `createBrowserClient(`: its first argument is the Supabase url (compare
+#    with `_SEARCH_URL`; if the project id changed, update that too), its second is the key
+#    (a long `eyJ...` JWT string).
+# 3. Paste the key into `_SUPABASE_ANON_KEY` by hand (an AI can do steps 1-2 and point at the
+#    line, but its safety check stops it writing the key), then check:
+#    uv run scripts/supermajor_usage.py DeLulu
+# 4. If the call itself changed (404 or a different body), re-read how the site's search box
+#    calls `functions.invoke("player-search-v2", {body})` in the same chunks and update
+#    `search_players`.
 #
 # Known gaps / next steps:
 # - Search results look capped at 25 ("Luke" returns exactly 25), so a low-event player with a
@@ -57,8 +70,6 @@ from typing import Literal
 import httpx2
 from pydantic import BaseModel, Field
 
-from ds.settings import ENV_FILE, get_settings
-
 # A regular desktop Chrome UA, so requests look like a normal browser visit
 USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
 LAST_6_MONTHS = "Last 6 Mo"  # the page's own key; the UI shows it as "Last 6 Months"
@@ -68,8 +79,10 @@ PLAYER_URL = "https://www.supermajor.gg/ultimate/player/player?id={player_id}"  
 _PLAYER_ID_RE = re.compile(r"^S\d{4,}$")  # same check the site's own JS uses for start.gg player ids
 
 # Tag search: the site's search box calls this Supabase edge function from the browser, with
-# the public "anon" key shipped in the site's JS bundle (`Settings.supermajor_anon_key`)
+# the public "anon" key shipped in the site's JS bundle (see "Updating the search key" above)
 _SEARCH_URL = "https://slpurukxtnleofuopadw.supabase.co/functions/v1/player-search-v2"
+# paste the key here by hand (public, committed on purpose; see Site notes)
+_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNscHVydWt4dG5sZW9mdW9wYWR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2NzQyMzYwMjIsImV4cCI6MTk4OTgxMjAyMn0.WN3Th51ocS4riD01CGhxJv6BsXtG8bqLPHZFeepyoyk"  # noqa: E501
 
 _PUSH_RE = re.compile(r"self\.__next_f\.push\(\[1,(\"(?:[^\"\\]|\\.)*\")\]\)")
 
@@ -147,15 +160,11 @@ class PlayerUsage(BaseModel):
 
 
 def search_players(tag: str) -> list[PlayerMatch]:
-    """Search supermajor.gg Ultimate players by tag (substring, any case), most events first
-
-    Needs `Settings.supermajor_anon_key` ($SUPERMAJOR_ANON_KEY or `pkgs/ds/settings/.env`).
-    """
-    secret = get_settings().supermajor_anon_key
-    if secret is None:
-        hint = "or pass a player id / page url instead"
-        raise ValueError(f"tag search needs SUPERMAJOR_ANON_KEY in {ENV_FILE} or the environment; {hint}")
-    key = secret.get_secret_value()
+    """Search supermajor.gg Ultimate players by tag (substring, any case), most events first"""
+    fix = "see 'Updating the search key' in ds/data/raw/supermajor.py, or pass a player id / url instead"
+    if not _SUPABASE_ANON_KEY:
+        raise ValueError(f"supermajor search key not set; {fix}")
+    key = _SUPABASE_ANON_KEY
     resp = httpx2.post(
         _SEARCH_URL,
         headers={
@@ -166,6 +175,8 @@ def search_players(tag: str) -> list[PlayerMatch]:
         json={"sport": "ultimate", "searchTerm": tag, "searchMode": "all-players", "limitToOldRankings": False},
         timeout=30,
     )
+    if resp.status_code in {401, 403}:
+        raise ValueError(f"supermajor search key rejected (HTTP {resp.status_code}); {fix}")
     resp.raise_for_status()
     return [PlayerMatch.model_validate(p) for p in resp.json()["data"]]
 

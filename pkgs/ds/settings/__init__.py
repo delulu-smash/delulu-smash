@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-from pathlib import Path
 
 import keyring
 from pydantic import BaseModel, SecretStr
@@ -9,22 +8,6 @@ from pydantic import BaseModel, SecretStr
 __all__ = ["get_settings"]
 
 KEYRING_SERVICE_NAME: str = "delulu-smash"
-# Local, git-ignored KEY=value file for non-keyring settings (eg SUPERMAJOR_ANON_KEY)
-ENV_FILE: Path = Path(__file__).parent / ".env"
-
-
-def _read_env_file(path: Path = ENV_FILE) -> dict[str, str]:
-    """Parse a simple KEY=value file (blank lines and # comments skipped); {} if missing"""
-    if not path.is_file():
-        return {}
-    values = {}
-    for raw in path.read_text().splitlines():
-        line = raw.strip()
-        if line and not line.startswith("#") and "=" in line:
-            key, _, value = line.partition("=")
-            values[key.strip()] = value.strip().strip("'\"")
-    return values
-
 
 _MAX_DISPLAY_LEN = 30
 
@@ -48,9 +31,6 @@ class Settings(BaseModel):
 
     # OpenAI API key stored in keyring
     openai_api_key: OpenApiKey | None = None
-    # supermajor.gg's public Supabase "anon" key (from the site's JS), for player tag search.
-    # Read from $SUPERMAJOR_ANON_KEY or ENV_FILE (pkgs/ds/settings/.env, git-ignored)
-    supermajor_anon_key: SecretStr | None = None
 
 
 def set_settings(openai_api_key: str | None = None) -> None:
@@ -67,8 +47,7 @@ def init_settings() -> Settings:
     openai_api_key = keyring.get_password(KEYRING_SERVICE_NAME, "OPENAI_API_KEY")
     if openai_api_key:
         os.environ["OPENAI_API_KEY"] = openai_api_key
-    supermajor_anon_key = os.environ.get("SUPERMAJOR_ANON_KEY") or _read_env_file().get("SUPERMAJOR_ANON_KEY")
-    return Settings(openai_api_key=openai_api_key, supermajor_anon_key=supermajor_anon_key)
+    return Settings(openai_api_key=openai_api_key)
 
 
 def get_settings() -> Settings:

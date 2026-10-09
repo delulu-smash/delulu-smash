@@ -51,8 +51,8 @@ table (primary key, foreign keys, grain), not as an arbitrary data dump.
   ids, since site slugs can differ (eg `donkey_kong` not `dk`, `king_dedede` not `king_ddd`).
 - supermajor.gg (player character/stage usage, `pkgs/ds/data/raw/supermajor.py`, agent tools in
   `pkgs/ds/ai/supermajor.py`) is server-rendered Next.js: data is JSON in the RSC payload, not HTML classes, and
-  tag search needs a key kept in the git-ignored `pkgs/ds/settings/.env`. Read the "Site notes" comment at the top
-  of that file (findings, decisions, dead ends) before changing it.
+  tag search uses the site's public search key, committed in that file. Read the "Site notes" comment at the top
+  of it (findings, decisions, dead ends, how to update the key) before changing it.
 - Use `httpx2` (Pydantic's actively maintained continuation of `httpx`, same API) as the HTTP client, not `httpx`.
 - Before writing any new scraper, verify whether the target site is static HTML or JS-rendered (fetch raw HTML and
   check for the data) before assuming a headless browser is needed.
