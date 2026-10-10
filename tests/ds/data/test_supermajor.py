@@ -12,6 +12,7 @@ from ds.data.raw.supermajor import (
     ALL_TIME,
     LAST_6_MONTHS,
     PlayerMatch,
+    PlayerUsage,
     parse_player_usage,
     pick_player,
     resolve_player,
@@ -115,3 +116,22 @@ def test_pick_player_prefers_exact_case_then_most_events() -> None:
     assert any_case.search_results == 4
     with pytest.raises(ValueError, match="similar tags"):
         pick_player("Lu", matches)
+
+
+def _field_names(model: type) -> set[str]:
+    """Every field name in a pydantic model, including nested models (eg list[StageUsage])"""
+    names = set()
+    for name, info in model.model_fields.items():
+        names.add(name)
+        for arg in (info.annotation, *getattr(info.annotation, "__args__", ())):
+            if isinstance(arg, type) and hasattr(arg, "model_fields"):
+                names |= _field_names(arg)
+    return names
+
+
+def test_no_skill_signals() -> None:
+    """Facts only by design (see Site notes): no win/loss/ranking/placement fields"""
+    names = _field_names(PlayerUsage) | _field_names(PlayerMatch)
+    assert {"usage_pct", "short_name", "num_events"} <= names  # nested models are walked
+    banned = ("win", "loss", "rank", "seed", "placement")
+    assert not [n for n in names if any(b in n for b in banned)]

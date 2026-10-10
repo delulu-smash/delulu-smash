@@ -24,6 +24,13 @@
 # - No robots.txt (the url just returns a page). Terms of service not reviewed.
 #
 # Decisions:
+# - Facts only, no skill signals: we deliberately don't return wins, losses, win rates,
+#   rankings, seeds or placements, even though the page and search results have them
+#   (`num_wins`/`num_losses`/`winrate` per character, `winrate_contexts`, placements,
+#   `all_rankings`/`defacto_ranking`, `match_wins`...). The user uses this to prep for an
+#   opponent and doesn't want to be distracted by how "good" or "bad" they seem: just what
+#   they play and where. Keep it that way; don't add them back without the user asking.
+#   (`num_events` stays: it's activity, and it decides ties between players sharing a tag.)
 # - Browser User-Agent on purpose: the user didn't want requests to announce a scraper.
 # - Returns pydantic models, not polars: the user wanted structured objects (also what the
 #   agent tools need). Convert with pl.DataFrame([m.model_dump() for m in ...]) if needed.
@@ -59,8 +66,6 @@
 #   very common tag may not be findable by tag; use their id.
 # - The TODO above: supermajor character ids (eg A1297) don't match SmashDb char ids
 #   (eg little_mac) yet.
-# - Not parsed yet but on the page: `winrate_contexts` (overall/vs ranked/vs seeds win rates)
-#   and tournament placements.
 from __future__ import annotations
 
 import json
@@ -126,9 +131,6 @@ class CharacterUsage(BaseModel):
     character: str = Field(description="Display name, eg 'Little Mac'")
     usage_pct: float = Field(description="0-100, share of the period's games that have character data")
     games: int
-    wins: int
-    losses: int
-    winrate: float = Field(description="0-1, game winrate on this character")
 
 
 class StageUsage(BaseModel):
@@ -279,9 +281,6 @@ def parse_player_usage(html: str, period: str = LAST_6_MONTHS) -> PlayerUsage:
             character=names.get(cid, cid),
             usage_pct=ctx["characters"][cid]["usage_rate"] * 100,
             games=ctx["characters"][cid]["num_games"],
-            wins=ctx["characters"][cid]["num_wins"],
-            losses=ctx["characters"][cid]["num_losses"],
-            winrate=ctx["characters"][cid]["winrate"],
         )
         for cid in ctx["order"]
     ]

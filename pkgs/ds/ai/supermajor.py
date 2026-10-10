@@ -39,8 +39,11 @@ supermajor.gg (tournament sets from start.gg), not from docs/.
 - `characters` covers the requested period (last 6 months by default). Stage stats (`starters` =
   game 1 stages, `counters` = counterpick stages) aren't filtered by period and the site doesn't
   say what time range they cover, so don't call them all-time or recent; just say unfiltered.
-- usage_pct is 0-100 (share of games with character/stage data); winrate is 0-1. Mention game counts,
-  since small samples (eg 2 games) mean little. Empty lists mean the site has no data for them."""
+- usage_pct is 0-100 (share of games with character/stage data). Mention game counts, since small
+  samples (eg 2 games) mean little. Empty lists mean the site has no data for them.
+- Facts only: the user is prepping for opponents and doesn't want to judge how good they are. Don't
+  bring up win rates, records, rankings, seeds or placements, even from memory or other sources,
+  unless the user asks for them directly."""
 
 
 def find_players(tag: str) -> list[PlayerMatch]:
