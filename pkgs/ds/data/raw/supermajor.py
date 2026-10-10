@@ -45,6 +45,23 @@
 #   git-ignored settings .env, but needing it copied to every machine wasn't worth it for a
 #   public value. Claude Code's safety check blocks an AI from writing or staging it, so the
 #   user pastes it in by hand (see "Updating the search key" below).
+# - Character windows: the page has both "Last 6 Mo" and "All Time" character usage; we
+#   return both. `characters` prefers the last 6 months (what they play now) and falls back to
+#   all time only when the last 6 months has no character data (eg inactive lately), flagged
+#   by `characters_fallback`, because all-time data can be stale (old mains). The agent must
+#   say which window its answer is based on.
+# - Last 10 events: from `recent_form.contexts["Last 10 Events"].placements` (one row per
+#   event: `event_info` + `entrant_info`). Each event lists which characters were used
+#   (`entrant_info.characters`, the event's main first; [] when start.gg has no character
+#   data) but not games per character, so this view counts events, not games: its
+#   `CharacterStats` has unit="events" (the user wanted the same object as the other windows;
+#   hence the neutral `count`/`total` names). Event pages (/ultimate/event/<id>) have the same
+#   per-event lists, no per-game picks; those load client-side, so a per-game count would need
+#   more search-API calls per event (not done). It's the
+#   latest 10 events whenever they were, so it can be years old for an inactive player; hence
+#   `first_date`/`last_date`. Per the facts-only rule we keep only date, names, online and
+#   characters: not seed, placement, match/game wins, entrants or tiers, and not games played
+#   per event either (how many games someone played at an event reveals how deep they went).
 # - Duplicate tags: exact case, then any case, then most events wins; `PlayerLookup` records
 #   which (`match_type`, `tied_matches`) because the user wanted it visible for debugging.
 #
@@ -68,17 +85,21 @@
 #   (eg little_mac) yet.
 from __future__ import annotations
 
+import datetime as dt
 import json
 import re
+from collections import Counter
 from typing import Literal
 
 import httpx2
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 
 # A regular desktop Chrome UA, so requests look like a normal browser visit
 USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
 LAST_6_MONTHS = "Last 6 Mo"  # the page's own key; the UI shows it as "Last 6 Months"
 ALL_TIME = "All Time"
+Window = Literal["last_6_months", "all_time", "last_10_events"]
+_WINDOW_KEYS: dict[Window, str] = {"last_6_months": LAST_6_MONTHS, "all_time": ALL_TIME}
 
 PLAYER_URL = "https://www.supermajor.gg/ultimate/player/player?id={player_id}"  # the site ignores the name part
 _PLAYER_ID_RE = re.compile(r"^S\d{4,}$")  # same check the site's own JS uses for start.gg player ids
@@ -125,12 +146,25 @@ class PlayerLookup(BaseModel):
 
 
 class CharacterUsage(BaseModel):
-    """One character's share of a player's games in a period"""
+    """One character's usage in a window, counted in the window's `unit` (games or events)"""
 
     character_id: str = Field(description="supermajor.gg character id, eg 'A1297'")
     character: str = Field(description="Display name, eg 'Little Mac'")
-    usage_pct: float = Field(description="0-100, share of the period's games that have character data")
-    games: int
+    usage_pct: float = Field(description="0-100, `count` / the window's `total`")
+    count: int = Field(description="Games (or events, if unit='events') this character was used in")
+    main_count: int | None = Field(None, description="Events where it was that event's main (events unit only)")
+
+
+class CharacterStats(BaseModel):
+    """Character usage over one window, most-used first"""
+
+    window: Window = Field(description="What these numbers cover: last_6_months, all_time or last_10_events")
+    unit: Literal["games", "events"] = Field(
+        description="What `total`/`count` count. games: usage_pct sums to ~100. events: a player can use "
+        + "several characters per event, so usage_pct can sum past 100"
+    )
+    total: int = Field(description="Games (or events) in this window that have character data")
+    characters: list[CharacterUsage]
 
 
 class StageUsage(BaseModel):
@@ -150,15 +184,47 @@ class StageStats(BaseModel):
     stages: list[StageUsage]
 
 
+class EventCharacters(BaseModel):
+    """Characters a player used at one tournament event"""
+
+    date: dt.date = Field(description="Event start date")
+    tournament: str = Field(description="Tournament name, eg 'Midnight Mashers #462'")
+    event: str = Field(description="Event name within the tournament, eg 'Ultimate Singles'")
+    online: bool
+    characters: list[str] = Field(description="Characters used, the site's main for that event first; [] = no data")
+
+
+class RecentEvents(BaseModel):
+    """Character usage over the player's last 10 events (counted per event, not per game)"""
+
+    first_date: dt.date | None = Field(None, description="Oldest event's date (can be long ago)")
+    last_date: dt.date | None = Field(None, description="Newest event's date")
+    characters: CharacterStats = Field(description="Same shape as the other windows, with unit='events'")
+    events: list[EventCharacters] = Field(description="Newest first")
+
+
 class PlayerUsage(BaseModel):
     """A supermajor.gg player's character and stage usage"""
 
-    period: str = Field(description="Period the `characters` list covers, eg 'Last 6 Mo'")
-    characters: list[CharacterUsage] = Field(description="Most-played first")
+    last_6_months: CharacterStats
+    all_time: CharacterStats
+    last_10_events: RecentEvents
     starters: StageStats = Field(description="Game 1 (starter) stages; not split by period on the page")
     counters: StageStats = Field(description="Counterpick stages; not split by period on the page")
     all_stages: StageStats = Field(description="Every game with stage data, any category")
     lookup: PlayerLookup | None = Field(None, description="How the player was found; None from parse_player_usage")
+
+    @computed_field(description="Character usage to go by: last 6 months, or all time if that has no games")
+    @property
+    def characters(self) -> CharacterStats:
+        """Last 6 months if it has character data, else all time (`characters_fallback`)"""
+        return self.last_6_months if self.last_6_months.characters else self.all_time
+
+    @computed_field(description="True when the last 6 months had no character data, so `characters` is all time")
+    @property
+    def characters_fallback(self) -> bool:
+        """Whether `characters` fell back to all time"""
+        return self.characters.window != "last_6_months"
 
 
 def search_players(tag: str) -> list[PlayerMatch]:
@@ -262,46 +328,95 @@ def _stage_stats(ctx: dict) -> StageStats:
     return StageStats(games=ctx["metadata"]["num_games_with_stage_data"], stages=stages)
 
 
-def parse_player_usage(html: str, period: str = LAST_6_MONTHS) -> PlayerUsage:
-    """Parse character usage for `period` plus stage usage out of a player page's HTML
-
-    Args:
-        html: the player page HTML, eg from `fetch_player_page`.
-        period: the page's character period key, `LAST_6_MONTHS` ("Last 6 Mo") or `ALL_TIME`.
-    """
-    payload = _flight_payload(html)
-    char_contexts = _contexts(payload, "characters")
-    if period not in char_contexts:
-        raise ValueError(f"unknown period {period!r}; available: {list(char_contexts)}")
-    names = {cid: info["name"] for cid, info in _json_after(payload, '"character_info_lookup":').items()}
-    ctx = char_contexts[period]
+def _character_stats(window: Window, ctx: dict | None, names: dict[str, str]) -> CharacterStats:
+    """One window's CharacterStats; a window missing from the page counts as no data"""
+    if ctx is None:
+        return CharacterStats(window=window, unit="games", total=0, characters=[])
     characters = [
         CharacterUsage(
             character_id=cid,
             character=names.get(cid, cid),
             usage_pct=ctx["characters"][cid]["usage_rate"] * 100,
-            games=ctx["characters"][cid]["num_games"],
+            count=ctx["characters"][cid]["num_games"],
         )
         for cid in ctx["order"]
     ]
+    total = ctx.get("metadata", {}).get("num_games_with_character_data", sum(c.count for c in characters))
+    return CharacterStats(window=window, unit="games", total=total, characters=characters)
+
+
+def _recent_events(payload: str, names: dict[str, str]) -> RecentEvents:
+    """The page's "Last 10 Events" (`recent_form`), characters only (see Site notes)"""
+    match = re.search(r'"recent_form":\s*', payload)
+    contexts = json.JSONDecoder().raw_decode(payload, match.end())[0]["contexts"] if match else {}
+    rows = contexts.get("Last 10 Events", {}).get("placements", [])
+    events = sorted(
+        (
+            EventCharacters(
+                date=row["event_info"]["start_date"][:10],
+                tournament=row["event_info"]["tournament_name"],
+                event=row["event_info"]["event_name"],
+                online=row["event_info"]["online"],
+                characters=[names.get(cid, cid) for cid in row["entrant_info"]["characters"]],
+            )
+            for row in rows
+        ),
+        key=lambda e: e.date,
+        reverse=True,
+    )
+    char_lists = [row["entrant_info"]["characters"] for row in rows if row["entrant_info"]["characters"]]
+    used = Counter(cid for chars in char_lists for cid in chars)
+    mains = Counter(chars[0] for chars in char_lists)
+    characters = [
+        CharacterUsage(
+            character_id=cid,
+            character=names.get(cid, cid),
+            usage_pct=n / len(char_lists) * 100,
+            count=n,
+            main_count=mains[cid],
+        )
+        for cid, n in sorted(used.items(), key=lambda kv: (-kv[1], -mains[kv[0]]))
+    ]
+    stats = CharacterStats(window="last_10_events", unit="events", total=len(char_lists), characters=characters)
+    return RecentEvents(
+        first_date=events[-1].date if events else None,
+        last_date=events[0].date if events else None,
+        characters=stats,
+        events=events,
+    )
+
+
+def parse_player_usage(html: str) -> PlayerUsage:
+    """Parse character usage (both date windows) plus stage usage out of a player page's HTML
+
+    Args:
+        html: the player page HTML, eg from `fetch_player_page`.
+    """
+    payload = _flight_payload(html)
+    char_contexts = _contexts(payload, "characters")
+    names = {cid: info["name"] for cid, info in _json_after(payload, '"character_info_lookup":').items()}
+    windows = {w: _character_stats(w, char_contexts.get(key), names) for w, key in _WINDOW_KEYS.items()}
     stage_contexts = _contexts(payload, "stages")
     return PlayerUsage(
-        period=period,
-        characters=characters,
+        last_6_months=windows["last_6_months"],
+        all_time=windows["all_time"],
+        last_10_events=_recent_events(payload, names),
         starters=_stage_stats(stage_contexts["starters"]),
         counters=_stage_stats(stage_contexts["counters"]),
         all_stages=_stage_stats(stage_contexts["all"]),
     )
 
 
-def player_usage(player: str, period: str = LAST_6_MONTHS) -> PlayerUsage:
-    """Character usage for `period` plus stage usage of a supermajor.gg player
+def player_usage(player: str) -> PlayerUsage:
+    """Character usage (last 6 months and all time) plus stage usage of a supermajor.gg player
+
+    `characters` is the window to go by: last 6 months, falling back to all time when the
+    player has no recent character data (`characters_fallback`).
 
     Args:
         player: a tag (eg 'Lukedub'; see `pick_player` for duplicate tags), a player id
             (eg 'S4734338') or a player page url.
-        period: `LAST_6_MONTHS` or `ALL_TIME`, for the character list.
     """
     lookup = resolve_player(player)
-    usage = parse_player_usage(fetch_player_page(lookup.url), period)
+    usage = parse_player_usage(fetch_player_page(lookup.url))
     return usage.model_copy(update={"lookup": lookup})

@@ -6,15 +6,11 @@
 # ---------------------------------------------------------------------------
 from __future__ import annotations
 
-from typing import Literal
-
 import httpx2
 from pydantic_ai import ModelRetry, Tool
 from pydantic_ai.capabilities import Capability
 
 from ds.data.raw.supermajor import (
-    ALL_TIME,
-    LAST_6_MONTHS,
     PlayerMatch,
     PlayerUsage,
     player_usage,
@@ -26,8 +22,6 @@ __all__ = ["find_players", "get_player_usage", "supermajor_capability"]
 # cap on search results handed back to the model
 MAX_PLAYERS = 25
 
-_PERIODS = {"last_6_months": LAST_6_MONTHS, "all_time": ALL_TIME}
-
 _INSTRUCTIONS = """\
 For a competitive Smash Ultimate player's character and stage usage, use get_player_usage with their
 tag (eg 'Lukedub'), supermajor.gg player id (eg 'S4734338') or player page url. Data comes from
@@ -36,11 +30,24 @@ supermajor.gg (tournament sets from start.gg), not from docs/.
   or url; `tied_matches` > 1 means several players share the tag and the one with the most events was
   picked. Say who was picked (tag, region, events) and, on a tie, offer find_players to choose another,
   then call get_player_usage with that player's id.
-- `characters` covers the requested period (last 6 months by default). Stage stats (`starters` =
-  game 1 stages, `counters` = counterpick stages) aren't filtered by period and the site doesn't
-  say what time range they cover, so don't call them all-time or recent; just say unfiltered.
-- usage_pct is 0-100 (share of games with character/stage data). Mention game counts, since small
-  samples (eg 2 games) mean little. Empty lists mean the site has no data for them.
+- Characters: answer from `characters`, which is the last 6 months, or all time when the player
+  has no recent character data (`characters_fallback` = true). ALWAYS say which window the
+  answer is based on, eg "last 6 months (67 games)"; on a fallback, say clearly that they have no
+  games in the last 6 months, so this is all-time data and may be outdated. `last_6_months` and
+  `all_time` are both included: if they differ notably (eg a new main), mention the change.
+- Every character window is a CharacterStats (`last_6_months`, `all_time`,
+  `last_10_events.characters`): `count`/`total` are in its `unit`. unit='games' for the date
+  windows; unit='events' for last 10 events (the site has no per-game split there), so say eg
+  "Roy in 3 of 7 events", never "3 games". With events, usage_pct can sum past 100 (several
+  characters per event); `main_count` = events where it was that event's main.
+- `last_10_events` is good for spotting secondaries and recent switches. Always give its date
+  range (`first_date` to `last_date`): it's the latest 10 events whenever they were, so for an
+  inactive player it can be years old. `events` lists each one.
+- Stage stats (`starters` = game 1 stages, `counters` = counterpick stages) aren't filtered by
+  date and the site doesn't say what time range they cover, so don't call them all-time or
+  recent; just say unfiltered.
+- usage_pct is 0-100. Mention counts and their unit, since small samples (eg 2 games) mean
+  little. Empty lists mean the site has no data for them.
 - Facts only: the user is prepping for opponents and doesn't want to judge how good they are. Don't
   bring up win rates, records, rankings, seeds or placements, even from memory or other sources,
   unless the user asks for them directly."""
@@ -61,20 +68,20 @@ def find_players(tag: str) -> list[PlayerMatch]:
         raise ModelRetry(f"{e}. Ask the user for the player's id or url.") from e
 
 
-def get_player_usage(
-    player: str,
-    period: Literal["last_6_months", "all_time"] = "last_6_months",
-) -> PlayerUsage:
+def get_player_usage(player: str) -> PlayerUsage:
     """Get a player's character, starter-stage and counterpick-stage usage from supermajor.gg.
+
+    Character usage comes for both date windows (last 6 months, all time), with `characters`
+    the one to answer from (see `characters_fallback`), plus per-event character use over their
+    last 10 events (`last_10_events`).
 
     Args:
         player: a tag (eg 'Lukedub'), a supermajor.gg player id (eg 'S4734338') or a player
             page url. For a shared tag, the player with the most events is picked
             (see `lookup`).
-        period: character-usage period, 'last_6_months' or 'all_time'. Stage stats ignore it.
     """
     try:
-        return player_usage(player, _PERIODS[period])
+        return player_usage(player)
     except ValueError as e:  # no player with that tag / missing search key / page format changed
         hint = "Try find_players to look up the tag, or ask the user for an id or url."
         raise ModelRetry(f"{e}. {hint}") from e

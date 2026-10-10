@@ -5,7 +5,9 @@
 # ---------------------------------------------------------------------------
 from __future__ import annotations
 
+import copy
 import json
+import re
 
 import pytest
 from ds.data.raw.supermajor import (
@@ -31,6 +33,20 @@ def _stage_ctx(*stages: dict, games: int) -> dict:
     }
 
 
+def _event(start: str, characters: list[str]) -> dict:
+    """One `recent_form` row, with the result fields we deliberately drop"""
+    return {
+        "event_info": {
+            "start_date": f"{start}T19:00:00",
+            "tournament_name": f"Weekly {start}",
+            "event_name": "Singles",
+            "online": True,
+            "num_entrants": 40,
+        },
+        "entrant_info": {"characters": characters, "seed": 3, "placement": 1, "game_wins": 9, "game_losses": 1},
+    }
+
+
 _PS2 = _stage("A378", "Pokemon Stadium 2", "PS2", 3, 0.75)
 _BF = _stage("A311", "Battlefield", "BF", 1, 0.25)
 
@@ -48,7 +64,22 @@ _DATA = {
                 },
                 "order": ["A1297", "A1299"],
             },
-            ALL_TIME: {"characters": {}, "order": []},
+            ALL_TIME: {
+                "characters": {"A1299": {"usage_rate": 1.0, "num_games": 10}},
+                "order": ["A1299"],
+                "metadata": {"num_games_with_character_data": 10},
+            },
+        }
+    },
+    "recent_form": {
+        "contexts": {
+            "Last 10 Events": {
+                "placements": [
+                    _event("2026-09-01", ["A1299", "A1297"]),
+                    _event("2026-10-01", ["A1297"]),
+                    _event("2026-08-01", []),
+                ]
+            }
         }
     },
     "stages": {
@@ -71,12 +102,33 @@ def _page(data: dict) -> str:
     return f"<html><body>{pushes}</body></html>"
 
 
-def test_last_6_months_characters() -> None:
+def test_characters_prefer_last_6_months() -> None:
     usage = parse_player_usage(_page(_DATA))
-    assert [(c.character, c.usage_pct, c.games) for c in usage.characters] == [
+    assert (usage.characters.window, usage.characters_fallback) == ("last_6_months", False)
+    assert [(c.character, c.usage_pct, c.count) for c in usage.characters.characters] == [
         ("Little Mac", 75.0, 3),
         ("Lucas", 25.0, 1),
     ]
+    assert (usage.characters.unit, usage.characters.total) == ("games", 4)  # no metadata -> sum of counts
+    assert [(c.character, c.count) for c in usage.all_time.characters] == [("Lucas", 10)]
+    assert usage.all_time.total == 10
+
+
+def test_characters_fall_back_to_all_time() -> None:
+    data = copy.deepcopy(_DATA)
+    data["characters"]["contexts"][LAST_6_MONTHS] = {"characters": {}, "order": []}
+    usage = parse_player_usage(_page(data))
+    assert (usage.characters.window, usage.characters_fallback) == ("all_time", True)
+    assert [c.character for c in usage.characters.characters] == ["Lucas"]
+    dumped = usage.model_dump()  # computed fields are serialized for the agent / --json
+    assert (dumped["characters"]["window"], dumped["characters_fallback"]) == ("all_time", True)
+
+
+def test_missing_window_counts_as_no_data() -> None:
+    data = copy.deepcopy(_DATA)
+    del data["characters"]["contexts"][LAST_6_MONTHS]
+    usage = parse_player_usage(_page(data))
+    assert (usage.last_6_months.total, usage.characters_fallback) == (0, True)
 
 
 def test_stages() -> None:
@@ -86,13 +138,22 @@ def test_stages() -> None:
     assert usage.counters.stages == []
 
 
-def test_empty_period() -> None:
-    assert parse_player_usage(_page(_DATA), ALL_TIME).characters == []
+def test_last_10_events() -> None:
+    recent = parse_player_usage(_page(_DATA)).last_10_events
+    assert [e.date.isoformat() for e in recent.events] == ["2026-10-01", "2026-09-01", "2026-08-01"]
+    assert (recent.first_date.isoformat(), recent.last_date.isoformat()) == ("2026-08-01", "2026-10-01")
+    assert recent.events[1].characters == ["Lucas", "Little Mac"]
+    stats = recent.characters  # same CharacterStats shape as the date windows
+    assert (stats.window, stats.unit, stats.total) == ("last_10_events", "events", 2)  # [] event has no data
+    rows = [(c.character, c.count, c.usage_pct, c.main_count) for c in stats.characters]
+    assert rows == [("Little Mac", 2, 100.0, 1), ("Lucas", 1, 50.0, 1)]
 
 
-def test_unknown_period_lists_available() -> None:
-    with pytest.raises(ValueError, match="Last 6 Mo"):
-        parse_player_usage(_page(_DATA), "Last Year")
+def test_missing_recent_form_is_empty() -> None:
+    data = copy.deepcopy(_DATA)
+    del data["recent_form"]
+    recent = parse_player_usage(_page(data)).last_10_events
+    assert (recent.events, recent.characters.characters, recent.first_date) == ([], [], None)
 
 
 def test_resolve_player() -> None:
@@ -133,5 +194,6 @@ def test_no_skill_signals() -> None:
     """Facts only by design (see Site notes): no win/loss/ranking/placement fields"""
     names = _field_names(PlayerUsage) | _field_names(PlayerMatch)
     assert {"usage_pct", "short_name", "num_events"} <= names  # nested models are walked
-    banned = ("win", "loss", "rank", "seed", "placement")
-    assert not [n for n in names if any(b in n for b in banned)]
+    # whole words of the snake_case name, so eg `window` isn't mistaken for a win stat
+    banned = re.compile(r"(^|_)(wins?|winrate|loss(es)?|rank(ing)?s?|seeds?|placements?)(_|$)")
+    assert not [n for n in names if banned.search(n)]

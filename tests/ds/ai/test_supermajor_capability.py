@@ -17,15 +17,8 @@ def test_find_players_caps_results(monkeypatch: pytest.MonkeyPatch) -> None:
     assert len(supermajor.find_players("Luke")) == supermajor.MAX_PLAYERS
 
 
-def test_get_player_usage_maps_period(monkeypatch: pytest.MonkeyPatch) -> None:
-    calls = []
-    monkeypatch.setattr(supermajor, "player_usage", lambda player, period: calls.append((player, period)))
-    supermajor.get_player_usage("S4734338", "all_time")
-    assert calls == [("S4734338", "All Time")]
-
-
 def test_unknown_tag_asks_model_to_retry(monkeypatch: pytest.MonkeyPatch) -> None:
-    def no_player(player: str, _period: str) -> None:
+    def no_player(player: str) -> None:
         raise ValueError(f"no supermajor.gg player tagged {player!r}; similar tags: none")
 
     monkeypatch.setattr(supermajor, "player_usage", no_player)

@@ -7,9 +7,10 @@
 #   0. By tag:          uv run scripts/supermajor_usage.py Lukedub
 #   1. By player id:    uv run scripts/supermajor_usage.py S4734338
 #   2. By page url:     uv run scripts/supermajor_usage.py "https://www.supermajor.gg/ultimate/player/DeLulu?id=S4734338"
-#   3. All Time:        uv run scripts/supermajor_usage.py S4734338 --all-time
+#   3. Both windows:    uv run scripts/supermajor_usage.py S4734338 --all-time
 #   4. Raw JSON:        uv run scripts/supermajor_usage.py S4734338 --json
 #   5. List tag matches: uv run scripts/supermajor_usage.py Luke --list
+#   6. Per-event detail: uv run scripts/supermajor_usage.py S4734338 --events
 # ---------------------------------------------------------------------------
 from __future__ import annotations
 
@@ -17,9 +18,9 @@ from typing import Annotated
 
 import typer
 from ds.data.raw.supermajor import (
-    ALL_TIME,
-    LAST_6_MONTHS,
+    CharacterStats,
     PlayerLookup,
+    RecentEvents,
     StageStats,
     player_usage,
     search_players,
@@ -35,6 +36,27 @@ def _print_stages(title: str, stats: StageStats) -> None:
         rprint(f"  {s.stage:<20} {s.usage_pct:5.1f}%  ({s.games} games)")
 
 
+_WINDOW_LABELS = {"last_6_months": "Last 6 Months", "all_time": "All Time", "last_10_events": "Last 10 Events"}
+
+
+def _print_characters(stats: CharacterStats, note: str = "") -> None:
+    rprint(f"[bold]Characters[/bold] ({_WINDOW_LABELS[stats.window]}, {stats.total} {stats.unit}){note}")
+    for c in stats.characters:
+        main = f", main in {c.main_count}" if c.main_count is not None else ""
+        rprint(f"  {c.character:<20} {c.usage_pct:5.1f}%  ({c.count} {stats.unit}{main})")
+
+
+def _print_recent(recent: RecentEvents, per_event: bool) -> None:
+    span = f" {recent.first_date} to {recent.last_date}" if recent.events else ""
+    rprint()
+    _print_characters(recent.characters, f"[dim]{span}[/dim]")
+    if per_event:
+        for e in recent.events:
+            chars = ", ".join(e.characters) or "[dim]no data[/dim]"
+            where = "online" if e.online else "offline"
+            rprint(f"  [dim]{e.date} {e.tournament} - {e.event} ({where}):[/dim] {chars}")
+
+
 def _print_lookup(lookup: PlayerLookup | None) -> None:
     if lookup is None or lookup.player is None:
         return
@@ -47,9 +69,10 @@ def _print_lookup(lookup: PlayerLookup | None) -> None:
 @app.command()
 def main(
     player: Annotated[str, typer.Argument(help="Tag (eg Lukedub), player id (eg S4734338) or page url")],
-    all_time: Annotated[bool, typer.Option("--all-time", help="All Time instead of Last 6 Months")] = False,
+    all_time: Annotated[bool, typer.Option("--all-time", help="Also show All Time character usage")] = False,
     as_json: Annotated[bool, typer.Option("--json", help="Print the PlayerUsage model as JSON")] = False,
     list_matches: Annotated[bool, typer.Option("--list", help="List players matching the tag, with ids")] = False,
+    per_event: Annotated[bool, typer.Option("--events", help="List each of the last 10 events")] = False,
 ) -> None:
     """Print each character's and stage's usage % for a supermajor.gg player."""
     if list_matches:
@@ -58,7 +81,7 @@ def main(
             rprint(f"  {m.player_id:<10} {m.tag:<20} {where:<7} {m.num_events} events")
         return
     try:
-        usage = player_usage(player, ALL_TIME if all_time else LAST_6_MONTHS)
+        usage = player_usage(player)
     except ValueError as e:
         rprint(f"[red]{e}[/red]")
         raise typer.Exit(1) from e
@@ -66,9 +89,12 @@ def main(
         rprint(usage.model_dump_json(indent=2))
         return
     _print_lookup(usage.lookup)
-    rprint(f"[bold]Characters[/bold] ({usage.period})")
-    for c in usage.characters:
-        rprint(f"  {c.character:<20} {c.usage_pct:5.1f}%  ({c.games} games)")
+    fallback = " [yellow]- no games in the last 6 months[/yellow]" if usage.characters_fallback else ""
+    _print_characters(usage.characters, fallback)
+    if all_time and not usage.characters_fallback:
+        rprint()
+        _print_characters(usage.all_time)
+    _print_recent(usage.last_10_events, per_event)
     _print_stages("Starters", usage.starters)
     _print_stages("Counterpicks", usage.counters)
 
