@@ -22,12 +22,15 @@ CHAR_PARQUET_PATH = DATA_DIR / "char.parquet"
 FRAMEDATA_PARQUET_PATH = DATA_DIR / "framedata.parquet"
 
 
+BYTES_PER_KB = 1024
+
+
 def _human_size(num_bytes: int) -> str:
     size = float(num_bytes)
     for unit in ["B", "KB", "MB", "GB"]:
-        if size < 1024:
+        if size < BYTES_PER_KB:
             return f"{size:.0f}{unit}" if unit == "B" else f"{size:.1f}{unit}"
-        size /= 1024
+        size /= BYTES_PER_KB
     return f"{size:.1f}TB"
 
 
@@ -41,7 +44,7 @@ def summary() -> None:
         rows.append(
             {
                 "table": parquet_path.name,
-                # parquet stores row counts in its metadata, so this is a cheap metadata-only read
+                # parquet stores row counts in its metadata, so this is a cheap read
                 "rows": lf.select(pl.len()).collect().item(),
                 "size": _human_size(parquet_path.stat().st_size),
             }
@@ -51,16 +54,18 @@ def summary() -> None:
     for table, schema in schemas.items():
         print(f"\n{table} schema:")
         with pl.Config(tbl_rows=-1):
-            print(pl.DataFrame({"column": schema.names(), "dtype": [str(dtype) for dtype in schema.dtypes()]}))
+            dtypes = [str(dtype) for dtype in schema.dtypes()]
+            print(pl.DataFrame({"column": schema.names(), "dtype": dtypes}))
 
 
 @data_app.command("framedata")
 def framedata(
     character: str | None = typer.Argument(
-        None, help="Character slug (eg little_mac), matches ultimateframedata.com URL. Omit to scrape all characters"
+        None,
+        help="Character slug from the ultimateframedata.com URL (eg little_mac). Omit for all.",
     ),
 ) -> None:
-    """Scrape ultimateframedata.com move frame data (one or all characters) and sync into data/framedata.parquet"""
+    """Scrape ultimateframedata.com move frame data and sync into data/framedata.parquet."""
     if character is not None:
         df = scrape_framedata(character)
     else:
@@ -76,7 +81,7 @@ def framedata(
 
 @data_app.command("roster")
 def roster() -> None:
-    """Scrape ultimateframedata.com/smash and sync the full character roster into data/char.parquet"""
+    """Scrape ultimateframedata.com/smash and sync the full roster into data/char.parquet."""
     df = scrape_character_roster()
     print(df)
     if typer.confirm(f"Overwrite {CHAR_PARQUET_PATH} with these {df.height} characters?"):

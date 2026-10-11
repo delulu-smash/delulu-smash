@@ -33,7 +33,7 @@ def remove_files(filename: str, target_directory: str, dry_run: bool) -> None:
                     file_path.unlink()
                     logger.info(f"DELETED: {file_path}")
                     count += 1
-                except Exception as e:
+                except OSError as e:
                     logger.info(f"ERROR: Could not delete {file_path}. Reason: {e}")
 
     # Summary of actions

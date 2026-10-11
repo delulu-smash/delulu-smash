@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from litellm import completion
-from pydantic import BaseModel
+
+if TYPE_CHECKING:
+    from pydantic import BaseModel
 
 __all__ = ["chat"]
 
@@ -13,13 +17,16 @@ def chat(
     Send a chat message to the specified model and return the response.
 
     Args:
-        messages (list[dict]): A list of messages in the format [{"role": "user", "content": "Hello"}].
+        messages (list[dict]): A list of messages in the format
+            [{"role": "user", "content": "Hello"}].
         model (str): The model to use for the chat. Default is "gpt-5.4-mini".
-        response_format (type[BaseModel] | None): If provided, the response will be validated against this Pydantic model.
+        response_format (type[BaseModel] | None): If provided, the response will be validated
+            against this Pydantic model.
 
     Returns
     -------
-        BaseModel | dict: The response from the model, either as a Pydantic model or a raw dictionary.
+        BaseModel | dict: The response from the model, either as a Pydantic model or a raw
+        dictionary.
     """
     resp = completion(model=model, messages=messages, response_format=response_format)
     if response_format:

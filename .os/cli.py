@@ -26,9 +26,11 @@
 # (see if auto run on succesful os sync)
 # TODO: command "os sync", "os publish"
 # TODO: add ~/.bashrc line if doesnt exist
+# TODO: review ruff S603/S607 (subprocess untrusted input / partial exe path), ignored
+# for .os/ in pyproject.toml per-file-ignores; decide if we actually care
+# (eg resolve absolute paths via shutil.which)
 
 
-# ruff: noqa: S603, S607  # fixed argv to trusted system tools (secret-tool, wl-copy, sh)
 from __future__ import annotations
 
 import subprocess

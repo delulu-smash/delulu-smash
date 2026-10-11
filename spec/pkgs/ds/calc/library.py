@@ -1,14 +1,21 @@
+from __future__ import annotations
+
 from pydantic import BaseModel
 
 
 class Damage(BaseModel):
+    """Damage dealt by a hit and the resulting hitlag."""
+
     freshness_bonus: float
     damage: float
     target_damage: float
     attack_hitlag: int
     target_hitlag: int
 
+
 class Knockback(BaseModel):
+    """Knockback outcome of a hit (launch, hitstun, frame advantage)."""
+
     total_kb: float
     launch_angle: float
     hitstun: int
@@ -17,17 +24,28 @@ class Knockback(BaseModel):
     is_tumble: bool
     can_jab_lock: bool
 
+
 class HitData(BaseModel):
+    """Everything about one hit: damage plus knockback."""
+
     damage: Damage
     knockback: Knockback
 
 
-# ds/calc/core
-from ds.calc.model import HitData
+# ds/calc/core (the real module imports HitData from ds.calc.model; it's defined above here so
+# this reference file stays a single runnable module)
 
-def get_hit_data(attacker:str, target:str, attack:str, hitbox: int| None = None,damage: float| None = None, hitlag: float | None = None) -> HitData:
+
+def get_hit_data(
+    attacker: str,
+    target: str,
+    attack: str,
+    hitbox: int | None = None,
+    damage: float | None = None,
+    hitlag: float | None = None,
+) -> HitData:
     """
-    gives the hit data from given attack hitting target
+    Gives the hit data from given attack hitting target
 
     If `attack`= 'custom', allow to specify additional parameters like `damage`, `hitlag`,...
     Otherwise, will fetch relevant data for that attack (eg damage, hitlag, etc...)
@@ -52,4 +70,4 @@ def get_hit_data(attacker:str, target:str, attack:str, hitbox: int| None = None,
     -------
     HitData
         hit data of the attack
-    """.
+    """

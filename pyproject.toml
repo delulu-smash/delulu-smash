@@ -206,6 +206,9 @@ extend-select = [
         "YTT",
 ]
 extend-ignore = [
+    # subprocess calls without shell=True are already safe from injection; flags nearly
+    # every subprocess.run, so it's noise for our internal scripts/CLIs
+    "S603",
     # get false positives with loguru for now
     # keep tabs on if fixed: https://github.com/astral-sh/ruff/issues/13390
     "PLE1205",
@@ -363,14 +366,21 @@ extend-unfixable = [
 "**/{cli}/*" = [
     # ignoring `print` found - as common to use print to get show on stdout
     "T201",
-    # Check for method calls that initiate a subprocess without a shell.
-    # we ignore this as many false positive are given, almost all commands
-    # are more static in nature (so attack vector is not really there)
-    "S603",
     # TODO: ideally would below but given this used purely internally
     # not as much of worry at moment and not simple for each one
     "S607"
     ]
+# personal machine tooling shells out to fixed system tools (wl-copy, secret-tool, wf-recorder, etc)
+".os/**/*.py" = ["S607"]
+"personal/**/*.py" = ["ERA001"]
+"tools/reflex/**/*.py" = [
+    # Reflex State/Component classes declare mutable class attributes by design (vars, rx.Model fields)
+    "RUF012",
+    # UI app code (mostly small component functions returning rx.Component), not library code,
+    # so docstrings/annotations are optional here (same as scripts/ and tests/)
+    "D100", "D101", "D102", "D103", "D106",
+    "ANN",
+]
 "pkgs/**/typing.py" = [
     # allowing unused imports for typing modules
     "F401",
@@ -402,6 +412,12 @@ mark-parentheses = false
 [tool.ruff.lint.flake8-tidy-imports]
 # Disallow all relative imports.
 ban-relative-imports = "all"
+[tool.ruff.lint.flake8-bugbear]
+# B008: Typer's old-style defaults (`x: int = typer.Option(...)`) are declarative metadata,
+# not mutable values shared between calls. Prefer `Annotated[...]` in new code.
+# see https://docs.astral.sh/ruff/rules/function-call-in-default-argument/
+extend-immutable-calls = ["typer.Argument", "typer.Option"]
+
 [tool.ruff.lint.flake8-annotations]
 # getting typing write for star arg is difficult and not the most useful
 # so allowing typing.Any is easier convenience

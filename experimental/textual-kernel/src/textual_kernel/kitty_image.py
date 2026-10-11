@@ -233,7 +233,10 @@ def _build_placeholder_text(image_id: int, cols: int, rows: int) -> Text:
     style = Style(color=f"rgb({(image_id >> 16) & 255},{(image_id >> 8) & 255},{image_id & 255})")
     id_diacritic = chr(_NUMBER_TO_DIACRITIC[(image_id >> 24) & 255])
     lines = [
-        "".join(f"{_PLACEHOLDER}{chr(_NUMBER_TO_DIACRITIC[r])}{chr(_NUMBER_TO_DIACRITIC[c])}{id_diacritic}" for c in range(cols))
+        "".join(
+            f"{_PLACEHOLDER}{chr(_NUMBER_TO_DIACRITIC[r])}{chr(_NUMBER_TO_DIACRITIC[c])}{id_diacritic}"
+            for c in range(cols)
+        )
         for r in range(rows)
     ]
     return Text("\n".join(lines), style=style, no_wrap=True)

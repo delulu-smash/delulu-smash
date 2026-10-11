@@ -237,6 +237,19 @@ Lint rules live in root `pyproject.toml` (`[tool.ruff]`) and run through the pre
 - If a rule genuinely doesn't fit a specific line, add a targeted `# noqa: CODE` with a short reason rather than
   contorting the code or retrying repeatedly.
 - `experimental/` is temporarily excluded from ruff linting (see `[tool.ruff.lint] exclude`).
+- **Long/multi-line strings: no concatenation of any kind.** Adjacent string literals (`("a " "b")`) are banned
+  because a missing comma in a tuple/list silently merges two items; ruff enforces this (`ISC` with
+  `allow-multiline = false`). Don't swap in `+` either (ruff doesn't catch that, so it's on us). Instead:
+  - Prose, prompts, messages: one indented triple-quoted string through `clean_f_str` from
+    `ds.util.text` (strips the source indent and the blank first/last line). Source line breaks become real
+    newlines, which is fine for prompts. Don't end lines with `\` to avoid that: it keeps the next line's
+    indent as a run of spaces.
+    - Pass a normal f-string, eg `clean_f_str(f"""...{name}...""")`. Caveat: an inserted value spanning
+      multiple lines (schemas, tables) has no indent on its later lines, so nothing gets stripped; keep such
+      values single-line.
+  - Must stay a single line, or built from distinct parts: `" ".join([...])` / `"\n".join([...])`, one item
+    per line with a trailing comma (a missing comma there is still caught by `ISC`).
+  - Don't use `# noqa: ISC002` to keep implicit concatenation.
 
 ## Repo Tag Prefix (`ds::`)
 

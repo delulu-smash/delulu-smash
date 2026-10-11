@@ -14,6 +14,7 @@ import shutil
 import subprocess
 import tempfile
 from pathlib import Path
+from typing import Annotated
 
 import typer
 
@@ -39,15 +40,15 @@ def parse_time_to_seconds(t: str) -> float:
 
 @app.command()
 def snippet(
-    input: Path = typer.Argument(..., exists=True, readable=True),
-    start: str = typer.Option(..., help="Start time (seconds or HH:MM:SS)"),
-    end: str | None = typer.Option(None, help="End time (seconds or HH:MM:SS)"),
-    duration: float | None = typer.Option(None, help="Duration in seconds (alternative to --end)"),
-    output: Path | None = typer.Option(None, "-o", help="Output gif path"),
-    fps: int = typer.Option(15, help="Frames per second for the GIF"),
-    width: int = typer.Option(480, help="Output GIF width in pixels (height auto)"),
-    overwrite: bool = typer.Option(False, "--overwrite", "-y", help="Overwrite output if exists"),
-):
+    input_file: Annotated[Path, typer.Argument(metavar="INPUT", exists=True, readable=True)],
+    start: Annotated[str, typer.Option(help="Start time (seconds or HH:MM:SS)")],
+    end: Annotated[str | None, typer.Option(help="End time (seconds or HH:MM:SS)")] = None,
+    duration: Annotated[float | None, typer.Option(help="Duration in seconds (alternative to --end)")] = None,
+    output: Annotated[Path | None, typer.Option("-o", help="Output gif path")] = None,
+    fps: Annotated[int, typer.Option(help="Frames per second for the GIF")] = 15,
+    width: Annotated[int, typer.Option(help="Output GIF width in pixels (height auto)")] = 480,
+    overwrite: Annotated[bool, typer.Option("--overwrite", "-y", help="Overwrite output if exists")] = False,
+) -> None:
     """Create a GIF from a segment of an input MP4 using ffmpeg.
 
     Provide either `--end` or `--duration`.
@@ -59,9 +60,9 @@ def snippet(
 
     try:
         start_s = parse_time_to_seconds(start)
-    except Exception:
+    except ValueError:
         typer.echo("Invalid --start value", err=True)
-        raise typer.Exit(code=2)
+        raise typer.Exit(code=2) from None
 
     if end is None and duration is None:
         typer.echo("Either --end or --duration must be provided.", err=True)
@@ -70,9 +71,9 @@ def snippet(
     if duration is None:
         try:
             end_s = parse_time_to_seconds(end)  # type: ignore[arg-type]
-        except Exception:
+        except ValueError:
             typer.echo("Invalid --end value", err=True)
-            raise typer.Exit(code=4)
+            raise typer.Exit(code=4) from None
         duration_s = end_s - start_s
         if duration_s <= 0:
             typer.echo("--end must be after --start", err=True)
@@ -84,14 +85,15 @@ def snippet(
             raise typer.Exit(code=6)
 
     if output is None:
-        output = input.with_suffix(".gif")
+        output = input_file.with_suffix(".gif")
 
     if output.exists() and not overwrite:
         typer.echo(f"Output {output} exists. Use --overwrite to replace.", err=True)
         raise typer.Exit(code=7)
 
-    palette = Path(tempfile.mktemp(suffix=".png"))
-    try:
+    # temp dir (not mktemp) so the palette path can't be raced; removed automatically on exit
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        palette = Path(tmp_dir) / "palette.png"
         # First pass: generate a palette tuned for the clipped segment
         cmd1 = [
             ffmpeg_path,
@@ -100,14 +102,12 @@ def snippet(
             "-t",
             str(duration_s),
             "-i",
-            str(input),
+            str(input_file),
             "-vf",
             f"fps={fps},scale={width}:-1:flags=lanczos,palettegen",
             "-y",
             str(palette),
         ]
-        typer.echo("Generating palette...")
-        subprocess.run(cmd1, check=True)
 
         # Second pass: create the GIF using the generated palette
         cmd2 = [
@@ -117,7 +117,7 @@ def snippet(
             "-t",
             str(duration_s),
             "-i",
-            str(input),
+            str(input_file),
             "-i",
             str(palette),
             "-lavfi",
@@ -125,19 +125,16 @@ def snippet(
             "-y",
             str(output),
         ]
-        typer.echo("Creating GIF...")
-        subprocess.run(cmd2, check=True)
-
-        typer.secho(f"Created {output}", fg=typer.colors.GREEN)
-    except subprocess.CalledProcessError as e:
-        typer.echo(f"ffmpeg failed: {e}", err=True)
-        raise typer.Exit(code=8)
-    finally:
         try:
-            if palette.exists():
-                palette.unlink()
-        except Exception:
-            pass
+            typer.echo("Generating palette...")
+            subprocess.run(cmd1, check=True)
+            typer.echo("Creating GIF...")
+            subprocess.run(cmd2, check=True)
+        except subprocess.CalledProcessError as e:
+            typer.echo(f"ffmpeg failed: {e}", err=True)
+            raise typer.Exit(code=8) from None
+
+    typer.secho(f"Created {output}", fg=typer.colors.GREEN)
 
 
 if __name__ == "__main__":
