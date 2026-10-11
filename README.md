@@ -4,7 +4,7 @@
 
 This is suite of tools, documentation, blog, and packages to help me, [`DeLulu`](https://www.delulu-smash.com/) with Smash Bros.
 
-This follows a monorepo structure with following subcomponents
+This follows a monorepo structure with following subcomponents:
 
 | Folder                                                              | Description                                                                                                                       |
 |---------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------|
