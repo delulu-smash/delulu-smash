@@ -12,8 +12,7 @@
 #
 # Example CLI Commands:
 #   1. Store (hidden prompt, asked twice):   uv run .os/cli.py pwd-store
-#   2. Copy to clipboard (clears after 45s): uv run .os/cli.py pwd-copy
-#   3. Copy, clear after 10s:                uv run .os/cli.py pwd-copy --clear-after 10
+#   2. Copy to clipboard (clears after 5s):  uv run .os/cli.py pwd-copy
 # ---------------------------------------------------------------------------
 
 
@@ -33,13 +32,14 @@
 from __future__ import annotations
 
 import subprocess
-from typing import Annotated
 
 import typer
 
 app = typer.Typer(no_args_is_help=True)
 
 KEYRING_ATTRS = ["service", "delulu-os", "account", "1password-master-password"]
+# Fixed on purpose (not a CLI option) so the password never lingers on the clipboard.
+CLEAR_AFTER_SECONDS = 5
 
 
 @app.command()
@@ -55,26 +55,21 @@ def pwd_store() -> None:
 
 
 @app.command()
-def pwd_copy(
-    clear_after: Annotated[int, typer.Option(help="Seconds before clearing the clipboard (0 = never).")] = 45,
-) -> None:
+def pwd_copy() -> None:
     """Copy the stored 1Password master password to the clipboard."""
     result = subprocess.run(["secret-tool", "lookup", *KEYRING_ATTRS], capture_output=True, check=False)
     if result.returncode != 0 or not result.stdout:
         typer.echo("No password found in gnome-keyring; run `pwd-store` first.", err=True)
         raise typer.Exit(1)
     subprocess.run(["wl-copy", "--type", "text/plain"], input=result.stdout, check=True)
-    if clear_after > 0:
-        # Detached so the clear still happens after this CLI exits.
-        subprocess.Popen(
-            ["sh", "-c", f"sleep {clear_after} && wl-copy --clear"],
-            start_new_session=True,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
-        typer.echo(f"Copied to clipboard; clearing in {clear_after}s.")
-    else:
-        typer.echo("Copied to clipboard.")
+    # Detached so the clear still happens after this CLI exits.
+    subprocess.Popen(
+        ["sh", "-c", f"sleep {CLEAR_AFTER_SECONDS} && wl-copy --clear"],
+        start_new_session=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    typer.echo(f"Copied to clipboard; clearing in {CLEAR_AFTER_SECONDS}s.")
 
 
 if __name__ == "__main__":

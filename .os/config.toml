@@ -14,9 +14,22 @@ packages = [
 # NOTE: configure to sublime so when open file in file explorer have fast to open editor
 # TODO: decide on editor
 # editor = "sublime"
+# Mirrors the overrides in $HOME/.config/hypr/bindings.lua. Each entry sets one of:
+#   cmd      = shell command (o.launch)
+#   tui      = script run in a terminal, launch-or-focus ({ tui = ..., focus = true })
+#   dispatch = Hyprland dispatcher (Lua expression)
+# replaces = the Omarchy default that is unbound first (hl.unbind) before binding.
 keybindings = [
-    { shortcut = "SUPER + SHIFT + Z", name = "Screenshot", cmd = "omarchy screenshot" },
-    { shortcut = "SUPER + SHIFT + V", name = "Vscode: delulu-smash", cmd = "code $HOME/repos/delulu-smash" }
+    { shortcut = "SUPER + SHIFT + S", name = "Screenshot", cmd = "omarchy screenshot", replaces = "Google Maps" },
+    { shortcut = "SUPER + SHIFT + Q", name = "Screenrecord", cmd = "$HOME/repos/delulu-smash/.os/scripts/keybindings/screenrecord.sh", replaces = "Screenrecord" },
+    { shortcut = "SUPER + SHIFT + ALT + Q", name = "Screenrecord (save)", cmd = "$HOME/repos/delulu-smash/.os/scripts/keybindings/screenrecord.sh --save", replaces = "Screenrecord (save)" },
+    { shortcut = "SUPER + SHIFT + K", name = "Discord", cmd = "Discord.desktop" },
+    { shortcut = "SUPER + SHIFT + V", name = "Vscode: delulu-smash", cmd = "code $HOME/repos/delulu-smash", replaces = "Vscode" },
+    { shortcut = "SUPER + F", name = "Force full width", dispatch = 'hl.dsp.window.fullscreen({ mode = "maximized" })', replaces = "Full screen" },
+    { shortcut = "SUPER + ALT + F", name = "Force fullscreen", dispatch = 'hl.dsp.window.fullscreen({ mode = "fullscreen" })', replaces = "Full width" },
+    { shortcut = "SUPER + SHIFT + J", name = "Textual kernel", tui = "$HOME/repos/delulu-smash/.os/scripts/keybindings/textual-kernel.sh" },
+    { shortcut = "SUPER + SHIFT + A", name = "Claude: delulu-smash", tui = "$HOME/repos/delulu-smash/.os/scripts/keybindings/claude-delulu.sh", replaces = "ChatGPT" },
+    { shortcut = "SUPER + SHIFT + P", name = "Copy 1Password master password", cmd = "$HOME/repos/delulu-smash/.os/scripts/keybindings/pwd-copy.sh", replaces = "Google Photos" },
 ]
 # TODO: make web app configurations
 # NOTE: use dashboardicons.com > select PNG option

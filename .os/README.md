@@ -26,8 +26,9 @@ Current files of interest:
 - `.os/scripts/keybindings/screenrecord.sh`: Omarchy/Hyprland-friendly region recording toggle script.
 - `.os/scripts/keybindings/textual-kernel.sh`: launches the `experimental/textual-kernel` TUI (bound to `SUPER + SHIFT + J`, launch-or-focus).
 - `.os/scripts/keybindings/claude-delulu.sh`: opens Claude Code in this repo, continuing the last session (bound to `SUPER + SHIFT + A`, replacing ChatGPT, launch-or-focus).
+- `.os/scripts/keybindings/pwd-copy.sh`: copies the 1Password master password from gnome-keyring to the clipboard via `.os/cli.py pwd-copy` (bound to `SUPER + SHIFT + P`, replacing Google Photos).
 - `.os/cli.py`: Local OS/bootstrap helper entry point.
-- `.os/config.toml` and `.os/rc`: machine setup configuration.
+- `.os/config.toml` and `.os/rc`: machine setup configuration. `config.toml` also records every custom keybinding in `$HOME/.config/hypr/bindings.lua`.
 
 Example setup command:
 
