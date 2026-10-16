@@ -61,7 +61,7 @@ All mods recommended are ones that are wifi safe (ie Nintendo won't detect when 
   - Ensure micro SD was in switch turned on (so has `Nintendo` folder)
 * - 2
   - Remove micro SD from switch and plug micro SD card into computer
-* - Ste3p
+* - 3
   - In Downloads, Move  in `hekate_ctcaer` folder and copy `hekate...bin` file to desktop & move `bootloader` folder to root of micro SD
 * - 4
   -  In Downloads, Move `hekate_ipl.ini` file to `bootloader` folder of micro SD (NOTE: may have downloaded with `.txt` extension, ensure just `.ini` at end of file)
@@ -73,18 +73,18 @@ All mods recommended are ones that are wifi safe (ie Nintendo won't detect when 
   -  In Downloads, Move `atmosphere` folder (from Training Mod Pack) into micro SD (when prompted merge, don't replace)
 * - 8
   -  In Downloads, Move `atmosphere` folder (from SSBU Online Deluxe) into micro SD (when prompted merge, don't replace)
-* - Step
-  -  In Downloads, Move all `.nro` files into micro SD `atmopshere/contents/01006A800016E000/skyline/plugins` folder
 * - 9
-  - Eject micro SD, Turn off swtich (ie hold power mode and select "Turn Off"), and put micro SD in switch
+  -  In Downloads, Move all `.nro` files into micro SD `atmopshere/contents/01006A800016E000/skyline/plugins` folder
 * - 10
+  - Eject micro SD, Turn off swtich (ie hold power mode and select "Turn Off"), and put micro SD in switch
+* - 11
   - Put RCM jig into right joycon slot, slide all the way down
-* - 1
+* - 12
   - Boot up RCM mode via `+ Volume` + `Power Button` for 3 seconds
 * - Open OmniRCM app on computer and plugin swtich via USB-C, Toggle `Auto-Inject on Connect` & select `hekate`, press `Inject Payload` (you should see switch boot up with Nyx)
-* - 12
-  - On Switch, after putting time and date, hit `Launch`, selecting `Atmosphere Sysmmc` option (switch should launch normally)
 * - 13
+  - On Switch, after putting time and date, hit `Launch`, selecting `Atmosphere Sysmmc` option (switch should launch normally)
+* - 14
   - Select "Smash Ultimate", should see "New Mods detected" pop up, click "yes"
 ````
 
