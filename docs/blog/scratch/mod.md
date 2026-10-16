@@ -80,11 +80,12 @@ All mods recommended are ones that are wifi safe (ie Nintendo won't detect when 
 * - 11
   - Put RCM jig into right joycon slot, slide all the way down
 * - 12
-  - Boot up RCM mode via `+ Volume` + `Power Button` for 3 seconds
-* - Open OmniRCM app on computer and plugin swtich via USB-C, Toggle `Auto-Inject on Connect` & select `hekate`, press `Inject Payload` (you should see switch boot up with Nyx)
+  - Boot up RCM mode via `+ Volume` + `Power Button` for 3 seconds (recommend press + then power so don't accidentally boot up switch normally)
 * - 13
-  - On Switch, after putting time and date, hit `Launch`, selecting `Atmosphere Sysmmc` option (switch should launch normally)
+  - Open OmniRCM app on computer and plugin swtich via USB-C, Toggle `Auto-Inject on Connect` & select `hekate`, press `Inject Payload` (you should see switch boot up with Nyx)
 * - 14
+  - On Switch, after putting time and date, hit `Launch`, selecting `Atmosphere Sysmmc` option (switch should launch normally)
+* - 15
   - Select "Smash Ultimate", should see "New Mods detected" pop up, click "yes"
 ````
 
