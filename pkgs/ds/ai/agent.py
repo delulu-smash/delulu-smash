@@ -10,9 +10,10 @@ from ds.ai.little_mac import little_mac_capability
 from ds.ai.mechanics import mechanics_capability
 from ds.ai.smashdb import smashdb_capability
 from ds.ai.supermajor import supermajor_capability
+from ds.util.const import DEFAULT_AI_MODEL
 
 __all__ = ["agent"]
-# agent = Agent("openai:gpt-5.6-sol", capabilities=[Coder()])  # noqa: ERA001  # alt config
+# agent = Agent(DEFAULT_AI_MODEL, capabilities=[Coder()])  # noqa: ERA001  # alt config
 # TODO: transfer specific smash ultimate engine items to docs/smashDb (eg 1v1 base multiplier)
 # always-on (capabilities are deferred), so match assumptions apply to every answer
 # ds::docs-source: none yet (no 1v1 multiplier docs page; 1.2 also in ds.calc.modifiers)
@@ -27,7 +28,10 @@ FFA, 3+ players). In 1v1 the game multiplies all damage by 1.2x:
 - If the user mentions doubles, FFA or 3+ players, drop the 1.2x and say so."""
 
 agent = Agent(
-    "openai:gpt-5.6-sol",
+    # via Pydantic AI Gateway (key + URL set in ds.settings; store key: `ds settings sync`)
+    DEFAULT_AI_MODEL,
+    # resolve the model at run time, so `import ds.ai` (tests, chat app) works without a key
+    defer_model_check=True,
     instructions=_INSTRUCTIONS,
     capabilities=[
         knowledge_capability,

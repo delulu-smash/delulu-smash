@@ -10,9 +10,10 @@ settings_app = typer.Typer(help="SubCommands for syncing up settings")
 
 @settings_app.command("sync")
 def sync() -> None:
-    """Sync settings (eg OpenAI API key)"""
-    openai_api_key = typer.prompt("Enter your OpenAI API key (eg sk-xxxx)", hide_input=True)
-    set_settings(openai_api_key=openai_api_key)
+    """Sync settings (Pydantic AI Gateway key) into keyring"""
+    # from Logfire Gateway > Connect; used by all ds.ai model calls (DEFAULT_AI_MODEL)
+    pydantic_gateway_api_key = typer.prompt("Enter your Pydantic AI Gateway key (eg pylf_v1_us_xxxx)", hide_input=True)
+    set_settings(pydantic_gateway_api_key=pydantic_gateway_api_key)
     print(f"Current Settings: {get_settings()}")
 
 
