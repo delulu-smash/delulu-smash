@@ -23,7 +23,7 @@
 5. using litellm (https://docs.litellm.ai/docs/proxy/ui) to test which ai is better (claude may be better as can cache prompts which useful if loading lot of skill files). Ideally i could have it read from existing skill and prompt files so the repo AI and app AI stay aligned
     1. prompt caching https://docs.litellm.ai/docs/completion/prompt_caching
 6. using pydnatic-ai to create a smash ai agent, which will have cli prompt tool and reflex ui forhttps://youtu.be/PY7xIxybYNc?is=NV3bopZXPFyjVJM6
-7. have the ai able to be run in tui like toad: https://youtu.be/fSE44AuiC8k?is=uBZqbdg56AZKeNxV (textual allows to host on browser as well)
+7. have the ai able to be run in tui like toad: https://youtu.be/a6xiegauaWE?si=s2ZMsQ02pxuCRYzH&t=830(textual allows to host on browser as well)
 8. adding cron job to keep smashdb data up to date (run cli command, commit new parquet files)
 9. Skill files that help with
     1. querying smashdb (need general SQL capability, smash database schema knowledge)
@@ -42,6 +42,7 @@
 14. how make answer macs SL armour question in consistent and meaningful way (eg nice table visualization, highlighting pragmatic items, eg ones that dont need to
 keep track of how staled players move is, whether a move on average likely be stale, eg they spam and hit shield a lot)
 15. teach AI how to write docs properly, the moveset.md good example where duplicating information, using specific AI reference information, not specific to little mac and general org of docs, etc
+16. use this https://youtu.be/a6xiegauaWE?si=s2ZMsQ02pxuCRYzH to update progcc control stick deadzone at top (perhaps can use )
 
 # TUI
 1. create own AI Tui
