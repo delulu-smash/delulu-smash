@@ -91,11 +91,7 @@ packages = [
 ]
 webapps = [
     "Basecamp",
-    "ChatGPT",
     "Discord",
-    "Figma",
-    "Fizzy",
-    "GitHub",
     "Google Contacts",
     "Google Maps",
     "Google Messages",
@@ -153,7 +149,7 @@ terminal = "kitty"
 "ProGcc Controller Config Tool" = "https://handheldlegend.github.io/hoja2/index.html"
 "Smash Calculator" = "https://rubendal.github.io/SSBU-Calculator/"
 "Smash Ladder" = "https://smash-ladder-na.vercel.app/lobby"
-"Start.gg" = "https://www.start.gg/search/near_me?indices%5Bindex_id_hub%5D%5BrefinementList%5D%5Bpage%5D=1&indices%5Bindex_id_hub%5D%5Bpage%5D=1&indices%5Bindex_id_hub%5D%5Brange%5D%5Bpage%5D=1&refinementList%5Bevents.videogame.id%5D=1386&page=1&configure%5BhitsPerPage%5D=10&configure%5Bfilters%5D=profileType%3Atournament&configure%5BaroundLatLngViaIP%5D=true&range%5BstartAt%5D%5Bmin%5D=1769576400&range%5Bstar"
+"Start.gg" = "https://www.start.gg/"
 "Supermajor" = "https://www.supermajor.gg/"
 "Twitch" = "https://www.twitch.tv/"
 "Ultimate Frame Data" = "https://ultimateframedata.com/smash"
