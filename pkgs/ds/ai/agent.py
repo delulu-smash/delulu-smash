@@ -33,6 +33,10 @@ agent = Agent(
     # resolve the model at run time, so `import ds.ai` (tests, chat app) works without a key
     defer_model_check=True,
     instructions=_INSTRUCTIONS,
+    # prompt caching (Anthropic 5m TTL, refreshed on each hit): chats are multi-request
+    # (capability load, tool calls, follow-ups), so later requests read the prefix at ~0.1x
+    # cost. Override per run with model_settings={"cache": False}
+    model_settings={"cache": True},
     capabilities=[
         knowledge_capability,
         smashdb_capability,
