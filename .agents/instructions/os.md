@@ -9,8 +9,8 @@
 - Machine config is managed by chezmoi with its source in `.os/home/` (dotfiles, web apps, packages in
   `.os/home/.chezmoidata/packages.toml`); see `.os/README.md`. chezmoi copies files rather than symlinking
   them, so the live files and the repo copies can drift. After changing a managed live file (eg
-  `$HOME/.config/hypr/bindings.lua`), run `chezmoi re-add` in the same change, or edit the repo copy and run
-  `chezmoi apply`. Never leave the two out of sync.
+  `$HOME/.config/hypr/bindings.lua`), run `chezmoi re-add` in the same change (or tell the user to run `os save`), or edit
+  the repo copy and run `chezmoi apply`. Never leave the two out of sync.
 - Keybindings: check the live bindings with `omarchy menu keybindings --print` first. If a key is taken,
   `hl.unbind` it, add a `-- previously: <default>` comment, and tell the user what it replaced.
 - Favor portability across the user's Linux machines, especially Omarchy-based systems.

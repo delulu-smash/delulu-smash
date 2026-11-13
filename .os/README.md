@@ -37,15 +37,22 @@ Manual per-machine steps (not synced):
 chezmoi **copies** files (it doesn't symlink them), because Omarchy updates edit configs with `sed -i`, which
 would turn a symlink back into a plain file. So the live files and the repo copies can drift:
 
-- After editing a managed live file (eg `~/.config/hypr/bindings.lua`): `chezmoi re-add`, then commit.
-- After an Omarchy update, or on the other machine: `chezmoi diff`, then `os sync` or `chezmoi re-add`.
-- Start managing a new file: `chezmoi add ~/.config/<file>`.
-- Add a package: edit `.os/home/.chezmoidata/packages.toml`. The install script re-runs when the list changes.
+- **Save this machine's changes: `os save`** (`--dry-run` to preview). It:
+  1. runs `chezmoi re-add` (pulls edits to managed files, eg `bindings.lua`, back into `.os/home/`),
+  2. lists packages you installed and web apps you created that aren't tracked yet, and asks
+     `[a]dd / [i]gnore forever / [s]kip` for each (adds go to `packages.toml` / `.os/home/`, ignores to
+     `.os/save-ignore.toml`),
+  3. shows `git status` for `.os/`, asks to confirm, then commits **only `.os/`** and pushes (`--no-push`,
+     `-m "msg"`).
+- Start managing some other new file: `chezmoi add ~/.config/<file>`, then `os save`.
+- Templates (`*.tmpl`, eg web apps with home paths) aren't re-added; edit those in `.os/home/` directly.
+- On the other machine: `os sync`.
 
 ## Files
 
 - `.os/install.sh`: first-run bootstrap (installs uv, then `sync`).
-- `.os/cli.py`: `os` CLI: `sync`, `pwd-store`, `pwd-copy`.
+- `.os/cli.py`: `os` CLI: `sync`, `save`, `pwd-store`, `pwd-copy`.
+- `.os/save-ignore.toml`: packages / web apps `os save` should never offer.
 - `.os/rc`: bashrc additions (`os` / `ds` aliases, start in this repo).
 - `.os/home/`: chezmoi source (chezmoi naming: `dot_config/` → `~/.config/`). Currently manages:
   - `~/.config/hypr/bindings.lua`: custom keybindings. Each binding that replaces a default has a
@@ -68,4 +75,3 @@ would turn a symlink back into a plain file. So the live files and the repo copi
 - Theme: maybe switch to a Severance-style theme (and sync it via chezmoi).
 - Decide on a default editor (vscode / nvim / sublime); sublime is fast for opening files from the file manager.
 - Integrate Zen browser with 1Password (https://docs.zen-browser.app/guides/1password).
-- `os publish`: commit + push `.os/` changes (maybe after a successful `os sync`).

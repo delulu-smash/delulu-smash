@@ -35,6 +35,13 @@ os sync            # git pull + show diff + apply
 os sync --dry-run  # preview only
 ```
 
+After changing this machine's setup (keybindings, new packages, new web apps), save it back to the repo:
+
+```bash
+os save            # re-add changed files, offer new packages/web apps, commit .os/ + push
+os save --dry-run  # preview only
+```
+
 See [`.os/README.md`](.os/README.md) for everyday use (`chezmoi re-add`) and manual per-machine steps.
 
 ## How to run docs locally
