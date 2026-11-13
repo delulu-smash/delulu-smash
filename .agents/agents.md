@@ -167,6 +167,8 @@ directory that references `.agents/` content, never a second copy of it.
 
 ## Git Hygiene
 
+- No pull requests: this is a single-user repo, so commit and push directly to `main`. Don't create branches or
+  open PRs unless the user asks for one.
 - Preserve the rule that `local/` is fully ignored in git unless the user explicitly changes that policy.
 - Avoid suggesting tracked source-of-truth files inside `local/` when another repo area would be more appropriate.
 

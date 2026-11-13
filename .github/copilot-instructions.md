@@ -111,5 +111,8 @@ Script implementation pattern:
 - For shell-based automation in this repo, prefer a paired layout: a Python Typer CLI script plus a same-name shell wrapper in the same folder.
 - The shell wrapper should stay thin and call the Python script via `uv run`, unless the user explicitly asks for shell-only or Python-only.
 
+Git workflow:
+- No pull requests: this is a single-user repo, so commit and push directly to `main`. Don't create branches or open PRs unless the user asks for one.
+
 Domain note:
 - In this repo, "Smash Ultimate" refers to Nintendo's video game Super Smash Bros. Ultimate.
