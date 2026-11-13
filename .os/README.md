@@ -81,6 +81,7 @@ Good to know:
 | `[ignore]`   | packages / web apps never synced                    | hardware packages, Omarchy's default web apps   |
 | `[settings]` | theme, font, default browser / editor / terminal    | `theme = "Everforest"`                          |
 | `[bar]`      | bar widget options                                  | `"omarchy.clock.format" = "dddd M/d HH:mm"`     |
+| `[toggles]`  | Omarchy Hyprland toggles: `"on"` / `"off"`          | `"window-no-gaps" = "on"`                       |
 | `[plugins]`  | Omarchy plugins: id = git URL                       | `"hamsti.vitals" = "https://..."`               |
 | `[files]`    | files synced between `$HOME` and `.os/files/`       | `".config/hypr/bindings.lua" = "always"`        |
 | `[webapps]`  | web apps: name = URL                                | `"Twitch" = "https://www.twitch.tv/"`           |
@@ -91,6 +92,9 @@ Good to know:
   `os.getenv("HOME")` instead of `/home/<user>` so they work on every machine.
 - **A file for one machine only:** use `"lspci:<text>"` instead of `"always"`; it then applies only where
   `lspci` output contains `<text>` (hostname is no use: every fresh Omarchy install is named `omarchy`).
+- `[toggles]` names are the files in `/usr/share/omarchy/default/hypr/toggles/` (not `flags.lua`, a
+  placeholder). `window-no-gaps` is the look without gaps, borders or rounded corners between windows
+  (`SUPER + SHIFT + BACKSPACE` flips it).
 - Web app icons are not synced: each machine fetches the site's own icon when it installs the web app, so
   an icon can differ between machines. If a site's icon can't be fetched, that web app isn't installed and
   `os sync` reports it.

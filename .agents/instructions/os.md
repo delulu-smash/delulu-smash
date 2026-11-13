@@ -6,10 +6,11 @@
 - `.os/` is for personal PC setup, bootstrap workflows, and reusable machine tooling.
 - This folder is not Smash-specific product code by default.
 - Prefer placing keybinding-target scripts under `.os/scripts/keybindings/` to make intent discoverable.
-- Machine setup is one list, `.os/machine.toml` (packages, Omarchy settings, bar options, plugins, files,
-  web apps), plus the real files in `.os/files/`. `os sync` makes the machine and the list the same in both
-  directions: it asks what to do with each change made on the machine (keep = save to the list, discard =
-  undo here), applies what came from the list, then commits and pushes `.os/`. See `.os/README.md`.
+- Machine setup is one list, `.os/machine.toml` (packages, Omarchy settings, bar options, Hyprland toggles,
+  plugins, files, web apps), plus the real files in `.os/files/`. `os sync` makes the machine and the list
+  the same in both directions: it asks what to do with each change made on the machine (keep = save to the
+  list, discard = undo here), applies what came from the list, then commits and pushes `.os/`. See
+  `.os/README.md`.
 - After changing something `os sync` tracks (eg `$HOME/.config/hypr/bindings.lua`, an installed package, a
   web app, the theme), tell the user to run `os sync` and keep the change, or make the same change in
   `.os/machine.toml` / `.os/files/` yourself. Never leave the machine and the list out of sync. Don't run

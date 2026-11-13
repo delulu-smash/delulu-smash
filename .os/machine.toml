@@ -117,6 +117,12 @@ terminal = "kitty"
 # Bar widget options: "<widget id>.<option>" = value (`omarchy bar set <widget id> <option> <value>`).
 "omarchy.clock.format" = "dddd M/d HH:mm"
 
+[toggles]
+# Omarchy's Hyprland toggles: name = "on" / "off" (`omarchy hyprland toggle <name> on|off`).
+# Names: the files in /usr/share/omarchy/default/hypr/toggles/ (not flags.lua, a placeholder).
+# window-no-gaps: no gaps, borders or rounded corners (SUPER + SHIFT + BACKSPACE flips it).
+"window-no-gaps" = "on"
+
 [plugins]
 # Omarchy plugins: id = git URL (`omarchy plugin add <git URL>`).
 "quickshell.spotify" = "https://github.com/stappmus/Omarchy-Spotify.git"
