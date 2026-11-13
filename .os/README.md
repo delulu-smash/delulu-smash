@@ -18,7 +18,11 @@ On a fresh Omarchy install (it ships `git` but not `uv`):
 git clone <repo> ~/repos/delulu-smash && ~/repos/delulu-smash/.os/install.sh
 ```
 
-`install.sh` installs `uv`, then runs `os sync`. On a machine that has never synced, it:
+`install.sh` gives the machine both the delulu-smash framework and the OS setup. It installs `uv`, runs the
+root `.install.sh` (Python environment with `uv sync`, the pre-commit git hook, git-lfs and the LFS data
+files, then `ds settings sync`, which asks for the Pydantic AI Gateway key; `Ctrl+D` skips it and
+`ds settings sync` stores it later), then runs `os sync`. If the framework step fails it stops there; fix
+the cause and run it again. On a machine that has never synced, `os sync`:
 
 1. lists everything that differs from the list (theme, default apps, keybindings) and offers one answer for
    the lot: `d` = use the list's (the replaced files are backed up),
@@ -90,7 +94,7 @@ Good to know:
 
 ## Files
 
-- `.os/install.sh`: first-run bootstrap (installs uv, then `sync`).
+- `.os/install.sh`: first-run bootstrap (installs uv, runs the root `.install.sh`, then `sync`).
 - `.os/cli.py`: `os` CLI: `sync`, `pwd-store`, `pwd-copy`.
 - `.os/machine.toml`: the list (see above).
 - `.os/files/`: the tracked files, at their path under `$HOME`. Currently:

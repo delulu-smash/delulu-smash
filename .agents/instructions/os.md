@@ -25,7 +25,9 @@
 - Tracked files must work on every machine: use `$HOME` / `os.getenv("HOME")`, not `/home/<user>`.
 - Never put secrets in `.os/`; passwords live in the per-machine keyring (`os pwd-store`).
 - `.os/install.sh` is plain bash on purpose (an exception to the Typer + shell wrapper pattern): it runs
-  before `uv` exists on a fresh machine. Keep it minimal; logic belongs in `.os/cli.py`.
+  before `uv` exists on a fresh machine. It installs `uv`, runs the root `.install.sh` (the delulu-smash
+  framework: Python environment, git-lfs data), then `os sync`. Keep it minimal; logic belongs in
+  `.os/cli.py`, and framework install steps belong in the root `.install.sh`.
 - Keybindings: check the live bindings with `omarchy menu keybindings --print` first. If a key is taken,
   `hl.unbind` it, add a `-- previously: <default>` comment, and tell the user what it replaced.
 - Favor portability across the user's Linux machines, especially Omarchy-based systems.

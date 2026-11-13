@@ -20,10 +20,15 @@ In this repository, "Smash Ultimate" refers to Nintendo's video game Super Smash
 
 ## How to set up a new machine (`.os`)
 
-On a fresh [Omarchy](https://omarchy.org/) install, clone the repo and run the bootstrap script. It installs
-`uv`, then runs `os sync`, which sets the machine up from the list in
-[`.os/machine.toml`](.os/machine.toml) (packages, theme and other settings, plugins, web apps, keybindings)
-once you confirm.
+On a fresh [Omarchy](https://omarchy.org/) install, clone the repo and run the bootstrap script. One command
+gives the machine both the delulu-smash framework and the OS setup:
+
+1. installs `uv`,
+2. runs the root [`.install.sh`](.install.sh), which installs the framework: Python environment
+   (`uv sync`), pre-commit git hook, git-lfs and the LFS data files, then `ds settings sync`, which asks
+   for the Pydantic AI Gateway key (`Ctrl+D` skips it; run `ds settings sync` later),
+3. runs `os sync`, which sets the machine up from the list in [`.os/machine.toml`](.os/machine.toml)
+   (packages, theme and other settings, plugins, web apps, keybindings) once you confirm.
 
 ```bash
 git clone git@github.com:delulu-smash/delulu-smash.git ~/repos/delulu-smash && ~/repos/delulu-smash/.os/install.sh
@@ -37,7 +42,8 @@ os sync            # save this machine's changes (it asks about each), apply the
 os sync --dry-run  # preview only
 ```
 
-See [`.os/README.md`](.os/README.md) for how it works and the manual per-machine steps.
+See [`.os/README.md`](.os/README.md) for how it works and the manual per-machine steps. To (re)install only
+the framework, eg on a machine that isn't Omarchy, run `bash .install.sh`.
 
 ## How to run docs locally
 
