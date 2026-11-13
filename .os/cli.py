@@ -117,33 +117,34 @@ def save(
         elif choice == "i":
             _append_toml(SAVE_IGNORE, ["webapps"], desktop.stem)
 
-    status = _out(["git", "-C", str(REPO), "status", "--short", "--", ".os"])
+    git = ["git", "-C", str(REPO)]
+    status = _out([*git, "status", "--short", "--", ".os"])
     if not status:
         typer.echo("Nothing to save.")
         return
-    typer.echo(status)
-    if not yes:
-        typer.confirm(f"Commit these .os/ changes{' and push' if push else ''}?", abort=True)
-    git = ["git", "-C", str(REPO)]
+    typer.echo(f"\nWill commit (.os/ only; other changes stay out):\n{status}")
+    # A push sends every unpushed commit on the branch, not just this one; show them up front.
+    unpushed = ""
+    if push:
+        log = subprocess.run([*git, "log", "--oneline", "@{u}..HEAD"], capture_output=True, text=True, check=False)
+        unpushed = log.stdout.strip()
+        if unpushed:
+            typer.echo(f"\nUnpushed commits that a push would also send:\n{unpushed}")
+    if yes:
+        push = push and not unpushed  # never push other commits unattended
+    else:
+        action = f"Commit and push{' all' if unpushed else ''}" if push else "Commit"
+        typer.confirm(f"\n{action}?", abort=True)
+
     commit = [*git, "commit", "-m", message, "--", ".os"]
     subprocess.run([*git, "add", "--", ".os"], check=True)
     # Pre-commit hooks may auto-fix files (eg JSON formatting) and fail once; restage, retry.
     if subprocess.run(commit, check=False).returncode != 0:
         subprocess.run([*git, "add", "--", ".os"], check=True)
         subprocess.run(commit, check=True)
-    if push:
-        _push(git)
-
-
-def _push(git: list[str]) -> None:
-    """Push, but ask first if commits other than the save commit would go out too."""
-    unpushed = _out([*git, "log", "--oneline", "@{u}..HEAD"]).splitlines()
-    if len(unpushed) > 1:
-        typer.echo("Other unpushed commits would be pushed too:\n" + "\n".join(unpushed[1:]))
-        if not typer.confirm("Push all of them?", default=False):
-            typer.echo("Saved locally; push later with `git push`.")
-            return
-    if subprocess.run([*git, "push"], check=False).returncode != 0:
+    if not push:
+        typer.echo("Committed locally; push later with `git push`.")
+    elif subprocess.run([*git, "push"], check=False).returncode != 0:
         typer.echo("Push rejected (remote likely ahead); run `git pull --rebase`, then `git push`.", err=True)
         raise typer.Exit(1)
 
@@ -161,8 +162,13 @@ def _out(cmd: list[str]) -> str:
 
 
 def _ask(prompt: str) -> str:
-    while (choice := typer.prompt(f"{prompt}: [a]dd, [i]gnore forever, [s]kip", default="s")) not in ("a", "i", "s"):
-        typer.echo("Enter a, i or s.")
+    return _choose(f"{prompt}: [a]dd, [i]gnore forever, [s]kip", "ais", "s")
+
+
+def _choose(prompt: str, options: str, default: str) -> str:
+    """Prompt until the answer is one of the single-letter `options`."""
+    while (choice := typer.prompt(prompt, default=default)) not in tuple(options):
+        typer.echo(f"Enter one of: {', '.join(options)}.")
     return choice
 
 

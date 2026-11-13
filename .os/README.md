@@ -42,8 +42,9 @@ would turn a symlink back into a plain file. So the live files and the repo copi
   2. lists packages you installed and web apps you created that aren't tracked yet, and asks
      `[a]dd / [i]gnore forever / [s]kip` for each (adds go to `packages.toml` / `.os/home/`, ignores to
      `.os/save-ignore.toml`),
-  3. shows `git status` for `.os/`, asks to confirm, then commits **only `.os/`** and pushes (`--no-push`,
-     `-m "msg"`).
+  3. shows the `.os/` files it will commit (**only `.os/`**; other changes stay out) and any other unpushed
+     commits a push would also send, then asks "Commit and push? [y/N]" (No aborts). `--yes` skips the
+     prompt but never pushes other commits; `--no-push` only commits; `-m "msg"` sets the message.
 - Start managing some other new file: `chezmoi add ~/.config/<file>`, then `os save`.
 - Templates (`*.tmpl`, eg web apps with home paths) aren't re-added; edit those in `.os/home/` directly.
 - On the other machine: `os sync`.
