@@ -56,8 +56,7 @@ def sync(
 ) -> None:
     """Apply this repo's machine setup (.os/home/ via chezmoi) to the current machine."""
     if shutil.which("chezmoi") is None:
-        typer.echo("chezmoi not installed; run .os/install.sh first.", err=True)
-        raise typer.Exit(1)
+        subprocess.run(["sudo", "pacman", "-S", "--needed", "--noconfirm", "chezmoi"], check=True)
     # Points ~/.config/chezmoi/chezmoi.toml at .os/home/ (see .os/home/.chezmoi.toml.tmpl).
     if not CHEZMOI_CONFIG.exists():
         subprocess.run(["chezmoi", "init", "--source", str(CHEZMOI_SOURCE)], check=True)

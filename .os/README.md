@@ -18,9 +18,9 @@ On a fresh Omarchy install (it ships `git` but not `uv` or `chezmoi`):
 git clone <repo> ~/repos/delulu-smash && ~/repos/delulu-smash/.os/install.sh
 ```
 
-`install.sh` installs `uv` + `chezmoi`, then runs `os sync`, which:
+`install.sh` installs `uv`, then runs `os sync`, which:
 
-1. points chezmoi at `.os/home/` (writes `~/.config/chezmoi/chezmoi.toml` on first run),
+1. installs `chezmoi` if missing and points it at `.os/home/` (writes `~/.config/chezmoi/chezmoi.toml` on first run),
 2. `git pull --ff-only` (skip with `--no-pull`),
 3. shows `chezmoi diff`, asks to confirm, then runs `chezmoi apply`. That copies the dotfiles, installs the
    packages, and adds `source .os/rc` to `~/.bashrc` (which gives you the `os` alias).
@@ -44,7 +44,7 @@ would turn a symlink back into a plain file. So the live files and the repo copi
 
 ## Files
 
-- `.os/install.sh`: first-run bootstrap (installs uv + chezmoi, then `sync`).
+- `.os/install.sh`: first-run bootstrap (installs uv, then `sync`).
 - `.os/cli.py`: `os` CLI: `sync`, `pwd-store`, `pwd-copy`.
 - `.os/rc`: bashrc additions (`os` / `ds` aliases, start in this repo).
 - `.os/home/`: chezmoi source (chezmoi naming: `dot_config/` → `~/.config/`). Currently manages:
