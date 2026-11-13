@@ -11,6 +11,7 @@ pacman = [
     "git-lfs",
     "rust",
     # editors / terminals
+    "zed",
     "visual-studio-code-bin",
     "sublime-text-4",
     "helix",
@@ -55,13 +56,9 @@ aur = [
     "resources-git",
     "rar",
     "speedometer",
-    "gscreenshot",
     "vidcutter",
     "qwinff",
     "blueferry-backend",
-    "blueferry-gtk",
-    "blueferry-qt",
-    "blueferry-quickshell",
     # alt browsers (experiments?)
     "badwolf",
     "min",
@@ -113,7 +110,7 @@ webapps = [
 theme = "Everforest"
 font = "JetBrainsMono Nerd Font"
 browser = "zen"
-editor = "code"
+editor = "zed"
 terminal = "kitty"
 
 [bar]
@@ -122,7 +119,6 @@ terminal = "kitty"
 
 [plugins]
 # Omarchy plugins: id = git URL (`omarchy plugin add <git URL>`).
-"hamsti.vitals" = "https://github.com/thehamsti/omarchy-vitals.git"
 "quickshell.spotify" = "https://github.com/stappmus/Omarchy-Spotify.git"
 "io.github.erikburdett.diskspace" = "https://github.com/ErikBurdett/omarchy-diskspace.git"
 "netmojo.omdrop" = "https://github.com/netmojo-systems/omdrop-plugin.git"

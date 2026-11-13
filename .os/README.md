@@ -42,13 +42,17 @@ One command, on whichever machine you are at. `.os/machine.toml` is the one list
 have; `os sync` makes the machine and the list the same **in both directions** (`--dry-run` previews: it asks
 nothing and changes nothing).
 
-1. `git pull --ff-only` (skip with `--no-pull`).
+1. `git pull --rebase` (skip with `--no-pull`). If the repo has uncommitted edits, it lists them and asks
+   whether to commit them all (you type the message) and then pull; no (or `--yes`) skips the pull and
+   syncs with the list as it is here (`--dry-run` also skips it).
 2. **Changes made on this machine** since its last sync (installed or removed a package, created a web app,
    edited `bindings.lua`, switched theme, ...): asks about each one.
    - `k` keep: save it to the list, so the other machine gets it.
    - `d` discard: undo it here (uninstall, restore the list's version; files are backed up first).
    - `i` ignore (packages and web apps): add to `[ignore]`, never synced or asked about again.
    - `s` skip (the default): leave it, ask again next time.
+   - More than 3 new packages or web apps: one answer for all of them is offered too (each, keep all,
+     discard all = remove them all here after a confirm listing them, ignore all, skip all).
 3. **Changes that came from the list** (what the other machine saved, or a hand edit of `machine.toml`): shows
    the plan and asks "Apply?". This includes removals: a package you removed and saved on one machine is
    removed on the other.

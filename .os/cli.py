@@ -139,7 +139,9 @@ class Item:
 @app.command()
 def sync(
     *,
-    pull: Annotated[bool, typer.Option(help="git pull --ff-only the repo first.")] = True,
+    pull: Annotated[
+        bool, typer.Option(help="git pull --rebase the repo first (offers to commit uncommitted edits).")
+    ] = True,
     push: Annotated[bool, typer.Option(help="git push after committing.")] = True,
     message: Annotated[str, typer.Option("--message", "-m", help="Commit message.")] = "os sync: update machine setup",
     dry_run: Annotated[bool, typer.Option("--dry-run", help="Show what would happen; ask and change nothing.")] = False,
@@ -153,7 +155,7 @@ def sync(
     """
     _check_omarchy()
     if pull:
-        _pull()
+        _pull(dry_run=dry_run, yes=yes)
     base_commit = _last_synced()
     target = tomllib.loads(MACHINE_LIST.read_text())
     base = _base_list(base_commit)
@@ -206,10 +208,36 @@ def _check_omarchy() -> None:
         raise typer.Exit(1)
 
 
-def _pull() -> None:
-    if subprocess.run(["git", "-C", str(REPO), "pull", "--ff-only"], check=False).returncode != 0:
-        typer.echo("Pull failed. Nothing was changed.", err=True)
-        typer.echo("With local commits or edits, run `git pull --rebase --autostash`, then `os sync` again.", err=True)
+def _pull(*, dry_run: bool, yes: bool) -> None:
+    """Pull the repo. Uncommitted edits block a pull, so first offer to commit them (all)."""
+    git = ["git", "-C", str(REPO)]
+    edited = _out([*git, "status", "--short", "--untracked-files=no"])
+    if edited:
+        typer.echo(f"Uncommitted changes in the repo:\n{edited}")
+        if dry_run:
+            typer.echo("Dry run: not pulling; previewing against the list as it is here.\n")
+            return
+        typer.echo("To pull, these must be committed first (all of them, not only .os/).")
+        if yes or not typer.confirm("Commit them and pull? (no = skip the pull, sync with the list as it is here)"):
+            typer.echo("Skipped the pull.\n")
+            return
+        message = ""
+        while not message:
+            message = typer.prompt("Commit message").strip()
+        commit = [*git, "commit", "-m", message]
+        subprocess.run([*git, "add", "--update"], check=True)
+        # Pre-commit hooks may auto-fix files and fail once; restage, retry.
+        if subprocess.run(commit, check=False).returncode != 0:
+            subprocess.run([*git, "add", "--update"], check=True)
+            if subprocess.run(commit, check=False).returncode != 0:
+                typer.echo("Commit failed (see the hook output above). Nothing was pulled.", err=True)
+                raise typer.Exit(1)
+    # --rebase, not --ff-only: local commits (eg the one just made) go on top of the pull.
+    if subprocess.run([*git, "pull", "--rebase"], check=False).returncode != 0:
+        if (REPO / ".git" / "rebase-merge").exists() or (REPO / ".git" / "rebase-apply").exists():
+            subprocess.run([*git, "rebase", "--abort"], check=False)
+        typer.echo("Pull failed (conflict with the remote?). Nothing was changed; your commits are kept.", err=True)
+        typer.echo("Run `git pull --rebase` and resolve it, then `os sync` again.", err=True)
         raise typer.Exit(1)
 
 
@@ -429,14 +457,27 @@ def _ask_all(pending: list[Item], *, first: bool) -> None:
     """Fill in `choice` for every local change / conflict."""
     where = "difference(s) between this machine and the list" if first else "change(s) on this machine, not in the list"
     typer.echo(f"\n{len(pending)} {where}:")
-    # A fresh machine can have dozens of new packages; offer one answer for the lot. There is
-    # no "discard all" on purpose: uninstalling many packages at once is too easy to regret.
+    # A fresh machine can have dozens of new packages; offer one answer for the lot. "Discard
+    # all" (uninstall) is easy to regret, so it lists them again and asks to confirm.
     for kind in ("package", "webapp"):
         group = [item for item in pending if item.kind == kind and item.target is None]
         if len(group) > BULK_THRESHOLD:
             typer.echo(f"\n{len(group)} of them are {KINDS[kind]}s on this machine but not in the list:")
             typer.echo(f"  {', '.join(item.key for item in group)}")
-            choice = _choose("[e]ach, [k]eep all (add to the list), [i]gnore all (never sync), [s]kip all", "ekis", "e")
+            menu = ", ".join(
+                [
+                    "[e]ach",
+                    "[k]eep all (add to the list)",
+                    "[d]iscard all (remove from this machine)",
+                    "[i]gnore all (never sync)",
+                    "[s]kip all",
+                ]
+            )
+            choice = _choose(menu, "ekdis", "e")
+            if choice == "d":
+                names = "\n".join(f"  {item.key}" for item in group)
+                if not typer.confirm(f"Remove these {len(group)} {KINDS[kind]}s from this machine?\n{names}\n"):
+                    choice = "e"
             for item in group if choice != "e" else []:
                 item.choice = choice
     # Same for a machine that has never synced and differs in many places (a new laptop).
