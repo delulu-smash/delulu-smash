@@ -68,7 +68,7 @@ With above requirement prefer below styling:
 Use this repo structure as default context when interpreting user requests and making edits.
 
 - `docs/`: Source content for the Smash Ultimate website, built with MyST/Myst engine. Preserve documentation structure and publishing intent.
-- `.os/`: Personal machine/bootstrap tooling and installation docs for the user's Linux/Omarchy setup. This folder is for reusable PC setup and local tooling, not Smash-specific product code.
+- `.os/`: Personal machine/bootstrap tooling and installation docs for the user's Linux/Omarchy setup. This folder is for reusable PC setup and local tooling, not Smash-specific product code. `.os/home/` is the chezmoi source for the machine's dotfiles and packages, applied with `os sync` and captured with `os save`.
 - `pkgs/`: Reusable Python package code for scripting, automation, and analysis.
 - `tools/`: Interactive application code, including the Reflex-based app(s).
 - `local/`: Local-only scratch files, generated outputs, experiments, and machine-specific artifacts. Treat this folder as fully git-ignored by default and do not recommend committing from it unless the user explicitly asks to change that policy.
@@ -88,6 +88,7 @@ OS script organization:
 
 Omarchy environment:
 - The user runs Omarchy 4.0.0-1 (Omarchy 4); use its Lua-based Hyprland configuration conventions.
+- Some live config under `$HOME` (eg `~/.config/hypr/bindings.lua`, web apps) is managed by chezmoi from `.os/home/`; `chezmoi managed` lists it. This applies even when the task never touches `.os/`: after changing a managed live file, run `chezmoi re-add` (or tell the user to run `os save`) so the repo copy doesn't drift. When installing a package for the user, add it to `.os/home/.chezmoidata/packages.toml`. Details: `.github/instructions/os.instructions.md`.
 
 AI memory policy:
 - Rationale: this repo is worked on from multiple computers, and the `/memories/` tool's user-wide memory is local
@@ -97,7 +98,7 @@ AI memory policy:
 - When the user says "remember this" / "AI remember" for something about this repo (conventions, structure,
   gotchas, workflow preferences), do not write it to the `/memories/` tool. Instead, capture it in version-controlled
   repository files: this instructions file, the relevant scoped `.github/instructions/*.instructions.md` file, a
-  skill, or `.os/home/` (chezmoi) or `.os/README.md` for machine setup facts.
+  skill. For machine setup facts, use `.os/README.md`, or `.os/home/` (chezmoi) for the config itself.
 - Only write to the `/memories/` tool when the user explicitly asks for that specific mechanism (eg says "memory
   tool" or "cross-session memory" by name), rather than a general "remember" request.
 

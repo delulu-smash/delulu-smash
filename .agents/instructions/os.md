@@ -9,8 +9,17 @@
 - Machine config is managed by chezmoi with its source in `.os/home/` (dotfiles, web apps, packages in
   `.os/home/.chezmoidata/packages.toml`); see `.os/README.md`. chezmoi copies files rather than symlinking
   them, so the live files and the repo copies can drift. After changing a managed live file (eg
-  `$HOME/.config/hypr/bindings.lua`), run `chezmoi re-add` in the same change (or tell the user to run `os save`), or edit
-  the repo copy and run `chezmoi apply`. Never leave the two out of sync.
+  `$HOME/.config/hypr/bindings.lua`), run `chezmoi re-add` in the same change (or tell the user to run
+  `os save`), or edit the repo copy and run `chezmoi apply`. Never leave the two out of sync.
+- Packages: list them in `.os/home/.chezmoidata/packages.toml` (`pacman` or `aur`). `os save` offers
+  installed-but-untracked packages and web apps; `.os/save-ignore.toml` lists ones it should never offer.
+- Machine-specific files: gate them in `.os/home/.chezmoiignore` on hardware (eg `lspci` output), not on
+  hostname; every fresh Omarchy install is named `omarchy`.
+- Files that can't expand `$HOME` (eg `.desktop` launchers): make them `*.tmpl` and use
+  `{{ .chezmoi.homeDir }}`. `chezmoi re-add` skips templates, so edit those in `.os/home/` directly.
+- Never put secrets in `.os/home/`; passwords live in the per-machine keyring (`os pwd-store`).
+- `.os/install.sh` is plain bash on purpose (an exception to the Typer + shell wrapper pattern): it runs
+  before `uv` exists on a fresh machine. Keep it minimal; logic belongs in `.os/cli.py`.
 - Keybindings: check the live bindings with `omarchy menu keybindings --print` first. If a key is taken,
   `hl.unbind` it, add a `-- previously: <default>` comment, and tell the user what it replaced.
 - Favor portability across the user's Linux machines, especially Omarchy-based systems.

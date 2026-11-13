@@ -71,6 +71,17 @@ would turn a symlink back into a plain file. So the live files and the repo copi
   - `pwd-copy.sh`: copies the 1Password master password via `os pwd-copy` (`SUPER + SHIFT + P`).
 - `.os/scripts/`: other machine helper scripts not bound to keys.
 
+## Known machine issues
+
+- **Desktop (AMD Raphael iGPU + NVIDIA RTX 5060): video flicker in Chromium.** AMD VCN hardware VP9 decode
+  corrupts video (YouTube/Twitch). Workaround: `--disable-accelerated-video-decode` in
+  `~/.config/chromium-flags.conf` (tracked, applied only on this GPU via `.chezmoiignore`). Also don't set
+  `LIBVA_DRIVER_NAME=nvidia` etc. globally in `envs.conf`: it routes decode to the idle NVIDIA GPU and crashes
+  Chromium.
+  - To try later (deliberately; it needs a reboot): first check Mesa release notes for a VCN/VP9 fix. If none,
+    boot with the `amd_iommu=off` kernel param (gives up IOMMU device isolation), remove the flag, retest
+    playback and `chrome://gpu`. Revert the param if it doesn't help.
+
 ## Ideas / TODO
 
 - Theme: maybe switch to a Severance-style theme (and sync it via chezmoi).
