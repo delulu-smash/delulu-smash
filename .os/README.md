@@ -146,6 +146,7 @@ os keep webapp:Twitch setting:theme toggle:window-no-gaps
 
 ## Ideas / TODO
 
+- Explore what `os keep` does (try `os keep --dry-run package:<name>` after an install; see the section above).
 - Theme: maybe switch to a Severance-style theme (`os sync` picks up the switch).
 - Decide on a default editor (vscode / nvim / sublime); sublime is fast for opening files from the file manager.
 - Integrate Zen browser with 1Password (https://docs.zen-browser.app/guides/1password).
