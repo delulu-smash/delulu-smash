@@ -186,11 +186,21 @@ directory that references `.agents/` content, never a second copy of it.
 ## Omarchy Environment
 
 - The user runs Omarchy 4.0.0-1 (Omarchy 4); use its Lua-based Hyprland configuration conventions.
-- Packages, Omarchy settings, plugins, web apps and some files under `$HOME` (eg `~/.config/hypr/bindings.lua`)
-  are tracked in `.os/machine.toml` and synced between the user's machines with `os sync`. This applies even
-  when the task never touches `.os/`: after installing a package or changing a tracked file or setting, tell
-  the user to run `os sync` (it asks whether to keep the change), or make the same change in
-  `.os/machine.toml` / `.os/files/`. Details: `.agents/instructions/os.md`.
+- **Machine changes go into the `os sync` list in the same task.** Packages, Omarchy settings, toggles, bar
+  options, plugins, web apps and some files under `$HOME` (eg `~/.config/hypr/bindings.lua`) are tracked in
+  `.os/machine.toml` and synced between the user's machines with `os sync`. Whenever the user asks for a
+  machine or Omarchy change (install or remove a package, add a keybinding, a web app, a theme / font /
+  default app, a toggle, a plugin, an edit to a tracked config file), even when the task never touches `.os/`:
+  1. Make the change on this machine (Omarchy's own commands, or edit the live file).
+  2. Record it: `uv run .os/cli.py keep <kind>:<name> ...` (kinds: `package`, `plugin`, `webapp`, `file`,
+     `setting`, `toggle`, `bar`; eg `keep package:zed file:.config/hypr/bindings.lua`). It asks nothing and
+     only writes `.os/`.
+  3. Tell the user what was recorded, and that `os sync` (or a commit and push, when they ask for one) sends
+     it to the other machines.
+- If `keep` refuses (the list has a version this machine has not synced), don't work around it by hand: tell
+  the user to run `os sync`. A new config file worth having on every machine: `keep file:<path under $HOME>`
+  starts tracking it. Something `os sync` can't track (monitors, input, other state): say so, instead of
+  leaving it silently on one machine. Details: `.agents/instructions/os.md`.
 
 ## AI Memory Policy
 

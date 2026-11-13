@@ -73,6 +73,22 @@ Good to know:
   `omarchy theme set`, ...), so it keeps working with Omarchy updates. If an update renames one of those
   commands, `os sync` says which and changes nothing.
 
+### Saving a change without the questions: `os keep`
+
+`os keep <kind>:<name> ...` saves this machine's current state of the named things to the list: the same as
+answering `k` for them in `os sync`, but it asks nothing. AI agents run it right after a change you asked for.
+
+```bash
+os keep package:zed                      # just installed (or removed) a package
+os keep file:.config/hypr/bindings.lua   # edited a tracked file; a new path starts being tracked
+os keep webapp:Twitch setting:theme toggle:window-no-gaps
+```
+
+- Kinds: `package`, `plugin`, `webapp`, `file`, `setting`, `toggle`, `bar`. `--dry-run` previews.
+- It only writes `.os/` (no pull, commit or push); the next `os sync` commits and pushes it.
+- It refuses when the list has a version this machine has not synced yet, or the machine has never synced and
+  differs: that needs your answer in `os sync`.
+
 ### The list: `.os/machine.toml`
 
 | Section      | What                                                | Example                                         |
@@ -103,7 +119,7 @@ Good to know:
 ## Files
 
 - `.os/install.sh`: first-run bootstrap (installs uv, runs the root `.install.sh`, then `sync`).
-- `.os/cli.py`: `os` CLI: `sync`, `pwd-store`, `pwd-copy`.
+- `.os/cli.py`: `os` CLI: `sync`, `keep`, `pwd-store`, `pwd-copy`.
 - `.os/machine.toml`: the list (see above).
 - `.os/files/`: the tracked files, at their path under `$HOME`. Currently:
   - `.config/hypr/bindings.lua`: custom keybindings. Each binding that replaces a default has a
