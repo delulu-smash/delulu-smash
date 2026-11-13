@@ -112,7 +112,7 @@ Script implementation pattern:
 - The shell wrapper should stay thin and call the Python script via `uv run`, unless the user explicitly asks for shell-only or Python-only.
 
 Git workflow:
-- No pull requests: this is a single-user repo, so commit and push directly to `main`. Don't create branches or open PRs unless the user asks for one.
+- No pull requests: this is a single-user repo, so finished work lands on `main` directly. Don't open PRs unless the user asks for one. A working branch to isolate work is fine if your harness prefers one; merge it into `main` and push `main` when done, rather than leaving it for a PR.
 
 Domain note:
 - In this repo, "Smash Ultimate" refers to Nintendo's video game Super Smash Bros. Ultimate.
