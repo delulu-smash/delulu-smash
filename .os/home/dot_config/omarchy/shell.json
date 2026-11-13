@@ -1,0 +1,83 @@
+{
+  "bar": {
+    "centerAnchor": "omarchy.clock",
+    "layout": {
+      "center": [
+        {
+          "id": "omarchy.indicators"
+        },
+        {
+          "format": "dddd M/d HH:mm",
+          "formatAlt": "d MMMM 'W'ww yyyy",
+          "id": "omarchy.clock",
+          "verticalFormat": "HH\n—\nmm"
+        },
+        {
+          "id": "omarchy.keyboard-layout"
+        },
+        {
+          "id": "omarchy.weather"
+        },
+        {
+          "id": "omarchy.system-update"
+        }
+      ],
+      "left": [
+        {
+          "id": "omarchy.menu"
+        },
+        {
+          "id": "omarchy.workspaces"
+        }
+      ],
+      "right": [
+        {
+          "id": "omarchy.tray"
+        },
+        {
+          "id": "hamsti.vitals"
+        },
+        {
+          "id": "quickshell.spotify",
+          "deviceName": "Omarchy Spotify",
+          "idleShutdownMinutes": 15,
+          "showMiniPlayer": "On",
+          "shortcutPlayer": "Omarchy Music app",
+          "showTrackTitle": "On",
+          "showArtistName": "Off",
+          "scrollBarText": "Off",
+          "scrollSpeed": "1",
+          "audioQuality": "320 kbps",
+          "searchHistory": "[]",
+          "sessionState": "{\"tab\":\"home\",\"searchText\":\"\",\"searchType\":\"track\",\"libraryType\":\"tracks\",\"homeType\":\"recent\",\"libraryFilter\":\"\",\"librarySort\":\"default\",\"playlistFilter\":\"\",\"playlistSort\":\"default\",\"detailFilter\":\"\",\"detailSort\":\"default\",\"homeFilter\":\"\",\"discoverFilter\":\"\",\"queueFilter\":\"\",\"artistSearchText\":\"\",\"scrollPositions\":{\"home:recent\":0,\"search:track\":0,\"discover\":0,\"library:tracks\":957,\"playlist:\":0,\"playlist:14KtkIpsvzDSCXR24EqHCL\":0,\"playlist:7K7037u64PYhj9BgQ62Bm3\":0,\"detail:spotify:album:5AHsqsk3UUAYNAuMCneQjA\":0,\"playlist:78mod2NcajCg9zyYTSOcoX\":0},\"detailItem\":null,\"selectedPlaylistId\":\"01G2RM2dfR6YBiSWin07Ek\",\"lastRadioPlaylist\":null}"
+        },
+        {
+          "id": "omarchy.agents"
+        },
+        {
+          "id": "omarchy.bluetooth"
+        },
+        {
+          "id": "omarchy.network"
+        },
+        {
+          "id": "omarchy.audio"
+        },
+        {
+          "id": "omarchy.monitor"
+        },
+        {
+          "id": "omarchy.power"
+        }
+      ]
+    },
+    "position": "top",
+    "transparent": false
+  },
+  "idle": {
+    "lock": 300,
+    "screensaver": 150
+  },
+  "plugins": [],
+  "version": 1
+}

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Name=Smash Calculator
+Comment=Smash Calculator
+Exec=omarchy-launch-webapp https://rubendal.github.io/SSBU-Calculator/
+Terminal=false
+Type=Application
+Icon=smash-calculator
+StartupNotify=true

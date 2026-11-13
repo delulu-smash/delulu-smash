@@ -97,7 +97,7 @@ AI memory policy:
 - When the user says "remember this" / "AI remember" for something about this repo (conventions, structure,
   gotchas, workflow preferences), do not write it to the `/memories/` tool. Instead, capture it in version-controlled
   repository files: this instructions file, the relevant scoped `.github/instructions/*.instructions.md` file, a
-  skill, or `.os/config.toml` for machine setup facts.
+  skill, or `.os/home/` (chezmoi) or `.os/README.md` for machine setup facts.
 - Only write to the `/memories/` tool when the user explicitly asks for that specific mechanism (eg says "memory
   tool" or "cross-session memory" by name), rather than a general "remember" request.
 

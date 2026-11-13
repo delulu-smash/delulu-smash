@@ -191,7 +191,7 @@ directory that references `.agents/` content, never a second copy of it.
 - When the user says "remember this" / "AI remember" for something about this repo (conventions, structure,
   gotchas, workflow preferences), do not write it to a machine-local memory store. Instead, capture it in
   version-controlled repository files: this file, the relevant scoped `.agents/instructions/*.md` file, a skill,
-  or `.os/config.toml` for machine setup facts.
+  or `.os/home/` (chezmoi) or `.os/README.md` for machine setup facts.
 - Only write to a persistent cross-session memory tool when the user explicitly asks for that specific mechanism
   by name, rather than a general "remember" request.
 

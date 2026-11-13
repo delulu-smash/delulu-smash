@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Name=DeLulu Smash
+Comment=DeLulu Smash
+Exec=omarchy-launch-webapp https://www.delulu-smash.com/
+Terminal=false
+Type=Application
+Icon=delulu-smash
+StartupNotify=true

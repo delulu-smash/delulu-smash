@@ -6,10 +6,13 @@
 - `.os/` is for personal PC setup, bootstrap workflows, and reusable machine tooling.
 - This folder is not Smash-specific product code by default.
 - Prefer placing keybinding-target scripts under `.os/scripts/keybindings/` to make intent discoverable.
-- Keep the `keybindings` list in `.os/config.toml` in sync with `$HOME/.config/hypr/bindings.lua`. Whenever you
-  add, change, or remove an Omarchy keybinding, update the matching entry in the same change (`cmd`, `tui`, or
-  `dispatch`, plus `replaces` naming any default it unbinds). Check the live bindings with
-  `omarchy menu keybindings --print` first; if a key is taken, `hl.unbind` it and tell the user what it replaced.
+- Machine config is managed by chezmoi with its source in `.os/home/` (dotfiles, web apps, packages in
+  `.os/home/.chezmoidata/packages.toml`); see `.os/README.md`. chezmoi copies files rather than symlinking
+  them, so the live files and the repo copies can drift. After changing a managed live file (eg
+  `$HOME/.config/hypr/bindings.lua`), run `chezmoi re-add` in the same change, or edit the repo copy and run
+  `chezmoi apply`. Never leave the two out of sync.
+- Keybindings: check the live bindings with `omarchy menu keybindings --print` first. If a key is taken,
+  `hl.unbind` it, add a `-- previously: <default>` comment, and tell the user what it replaced.
 - Favor portability across the user's Linux machines, especially Omarchy-based systems.
 - Prefer `$HOME`-relative paths over hardcoded `/home/<user>` paths when writing scripts, keybindings, or setup examples intended to work on multiple machines.
 - Keep setup assumptions explicit: dependencies, output paths, and intended usage should be easy to recover later.

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Name=Logfire Pydantic AI
+Comment=Logfire Pydantic AI
+Exec=omarchy-launch-webapp "https://logfire-us.pydantic.dev/delulu-smash/delulu-smash"
+Terminal=false
+Type=Application
+Icon=logfire-pydantic-ai
+StartupNotify=true

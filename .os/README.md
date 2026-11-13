@@ -10,35 +10,62 @@ It is intentionally different from the Smash Ultimate code and content in the re
 - Do not treat `.os/` as part of the Smash Ultimate website, Python analysis packages, or Reflex app code unless the user explicitly asks for an integration.
 - Favor clear setup documentation so a new laptop or desktop can be configured the same way.
 
-Common examples for this folder:
+## New machine
 
-- Shell scripts for machine workflows such as screen recording.
-- Bootstrap or install helpers for local tools.
-- Notes about PC-specific assumptions, dependencies, and setup steps.
-
-Recommended layout for script discoverability:
-
-- `.os/scripts/keybindings/`: scripts intended to be called directly by Omarchy/Hyprland keybinds.
-- `.os/scripts/`: other machine helper scripts not directly bound to keyboard shortcuts.
-
-Current files of interest:
-
-- `.os/scripts/keybindings/screenrecord.sh`: Omarchy/Hyprland-friendly region recording toggle script.
-- `.os/scripts/keybindings/textual-kernel.sh`: launches the `experimental/textual-kernel` TUI (bound to `SUPER + SHIFT + J`, launch-or-focus).
-- `.os/scripts/keybindings/claude-delulu.sh`: opens Claude Code in this repo, continuing the last session (bound to `SUPER + SHIFT + A`, replacing ChatGPT, launch-or-focus).
-- `.os/scripts/keybindings/pwd-copy.sh`: copies the 1Password master password from gnome-keyring to the clipboard via `.os/cli.py pwd-copy` (bound to `SUPER + SHIFT + P`, replacing Google Photos).
-- `.os/cli.py`: Local OS/bootstrap helper entry point.
-- `.os/config.toml` and `.os/rc`: machine setup configuration. `config.toml` also records every custom keybinding in `$HOME/.config/hypr/bindings.lua`.
-
-Example setup command:
+On a fresh Omarchy install (it ships `git` but not `uv` or `chezmoi`):
 
 ```bash
-uv add --script .os/cli.py 'pkg'
+git clone <repo> ~/repos/delulu-smash && ~/repos/delulu-smash/.os/install.sh
 ```
 
-When editing files in this folder, optimize for:
+`install.sh` installs `uv` + `chezmoi`, then runs `os sync`, which:
 
-- portability across the user's Linux machines
-- explicit dependency documentation
-- safe defaults for local machine automation
-- readability for both humans and AI assistants
+1. points chezmoi at `.os/home/` (writes `~/.config/chezmoi/chezmoi.toml` on first run),
+2. `git pull --ff-only` (skip with `--no-pull`),
+3. shows `chezmoi diff`, asks to confirm, then runs `chezmoi apply`. That copies the dotfiles, installs the
+   packages, and adds `source .os/rc` to `~/.bashrc` (which gives you the `os` alias).
+
+After that, open a new terminal and use `os sync` (`--dry-run` to preview).
+
+Manual per-machine steps (not synced):
+
+- `os pwd-store` (the keyring is per-machine), and sign in to 1Password.
+- Monitors / scaling (`~/.config/hypr/monitors.lua`) and input tweaks (`input.lua`).
+
+## Everyday use
+
+chezmoi **copies** files (it doesn't symlink them), because Omarchy updates edit configs with `sed -i`, which
+would turn a symlink back into a plain file. So the live files and the repo copies can drift:
+
+- After editing a managed live file (eg `~/.config/hypr/bindings.lua`): `chezmoi re-add`, then commit.
+- After an Omarchy update, or on the other machine: `chezmoi diff`, then `os sync` or `chezmoi re-add`.
+- Start managing a new file: `chezmoi add ~/.config/<file>`.
+- Add a package: edit `.os/home/.chezmoidata/packages.toml`. The install script re-runs when the list changes.
+
+## Files
+
+- `.os/install.sh`: first-run bootstrap (installs uv + chezmoi, then `sync`).
+- `.os/cli.py`: `os` CLI: `sync`, `pwd-store`, `pwd-copy`.
+- `.os/rc`: bashrc additions (`os` / `ds` aliases, start in this repo).
+- `.os/home/`: chezmoi source (chezmoi naming: `dot_config/` → `~/.config/`). Currently manages:
+  - `~/.config/hypr/bindings.lua`: custom keybindings. Each binding that replaces a default has a
+    `-- previously: X` comment.
+  - `~/.config/omarchy/shell.json`: bar layout (clock format).
+  - `~/.local/share/applications/`: custom web apps (Smash tools, Cloudflare, etc.) + icons.
+  - `~/.config/chromium-flags.conf`: only on machines with the AMD Raphael iGPU (VP9 flicker workaround;
+    see `.chezmoiignore`).
+  - `.chezmoidata/packages.toml` + `run_onchange_install-packages.sh.tmpl`: packages beyond stock Omarchy.
+  - `run_once_after_add-bashrc-source.sh`: hooks `.os/rc` into `~/.bashrc`.
+- `.os/scripts/keybindings/`: scripts called by keybindings:
+  - `screenrecord.sh`: region recording toggle (`SUPER + SHIFT + Q`, `--save` on `SUPER + SHIFT + ALT + Q`).
+  - `textual-kernel.sh`: launches the `experimental/textual-kernel` TUI (`SUPER + SHIFT + J`).
+  - `claude-delulu.sh`: Claude Code in this repo, continuing the last session (`SUPER + SHIFT + A`).
+  - `pwd-copy.sh`: copies the 1Password master password via `os pwd-copy` (`SUPER + SHIFT + P`).
+- `.os/scripts/`: other machine helper scripts not bound to keys.
+
+## Ideas / TODO
+
+- Theme: maybe switch to a Severance-style theme (and sync it via chezmoi).
+- Decide on a default editor (vscode / nvim / sublime); sublime is fast for opening files from the file manager.
+- Integrate Zen browser with 1Password (https://docs.zen-browser.app/guides/1password).
+- `os publish`: commit + push `.os/` changes (maybe after a successful `os sync`).
