@@ -23,7 +23,7 @@ uv sync
 # the pre-commit git hook, so `git commit` runs the lint hooks in .pre-commit-config.yaml
 # (pre-commit itself is in the pyproject.toml dev group, installed by `uv sync` by default)
 uv run pre-commit install
-# TODO: add install for ffmpeg (see readme)
+# ffmpeg (docs .mov conversion, gif tools) is not installed here: `os sync` does, from .os/machine.toml
 
 # git-lfs: data files (eg pkgs/ds/data/*.parquet, see .gitattributes) are stored in LFS -- without it
 # they're checked out as small pointer files and every read fails ("File out of specification")

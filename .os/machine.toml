@@ -27,8 +27,10 @@ pacman = [
     # AI CLIs
     "aichat",
     "gemini-cli",
-    # media (wf-recorder is needed by .os/scripts/keybindings/screenrecord.sh)
+    # media (wf-recorder is needed by .os/scripts/keybindings/screenrecord.sh; ffmpeg by that script,
+    # the docs build (.mov conversion) and pkgs/ds/util/gif.py)
     "wf-recorder",
+    "ffmpeg",
     "avidemux-qt",
     "video-trimmer",
     "gradia",

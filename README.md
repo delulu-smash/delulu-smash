@@ -20,45 +20,29 @@ In this repository, "Smash Ultimate" refers to Nintendo's video game Super Smash
 
 ## How to set up a new machine (`.os`)
 
-On a fresh [Omarchy](https://omarchy.org/) install, clone the repo and run the bootstrap script. One command
-gives the machine both the delulu-smash framework and the OS setup:
-
-1. installs `uv`,
-2. runs the root [`.install.sh`](.install.sh), which installs the framework: Python environment
-   (`uv sync`), pre-commit git hook, git-lfs and the LFS data files, then `ds settings sync`, which asks
-   for the Pydantic AI Gateway key (`Ctrl+D` skips it; run `ds settings sync` later),
-3. runs `os sync`, which sets the machine up from the list in [`.os/machine.toml`](.os/machine.toml)
-   (packages, theme and other settings, plugins, web apps, keybindings) once you confirm.
+Clone the repo and go into it:
 
 ```bash
-git clone git@github.com:delulu-smash/delulu-smash.git ~/repos/delulu-smash && ~/repos/delulu-smash/.os/install.sh
+git clone git@github.com:delulu-smash/delulu-smash.git ~/repos/delulu-smash
+cd ~/repos/delulu-smash
 ```
 
-After that, open a new terminal and use the `os` alias. One command keeps every machine the same, in both
-directions:
+On a fresh [Omarchy](https://omarchy.org/) install, set up the framework and the OS:
 
 ```bash
-os sync            # save this machine's changes (it asks about each), apply the other machines', push
-os sync --dry-run  # preview only
+.os/install.sh
 ```
 
-See [`.os/README.md`](.os/README.md) for how it works and the manual per-machine steps. To (re)install only
-the framework, eg on a machine that isn't Omarchy, run `bash .install.sh`.
+To preview the OS changes first (only installs `uv` if missing; skips the framework install):
 
-## How to run docs locally
-
-Ensure you have ffmpeg installed (per [instructions](https://mystmd.org/guide/figures#videos) for `.mov` conversion).
-
-
-For Linux
 ```bash
-sudo pacman -S ffmpeg
+.os/install.sh --dry-run
 ```
 
-Below command will ensure have proper up to date requirements and run docs locally
+To keep machines in sync afterwards (details in [`.os/README.md`](.os/README.md)):
 
 ```bash
-ds docs run
+os sync
 ```
 
 ## How to upgrade dependencies
