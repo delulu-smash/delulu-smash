@@ -124,6 +124,9 @@ terminal = "kitty"
 # Omarchy plugins: id = git URL (`omarchy plugin add <git URL>`).
 "hamsti.vitals" = "https://github.com/thehamsti/omarchy-vitals.git"
 "quickshell.spotify" = "https://github.com/stappmus/Omarchy-Spotify.git"
+"io.github.erikburdett.diskspace" = "https://github.com/ErikBurdett/omarchy-diskspace.git"
+"netmojo.omdrop" = "https://github.com/netmojo-systems/omdrop-plugin.git"
+"stappmus.activity-monitor" = "https://github.com/stappmus/omarchy-activity-monitor.git"
 
 [files]
 # Files copied between $HOME/<path> and .os/files/<path>. To track another file, add a line and
