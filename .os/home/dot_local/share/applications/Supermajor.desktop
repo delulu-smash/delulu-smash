@@ -1,9 +1,0 @@
-[Desktop Entry]
-Version=1.0
-Name=Supermajor
-Comment=Supermajor
-Exec=omarchy-launch-webapp "https://www.supermajor.gg/"
-Terminal=false
-Type=Application
-Icon=supermajor
-StartupNotify=true

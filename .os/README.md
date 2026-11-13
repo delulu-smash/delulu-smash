@@ -12,58 +12,92 @@ It is intentionally different from the Smash Ultimate code and content in the re
 
 ## New machine
 
-On a fresh Omarchy install (it ships `git` but not `uv` or `chezmoi`):
+On a fresh Omarchy install (it ships `git` but not `uv`):
 
 ```bash
 git clone <repo> ~/repos/delulu-smash && ~/repos/delulu-smash/.os/install.sh
 ```
 
-`install.sh` installs `uv`, then runs `os sync`, which:
+`install.sh` installs `uv`, then runs `os sync`. On a machine that has never synced, it:
 
-1. installs `chezmoi` if missing and points it at `.os/home/` (writes `~/.config/chezmoi/chezmoi.toml` on first run),
-2. `git pull --ff-only` (skip with `--no-pull`),
-3. shows `chezmoi diff`, asks to confirm, then runs `chezmoi apply`. That copies the dotfiles, installs the
-   packages, and adds `source .os/rc` to `~/.bashrc` (which gives you the `os` alias).
+1. lists everything that differs from the list (theme, default apps, keybindings) and offers one answer for
+   the lot: `d` = use the list's (the replaced files are backed up),
+2. shows the full plan (packages, plugins, web apps, files, settings, the `source .os/rc` line for
+   `~/.bashrc`) and asks "Apply?".
 
-After that, open a new terminal and use `os sync` (`--dry-run` to preview).
+After that, open a new terminal and use `os sync`.
 
 Manual per-machine steps (not synced):
 
 - `os pwd-store` (the keyring is per-machine), and sign in to 1Password.
 - Monitors / scaling (`~/.config/hypr/monitors.lua`) and input tweaks (`input.lua`).
 
-## Everyday use
+## Everyday use: `os sync`
 
-chezmoi **copies** files (it doesn't symlink them), because Omarchy updates edit configs with `sed -i`, which
-would turn a symlink back into a plain file. So the live files and the repo copies can drift:
+One command, on whichever machine you are at. `.os/machine.toml` is the one list of what every machine should
+have; `os sync` makes the machine and the list the same **in both directions** (`--dry-run` previews: it asks
+nothing and changes nothing).
 
-- **Save this machine's changes: `os save`** (`--dry-run` to preview). It:
-  1. runs `chezmoi re-add` (pulls edits to managed files, eg `bindings.lua`, back into `.os/home/`),
-  2. lists packages you installed and web apps you created that aren't tracked yet, and asks
-     `[a]dd / [i]gnore forever / [s]kip` for each (adds go to `packages.toml` / `.os/home/`, ignores to
-     `.os/save-ignore.toml`),
-  3. shows the `.os/` files it will commit (**only `.os/`**; other changes stay out) and any other unpushed
-     commits a push would also send, then asks "Commit and push? [y/N]" (No aborts). `--yes` skips the
-     prompt but never pushes other commits; `--no-push` only commits; `-m "msg"` sets the message.
-- Start managing some other new file: `chezmoi add ~/.config/<file>`, then `os save`.
-- Templates (`*.tmpl`, eg web apps with home paths) aren't re-added; edit those in `.os/home/` directly.
-- On the other machine: `os sync`.
+1. `git pull --ff-only` (skip with `--no-pull`).
+2. **Changes made on this machine** since its last sync (installed or removed a package, created a web app,
+   edited `bindings.lua`, switched theme, ...): asks about each one.
+   - `k` keep: save it to the list, so the other machine gets it.
+   - `d` discard: undo it here (uninstall, restore the list's version; files are backed up first).
+   - `i` ignore (packages and web apps): add to `[ignore]`, never synced or asked about again.
+   - `s` skip (the default): leave it, ask again next time.
+3. **Changes that came from the list** (what the other machine saved, or a hand edit of `machine.toml`): shows
+   the plan and asks "Apply?". This includes removals: a package you removed and saved on one machine is
+   removed on the other.
+4. Shows the `.os/` files it will commit (**only `.os/`**; other changes stay out) and any other unpushed
+   commits a push would also send, then asks "Commit and push?".
+
+Good to know:
+
+- The same thing changed on both machines: it shows both versions and asks which one wins.
+- Something fails to apply (eg an AUR package that no longer builds): the rest still applies, the command
+  exits with an error, and the next `os sync` asks what to do with the leftover (`k` removes it from the list).
+- `--yes` asks nothing: it applies the list's changes and skips this machine's own changes. It never pushes
+  commits other than its own.
+- How it tells "changed here" from "changed on the other machine": each machine records the commit it last
+  synced to in `~/.local/state/delulu-os/synced`. Files it replaces are backed up under
+  `~/.local/state/delulu-os/backup/<time>/`.
+- Applying goes through Omarchy's own commands (`omarchy pkg add`, `omarchy webapp install`,
+  `omarchy theme set`, ...), so it keeps working with Omarchy updates. If an update renames one of those
+  commands, `os sync` says which and changes nothing.
+
+### The list: `.os/machine.toml`
+
+| Section      | What                                                | Example                                         |
+| ------------ | --------------------------------------------------- | ----------------------------------------------- |
+| `[packages]` | `pacman` and `aur` packages beyond stock Omarchy    | `"glow"`                                        |
+| `[ignore]`   | packages / web apps never synced                    | hardware packages, Omarchy's default web apps   |
+| `[settings]` | theme, font, default browser / editor / terminal    | `theme = "Everforest"`                          |
+| `[bar]`      | bar widget options                                  | `"omarchy.clock.format" = "dddd M/d HH:mm"`     |
+| `[plugins]`  | Omarchy plugins: id = git URL                       | `"hamsti.vitals" = "https://..."`               |
+| `[files]`    | files synced between `$HOME` and `.os/files/`       | `".config/hypr/bindings.lua" = "always"`        |
+| `[webapps]`  | web apps: name = URL                                | `"Twitch" = "https://www.twitch.tv/"`           |
+
+- Editing the list by hand is fine: the next `os sync` applies the edit.
+- **Track another file:** add `"<path under $HOME>" = "always"` under `[files]`, then `os sync` (answer `k`).
+  Only files you own belong here (overrides like `bindings.lua`), written with `$HOME` /
+  `os.getenv("HOME")` instead of `/home/<user>` so they work on every machine.
+- **A file for one machine only:** use `"lspci:<text>"` instead of `"always"`; it then applies only where
+  `lspci` output contains `<text>` (hostname is no use: every fresh Omarchy install is named `omarchy`).
+- Web app icons are not synced: each machine fetches the site's own icon when it installs the web app, so
+  an icon can differ between machines. If a site's icon can't be fetched, that web app isn't installed and
+  `os sync` reports it.
+- Not in the list on purpose: monitors, input tweaks, secrets.
 
 ## Files
 
 - `.os/install.sh`: first-run bootstrap (installs uv, then `sync`).
-- `.os/cli.py`: `os` CLI: `sync`, `save`, `pwd-store`, `pwd-copy`.
-- `.os/save-ignore.toml`: packages / web apps `os save` should never offer.
-- `.os/rc`: bashrc additions (`os` / `ds` aliases, start in this repo).
-- `.os/home/`: chezmoi source (chezmoi naming: `dot_config/` → `~/.config/`). Currently manages:
-  - `~/.config/hypr/bindings.lua`: custom keybindings. Each binding that replaces a default has a
+- `.os/cli.py`: `os` CLI: `sync`, `pwd-store`, `pwd-copy`.
+- `.os/machine.toml`: the list (see above).
+- `.os/files/`: the tracked files, at their path under `$HOME`. Currently:
+  - `.config/hypr/bindings.lua`: custom keybindings. Each binding that replaces a default has a
     `-- previously: X` comment.
-  - `~/.config/omarchy/shell.json`: bar layout (clock format).
-  - `~/.local/share/applications/`: custom web apps (Smash tools, Cloudflare, etc.) + icons.
-  - `~/.config/chromium-flags.conf`: only on machines with the AMD Raphael iGPU (VP9 flicker workaround;
-    see `.chezmoiignore`).
-  - `.chezmoidata/packages.toml` + `run_onchange_install-packages.sh.tmpl`: packages beyond stock Omarchy.
-  - `run_once_after_add-bashrc-source.sh`: hooks `.os/rc` into `~/.bashrc`.
+  - `.config/chromium-flags.conf`: only on machines with the AMD Raphael iGPU (VP9 flicker workaround).
+- `.os/rc`: bashrc additions (`os` / `ds` aliases, start in this repo).
 - `.os/scripts/keybindings/`: scripts called by keybindings:
   - `screenrecord.sh`: region recording toggle (`SUPER + SHIFT + Q`, `--save` on `SUPER + SHIFT + ALT + Q`).
   - `textual-kernel.sh`: launches the `experimental/textual-kernel` TUI (`SUPER + SHIFT + J`).
@@ -75,7 +109,7 @@ would turn a symlink back into a plain file. So the live files and the repo copi
 
 - **Desktop (AMD Raphael iGPU + NVIDIA RTX 5060): video flicker in Chromium.** AMD VCN hardware VP9 decode
   corrupts video (YouTube/Twitch). Workaround: `--disable-accelerated-video-decode` in
-  `~/.config/chromium-flags.conf` (tracked, applied only on this GPU via `.chezmoiignore`). Also don't set
+  `~/.config/chromium-flags.conf` (tracked, applied only on this GPU via `lspci:Raphael` in `machine.toml`). Also don't set
   `LIBVA_DRIVER_NAME=nvidia` etc. globally in `envs.conf`: it routes decode to the idle NVIDIA GPU and crashes
   Chromium.
   - To try later (deliberately; it needs a reboot): first check Mesa release notes for a VCN/VP9 fix. If none,
@@ -84,6 +118,6 @@ would turn a symlink back into a plain file. So the live files and the repo copi
 
 ## Ideas / TODO
 
-- Theme: maybe switch to a Severance-style theme (and sync it via chezmoi).
+- Theme: maybe switch to a Severance-style theme (`os sync` picks up the switch).
 - Decide on a default editor (vscode / nvim / sublime); sublime is fast for opening files from the file manager.
 - Integrate Zen browser with 1Password (https://docs.zen-browser.app/guides/1password).

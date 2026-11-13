@@ -1,9 +1,0 @@
-[Desktop Entry]
-Version=1.0
-Name=Glyph Config
-Comment=Glyph Config
-Exec=omarchy-launch-webapp "https://limitlabs.com/pages/glyph-configurator"
-Terminal=false
-Type=Application
-Icon=glyph-config
-StartupNotify=true

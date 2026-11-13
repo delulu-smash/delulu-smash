@@ -72,8 +72,9 @@ Prefer a boxed header comment style modeled after below code snippet example:
 - `docs/`: Source content for the Smash Ultimate website, built with MyST/Myst engine. Preserve documentation
   structure and publishing intent.
 - `.os/`: Personal machine/bootstrap tooling and installation docs for the user's Linux/Omarchy setup. This
-  folder is for reusable PC setup and local tooling, not Smash-specific product code. `.os/home/` is the
-  chezmoi source for the machine's dotfiles and packages, applied with `os sync` and captured with `os save`.
+  folder is for reusable PC setup and local tooling, not Smash-specific product code. `.os/machine.toml` is
+  the one list of what every machine should have (packages, settings, files, web apps); `os sync` keeps the
+  machine and the list the same in both directions.
 - `pkgs/`: Reusable Python package code for scripting, automation, and analysis.
 - `tools/`: Interactive application code, including the Reflex-based app(s).
 - `local/`: Local-only scratch files, generated outputs, experiments, and machine-specific artifacts. Treat this
@@ -182,11 +183,11 @@ directory that references `.agents/` content, never a second copy of it.
 ## Omarchy Environment
 
 - The user runs Omarchy 4.0.0-1 (Omarchy 4); use its Lua-based Hyprland configuration conventions.
-- Some live config under `$HOME` (eg `~/.config/hypr/bindings.lua`, web apps) is managed by chezmoi from
-  `.os/home/`; `chezmoi managed` lists it. This applies even when the task never touches `.os/`: after changing
-  a managed live file, run `chezmoi re-add` (or tell the user to run `os save`) so the repo copy doesn't drift.
-  When installing a package for the user, add it to `.os/home/.chezmoidata/packages.toml`. Details:
-  `.agents/instructions/os.md`.
+- Packages, Omarchy settings, plugins, web apps and some files under `$HOME` (eg `~/.config/hypr/bindings.lua`)
+  are tracked in `.os/machine.toml` and synced between the user's machines with `os sync`. This applies even
+  when the task never touches `.os/`: after installing a package or changing a tracked file or setting, tell
+  the user to run `os sync` (it asks whether to keep the change), or make the same change in
+  `.os/machine.toml` / `.os/files/`. Details: `.agents/instructions/os.md`.
 
 ## AI Memory Policy
 
@@ -197,7 +198,7 @@ directory that references `.agents/` content, never a second copy of it.
 - When the user says "remember this" / "AI remember" for something about this repo (conventions, structure,
   gotchas, workflow preferences), do not write it to a machine-local memory store. Instead, capture it in
   version-controlled repository files: this file, the relevant scoped `.agents/instructions/*.md` file, or a
-  skill. For machine setup facts, use `.os/README.md`, or `.os/home/` (chezmoi) for the config itself.
+  skill. For machine setup facts, use `.os/README.md`, or `.os/machine.toml` for the setup itself.
 - Only write to a persistent cross-session memory tool when the user explicitly asks for that specific mechanism
   by name, rather than a general "remember" request.
 

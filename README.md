@@ -21,28 +21,23 @@ In this repository, "Smash Ultimate" refers to Nintendo's video game Super Smash
 ## How to set up a new machine (`.os`)
 
 On a fresh [Omarchy](https://omarchy.org/) install, clone the repo and run the bootstrap script. It installs
-`uv`, then runs `os sync`. That installs [chezmoi](https://www.chezmoi.io/), shows a diff of the dotfiles,
-web apps, packages and bashrc hook from `.os/home/`, and applies them once you confirm.
+`uv`, then runs `os sync`, which sets the machine up from the list in
+[`.os/machine.toml`](.os/machine.toml) (packages, theme and other settings, plugins, web apps, keybindings)
+once you confirm.
 
 ```bash
 git clone git@github.com:delulu-smash/delulu-smash.git ~/repos/delulu-smash && ~/repos/delulu-smash/.os/install.sh
 ```
 
-After that, open a new terminal and use the `os` alias to pull and apply later changes:
+After that, open a new terminal and use the `os` alias. One command keeps every machine the same, in both
+directions:
 
 ```bash
-os sync            # git pull + show diff + apply
+os sync            # save this machine's changes (it asks about each), apply the other machines', push
 os sync --dry-run  # preview only
 ```
 
-After changing this machine's setup (keybindings, new packages, new web apps), save it back to the repo:
-
-```bash
-os save            # re-add changed files, offer new packages/web apps, commit .os/ + push
-os save --dry-run  # preview only
-```
-
-See [`.os/README.md`](.os/README.md) for everyday use (`chezmoi re-add`) and manual per-machine steps.
+See [`.os/README.md`](.os/README.md) for how it works and the manual per-machine steps.
 
 ## How to run docs locally
 
