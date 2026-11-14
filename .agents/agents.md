@@ -192,8 +192,8 @@ directory that references `.agents/` content, never a second copy of it.
   machine or Omarchy change (install or remove a package, add a keybinding, a web app, a theme / font /
   default app, a toggle, a plugin, an edit to a tracked config file), even when the task never touches `.os/`:
   1. Make the change on this machine (Omarchy's own commands, or edit the live file).
-  2. Record it: `uv run .os/cli.py save <kind>:<name> ...` (kinds: `package`, `plugin`, `webapp`, `file`,
-     `setting`, `toggle`, `bar`; eg `save package:zed file:.config/hypr/bindings.lua`). It asks nothing and
+  2. Record it: `uv run .os/cli.py save --no-commit <kind>:<name> ...` (kinds: `package`, `plugin`, `webapp`, `file`,
+     `setting`, `toggle`, `bar`; eg `save --no-commit package:zed file:.config/hypr/bindings.lua`). It asks nothing and
      only writes `.os/`. Always name what you changed: a bare `save` saves every change on the machine,
      including ones the user hasn't decided on.
   3. Tell the user what was recorded, and that `os sync` (or a commit and push, when they ask for one) sends

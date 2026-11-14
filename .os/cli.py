@@ -20,8 +20,8 @@
 #   1. Sync this machine both ways:          os sync
 #   2. Preview only (asks and changes nothing): os sync --dry-run
 #   3. Preview without pulling:              os sync --dry-run --no-pull
-#   4. Save every change made here:          os save
-#   5. Save just these (scripts, AI agents): os save package:zed file:.config/hypr/bindings.lua
+#   4. Save every change here (asks to push): os save
+#   5. Save just these, no git (AI agents):  os save --no-commit package:zed
 #   6. Store (hidden prompt, asked twice):   os pwd-store
 #   7. Copy to clipboard (clears after 5s):  os pwd-copy
 # ---------------------------------------------------------------------------
@@ -218,15 +218,19 @@ def save(
         ),
     ] = None,
     *,
+    no_commit: Annotated[
+        bool, typer.Option("--no-commit", help="Only write .os/; don't offer to commit and push.")
+    ] = False,
     dry_run: Annotated[bool, typer.Option("--dry-run", help="Show what would be saved; change nothing.")] = False,
 ) -> None:
-    """Save this machine's changes to the list, asking nothing.
+    """Save this machine's changes to the list, then commit and push them.
 
     With no names: every change made on this machine since its last sync (what `os sync` would
     ask about), each saved as if answered "keep". With names: only those, eg right after
     installing a package or editing a tracked file (a new file path starts being tracked).
     Anything the list changed since this machine's last sync is left for `os sync` to settle.
-    Only writes .os/ (no pull, commit or push); the next `os sync` commits and pushes it.
+    If it saved anything, it then shows what a commit and push would send and asks before doing
+    it (--no-commit: only write .os/ and ask nothing).
     """
     _check_omarchy()
     target = tomllib.loads(MACHINE_LIST.read_text())
@@ -242,9 +246,14 @@ def save(
     for item in items:
         action = "remove from" if item.machine is None else "add to" if item.target is None else "update in"
         typer.echo(f"{f'Would {action}' if dry_run else action.capitalize()} the list: {KINDS[item.kind]} {item.key}")
-    if items and not dry_run:
-        _save_all(items)
+    if dry_run or not items:
+        return
+    _save_all(items)
+    if no_commit:
         typer.echo("Saved in .os/ (not committed); `os sync` commits and pushes it for the other machines.")
+        return
+    if not _commit_and_push("os save: update machine setup", push=True, yes=False):
+        raise typer.Exit(1)
 
 
 def _all_local_items(target: dict[str, Any]) -> tuple[list[Item], list[str]]:
@@ -846,7 +855,10 @@ def _commit_and_push(message: str, *, push: bool, yes: bool) -> bool:
         typer.echo("\nNothing to commit.")
         return True
     if status:
-        typer.echo(f"\nWill commit (.os/ only; other changes stay out):\n{status}")
+        typer.echo(f"\nWill commit everything changed in .os/ (staged or not):\n{status}")
+    elsewhere = _out([*git, "diff", "--cached", "--name-only", "--", ".", ":!.os"])
+    if elsewhere:
+        typer.echo(f"\nStaged outside .os/, left out of this commit:\n{elsewhere}")
     if unpushed:
         typer.echo(f"\nUnpushed commits that a push would also send:\n{unpushed}")
     if yes:
@@ -854,7 +866,7 @@ def _commit_and_push(message: str, *, push: bool, yes: bool) -> bool:
     else:
         steps = [*(["commit"] if status else []), *([f"push{' all' if unpushed else ''}"] if push else [])]
         if not typer.confirm(f"\n{' and '.join(steps).capitalize()}?"):
-            typer.echo("Left as is; the next `os sync` offers this again.")
+            typer.echo("Left as is; the next `os sync` or `os save` offers this again.")
             return True
 
     if status:
@@ -866,7 +878,7 @@ def _commit_and_push(message: str, *, push: bool, yes: bool) -> bool:
             subprocess.run([*git, "add", "--", ".os"], check=True)
             subprocess.run(commit, check=True)
     if not push:
-        typer.echo("Not pushed; the next `os sync` offers to push.")
+        typer.echo("Not pushed; the next `os sync` or `os save` offers to push.")
     elif subprocess.run([*git, "push"], check=False).returncode != 0:
         typer.echo("Push rejected (remote likely ahead); run `git pull --rebase`, then `git push`.", err=True)
         return False

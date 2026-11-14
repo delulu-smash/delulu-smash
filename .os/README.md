@@ -76,22 +76,27 @@ Good to know:
 
 ### Saving changes without the questions: `os save`
 
-`os save` saves this machine's changes to the list: the same as answering `k` in `os sync`, but it asks
-nothing. With no names it saves every change made here since the last sync; with names, only those (AI agents
-name what they changed, right after a change you asked for).
+`os save` saves this machine's changes to the list: the same as answering `k` in `os sync`, but without a
+question per change. With no names it saves every change made here since the last sync; with names, only
+those. If it saved anything, it then shows what a commit would contain (everything changed in `.os/`, staged or not; other staged
+files are listed but left out) plus any unpushed commits, and asks "Commit and push?". It never pulls or
+applies anything from the list (that's `os sync`). AI agents use `--no-commit` to name what they changed,
+right after a change you asked for.
 
 ```bash
 os save --dry-run                        # what a full save would do
-os save                                  # every change made on this machine
+os save                                  # every change made here, then "Commit and push?"
+os save --no-commit package:zed          # only write .os/ (no commit, no question)
 os save package:zed                      # just installed (or removed) a package
 os save file:.config/hypr/bindings.lua   # edited a tracked file; a new path starts being tracked
 os save webapp:Twitch setting:theme toggle:window-no-gaps
 ```
 
 - Kinds: `package`, `plugin`, `webapp`, `file`, `setting`, `toggle`, `bar`. `--dry-run` previews.
+- `--no-commit`: the next `os sync` or `os save` commits it. A rejected push (remote ahead) means run
+  `os sync`, which pulls first.
 - "Every change" includes removals: a listed package you uninstalled here is taken off the list for all
   machines. Preview with `--dry-run` first.
-- It only writes `.os/` (no pull, commit or push); the next `os sync` commits and pushes it.
 - Anything the list changed since this machine last synced (or everything, if it never synced) is left for
   `os sync` to ask about, since saving would undo the other machine's change. With names it refuses
   outright; without, it saves the rest and lists those.
