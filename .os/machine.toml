@@ -46,6 +46,9 @@ pacman = [
     # fonts
     "noto-fonts-extra",
     "ttf-cascadia-mono-nerd",
+    "libfprint-git",
+    "mkinitcpio",
+    "openssh",
 ]
 aur = [
     "eden-bin",
@@ -58,7 +61,6 @@ aur = [
     "speedometer",
     "vidcutter",
     "qwinff",
-    "blueferry-backend",
     # alt browsers (experiments?)
     "badwolf",
     "min",
@@ -106,7 +108,7 @@ webapps = [
 theme = "Everforest"
 font = "JetBrainsMono Nerd Font"
 browser = "zen"
-editor = "zed"
+editor = "zeditor"
 terminal = "kitty"
 
 [bar]
