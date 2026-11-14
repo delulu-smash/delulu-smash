@@ -32,8 +32,8 @@ hl.unbind("SUPER + SHIFT + S") -- previously Google Maps
 o.bind("SUPER + SHIFT + S", "Screenshot", "omarchy screenshot")
 hl.unbind("SUPER + SHIFT + Q") -- previously: Screenrecord
 hl.unbind("SUPER + SHIFT + ALT + Q") -- previously: Screenrecord (save)
-o.bind("SUPER + SHIFT + Q", "Screenrecord", o.launch(os.getenv("HOME") .. "/repos/delulu-smash/.os/scripts/keybindings/screenrecord.sh"))
-o.bind("SUPER + SHIFT + ALT + Q", "Screenrecord (save)", o.launch(os.getenv("HOME") .. "/repos/delulu-smash/.os/scripts/keybindings/screenrecord.sh --save"))
+o.bind("SUPER + SHIFT + Q", "Screenrecord", o.launch("/home/kdaftari/repos/delulu-smash/.os/scripts/keybindings/screenrecord.sh"))
+o.bind("SUPER + SHIFT + ALT + Q", "Screenrecord (save)", o.launch("/home/kdaftari/repos/delulu-smash/.os/scripts/keybindings/screenrecord.sh --save"))
 o.bind("SUPER + SHIFT + K", "Discord", o.launch("Discord.desktop"))
 hl.unbind("SUPER + SHIFT + V") -- previously: Vscode
 o.bind("SUPER + SHIFT + V", "Vscode: delulu-smash", 'code "$HOME/repos/delulu-smash"')
