@@ -140,6 +140,8 @@ terminal = "kitty"
 # AMD VP9 decode workaround, only for the desktop's Raphael iGPU.
 ".config/chromium-flags.conf" = "lspci:Raphael"
 ".config/zed/settings.json" = "always"
+".config/hypr/autostart.lua" = "always"
+".config/systemd/user/smashgpt.service" = "always"
 
 [webapps]
 # Web apps: name = URL (`omarchy webapp install <name> <url>`). Icons are not synced: each machine
@@ -160,3 +162,4 @@ terminal = "kitty"
 "Supermajor" = "https://www.supermajor.gg/"
 "Twitch" = "https://www.twitch.tv/"
 "Ultimate Frame Data" = "https://ultimateframedata.com/smash"
+SmashGPT = "http://localhost:3000"

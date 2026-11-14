@@ -52,3 +52,5 @@ hl.unbind("SUPER + SHIFT + A") -- previously: ChatGPT
 o.bind("SUPER + SHIFT + A", "Claude: delulu-smash", { tui = os.getenv("HOME") .. "/repos/delulu-smash/.os/scripts/keybindings/claude-delulu.sh", focus = true })
 hl.unbind("SUPER + SHIFT + P") -- previously: Google Photos
 o.bind("SUPER + SHIFT + P", "Copy 1Password master password", o.launch(os.getenv("HOME") .. "/repos/delulu-smash/.os/scripts/keybindings/pwd-copy.sh"))
+hl.unbind("SUPER + SHIFT + I") -- previously: Switch input language back
+o.bind("SUPER + SHIFT + I", "SmashGPT", o.launch(os.getenv("HOME") .. "/repos/delulu-smash/.os/scripts/keybindings/smashgpt.sh"))
