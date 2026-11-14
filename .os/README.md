@@ -33,7 +33,8 @@ After that, open a new terminal and use `os sync`.
 
 Manual per-machine steps (not synced):
 
-- `os pwd-store` (the keyring is per-machine), and sign in to 1Password.
+- Sign in to 1Password. (The master password for `os pwd-copy` lives in the per-machine keyring; `os sync`
+  offers `os pwd-store` while none is stored, or run it yourself.)
 - Monitors / scaling (`~/.config/hypr/monitors.lua`) and input tweaks (`input.lua`).
 
 ## Everyday use: `os sync`

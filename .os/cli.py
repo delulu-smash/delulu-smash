@@ -14,7 +14,7 @@
 # the list without asking (for scripts and AI agents). `pwd-store` saves the 1Password master
 # password in gnome-keyring (via `secret-tool`); `pwd-copy` copies it to the clipboard
 # (wl-copy) and clears it after a timeout. No password file is written; the keyring is
-# per-machine.
+# per-machine, so `sync` offers `pwd-store` when this machine's keyring has none yet.
 #
 # Example CLI Commands (`os` alias comes from .os/rc; new machine: run .os/install.sh first):
 #   1. Sync this machine both ways:          os sync
@@ -176,6 +176,8 @@ def sync(
     pending = [item for item in items if item.status in ("local", "conflict")]
     if dry_run:
         _preview(pending, [item for item in items if item.status == "remote"], target, first=base is None)
+        if shutil.which("secret-tool") and _stored_password() is None:
+            typer.echo("\nWould offer to store the 1Password master password (none in the keyring yet).")
         return
 
     if pending and yes:
@@ -196,6 +198,8 @@ def sync(
     if applied:
         STATE.mkdir(parents=True, exist_ok=True)
         (STATE / "synced").write_text(f"{_out(['git', '-C', str(REPO), 'rev-parse', 'HEAD'])}\n")
+    if not yes:
+        _offer_pwd_store()
     if failed:
         typer.echo("\nThese did not apply (the next `os sync` asks what to do with them):", err=True)
         for line in failed:
@@ -839,6 +843,25 @@ def _commit_and_push(message: str, *, push: bool, yes: bool) -> bool:
     return True
 
 
+def _stored_password() -> bytes | None:
+    """The 1Password master password from gnome-keyring, or None if none is stored."""
+    result = subprocess.run(["secret-tool", "lookup", *KEYRING_ATTRS], capture_output=True, check=False)
+    return result.stdout if result.returncode == 0 and result.stdout else None
+
+
+def _offer_pwd_store() -> None:
+    """During sync: offer `pwd-store` when this machine's keyring has no password yet."""
+    if shutil.which("secret-tool") is None:
+        typer.echo("\nsecret-tool missing (libsecret); run `os pwd-store` once it is installed.", err=True)
+        return
+    if _stored_password() is not None:
+        return
+    if typer.confirm("\nNo 1Password master password in the keyring yet. Store it now?", default=True):
+        pwd_store()
+    else:
+        typer.echo("Skipped; `os pwd-store` stores it later (the next `os sync` asks again).")
+
+
 @app.command()
 def pwd_store() -> None:
     """Save the 1Password master password in gnome-keyring (prompted, never an arg)."""
@@ -854,11 +877,11 @@ def pwd_store() -> None:
 @app.command()
 def pwd_copy() -> None:
     """Copy the stored 1Password master password to the clipboard."""
-    result = subprocess.run(["secret-tool", "lookup", *KEYRING_ATTRS], capture_output=True, check=False)
-    if result.returncode != 0 or not result.stdout:
+    password = _stored_password()
+    if password is None:
         typer.echo("No password found in gnome-keyring; run `pwd-store` first.", err=True)
         raise typer.Exit(1)
-    subprocess.run(["wl-copy", "--type", "text/plain"], input=result.stdout, check=True)
+    subprocess.run(["wl-copy", "--type", "text/plain"], input=password, check=True)
     # Detached so the clear still happens after this CLI exits.
     subprocess.Popen(
         ["sh", "-c", f"sleep {CLEAR_AFTER_SECONDS} && wl-copy --clear"],
