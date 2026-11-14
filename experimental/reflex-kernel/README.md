@@ -3,9 +3,10 @@
 # reflex-kernel
 
 A browser workbench built with [Reflex](https://reflex.dev), in the spirit of
-`experimental/textual-kernel`: chat with the Smash agent (`ds.ai.agent`) on the left; on the
-right, every table its tools return shows up as a sortable, filterable grid named `r1`, `r2`, …
-above Jupyter-style Python cells where those names are plain polars DataFrames.
+`experimental/textual-kernel`: chat with the Smash agent (`ds.ai.agent`) across the top; below
+it, every table its tools return shows up as a sortable, filterable grid named `r1`, `r2`, …
+side by side with Jupyter-style Python cells where those names are plain polars DataFrames.
+Drag the chat strip's or the tables pane's bottom-right corner to resize them.
 
 ```sh
 cd experimental/reflex-kernel
