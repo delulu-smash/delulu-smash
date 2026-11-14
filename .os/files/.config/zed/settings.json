@@ -1,0 +1,17 @@
+{
+  "git_panel": {
+    "dock": "left"
+  },
+  "cli_default_open_behavior": "existing_window",
+  "agent_servers": {
+    "claude-acp": {
+      "default_config_options": {
+        "model": "opus"
+      },
+      "type": "registry"
+    }
+  },
+  "base_keymap": "VSCode",
+  "theme": "Omazed",
+  "buffer_font_family": "JetBrainsMono Nerd Font"
+}

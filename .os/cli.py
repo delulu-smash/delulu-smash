@@ -10,9 +10,9 @@
 # Purpose: local OS helper CLI. `sync` keeps this machine and the repo's machine list
 # (.os/machine.toml: packages, plugins, web apps, files, settings, toggles) the same in both
 # directions: it asks about this machine's own changes, applies the list's changes through the
-# Omarchy CLI, then commits + pushes .os/. `keep` saves named changes made on this machine to
-# the list without asking (for scripts and AI agents). `pwd-store` saves the 1Password master
-# password in gnome-keyring (via `secret-tool`); `pwd-copy` copies it to the clipboard
+# Omarchy CLI, then commits + pushes .os/. `save` saves changes made on this machine to the
+# list without asking (all of them, or just the named ones). `pwd-store` saves the 1Password
+# master password in gnome-keyring (via `secret-tool`); `pwd-copy` copies it to the clipboard
 # (wl-copy) and clears it after a timeout. No password file is written; the keyring is
 # per-machine, so `sync` offers `pwd-store` when this machine's keyring has none yet.
 #
@@ -20,9 +20,10 @@
 #   1. Sync this machine both ways:          os sync
 #   2. Preview only (asks and changes nothing): os sync --dry-run
 #   3. Preview without pulling:              os sync --dry-run --no-pull
-#   4. Save changes just made here:          os keep package:zed file:.config/hypr/bindings.lua
-#   5. Store (hidden prompt, asked twice):   os pwd-store
-#   6. Copy to clipboard (clears after 5s):  os pwd-copy
+#   4. Save every change made here:          os save
+#   5. Save just these (scripts, AI agents): os save package:zed file:.config/hypr/bindings.lua
+#   6. Store (hidden prompt, asked twice):   os pwd-store
+#   7. Copy to clipboard (clears after 5s):  os pwd-copy
 # ---------------------------------------------------------------------------
 
 
@@ -209,23 +210,30 @@ def sync(
 
 
 @app.command()
-def keep(
+def save(
     things: Annotated[
-        list[str],
-        typer.Argument(help="<kind>:<name>; kinds: package, plugin, webapp, file, setting, toggle, bar."),
-    ],
+        list[str] | None,
+        typer.Argument(
+            help="<kind>:<name>; kinds: package, plugin, webapp, file, setting, toggle, bar. None: all changes.",
+        ),
+    ] = None,
     *,
     dry_run: Annotated[bool, typer.Option("--dry-run", help="Show what would be saved; change nothing.")] = False,
 ) -> None:
-    """Save this machine's current state of the named things to the list, asking nothing.
+    """Save this machine's changes to the list, asking nothing.
 
-    For right after a change made on purpose (a package installed or removed, an edited tracked
-    file, a new web app, a switched theme): the same as answering "keep" for them in `os sync`.
+    With no names: every change made on this machine since its last sync (what `os sync` would
+    ask about), each saved as if answered "keep". With names: only those, eg right after
+    installing a package or editing a tracked file (a new file path starts being tracked).
+    Anything the list changed since this machine's last sync is left for `os sync` to settle.
     Only writes .os/ (no pull, commit or push); the next `os sync` commits and pushes it.
     """
     _check_omarchy()
     target = tomllib.loads(MACHINE_LIST.read_text())
-    items, problems = _kept_items([_thing(thing, target) for thing in things], target)
+    if things:
+        items, problems = _kept_items([_thing(thing, target) for thing in things], target)
+    else:
+        items, problems = _all_local_items(target)
     if problems:
         for line in problems:
             typer.echo(line, err=True)
@@ -239,8 +247,30 @@ def keep(
         typer.echo("Saved in .os/ (not committed); `os sync` commits and pushes it for the other machines.")
 
 
+def _all_local_items(target: dict[str, Any]) -> tuple[list[Item], list[str]]:
+    """Changes made on this machine only, and what blocks saving (conflicts: listed only)."""
+    base_commit = _last_synced()
+    base = _base_list(base_commit)
+    if base is None:
+        return [], ["This machine has never synced, so its changes can't be told from the list's; run `os sync`."]
+    items = _items(target, base, base_commit)
+    local = [item for item in items if item.status == "local"]
+    for item in local:
+        item.choice = "k"
+    if not local:
+        typer.echo("No changes on this machine to save.")
+    # Changed both here and in the list since the last sync: saving this machine's version
+    # would undo the other machine's change, so those stay a question for `os sync`.
+    conflicts = [f"  {KINDS[item.kind]} {item.key}" for item in items if item.status == "conflict"]
+    if conflicts:
+        typer.echo("Left for `os sync` (changed here and in the list since the last sync):", err=True)
+        for line in conflicts:
+            typer.echo(line, err=True)
+    return local, []
+
+
 def _thing(thing: str, target: dict[str, Any]) -> tuple[str, str]:
-    """Parse a `keep` argument, `<kind>:<name>`, into (kind, key); exits on an invalid one."""
+    """Parse a `save` argument, `<kind>:<name>`, into (kind, key); exits on an invalid one."""
     kind, _, key = thing.partition(":")
     problem = ""
     if kind not in KINDS or not key:
@@ -699,7 +729,7 @@ def _save_file(files: Any, item: Item) -> None:
         (FILES / item.key).unlink(missing_ok=True)
         return
     if item.key not in files:
-        _put(files, item.key, "always")  # newly tracked (through `os keep`)
+        _put(files, item.key, "always")  # newly tracked (through `os save`)
     (FILES / item.key).parent.mkdir(parents=True, exist_ok=True)
     shutil.copy(HOME / item.key, FILES / item.key)
 

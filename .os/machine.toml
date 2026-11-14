@@ -65,12 +65,10 @@ aur = [
     "resources-git",
     "rar",
     "speedometer",
-    "vidcutter",
     "qwinff",
     # alt browsers (experiments?)
     "badwolf",
     "min",
-    "qutebrowser-git",
     "vieb-bin",
 ]
 
@@ -141,6 +139,7 @@ terminal = "kitty"
 ".config/hypr/bindings.lua" = "always"
 # AMD VP9 decode workaround, only for the desktop's Raphael iGPU.
 ".config/chromium-flags.conf" = "lspci:Raphael"
+".config/zed/settings.json" = "always"
 
 [webapps]
 # Web apps: name = URL (`omarchy webapp install <name> <url>`). Icons are not synced: each machine

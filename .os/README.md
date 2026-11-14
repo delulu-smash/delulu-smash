@@ -74,21 +74,27 @@ Good to know:
   `omarchy theme set`, ...), so it keeps working with Omarchy updates. If an update renames one of those
   commands, `os sync` says which and changes nothing.
 
-### Saving a change without the questions: `os keep`
+### Saving changes without the questions: `os save`
 
-`os keep <kind>:<name> ...` saves this machine's current state of the named things to the list: the same as
-answering `k` for them in `os sync`, but it asks nothing. AI agents run it right after a change you asked for.
+`os save` saves this machine's changes to the list: the same as answering `k` in `os sync`, but it asks
+nothing. With no names it saves every change made here since the last sync; with names, only those (AI agents
+name what they changed, right after a change you asked for).
 
 ```bash
-os keep package:zed                      # just installed (or removed) a package
-os keep file:.config/hypr/bindings.lua   # edited a tracked file; a new path starts being tracked
-os keep webapp:Twitch setting:theme toggle:window-no-gaps
+os save --dry-run                        # what a full save would do
+os save                                  # every change made on this machine
+os save package:zed                      # just installed (or removed) a package
+os save file:.config/hypr/bindings.lua   # edited a tracked file; a new path starts being tracked
+os save webapp:Twitch setting:theme toggle:window-no-gaps
 ```
 
 - Kinds: `package`, `plugin`, `webapp`, `file`, `setting`, `toggle`, `bar`. `--dry-run` previews.
+- "Every change" includes removals: a listed package you uninstalled here is taken off the list for all
+  machines. Preview with `--dry-run` first.
 - It only writes `.os/` (no pull, commit or push); the next `os sync` commits and pushes it.
-- It refuses when the list has a version this machine has not synced yet, or the machine has never synced and
-  differs: that needs your answer in `os sync`.
+- Anything the list changed since this machine last synced (or everything, if it never synced) is left for
+  `os sync` to ask about, since saving would undo the other machine's change. With names it refuses
+  outright; without, it saves the rest and lists those.
 
 ### The list: `.os/machine.toml`
 
@@ -120,7 +126,7 @@ os keep webapp:Twitch setting:theme toggle:window-no-gaps
 ## Files
 
 - `.os/install.sh`: first-run bootstrap (installs uv, runs the root `.install.sh`, then `sync`).
-- `.os/cli.py`: `os` CLI: `sync`, `keep`, `pwd-store`, `pwd-copy`.
+- `.os/cli.py`: `os` CLI: `sync`, `save`, `pwd-store`, `pwd-copy`.
 - `.os/machine.toml`: the list (see above).
 - `.os/files/`: the tracked files, at their path under `$HOME`. Currently:
   - `.config/hypr/bindings.lua`: custom keybindings. Each binding that replaces a default has a
@@ -147,7 +153,7 @@ os keep webapp:Twitch setting:theme toggle:window-no-gaps
 
 ## Ideas / TODO
 
-- Explore what `os keep` does (try `os keep --dry-run package:<name>` after an install; see the section above).
+- Explore what `os save` does (try `os save --dry-run`; see the section above).
 - Theme: maybe switch to a Severance-style theme (`os sync` picks up the switch).
 - Decide on a default editor (vscode / nvim / sublime); sublime is fast for opening files from the file manager.
 - Integrate Zen browser with 1Password (https://docs.zen-browser.app/guides/1password).

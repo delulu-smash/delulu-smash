@@ -16,17 +16,18 @@ applyTo: ".os/**"
   `.os/README.md`.
 - After changing something `os sync` tracks (eg `$HOME/.config/hypr/bindings.lua`, an installed or removed
   package, a web app, the theme, a toggle), record it right away with
-  `uv run .os/cli.py keep <kind>:<name> ...` (kinds: `package`, `plugin`, `webapp`, `file`, `setting`,
+  `uv run .os/cli.py save <kind>:<name> ...` (kinds: `package`, `plugin`, `webapp`, `file`, `setting`,
   `toggle`, `bar`; `--dry-run` previews). It is the no-questions form of answering "keep" in `os sync`: it
   saves this machine's current state of the named things into `.os/machine.toml` / `.os/files/` and does
-  nothing else (no pull, commit or push). Prefer it over editing those by hand. Then tell the user what was
+  nothing else (no pull, commit or push). Always name the things: a bare `os save` saves every change on
+  the machine (for the user to run themselves). Prefer it over editing those by hand. Then tell the user what was
   recorded; `os sync` (or a commit and push, when they ask) sends it to the other machines. Never leave the
   machine and the list out of sync.
-- `keep` refuses when the list has a version this machine has not synced (or the machine never synced and
+- `save` refuses when the list has a version this machine has not synced (or the machine never synced and
   differs): saving would undo the other machine's change. Don't force it; tell the user to run `os sync`.
   Don't run `os sync` for the user without `--dry-run`: it asks questions and changes the machine.
-- `keep file:<path under $HOME>` on a path not yet under `[files]` starts tracking it. For something wanted
-  on this machine only, add it to `[ignore]` (packages, web apps) instead of keeping it.
+- `save file:<path under $HOME>` on a path not yet under `[files]` starts tracking it. For something wanted
+  on this machine only, add it to `[ignore]` (packages, web apps) instead of saving it.
 - `os sync` applies through the Omarchy CLI (`omarchy pkg add`, `omarchy webapp install`, `omarchy theme set`,
   ...) and only copies plain files for the user-owned ones listed under `[files]`. Keep it that way: don't
   write Omarchy's own state files directly, and never edit `/usr/share/omarchy/`.
