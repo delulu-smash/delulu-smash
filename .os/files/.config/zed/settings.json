@@ -1,6 +1,16 @@
 {
+  "diff_view_style": "unified",
+  "agent": {
+    "dock": "right",
+    "favorite_models": [],
+    "model_parameters": [],
+    "expand_terminal_card": false,
+    "expand_edit_card": false,
+    "thinking_display": "always_collapsed"
+  },
   "git_panel": {
-    "dock": "left"
+    "starts_open": true,
+    "dock": "bottom"
   },
   "cli_default_open_behavior": "existing_window",
   "agent_servers": {
