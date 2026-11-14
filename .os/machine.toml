@@ -49,6 +49,12 @@ pacman = [
     "libfprint-git",
     "mkinitcpio",
     "openssh",
+    # password tools for `os pwd-store` / `os pwd-copy` and .os/scripts/keybindings/pwd-copy.sh
+    # (secret-tool, the keyring, wl-copy, notify-send); listed so they stay even if Omarchy drops them
+    "libsecret",
+    "gnome-keyring",
+    "wl-clipboard",
+    "libnotify",
 ]
 aur = [
     "eden-bin",
