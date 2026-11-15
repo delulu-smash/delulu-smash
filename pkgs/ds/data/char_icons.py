@@ -39,6 +39,8 @@ def _name_key(name: str) -> str:
     return " ".join(word for word in words if word != "and")
 
 
+# ds::exception: caching (approved 2026-11-15): from char.parquet, which only changes on a
+#   roster re-scrape (new DLC)
 @cache
 def _icons_by_name() -> dict[str, str]:
     chars = pl.read_parquet(CHAR_ICON_DIR.parent / "char.parquet")
@@ -73,6 +75,8 @@ _GROUP_NAMES = {"pokemon trainer": "pokemon_trainer", "pyra mythra": "pyra_mythr
 _GROUP_NAMES |= {_name_key(group): group for group in CHAR_GROUPS}  # the group ids themselves
 
 
+# ds::exception: caching (approved 2026-11-15): from char.parquet, which only changes on a
+#   roster re-scrape (new DLC)
 @cache
 def _ids_by_name() -> dict[str, str]:
     chars = pl.read_parquet(CHAR_ICON_DIR.parent / "char.parquet")

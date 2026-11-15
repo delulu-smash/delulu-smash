@@ -109,6 +109,8 @@ class ToolForm:
     hide: tuple[str, ...] = ()
     """Parameters not on the form (they keep their defaults), eg paging the view does itself."""
 
+    # ds::exception: caching (approved 2026-11-15): from the tool function's signature, which
+    #   only changes with a code edit
     @cached_property
     def tool(self) -> Tool:
         return Tool(self.function)
@@ -117,15 +119,21 @@ class ToolForm:
     def key(self) -> str:
         return self.tool.name
 
+    # ds::exception: caching (approved 2026-11-15): from the tool function's signature, which
+    #   only changes with a code edit
     @cached_property
     def schema(self) -> dict[str, Any]:
         """The parameters' JSON schema, as the model gets it."""
         return self.tool.tool_def.parameters_json_schema
 
+    # ds::exception: caching (approved 2026-11-15): from the tool function's signature, which
+    #   only changes with a code edit
     @cached_property
     def result_type(self) -> type:
         return typing.get_type_hints(self.function)["return"]
 
+    # ds::exception: caching (approved 2026-11-15): from the tool function's signature, which
+    #   only changes with a code edit
     @cached_property
     def character_types(self) -> dict[str, type[CharEnum]]:
         """Parameters typed with a character enum (CharId, CharGroup, also `| None`): name -> the enum.

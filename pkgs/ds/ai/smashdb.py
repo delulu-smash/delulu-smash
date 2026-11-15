@@ -91,6 +91,8 @@ SmashDb tables (framedata.char_id -> char.id):
 {schema}"""
 
 
+# ds::exception: caching (approved 2026-11-15): a SQL context, no data (scan_parquet reads per
+#   query); new .parquet files need a restart
 @cache
 def _db() -> SmashDb:
     return init_db()

@@ -99,6 +99,8 @@ def _parse_page(file: Path) -> _Page:
     )
 
 
+# ds::exception: caching (approved 2026-11-15): docs/ parsed once per process; edits to docs/
+#   need a backend restart
 @cache
 def _pages() -> tuple[_Page, ...]:
     def included(f: Path) -> bool:

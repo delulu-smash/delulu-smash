@@ -39,6 +39,8 @@ data questions are listed in docs/scratch/discrepancies.md (search it for the mo
 D-ID when a row depends on one."""
 
 
+# ds::exception: caching (approved 2026-11-15): a SQL context, no data (scan_parquet reads per
+#   query); new .parquet files need a restart
 @cache
 def _db() -> SmashDb:
     return init_db()

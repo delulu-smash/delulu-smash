@@ -43,6 +43,8 @@ class Widget:
         if self.addable and self.tool is None:
             raise ValueError(f"widget {self.kind!r}: addable needs a tool to run")
 
+    # ds::exception: caching (approved 2026-11-15): built from a function signature, which only
+    #   changes with a code edit (a restart)
     @cached_property
     def form(self) -> ToolForm | None:
         return ToolForm(self.title, self.tool, self.hide) if self.tool else None

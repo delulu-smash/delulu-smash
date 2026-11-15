@@ -121,6 +121,12 @@ Caching policy (mirror of "Caching Policy" in `.agents/agents.md`):
 - If a cache seems useful, stop and ask before writing it, with options that each state: what is cached and where, how long it lives (TTL), how it is invalidated and how stale data would show up, how to bypass or clear it, and the no-cache alternative with its cost (always one of the options).
 - Prefer no cache: first fix the real cost (fetch once per call and pass it down, fewer rows, batching). If the same data is needed again and again, raise data storage as the alternative.
 - If code depends on an existing cache, say so before changing it; don't remove or extend a cache without asking.
+- Approved caches carry `# ds::exception: caching (approved <date>): <why>` on the line above; `tests/test_rule_exceptions.py` fails on an untagged `@cache` / `@lru_cache` / `@cached_property`. Only the user approves: ask first, then tag with their reason.
+
+Rule exceptions (mirror of "Rule Exceptions" in `.agents/agents.md`):
+- Code that knowingly breaks a rule of these instructions, with the user's approval, carries `ds::exception: <rule> (approved <YYYY-MM-DD>): <why it is fine here>` (rules today: `caching`). `grep -rn "ds::exception:" .` lists them all.
+- Never add the tag on your own judgment; ask, and write the user's reason. Don't remove, "fix" or flag tagged code; if the reason no longer holds, say so and ask.
+- Ruff's `# noqa: CODE  # reason` stays the way to except a lint rule.
 
 Git workflow:
 - No pull requests: this is a single-user repo, so finished work lands on `main` directly. Don't open PRs unless the user asks for one. A working branch to isolate work is fine if your harness prefers one; merge it into `main` and push `main` when done, rather than leaving it for a PR.

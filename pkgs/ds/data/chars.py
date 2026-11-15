@@ -40,6 +40,8 @@ class CharChoice(BaseModel):
     icon: str  # path under pkgs/ds/data/, eg 'char_icons/little_mac.png'
 
 
+# ds::exception: caching (approved 2026-11-15): names from char.parquet, which only changes on
+#   a roster re-scrape (new DLC)
 @cache
 def _names() -> dict[str, str]:
     """Display name of every fighter id and every group id"""

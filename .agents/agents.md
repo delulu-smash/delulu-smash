@@ -258,6 +258,31 @@ response cache.
   alternative.
 - **Existing caches:** if code turns out to depend on one (it only works or only stays fast because of it), say
   so before changing that code, and don't remove or extend the cache without asking.
+- **Approved caches carry `# ds::exception: caching`** (see "Rule Exceptions" below). `tests/test_rule_exceptions.py`
+  fails on any `@cache` / `@lru_cache` / `@cached_property` in `pkgs/`, `scripts/` or `experimental/` without
+  one, so a new cache can't land unreviewed: ask first, then tag it with the user's reason.
+
+## Rule Exceptions (`ds::exception:`)
+
+Some code knowingly breaks a rule in these instructions, with the user's approval. It carries a tag on the line
+above (or at the end of the line), so an AI reading it knows the exception is deliberate and doesn't "fix" it,
+and so `grep -rn "ds::exception:" .` lists every one:
+
+```python
+# ds::exception: caching (approved 2026-11-15): parsed once per process; docs edits need a backend restart
+@cache
+def _pages() -> tuple[_Page, ...]:
+```
+
+- **Shape:** `ds::exception: <rule> (approved <YYYY-MM-DD>): <why it is fine here>`, in the file's comment
+  syntax. A long reason wraps onto the next comment lines (indented), as the line-length limit requires. `<rule>` is a short slug for the rule's section: `caching` (Caching Policy) today; add others as
+  they come up, and list them here.
+- **Only the user approves.** Never add the tag on your own judgment, not even for an obvious case: ask (with
+  the options the rule asks for), and write the user's reason. The date is the day they approved.
+- **Respect it.** Don't remove, "fix" or flag tagged code as a rule violation. If the reason no longer holds
+  (eg the cache now holds data that can change), say so and ask; don't change it silently.
+- Ruff's own `# noqa: CODE  # reason` stays the way to except a **lint** rule; this tag is for the rules in
+  these instructions.
 
 ## Linting
 
@@ -310,6 +335,7 @@ Every machine-readable tag created for this repo (comments that AI and tools sea
 | `% ds::discrepancy: D-###` | `docs/` pages (MyST comment) | Page is affected by an **unresolved** entry in `docs/scratch/discrepancies.md`. ID only; removed when resolved | `.agents/skills/docs-writing/SKILL.md` |
 | `# ds::docs-source:` | code (`pkgs/`, tests) | Value or rule comes from a docs page/label | `.agents/instructions/pkgs.md` ("Docs-Derived Code") |
 | `# ds::external-source:` | code (`pkgs/`, scripts) | Code written from an outside page (API docs, schema, another repo) that should be re-checked for changes: date checked, url, what depends on it | `.agents/skills/external-review/SKILL.md` |
+| `# ds::exception:` | any code | A user-approved exception to a rule in these instructions (eg a cache under the Caching Policy), with the rule, the approval date and why | `.agents/agents.md` ("Rule Exceptions") |
 
 - **New tag types** use the same `ds::<name>:` shape. Add a row here and define the details where the tag is
   used.
