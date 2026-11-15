@@ -11,7 +11,6 @@ pacman = [
     "git-lfs",
     "rust",
     # editors / terminals
-    "zed",
     "visual-studio-code-bin",
     "sublime-text-4",
     "helix",
@@ -46,7 +45,6 @@ pacman = [
     # fonts
     "noto-fonts-extra",
     "ttf-cascadia-mono-nerd",
-    "libfprint-git",
     "mkinitcpio",
     "openssh",
     # password tools for `os pwd-store` / `os pwd-copy` and .os/scripts/keybindings/pwd-copy.sh
