@@ -53,6 +53,10 @@ table (primary key, foreign keys, grain), not as an arbitrary data dump.
   `pkgs/ds/ai/supermajor.py`) is server-rendered Next.js: data is JSON in the RSC payload, not HTML classes, and
   tag search uses the site's public search key, committed in that file. Read the "Site notes" comment at the top
   of it (findings, decisions, dead ends, how to update the key) before changing it.
+- smash-tube.com (YouTube match video search, `pkgs/ds/data/raw/smashtube.py`, agent tool in
+  `pkgs/ds/ai/smashtube.py`) is server-rendered PHP: plain HTML per video, characters sent as Japanese names
+  (`SITE_CHARACTER` maps `char.id` to them), and the result page answers 403 without browser-like headers. Read
+  its "Site notes" comment (site behavior, what's allowed, what's still unverified) before changing it.
 - Use `httpx2` (Pydantic's actively maintained continuation of `httpx`, same API) as the HTTP client, not `httpx`.
 - Before writing any new scraper, verify whether the target site is static HTML or JS-rendered (fetch raw HTML and
   check for the data) before assuming a headless browser is needed.

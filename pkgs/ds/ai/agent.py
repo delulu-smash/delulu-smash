@@ -9,6 +9,7 @@ from ds.ai.knowledge import knowledge_capability
 from ds.ai.little_mac import little_mac_capability
 from ds.ai.mechanics import mechanics_capability
 from ds.ai.smashdb import smashdb_capability
+from ds.ai.smashtube import smashtube_capability
 from ds.ai.supermajor import supermajor_capability
 from ds.util.const import DEFAULT_AI_MODEL
 
@@ -43,6 +44,7 @@ agent = Agent(
         mechanics_capability,
         little_mac_capability,
         supermajor_capability,
+        smashtube_capability,
     ],
 )
 

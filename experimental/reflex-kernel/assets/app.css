@@ -47,7 +47,8 @@ button { font: inherit; color: inherit; }
 .chat-pane { height: 50vh; min-height: 160px; max-height: 80vh; flex: none; display: flex; flex-direction: column;
   border-bottom: 1px solid var(--bg2); background: var(--bg-dim); padding: 0 12px 12px; resize: vertical; overflow: hidden; }
 .chat-pane .bubble { max-width: 900px; }
-.pane-title { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--grey1); padding: 10px 2px 6px; }
+.pane-title { display: flex; align-items: center; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--grey1);
+  padding: 6px 0 4px 2px; }
 .chat-scroll { flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column-reverse; }
 .chat-items { display: flex; flex-direction: column; gap: 8px; padding-bottom: 10px; }
 .bubble { background: var(--bg0); border: 1px solid var(--bg2); border-radius: 8px; padding: 8px 10px; font-size: 13.5px; }
@@ -60,6 +61,16 @@ button { font: inherit; color: inherit; }
   padding: 5px 8px; background: var(--bg1); font-size: 12.5px; cursor: pointer; }
 .ref:hover { border-color: var(--blue); }
 .ref-open { margin-left: auto; color: var(--blue); }
+/* agent working: 3x3 dots pulsing in a diagonal wave */
+.agent-progress { display: flex; align-items: center; gap: 10px; padding: 2px 2px 0; color: var(--grey1); font-size: 12.5px; }
+.dot-square { display: grid; grid-template-columns: repeat(3, 3px); gap: 2px; }
+.dot-square i { width: 3px; height: 3px; border-radius: 1px; background: var(--green); animation: dot-pulse 1.2s ease-in-out infinite; }
+.dot-square i:nth-child(2), .dot-square i:nth-child(4) { animation-delay: 0.15s; }
+.dot-square i:nth-child(3), .dot-square i:nth-child(5), .dot-square i:nth-child(7) { animation-delay: 0.3s; }
+.dot-square i:nth-child(6), .dot-square i:nth-child(8) { animation-delay: 0.45s; }
+.dot-square i:nth-child(9) { animation-delay: 0.6s; }
+@keyframes dot-pulse { 0%, 100% { opacity: 0.2; } 50% { opacity: 1; } }
+
 .composer { border: 1px solid var(--bg4); border-radius: 8px; background: var(--bg0); padding: 8px 10px 4px; flex: none; }
 .composer:focus-within, .console-input:focus-within { border-color: var(--blue); }
 
@@ -81,7 +92,14 @@ button { font: inherit; color: inherit; }
 /* workspace */
 .ws-pane { width: 50%; min-width: 280px; max-width: 80%; flex: none; display: flex; flex-direction: column; min-height: 0;
   border-right: 1px solid var(--bg2); resize: horizontal; overflow: hidden; }
-.tabbar { display: flex; background: var(--bg-dim); border-bottom: 1px solid var(--bg2); font-size: 12.5px; flex: none; overflow-x: auto; }
+.tabbar { display: flex; align-items: center; background: var(--bg-dim); border-bottom: 1px solid var(--bg2); font-size: 12.5px;
+  flex: none; padding-right: 6px; }
+.tabs { display: flex; flex: 1; min-width: 0; overflow-x: auto; }
+/* full screen for one pane (two diagonal arrows, as in Zed); also Ctrl+Shift+F, see panes.js */
+.zoom-btn { flex: none; border: 0; border-radius: 4px; background: transparent; color: var(--grey1); cursor: pointer; font-size: 17px;
+  line-height: 20px; padding: 0 5px; }
+.zoom-btn:hover { color: var(--fg); background: var(--bg1); }
+.zoom-btn.is-on { color: var(--green); }
 .tab { display: flex; gap: 8px; align-items: center; padding: 6px 14px; border: 0; border-right: 1px solid var(--bg2);
   background: transparent; color: var(--grey2); cursor: pointer; white-space: nowrap; }
 .tab.is-active { background: var(--bg0); color: var(--fg); }
@@ -127,8 +145,99 @@ button { font: inherit; color: inherit; }
 .cell-out { padding: 6px 8px 2px calc(4ch + 16px); font-size: 13px; white-space: pre; overflow-x: auto; }
 .cell-out.is-error { color: var(--red); }
 
+/* tracebacks (session.trace_parts): all of Python's traceback, styled by role. Your cells' frames stand out,
+   this repo's code is normal, library frames are dimmed; the failing expression is underlined. */
+.cell-trace { margin: 6px 0 2px calc(4ch + 16px); padding: 6px 10px; font-size: 12.5px; line-height: 1.55; overflow-x: auto;
+  border-left: 3px solid var(--red); border-radius: 0 4px 4px 0; background: rgba(230, 126, 128, 0.07); }
+.tb-toggle { cursor: pointer; color: var(--grey1); font-size: 12px; list-style: none; user-select: none; }
+.tb-toggle::-webkit-details-marker { display: none; }
+.tb-toggle::before { content: "▸ "; }
+.tb-toggle:hover { color: var(--fg); }
+details[open] > .tb-toggle { margin-bottom: 4px; }
+details[open] > .tb-toggle::before { content: "▾ "; }
+.tb-dim { color: var(--grey1); white-space: pre-wrap; }
+.tb-chain { color: var(--grey1); font-style: italic; border-top: 1px dashed var(--bg3); margin: 8px 0 6px; padding-top: 6px; }
+.tb-frame { padding: 1px 0 1px 2ch; white-space: pre; }
+.tb-path { color: var(--blue); }
+.tb-line { color: var(--purple); }
+.tb-func { color: var(--yellow); }
+.tb-code { padding-left: 2ch; color: var(--fg); }
+.tb-mark { color: var(--orange); text-decoration: underline wavy var(--red); text-underline-offset: 3px; }
+.tb-frame.is-cell .tb-path { color: var(--aqua); font-weight: 600; }
+.tb-frame.is-lib { opacity: 0.6; }
+.tb-frame.is-lib:hover { opacity: 1; }
+.tb-error { margin-top: 4px; white-space: pre-wrap; }
+.tb-module { color: var(--grey1); }
+.tb-name { color: var(--red); font-weight: 700; }
+.tb-msg { color: var(--fg); }
+
+/* match videos (render kind "videos"): thumbnail cards; click plays it in the same component */
+.video-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; padding: 10px;
+  overflow: auto; flex: 1; min-height: 0; align-content: start; grid-auto-rows: max-content; background: var(--bg0); }
+.video-card > * { flex: none; }
+.video-card { display: flex; flex-direction: column; gap: 4px; text-align: left; background: var(--bg1); border: 1px solid var(--bg3);
+  border-radius: 6px; padding: 0 0 6px; cursor: pointer; overflow: hidden; color: var(--fg); font-family: var(--sans); }
+.video-card:hover { border-color: var(--blue); }
+.video-card.is-playing { border-color: var(--green); }
+.video-card .thumb { position: relative; display: block; aspect-ratio: 16 / 9; background: var(--bg-dim); }
+.video-card .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.video-card .play { position: absolute; inset: 0; display: grid; place-items: center; font-size: 26px; color: #fff; opacity: 0;
+  background: rgba(35, 42, 46, 0.45); }
+.video-card:hover .play, .video-card.is-playing .play { opacity: 1; }
+.video-title { padding: 2px 8px 0; font-size: 12.5px; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical; overflow: hidden; }
+.video-meta { padding: 0 8px; font-size: 11.5px; color: var(--grey1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.view-error { padding: 6px 10px; color: var(--red); font-size: 12.5px; border-bottom: 1px solid var(--bg2); }
+.act:disabled { opacity: 0.4; cursor: default; }
+.act:disabled:hover { border-color: var(--bg3); }
+a.act { text-decoration: none; color: var(--fg); }
+
+/* bottom bar (as in Zed): one toggle per pane */
+.statusbar { display: flex; align-items: center; gap: 4px; height: 26px; flex: none; padding: 0 8px; background: var(--bg-dim);
+  border-top: 1px solid var(--bg2); font-size: 12px; }
+.pane-toggle { font-size: 15px; line-height: 20px; border: 0; border-radius: 4px; padding: 0 7px; background: transparent; color: var(--grey1);
+  cursor: pointer; }
+.pane-toggle:hover { color: var(--fg); background: var(--bg1); }
+.pane-toggle.is-on { color: var(--green); background: var(--bg1); }
+.statusbar .dim { margin-left: 12px; }
+.is-hidden { display: none !important; }
+/* a pane with its neighbour hidden takes the whole row / column (and stops being resizable) */
+/* !important: a pane resized by dragging has an inline size, which would otherwise win */
+.ws-pane.is-alone { width: auto !important; max-width: none; flex: 1; resize: none; border-right: 0; }
+.chat-pane.is-alone { height: auto !important; max-height: none; flex: 1; resize: none; border-bottom: 0; }
+/* the video picked from a video list, inside that list's component; drag its corner to resize */
+.player { flex: none; display: flex; flex-direction: column; border-bottom: 1px solid var(--bg3);
+  overflow: hidden; background: #000; height: 46%; min-height: 160px; max-height: 80%; resize: vertical; }
+/* with the list folded away it fills the component */
+.player.is-full { flex: 1; height: auto !important; max-height: none; resize: none; border-bottom: 0; }
+.video-list { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.player-bar { display: flex; align-items: center; gap: 8px; padding: 4px 6px 4px 10px; background: var(--bg-dim);
+  border-bottom: 1px solid var(--bg2); font-size: 12.5px; flex: none; }
+.player-title { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.player-frame { flex: 1; min-height: 0; width: 100%; border: 0; }
+
+/* generic pydantic model view (render kind "fields") */
+.model-view { flex: 1; min-height: 0; overflow: auto; padding: 10px 12px; font-size: 12.5px; background: var(--bg0); }
+.field-list { display: grid; grid-template-columns: max-content 1fr; gap: 2px 16px; }
+.field-name { color: var(--blue); }
+.field-value { white-space: pre-wrap; overflow-wrap: anywhere; }
+.section-title { color: var(--green); margin: 12px 0 4px; }
+.section-table { overflow-x: auto; }
+.section-table table { border-collapse: collapse; }
+.section-table th { text-align: left; color: var(--grey1); font-weight: 400; font-style: italic; }
+.section-table th, .section-table td { padding: 2px 14px 2px 0; border-bottom: 1px solid var(--bg2); white-space: nowrap;
+  max-width: 420px; overflow: hidden; text-overflow: ellipsis; }
+.cell-widget .video-gallery, .cell-widget .model-view { max-height: 320px; flex: none; }
+/* the compact form of a component (cell outputs): same parts, sized to the content */
+.cell-widget .viewer-bar { padding: 2px 4px 2px 8px; gap: 8px; font-size: 11.5px; white-space: nowrap; }
+.cell-widget .viewer-bar .act { font-size: 11px; padding: 0 6px; }
+.cell-widget .viewer-filter { width: 110px; padding: 0 6px; }
+.cell-widget .video-list { flex: none; }
+.cell-widget .player, .cell-widget .player.is-full { flex: none; height: 380px !important; max-height: none; resize: none; }
+
 /* tabular cell results: same widget as the tables pane */
-.cell-widget { margin: 6px 0 2px calc(4ch + 16px); min-width: 240px; }
+/* max-width: the left margin must not push a wide table past the cell's right edge */
+.cell-widget { margin: 6px 0 2px calc(4ch + 16px); min-width: 400px; max-width: calc(100% - 4ch - 16px); }
 .out-bar { display: flex; align-items: center; gap: 8px; padding: 2px 4px 2px 8px; border-bottom: 1px solid var(--bg2);
   font-size: 11.5px; }
 .out-bar .act { font-size: 11px; padding: 0 6px; }

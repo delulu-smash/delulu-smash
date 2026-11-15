@@ -4,9 +4,10 @@
 
 A browser workbench built with [Reflex](https://reflex.dev), in the spirit of
 `experimental/textual-kernel`: chat with the Smash agent (`ds.ai.agent`) across the top; below
-it, every table its tools return shows up as a sortable, filterable grid named `r1`, `r2`, …
-side by side with Jupyter-style Python cells where those names are plain polars DataFrames.
-Drag the chat strip's or the tables pane's bottom-right corner to resize them.
+it, everything its tools return shows up as a tab named `r1`, `r2`, … (tables as sortable, filterable
+grids, match videos as a playable gallery, other results as a field list), side by side with
+Jupyter-style Python cells where those names are plain Python objects (tables are polars DataFrames).
+Drag the chat strip's or the tables pane's bottom-right corner to resize them. The bottom bar shows or hides each pane.
 
 ```sh
 cd experimental/reflex-kernel
@@ -35,23 +36,51 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
 `ds.ai` uses.
 
 - **Chat**: Enter sends, Shift+Enter adds a line. Tool calls are listed above each reply.
-- **Tables**: click a tab to switch, type in the filter box to search. Header-click sorting
-  works in cell result grids but not yet in this pane (the grid never reports the click; cause unknown).
+- **Tables**: click a tab to switch, type in the filter box to search. Click a column header to sort
+  (ascending, descending, unsorted); filter and sort work the same in a tab and in a cell's result.
   The grid shows at most 2000 rows; the DataFrame itself is never truncated.
+- **Rendering** (`reflex_kernel/render.py`): everything about showing a value lives in this one file, used
+  for agent tool results, cell outputs and tabs alike. Today: DataFrame / Series / list of pydantic models
+  -> grid; `MatchVideos` (the agent's `find_match_videos`, smash-tube.com) -> thumbnail gallery; any other
+  pydantic model -> its fields, with lists of models as small tables; everything else -> its repr.
+  It is two matches, because Reflex compiles components ahead of time and the browser never sees the
+  Python object: `to_view(value)` is a Python `match` on the value's type (run when a cell or tool
+  returns), and `render_component(view)` picks the component for the view's kind. To add a type, add a
+  `case` to `to_view`; a new kind of view also needs a `case` (and its component) in `render_component`.
+  **Design rule: a value renders as one contained component, the same wherever it is placed** (a tab,
+  a cell output, later a popup or anything else). Everything that belongs to the view is inside what
+  `render_component` returns: a table's filter and sort, a video list's player and paging. Its state
+  (filter text, sort, picked video, folded list) travels in its `ViewData`, and the session keeps it
+  per *slot*, the place a view is shown (`tab:<name>`, `cell:<id>`), so a view is back as it was left.
+  Every interaction comes back through one handler, `State.view_event(slot, action, arg)`. A host only
+  does `render_component(view, State.view_event)`: it adds nothing of the view's own around it, and
+  `compact=True` changes sizing only. To show a view somewhere new, give that place a slot prefix
+  (`Session.view_at` / `put`, `State._show`) and call `render_component`; no component logic is repeated.
+- **Panes**: the bottom bar toggles Chat, Results and Python (as in Zed). Python starts hidden; a pane
+  whose neighbour is hidden takes the freed space. Hidden cells keep their text.
+- **Full screen**: each pane has a button with two diagonal arrows (top right) that fills the window
+  with that pane; click it again to restore. Ctrl+Shift+F does the same for the pane you are in: the
+  one with keyboard focus, else the one you last clicked (`assets/panes.js`). The bottom-bar toggles
+  keep their state while a pane is full screen; clicking one leaves full screen and shows that pane.
+- **Match videos**: one component, the list plus the video picked from it. Click a card to play it:
+  the list folds away so the video fills the component, and "Show list" in the player's bar brings it
+  back under the player. It works the same in a tab and in a cell's result, each with its own picked
+  video. Leaving a tab stops its video; it is back, paused, when you return. Prev / Next fetch the search's other
+  pages. Videos whose uploader disabled embedding show YouTube's own message; use the "YouTube ↗" button.
 - **Python cells**: Jupyter-style, each a CodeMirror editor with Everforest syntax colors.
   Shift+Enter runs a cell and moves to the next (adding one after the last), Ctrl+Enter runs in
   place, Tab indents. `pl` (polars) and `db` (`ds.data.SmashDb`) are predefined. A cell ending in a
   DataFrame (polars or pandas, or a Series) shows it in a compact version of the tables-pane grid (8 rows visible, columns sized
   to content, each header showing its polars dtype in italics on a second line, like polars' own notebook
   view; click a header to sort);
-  "Open as tab" moves it up there as `out<n>`. Any DataFrame you bind to a name becomes a tab. Variables persist until the server restarts.
+  "Open as tab" moves it up there as `out<n>`. Any value with a view (see Rendering) that you bind to a name becomes a tab. Variables persist until the server restarts.
 - **Completion**: pops up as you type. Tab accepts the highlighted suggestion (Enter also works), or
   opens the list after a name or a dot; elsewhere Tab indents. Ctrl+Space forces the list. Suggestions come from `jedi` run
   against the live variables, so `r1.` lists real DataFrame methods. `jedi` is present in the root
   venv only as a dependency of IPython; add it to the root `pyproject.toml` if that changes.
 - **Local only**: the backend binds to 127.0.0.1, since the app executes arbitrary Python.
 
-Layout: `reflex_kernel/session.py` (namespace, agent, completion; no UI), `state.py` (Reflex
+Layout: `reflex_kernel/session.py` (namespace, agent, completion; no UI), `render.py` (Python value -> view -> component), `state.py` (Reflex
 state), `reflex_kernel.py` (components), `editor.py` + `cell_editor.jsx` (CodeMirror wrapper),
 `api.py` (`POST /complete`), `assets/app.css` (Everforest). Design mockups this came from:
 `experimental/design_poc` (`/split`).

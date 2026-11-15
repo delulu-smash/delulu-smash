@@ -12,19 +12,16 @@ from typing import Any
 
 import reflex as rx
 
-from .session import MAX_GRID_ROWS, Session, get_session, grid_data
+from ds.data.raw.smashtube import MatchVideos, search_videos
+
+from .render import Ui, ViewData, apply_event, fill_defaults
+from .session import Session, get_session, split_trace
+
 
 # Cell result grids are compact: short rows, a few visible, scroll for the rest.
-OUTPUT_VISIBLE_ROWS = 8
-OUTPUT_ROW_HEIGHT = 24
-OUTPUT_HEADER_HEIGHT = 40  # two lines: name, then dtype
-# Row-number column plus borders, added to the column widths to size the grid.
-OUTPUT_MARKER_WIDTH = 36
-
-
 @dataclasses.dataclass
 class Cell:
-    """One notebook cell as the browser sees it. A tabular result is stored as grid columns/rows."""
+    """One notebook cell as the browser sees it."""
 
     id: str
     code: str = ""
@@ -33,24 +30,33 @@ class Cell:
     stdout: str = ""
     text: str = ""
     error: str = ""
-    columns: list[dict[str, Any]] = dataclasses.field(default_factory=list)
-    rows: list[list[Any]] = dataclasses.field(default_factory=list)
-    note: str = ""
-    height: str = "0px"
-    width: str = "100%"
-    sort_col: str = ""
-    sort_desc: bool = False
+    trace: list[dict[str, str]] = dataclasses.field(default_factory=list)
+    """Bottom of the error's traceback as styled parts (session.trace_parts / split_trace): the frame
+    that raised and the error. Rendered instead of the plain error text."""
+    trace_hidden: list[dict[str, str]] = dataclasses.field(default_factory=list)
+    """The rest of the traceback above it, collapsed by default."""
+    trace_more: str = ""
+    """Label of the collapsed part, eg "4 more frames"."""
+    view: ViewData = dataclasses.field(default_factory=ViewData)
+    """The result's view (render.py): a grid, videos, a model's fields; kind "" when it has none."""
+
+    def __setstate__(self, state: dict[str, Any]) -> None:
+        fill_defaults(self, state)
 
 
-def _grid_height(rows: int) -> str:
-    """Show up to OUTPUT_VISIBLE_ROWS rows, then scroll inside the grid."""
-    return f"{OUTPUT_HEADER_HEIGHT + 2 + OUTPUT_ROW_HEIGHT * max(1, min(rows, OUTPUT_VISIBLE_ROWS))}px"
-
-
-def _grid_width(columns: list[dict[str, Any]]) -> str:
-    """Only as wide as the columns, never wider than the cell."""
-    total = OUTPUT_MARKER_WIDTH + sum(int(column.get("width", 0)) for column in columns)
-    return f"min(100%, {total}px)"
+def _trace_fields(parts: list[dict[str, str]]) -> dict[str, Any]:
+    hidden, shown = split_trace(parts)
+    frames = sum(part["kind"] == "frame" for part in hidden)
+    chained = sum(part["kind"] == "chain" for part in hidden)
+    label = ", ".join(
+        text
+        for count, text in [
+            (frames, f"{frames} more frame{'s' if frames != 1 else ''}"),
+            (chained, f"{chained} chained exception{'s' if chained != 1 else ''}"),
+        ]
+        if count
+    )
+    return {"trace": shown, "trace_hidden": hidden, "trace_more": label or "full traceback"}
 
 
 class State(rx.State):
@@ -64,46 +70,53 @@ class State(rx.State):
     exec_count: int = 0
     running: bool = False
 
+    # Tabs: every named value render.py has a view for; `view` is the selected one's. A view's own
+    # state (filter, sort, picked video) is inside it, kept in the session by slot.
     objects: list[dict[str, str]] = []
     selected: str = ""
-    query: str = ""
-    sort_col: str = ""
-    sort_desc: bool = False
-    columns: list[dict[str, Any]] = []
-    rows: list[list[Any]] = []
-    grid_note: str = ""
+    view: ViewData = ViewData()
+    # Panes toggled from the bottom bar.
+    show_chat: bool = True
+    show_results: bool = True
+    show_python: bool = False
+    # The pane filling the window ("" = none): chat | results | python. Leaves the toggles as they were.
+    zoomed: str = ""
 
     def _session(self) -> Session:
         return get_session(self.router.session.client_token)
 
     def _sync(self, prefer: str = "") -> None:
-        """Re-read the session's DataFrames into the object list and redraw the grid."""
+        """Re-read the session's viewable values into the tab list and redraw the selected one."""
         session = self._session()
-        frames = session.frames()
+        views = session.views()
         self.objects = [
-            {"name": name, "shape": f"{df.height} × {df.width}", "source": session.sources.get(name, "python")}
-            for name, df in frames.items()
+            {"name": name, "shape": view.summary, "source": session.sources.get(name, "python"), "kind": view.kind}
+            for name, view in views.items()
         ]
-        if prefer in frames:
+        # forget what was done to tabs that are gone
+        session.ui = {slot: ui for slot, ui in session.ui.items() if not slot.startswith("tab:") or slot[4:] in views}
+        if prefer in views:
             self._select(prefer)
-        elif self.selected not in frames:
-            self._select(next(reversed(frames), ""))
-        self._draw_grid()
+        elif self.selected not in views:
+            self._select(next(reversed(views), ""))
+        self._show(f"tab:{self.selected}")
 
     def _select(self, name: str) -> None:
         if name != self.selected:
-            self.selected, self.query, self.sort_col, self.sort_desc = name, "", "", False
+            # a video in the tab being left stops; it is back, paused, with the tab
+            if left := self._session().ui.get(f"tab:{self.selected}"):
+                left.autoplay = False
+            self.selected = name
+            self.view = ViewData()
 
-    def _draw_grid(self) -> None:
-        df = self._session().frames().get(self.selected)
-        if df is None:
-            self.columns, self.rows, self.grid_note = [], [], ""
-            return
-        self.columns, self.rows = grid_data(df, self.query, self.sort_col, self.sort_desc)
-        shown = len(self.rows)
-        self.grid_note = f"{shown} of {df.height} rows" if shown != df.height else f"{df.height} rows"
-        if shown == MAX_GRID_ROWS and df.height > MAX_GRID_ROWS:
-            self.grid_note += f" (grid shows the first {MAX_GRID_ROWS})"
+    def _show(self, slot: str) -> None:
+        """Redraw the view shown at a slot (the selected tab, or a cell's result) from the session."""
+        kind, _, key = slot.partition(":")
+        if kind == "tab":
+            if key == self.selected:
+                self.view = self._session().show(slot)
+        elif (index := self._cell_index(key)) >= 0:
+            self._update(index, view=self._session().show(slot, compact=True))
 
     @rx.var
     def token(self) -> str:
@@ -111,8 +124,31 @@ class State(rx.State):
         return self.router.session.client_token
 
     @rx.var
-    def row_count(self) -> int:
-        return len(self.rows)
+    def chat_on(self) -> bool:
+        """Whether the chat pane is on screen: its toggle, unless a pane is zoomed."""
+        return self.zoomed == "chat" or (self.zoomed == "" and self.show_chat)
+
+    @rx.var
+    def results_on(self) -> bool:
+        return self.zoomed == "results" or (self.zoomed == "" and self.show_results)
+
+    @rx.var
+    def python_on(self) -> bool:
+        return self.zoomed == "python" or (self.zoomed == "" and self.show_python)
+
+    @rx.var
+    def pane_layout(self) -> str:
+        """The results pane: hidden, alone (Python hidden, so it takes the full width) or split."""
+        if not self.results_on:
+            return "hidden"
+        return "split" if self.python_on else "alone"
+
+    @rx.var
+    def chat_layout(self) -> str:
+        """The chat pane: hidden, alone (nothing below it, so it takes the full height) or split."""
+        if not self.chat_on:
+            return "hidden"
+        return "split" if self.results_on or self.python_on else "alone"
 
     @rx.var
     def has_objects(self) -> bool:
@@ -124,29 +160,68 @@ class State(rx.State):
 
     @rx.event
     def select_object(self, name: str):
+        self._reveal_results()
         self._select(name)
-        self._draw_grid()
+        self._show(f"tab:{name}")
 
     @rx.event
-    def set_query(self, value: str):
-        self.query = value
-        self._draw_grid()
+    async def view_event(self, slot: str, action: str, arg: Any):
+        """Every event of a rendered view (render.render_component), wherever it is placed.
 
-    @rx.event
-    def header_clicked(self, pos: tuple[int, int]):
-        """Cycle the clicked column: ascending -> descending -> unsorted."""
-        # Glide sends the bare column index here, despite the (col, row) tuple in Reflex's event spec.
-        index = pos if isinstance(pos, int) else pos[0]
-        if not 0 <= index < len(self.columns):
+        slot says which view ('tab:<name>', 'cell:<id>'). The change goes into that slot's Ui
+        (render.apply_event) and the view is redrawn; 'page' fetches another page of a video
+        search and puts it in the slot.
+        """
+        session = self._session()
+        view = session.view_at(slot)
+        if view is None:
             return
-        name = self.columns[index]["id"]
-        if name != self.sort_col:
-            self.sort_col, self.sort_desc = name, False
-        elif not self.sort_desc:
-            self.sort_desc = True
+        ui = session.ui.setdefault(slot, Ui())
+        if action != "page":
+            apply_event(view, ui, action, arg)
+            self._show(slot)
+            return
+        current = view.value
+        if ui.paging or not isinstance(current, MatchVideos) or not 1 <= current.page + arg <= current.pages:
+            return
+        ui.paging, ui.error = True, ""
+        self._show(slot)
+        yield
+        try:
+            page = await asyncio.to_thread(search_videos, **current.query.model_dump(), page=current.page + arg)
+        except Exception as error:  # noqa: BLE001  # network / site errors are shown in the view
+            ui.error = f"Couldn't load that page: {error}"
         else:
-            self.sort_col, self.sort_desc = "", False
-        self._draw_grid()
+            session.put(slot, page)
+        ui.paging = False
+        if slot.startswith("tab:"):
+            self._sync()  # the tab's label changes with the page
+        else:
+            self._show(slot)
+
+    def _reveal_results(self) -> None:
+        """Make sure the results pane is on screen (eg a video was opened from a zoomed cell)."""
+        self.show_results = True
+        if self.zoomed != "results":
+            self.zoomed = ""
+
+    @rx.event
+    def toggle_zoom(self, pane: str):
+        """Fill the window with one pane, or go back to the normal layout (button, Ctrl+Shift+F)."""
+        self.zoomed = "" if self.zoomed == pane else pane
+
+    @rx.event
+    def toggle_pane(self, pane: str):
+        """Bottom bar: show or hide the chat, results or Python pane."""
+        name = f"show_{pane}"
+        if pane not in ("chat", "results", "python"):
+            return
+        if self.zoomed:
+            # leaving full screen: the clicked pane is the one wanted back, so make sure it shows
+            self.zoomed = ""
+            setattr(self, name, True)
+        else:
+            setattr(self, name, not getattr(self, name))
 
     def _new_cell(self) -> Cell:
         self.cell_seq += 1
@@ -159,45 +234,19 @@ class State(rx.State):
         # Replace the item rather than mutating it, so Reflex always sees the change.
         self.cells[index] = dataclasses.replace(self.cells[index], **changes)
 
-    def _output_grid(self, cell_id: str, sort_col: str, descending: bool) -> dict[str, Any]:
-        """Grid fields for a cell's tabular result ({} clears them when there is none)."""
-        df = self._session().outputs.get(cell_id)
-        if df is None:
-            return {
-                "columns": [],
-                "rows": [],
-                "note": "",
-                "height": "0px",
-                "width": "100%",
-                "sort_col": "",
-                "sort_desc": False,
-            }
-        columns, rows = grid_data(df, "", sort_col, descending)
-        note = f"{df.height} × {df.width}"
-        if len(rows) < df.height:
-            note += f" (first {len(rows)} rows shown)"
-        return {
-            "columns": columns,
-            "rows": rows,
-            "note": note,
-            "height": _grid_height(len(rows)),
-            "width": _grid_width(columns),
-            "sort_col": sort_col,
-            "sort_desc": descending,
-        }
-
     async def _run(self, index: int, code: str) -> None:
         """Run one cell's code in the session and store its output on the cell."""
         session = self._session()
         cell_id = self.cells[index].id
-        before = set(session.frames())
+        before = set(session.views())
         # exec blocks, so keep it off the event loop
-        result = await asyncio.to_thread(session.run_python, code)
+        result = await asyncio.to_thread(session.run_python, code, f"In [{self.exec_count + 1}]")
         self.exec_count += 1
-        if result.frame is None:
+        if result.view is None:
             session.outputs.pop(cell_id, None)
         else:
-            session.outputs[cell_id] = result.frame
+            session.outputs[cell_id] = result.view
+        session.ui.pop(f"cell:{cell_id}", None)  # a new result starts fresh
         self._update(
             index,
             code=code,
@@ -205,9 +254,10 @@ class State(rx.State):
             stdout=result.stdout.rstrip(),
             text=result.result_repr.rstrip(),
             error=result.error.rstrip(),
-            **self._output_grid(cell_id, "", False),
+            **_trace_fields(result.trace),
+            view=session.show(f"cell:{cell_id}", compact=True),
         )
-        new = [name for name in session.frames() if name not in before]
+        new = [name for name in session.views() if name not in before]
         self._sync(prefer=new[-1] if new else "")
 
     async def _start(self, index: int, code: str):
@@ -256,35 +306,15 @@ class State(rx.State):
         self.running = False
 
     @rx.event
-    def sort_output(self, cell_id: str, pos: tuple[int, int]):
-        """Header click on a cell's result grid: ascending -> descending -> unsorted."""
-        index = self._cell_index(cell_id)
-        if index < 0:
-            return
-        cell = self.cells[index]
-        # Glide sends the bare column index here, despite the (col, row) tuple in Reflex's event spec.
-        col = pos if isinstance(pos, int) else pos[0]
-        if not 0 <= col < len(cell.columns):
-            return
-        name = cell.columns[col]["id"]
-        if name != cell.sort_col:
-            sort_col, descending = name, False
-        elif not cell.sort_desc:
-            sort_col, descending = name, True
-        else:
-            sort_col, descending = "", False
-        self._update(index, **self._output_grid(cell_id, sort_col, descending))
-
-    @rx.event
     def open_output(self, cell_id: str):
-        """Bind a cell's result to a name (out<n>) so it gets a tab with filter and full view."""
+        """Bind a cell's result to a name (out<n>) so it also gets a tab."""
         index = self._cell_index(cell_id)
         session = self._session()
-        df = session.outputs.get(cell_id)
-        if index < 0 or df is None:
+        view = session.outputs.get(cell_id)
+        if index < 0 or view is None:
             return
         name = f"out{self.cells[index].count}"
-        session.namespace[name] = df
+        session.namespace[name] = view.value
         session.sources[name] = f"cell [{self.cells[index].count}]"
         self._sync(prefer=name)
 
@@ -305,6 +335,7 @@ class State(rx.State):
         if index >= 0 and not self.running:
             del self.cells[index]
             self._session().outputs.pop(cell_id, None)
+            self._session().ui.pop(f"cell:{cell_id}", None)
         if not self.cells:
             self.cells.append(self._new_cell())
 
@@ -312,7 +343,7 @@ class State(rx.State):
     def clear_outputs(self):
         self._session().outputs.clear()
         for index in range(len(self.cells)):
-            self._update(index, stdout="", text="", error="", **self._output_grid("", "", False))
+            self._update(index, stdout="", text="", error="", **_trace_fields([]), view=ViewData())
 
     @rx.event(background=True)
     async def send_chat(self, form: dict[str, Any]):
@@ -337,9 +368,8 @@ class State(rx.State):
                 self.chat.append({"kind": "step", "name": step.tool, "text": step.args})
                 if step.result_name:
                     last_table = step.result_name
-                    df = session.frames().get(step.result_name)
-                    shape = f"{df.height} × {df.width}" if df is not None else ""
-                    self.chat.append({"kind": "ref", "name": step.result_name, "text": f"{step.tool} · {shape}"})
+                    text = f"{step.tool} · {step.result_label}"
+                    self.chat.append({"kind": "ref", "name": step.result_name, "text": text})
             if result.text or self.streaming:
                 self.chat.append({"kind": "agent", "name": "", "text": result.text or self.streaming})
             if result.error:
