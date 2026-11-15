@@ -105,6 +105,8 @@ def chat_pane() -> rx.Component:
                 name="prompt",
                 placeholder="Ask the agent…  (Enter to send, Shift+Enter for a new line)",
                 enter_key_submit=True,
+                # the cursor starts here when the app opens
+                auto_focus=True,
                 rows=2,
                 class_name="input sans",
             ),
