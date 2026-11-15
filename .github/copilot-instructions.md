@@ -115,6 +115,13 @@ Script implementation pattern:
 - For shell-based automation in this repo, prefer a paired layout: a Python Typer CLI script plus a same-name shell wrapper in the same folder.
 - The shell wrapper should stay thin and call the Python script via `uv run`, unless the user explicitly asks for shell-only or Python-only.
 
+Caching policy (mirror of "Caching Policy" in `.agents/agents.md`):
+- The user decided against caching (Nov 2026): a cache hides what code really costs and stale data shows up as wrong answers. If repeat lookups become common, the answer is proper data storage (`spec/pkgs/ds/data/data_storage.md`), not a response cache.
+- Never add a cache of any kind without the user's explicit approval first: disk or memory caches, `lru_cache` / `cache` / `cached_property`, module-level memo dicts, TTL stores, HTTP/response caches, "keep the last result" globals. Not even as a small or temporary fix.
+- If a cache seems useful, stop and ask before writing it, with options that each state: what is cached and where, how long it lives (TTL), how it is invalidated and how stale data would show up, how to bypass or clear it, and the no-cache alternative with its cost (always one of the options).
+- Prefer no cache: first fix the real cost (fetch once per call and pass it down, fewer rows, batching). If the same data is needed again and again, raise data storage as the alternative.
+- If code depends on an existing cache, say so before changing it; don't remove or extend a cache without asking.
+
 Git workflow:
 - No pull requests: this is a single-user repo, so finished work lands on `main` directly. Don't open PRs unless the user asks for one. A working branch to isolate work is fine if your harness prefers one; merge it into `main` and push `main` when done, rather than leaving it for a PR.
 

@@ -31,7 +31,7 @@ from reflex.event import no_args_event_spec, passthrough_event_spec
 from ds.ai import TableResult
 from ds.data import char_icon_by_name
 from ds.data.raw.smashtube import MatchVideos
-from ds.data.raw.supermajor import CharacterStats, PlayerUsage, StageStats
+from ds.data.startgg import CharacterStats, PlayerUsage, StageStats
 from pydantic import BaseModel
 
 from .editor import sql_editor
@@ -51,6 +51,8 @@ DEFAULT_SQL = "select * from self"
 MAX_BAR_ROWS = 6
 # The backend serves the character icons (api.py); the browser loads them from here.
 ICON_URL = rx.config.get_config().api_url + "/"
+# A transparent 1x1 GIF: the src of an image that has nothing to show yet.
+BLANK_IMAGE = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
 # Longest text shown for one field value or table cell of a generic model view.
 MAX_VALUE_CHARS = 400
 # Rows shown per list in a generic model view.
@@ -112,6 +114,10 @@ class EventRow:
     date: str
     title: str
     tip: str = ""
+    where: str = ""
+    """'online' | 'offline' | '' (start.gg doesn't say)."""
+    url: str = ""
+    """The event's start.gg page ("" = none)."""
     icons: list[dict[str, str]] = dataclasses.field(default_factory=list)
     """Each: name, url ("" = no icon for that name)."""
 
@@ -167,6 +173,10 @@ class ViewData:
     stage_groups: list[BarGroup] = dataclasses.field(default_factory=list)
     events: list[EventRow] = dataclasses.field(default_factory=list)
     events_note: str = ""
+    settings: list[dict[str, str]] = dataclasses.field(default_factory=list)
+    """Which events the usage counts, to pick from: key (all | offline | online), label, tip, on."""
+    switch_note: str = ""
+    """How often the player changed character within a set, as one line ("" = nothing to say)."""
     # tool form (tool_forms.py): the inputs of the tool that made this result, to change and re-run
     form: list[FormField] = dataclasses.field(default_factory=list)
     form_open: bool = False
@@ -429,26 +439,26 @@ def _videos_view(value: MatchVideos) -> View:
     )
 
 
-def _player(value: PlayerUsage) -> str:
-    lookup = value.lookup
-    if lookup is None:
-        return ""
-    return lookup.player.tag if lookup.player else lookup.query
-
-
 def _usage_view(value: PlayerUsage) -> View:
-    lookup = value.lookup
-    events = f"{lookup.player.num_events} events" if lookup and lookup.player else ""
-    mains = ", ".join(usage.character for usage in value.characters.characters[:2])
-    note = " · ".join(part for part in [_player(value), events] if part)
-    return View(kind="usage", value=value, summary=_player(value) or "player usage", note=note or mains)
+    lookup, window = value.lookup, value.window
+    span = f"{window.first_date} to {window.last_date}" if window.first_date else "no sets"
+    versus = f"vs {value.vs_character}" if value.vs_character else ""
+    where = f"{value.setting} only" if value.setting != "all" else ""
+    counts = f"{window.sets} sets, {window.games} games"
+    note = " · ".join(part for part in [lookup.tag, versus, where, span, counts] if part)
+    return View(kind="usage", value=value, summary=lookup.tag or "player usage", note=note)
 
 
-_WINDOW_LABELS = {"last_6_months": "6 mo", "all_time": "All time", "last_10_events": "Last 10"}
+_SETTINGS = {
+    "all": ("All", "Online and in-person events"),
+    "offline": ("Offline", "In-person events only (fetched again: reaches further back)"),
+    "online": ("Online", "Online events only (fetched again)"),
+}
+_WINDOW_LABELS = {"recent": "All games", "game_1": "Game 1", "last_events": "Events"}
 _WINDOW_TIPS = {
-    "last_6_months": "Games in the last 6 months",
-    "all_time": "Every game with character data",
-    "last_10_events": "Events (not games) among the last 10",
+    "recent": "Every game in the window",
+    "game_1": "The character they open a set with",
+    "last_events": "Events (not games) among the last ones listed",
 }
 
 
@@ -486,31 +496,74 @@ def _char_group(stats: CharacterStats) -> BarGroup:
 
 
 def _stage_group(title: str, stats: StageStats) -> BarGroup:
-    items = [(stage.short_name or stage.stage, stage.stage, stage.usage_pct, stage.games) for stage in stats.stages]
+    items = [(stage.stage, stage.stage, stage.usage_pct, stage.games) for stage in stats.stages]
     return BarGroup(title=title, note=f"{stats.games} games", rows=_bar_rows(items, "games"))
 
 
+def _switch_note(value: PlayerUsage) -> str:
+    """One line on changing character within a set ('' with nothing to go on)."""
+    switches = value.switches
+    if not switches.sets:
+        return ""
+    parts = [f"Changed character in {switches.sets_with_switch} of {switches.sets} sets"]
+    if switches.chances_after_losing:
+        parts.append(f"{switches.switched_after_losing} of {switches.chances_after_losing} games after dropping one")
+    if switches.chances_after_winning:
+        parts.append(f"{switches.switched_after_winning} of {switches.chances_after_winning} after taking one")
+    return " · ".join(parts)
+
+
+def rerun_inputs(view: View, action: str, arg: Any) -> dict[str, Any] | None:
+    """The tool inputs for a view event that needs the view's tool run again (None: it doesn't).
+
+    'setting' on a usage view: the same player, character and months, for other events. The
+    inputs come from the result itself, so this works on a result the agent made too.
+    """
+    value = view.value
+    if action == "setting" and isinstance(value, PlayerUsage) and arg in _SETTINGS and arg != value.setting:
+        return {
+            "player": value.lookup.query,
+            "vs_character": str(value.vs_character or ""),
+            "months": str(value.window.months),
+            "setting": arg,
+        }
+    return None
+
+
 def _usage_data(value: PlayerUsage, ui: Ui, data: ViewData) -> None:
-    """Fill a usage view: the characters of the picked window, starter / counterpick stages, recent events."""
-    windows = {
-        "last_6_months": value.last_6_months,
-        "all_time": value.all_time,
-        "last_10_events": value.last_10_events.characters,
-    }
-    picked = ui.window if ui.window in windows else value.characters.window
+    """Fill a usage view: the characters of the picked window, the stage groups, recent events."""
+    windows = {"recent": value.recent, "game_1": value.game_1, "last_events": value.last_events.characters}
+    picked = ui.window if ui.window in windows else "recent"
     data.windows = [
         {"key": key, "label": _WINDOW_LABELS[key], "tip": _WINDOW_TIPS[key], "on": "1" if key == picked else ""}
         for key in windows
     ]
     data.chars = _char_group(windows[picked])
-    data.stage_groups = [_stage_group("Starters", value.starters), _stage_group("Counterpicks", value.counters)]
-    recent = value.last_10_events
+    data.stage_groups = [
+        _stage_group("Starters", value.starters),
+        _stage_group("Counterpicks", value.counterpicks),
+        _stage_group("Taken to", value.taken_to),
+    ]
+    data.settings = [
+        {"key": key, "label": label, "tip": tip, "on": "1" if key == value.setting else ""}
+        for key, (label, tip) in _SETTINGS.items()
+    ]
+    data.switch_note = _switch_note(value)
+    recent = value.last_events
     data.events = [
         EventRow(
             date=event.date.isoformat(),
             title=event.tournament,
-            tip=f"{event.tournament} · {event.event}" + (" · online" if event.online else ""),
-            icons=[{"name": name, "url": _icon_url(name)} for name in event.characters],
+            tip=f"{event.tournament} · {event.event}",
+            where="" if event.online is None else "online" if event.online else "offline",
+            url=event.url or "",
+            icons=[
+                {
+                    "name": f"{used.character} ({used.games} game{'' if used.games == 1 else 's'})",
+                    "url": _icon_url(used.character),
+                }
+                for used in event.characters
+            ],
         )
         for event in recent.events
     ]
@@ -804,9 +857,53 @@ def form_section(view: rx.Var[ViewData], send: Any) -> rx.Component:
     )
 
 
+def _character_picker(item: rx.Var[FormField]) -> rx.Component:
+    """A character input: type to filter, pick from a list of icon + name (assets/combo.js does
+    the typing, keys and picking; this is its markup). The hidden input carries the picked
+    value under the field's name, so the form submits it like any other input; "" = any."""
+
+    def option(choice: rx.Var[dict[str, str]]) -> rx.Component:
+        return rx.el.button(
+            rx.el.img(src=ICON_URL + choice["icon"], alt="", loading="lazy", class_name="char-icon"),
+            rx.el.span(choice["label"]),
+            type="button",
+            tab_index=-1,
+            custom_attrs={
+                "data-value": choice["value"],
+                "data-label": choice["label"],
+                "data-icon": ICON_URL + choice["icon"],
+            },
+            class_name="combo-option",
+        )
+
+    return rx.el.span(
+        # the picked character's icon, inside the box (hidden while nothing is picked)
+        rx.el.img(
+            # never "": an empty src makes the browser request the page itself (React warns)
+            src=rx.cond(item.icon != "", ICON_URL + item.icon, BLANK_IMAGE),
+            alt="",
+            class_name="char-icon combo-icon",
+            custom_attrs={"data-combo-icon": ""},
+        ),
+        rx.el.input(
+            default_value=item.shown,
+            placeholder="any",
+            auto_complete="off",
+            spell_check=False,
+            class_name="form-input combo-text",
+            custom_attrs={"data-combo-text": ""},
+        ),
+        rx.el.input(type="hidden", name=item.name, default_value=item.value, custom_attrs={"data-combo-value": ""}),
+        rx.el.span(rx.foreach(item.choices, option), class_name="combo-list", custom_attrs={"data-combo-list": ""}),
+        class_name=rx.cond(item.value != "", "combo has-value", "combo"),
+        custom_attrs={"data-combo": ""},
+    )
+
+
 def _form_field(item: rx.Var[FormField]) -> rx.Component:
     control = rx.match(
         item.kind,
+        ("character", _character_picker(item)),
         (
             "select",
             rx.el.select(
@@ -868,6 +965,17 @@ def tool_form(
     )
 
 
+def link(text: Any, href: Any, class_name: str = "") -> rx.Component:
+    """A hyperlink in a widget. THE way to show one: every link in every widget goes through
+    here, so it looks like a link in the agent's markdown (blue, underlined: `a.link` in
+    app.css) and opens in a new tab. class_name adds layout only (eg truncation), never colour.
+    (A link drawn as a button, eg the video player's "YouTube ↗", is a button: class `act`.)
+    """
+    return rx.el.a(
+        text, href=href, target="_blank", rel="noreferrer", class_name=f"link {class_name}".strip(), title=href
+    )
+
+
 def _bar_row(row: rx.Var[BarRow]) -> rx.Component:
     return rx.el.div(
         rx.cond(
@@ -903,8 +1011,8 @@ def bar_group(group: rx.Var[BarGroup], *head: rx.Component) -> rx.Component:
 
 
 def usage_widget(view: rx.Var[ViewData], send: Any, actions: tuple[rx.Component, ...]) -> rx.Component:
-    """A player's usage at a glance (supermajor.gg): characters for a picked window, starter and
-    counterpick stages, and the characters at each of the last events."""
+    """A player's usage at a glance (start.gg sets): characters for a picked window, stages by
+    who picked them, a line on character changes, and the characters at each of the last events."""
     windows = rx.el.span(
         rx.foreach(
             view.windows,
@@ -918,9 +1026,33 @@ def usage_widget(view: rx.Var[ViewData], send: Any, actions: tuple[rx.Component,
         class_name="segs",
     )
 
+    settings = rx.el.span(
+        rx.foreach(
+            view.settings,
+            lambda setting: rx.el.button(
+                setting["label"],
+                title=setting["tip"],
+                disabled=view.running,
+                on_click=send("setting", setting["key"]),
+                class_name=rx.cond(setting["on"] != "", "seg is-on", "seg"),
+            ),
+        ),
+        class_name="segs",
+    )
+
     def event_row(event: rx.Var[EventRow]) -> rx.Component:
         return rx.el.div(
             rx.el.span(event.date, class_name="event-date mono"),
+            # where it was played: a filled tag for in-person, an outlined one for online
+            rx.el.span(
+                event.where,
+                class_name=rx.match(
+                    event.where,
+                    ("online", "event-where is-online"),
+                    ("offline", "event-where is-offline"),
+                    "event-where",
+                ),
+            ),
             rx.el.span(
                 rx.foreach(
                     event.icons,
@@ -932,7 +1064,11 @@ def usage_widget(view: rx.Var[ViewData], send: Any, actions: tuple[rx.Component,
                 ),
                 class_name="event-icons",
             ),
-            rx.el.span(event.title, class_name="event-title"),
+            rx.cond(
+                event.url != "",
+                link(event.title, event.url, class_name="event-title"),
+                rx.el.span(event.title, class_name="event-title"),
+            ),
             title=event.tip,
             class_name="event-row",
         )
@@ -942,7 +1078,14 @@ def usage_widget(view: rx.Var[ViewData], send: Any, actions: tuple[rx.Component,
         rx.cond(view.form_open, form_section(view, send)),
         _error(view),
         rx.el.div(
+            rx.el.div(
+                rx.el.span("Events counted", class_name="dim"),
+                settings,
+                rx.cond(view.running, rx.el.span("loading…", class_name="dim")),
+                class_name="usage-settings",
+            ),
             bar_group(view.chars, windows),
+            rx.cond(view.switch_note != "", rx.el.div(view.switch_note, class_name="usage-switches dim")),
             rx.foreach(view.stage_groups, lambda group: bar_group(group)),
             rx.el.div(
                 rx.el.div(

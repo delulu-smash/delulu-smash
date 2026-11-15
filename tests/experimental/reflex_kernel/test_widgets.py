@@ -11,16 +11,19 @@ import sys
 from pathlib import Path
 
 import pytest
-from ds.data.raw.supermajor import (
+from ds.data.chars import CharGroup
+from ds.data.startgg import (
     CharacterStats,
     CharacterUsage,
+    EventCharacter,
     EventCharacters,
     PlayerLookup,
-    PlayerMatch,
     PlayerUsage,
     RecentEvents,
     StageStats,
     StageUsage,
+    Switches,
+    UsageWindow,
 )
 
 # the app has no package install: import it from its folder
@@ -30,21 +33,15 @@ sys.path.insert(0, str(APP_DIR))
 from reflex_kernel.widgets import ADDABLE, TOOL_FORMS, WIDGETS, Widget, form_for, widget_of  # noqa: E402
 
 
-def _chars(window: str, unit: str, items: list[tuple[str, int]]) -> CharacterStats:
+def _chars(unit: str, items: list[tuple[str, int]]) -> CharacterStats:
     total = sum(count for _, count in items)
-    usages = [
-        CharacterUsage(character_id=f"A{i}", character=name, usage_pct=100 * count / total, count=count)
-        for i, (name, count) in enumerate(items)
-    ]
-    return CharacterStats(window=window, unit=unit, total=total, characters=usages)
+    usages = [CharacterUsage(character=name, usage_pct=100 * count / total, count=count) for name, count in items]
+    return CharacterStats(unit=unit, total=total, characters=usages)
 
 
-def _stages(items: list[tuple[str, str, int]]) -> StageStats:
-    total = sum(games for *_, games in items)
-    stages = [
-        StageUsage(stage_id=f"S{i}", stage=name, short_name=short, usage_pct=100 * games / total, games=games)
-        for i, (name, short, games) in enumerate(items)
-    ]
+def _stages(items: list[tuple[str, int]]) -> StageStats:
+    total = sum(games for _, games in items)
+    stages = [StageUsage(stage=name, usage_pct=100 * games / total, games=games) for name, games in items]
     return StageStats(games=total, stages=stages)
 
 
@@ -54,26 +51,39 @@ def _usage() -> PlayerUsage:
         tournament="Weekly",
         event="Singles",
         online=True,
-        characters=["Little Mac", "Nobody"],
+        url="https://www.start.gg/tournament/weekly/event/singles",
+        characters=[EventCharacter(character="Little Mac", games=5), EventCharacter(character="Nobody", games=1)],
     )
     many = [("Little Mac", 60), ("Cloud", 15), ("Pac-Man", 9), ("Steve", 6), ("Sonic", 4), ("Lucas", 3), ("Ness", 3)]
     return PlayerUsage(
-        last_6_months=_chars("last_6_months", "games", many),
-        all_time=_chars("all_time", "games", [("Lucas", 10)]),
-        last_10_events=RecentEvents(
+        lookup=PlayerLookup(query="mac", match_type="tag_exact", player_id=1, tag="Mac", num_events=12),
+        window=UsageWindow(
+            months=6,
+            max_sets=150,
+            capped=False,
+            sets=40,
+            games=100,
+            first_date=dt.date(2026, 6, 1),
+            last_date=dt.date(2026, 11, 1),
+        ),
+        recent=_chars("games", many),
+        game_1=_chars("games", [("Lucas", 10)]),
+        last_events=RecentEvents(
             first_date=event.date,
             last_date=event.date,
-            characters=_chars("last_10_events", "events", [("Little Mac", 1)]),
+            characters=_chars("events", [("Little Mac", 1)]),
             events=[event],
         ),
-        starters=_stages([("Pokemon Stadium 2", "PS2", 3), ("Battlefield", "BF", 1)]),
-        counters=StageStats(games=0, stages=[]),
-        all_stages=_stages([("Pokemon Stadium 2", "PS2", 4)]),
-        lookup=PlayerLookup(
-            query="mac",
-            match_type="tag_exact",
-            url="https://example.invalid",
-            player=PlayerMatch(player_id="S1", tag="Mac", num_events=12),
+        starters=_stages([("Pokemon Stadium 2", 3), ("Battlefield", 1)]),
+        counterpicks=StageStats(games=0, stages=[]),
+        taken_to=_stages([("Battlefield", 2)]),
+        switches=Switches(
+            sets=30,
+            sets_with_switch=4,
+            chances_after_losing=20,
+            switched_after_losing=3,
+            chances_after_winning=40,
+            switched_after_winning=1,
         ),
     )
 
@@ -100,21 +110,48 @@ def test_usage_widget_attributes():
     assert (usage.addable, usage.chat_open) == (True, True)
     assert not widget_of("videos").chat_open
     assert form_for(_usage()) is usage.form
-    assert [field.name for field in usage.form.fields({})] == ["player"]
+    assert [field.name for field in usage.form.fields({})] == ["player", "vs_character", "months", "setting"]
+    setting = usage.form.fields({})[-1]
+    assert (setting.kind, setting.value, setting.options) == ("select", "all", ["all", "offline", "online"])
+    # vs_character is typed CharGroup, so the form draws it as the character picker
+    picker = usage.form.fields({"vs_character": "pokemon_trainer"})[1]
+    assert (picker.kind, picker.value, picker.shown) == ("character", "pokemon_trainer", "Pokemon Trainer")
+    assert picker.icon == "char_icons/pokemon_trainer.png"
+    assert len(picker.choices) == len(CharGroup)
+    assert picker.choices[0] == {
+        "value": "banjo_and_kazooie",
+        "label": "Banjo & Kazooie",
+        "icon": "char_icons/banjo_and_kazooie.png",
+    }
+    assert usage.form.fields({})[1].shown == ""
+    assert usage.form.character_types == {"vs_character": CharGroup}
+    assert (
+        usage.form.arguments({"player": "Mac", "vs_character": "pyra_mythra"})["vs_character"] is CharGroup.PYRA_MYTHRA
+    )
+    assert usage.form.arguments({"player": "Mac", "vs_character": ""})["vs_character"] is None
+    with pytest.raises(ValueError, match="vs_character"):
+        usage.form.arguments({"player": "Mac", "vs_character": "Goku"})
+    # other tools' forms have no character-typed parameter (yet)
+    assert widget_of("videos").form.character_types == {}
+    # a select left out of the inputs keeps the tool's default (it has no empty choice)
+    assert usage.form.arguments({"player": "Mac"})["setting"] == "all"
+    assert usage.form.arguments({"player": "Mac", "setting": "offline"})["setting"] == "offline"
 
 
 def test_usage_view_data(monkeypatch):
     pytest.importorskip("reflex")
     # importing the app links its editor assets into ./assets: keep that in the app's folder
     monkeypatch.chdir(APP_DIR)
-    from reflex_kernel.render import MAX_BAR_ROWS, Ui, apply_event, to_view
+    from reflex_kernel.render import MAX_BAR_ROWS, Ui, apply_event, rerun_inputs, to_view
 
     view = to_view(_usage())
-    assert (view.kind, view.summary, view.note) == ("usage", "Mac", "Mac · 12 events")
+    assert (view.kind, view.summary) == ("usage", "Mac")
+    assert view.note == "Mac · 2026-06-01 to 2026-11-01 · 40 sets, 100 games"
 
     ui = Ui()
     data = view.data("tab:r1", ui)
-    assert [window["key"] for window in data.windows if window["on"]] == ["last_6_months"]
+    assert [window["key"] for window in data.windows] == ["recent", "game_1", "last_events"]
+    assert [window["key"] for window in data.windows if window["on"]] == ["recent"]
     rows = data.chars.rows
     # 7 characters: the first MAX_BAR_ROWS - 1, then the rest folded into one row
     assert len(rows) == MAX_BAR_ROWS
@@ -125,14 +162,34 @@ def test_usage_view_data(monkeypatch):
     assert "Lucas" in rows[-1].tip
     assert data.chars.note == "100 games"
 
-    assert [(group.title, len(group.rows)) for group in data.stage_groups] == [("Starters", 2), ("Counterpicks", 0)]
-    assert (data.stage_groups[0].rows[0].label, data.stage_groups[0].rows[0].value) == ("PS2", "75%")
+    groups = [(group.title, len(group.rows)) for group in data.stage_groups]
+    assert groups == [("Starters", 2), ("Counterpicks", 0), ("Taken to", 1)]
+    assert (data.stage_groups[0].rows[0].label, data.stage_groups[0].rows[0].value) == ("Pokemon Stadium 2", "75%")
+    assert data.switch_note == (
+        "Changed character in 4 of 30 sets · 3 of 20 games after dropping one · 1 of 40 after taking one"
+    )
 
-    assert [icon["name"] for icon in data.events[0].icons] == ["Little Mac", "Nobody"]
+    assert [icon["name"] for icon in data.events[0].icons] == ["Little Mac (5 games)", "Nobody (1 game)"]
     assert data.events[0].icons[1]["url"] == ""  # an unknown name: shown as text
-    assert "online" in data.events[0].tip
+    assert data.events[0].where == "online"
+    assert data.events[0].url == "https://www.start.gg/tournament/weekly/event/singles"
+    assert [(s["key"], s["on"]) for s in data.settings] == [("all", "1"), ("offline", ""), ("online", "")]
 
-    apply_event(view, ui, "window", "all_time")
+    # Offline / Online ask the tool again for the same player; the setting shown doesn't
+    assert rerun_inputs(view, "setting", "offline") == {
+        "player": "mac",
+        "vs_character": "",
+        "months": "6",
+        "setting": "offline",
+    }
+    assert rerun_inputs(view, "setting", "all") is None
+    assert rerun_inputs(view, "setting", "nope") is None
+    assert rerun_inputs(view, "window", "game_1") is None
+    offline = to_view(_usage().model_copy(update={"setting": "offline"}))
+    assert offline.note == "Mac · offline only · 2026-06-01 to 2026-11-01 · 40 sets, 100 games"
+    assert [s["key"] for s in offline.data("tab:r1", Ui()).settings if s["on"]] == ["offline"]
+
+    apply_event(view, ui, "window", "game_1")
     data = view.data("tab:r1", ui)
     assert [row.label for row in data.chars.rows] == ["Lucas"]
     assert data.chars.note == "10 games"

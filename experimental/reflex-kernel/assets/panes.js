@@ -4,10 +4,10 @@
 //          (set from reflex_kernel/shortcuts.py, the one place they are defined):
 //          FULL_SCREEN floats the view (.widget) you are in nearly full screen, or, outside a view,
 //          fills the window with your pane (clicks its zoom button). CLOSE (Esc) closes a menu or
-//          the help panel, then a floating view. TOGGLE_RESULTS / TOGGLE_PYTHON / HELP click the
-//          bottom bar's pane toggles and the title bar's ? (data-toggle). A view's float button (render.float_button) and
-//          a click outside a floating view work too. showInChat(id) scrolls the chat to a tool
-//          result's row and flashes it (State.show_in_chat).
+//          the help or debug panel, then a floating view. TOGGLE_RESULTS / TOGGLE_PYTHON / HELP / DEBUG click the
+//          bottom bar's pane toggles and the title bar's ? and bug icon (data-toggle). A view's float button (render.float_button) and
+//          a click outside a floating view work too. reveal(id) scrolls to a chat row, result tab or
+//          cell and flashes it (State.reveal).
 // ---------------------------------------------------------------------------
 (() => {
   const SHORTCUTS = window.SHORTCUTS || { FULL_SCREEN: "Alt+F", CLOSE: "Escape" };
@@ -39,13 +39,16 @@
     setFloating(widget, !widget.classList.contains("is-floating"));
   };
 
-  window.showInChat = (id) => {
+  // State.reveal: scroll to an element (a chat row, a result tab, a cell) and flash it. The one
+  // navigation of the app (Show in Chat, the debug log's links); the flash is .is-flash in
+  // app.css, on the element's [data-flash] part when it has one (eg a result row, not its view)
+  window.reveal = (id) => {
     const target = document.getElementById(id);
     if (!target) return;
     const current = floating();
     if (current) setFloating(current, false);
-    target.scrollIntoView({ block: "center", behavior: "smooth" });
-    const row = target.querySelector(".ref") || target;
+    target.scrollIntoView({ block: "center", inline: "nearest", behavior: "smooth" });
+    const row = target.querySelector("[data-flash]") || target;
     row.classList.remove("is-flash");
     void row.offsetWidth; // restart the animation when flashed twice
     row.classList.add("is-flash");
@@ -57,7 +60,7 @@
     // a click outside the floating view puts it back (menus and popups float above it, so not those)
     const current = floating();
     if (current && !current.contains(event.target)
-      && !event.target.closest(".menu, .help-panel, .overlay-backdrop, .cm-tooltip, .gdg-overlay, #portal")) {
+      && !event.target.closest(".menu, .help-panel, .debug-panel, .overlay-backdrop, .cm-tooltip, .gdg-overlay, #portal")) {
       setFloating(current, false);
     }
   }, true);
@@ -94,7 +97,7 @@
       else setFloating(current, false);
       return;
     }
-    const toggle = [["TOGGLE_RESULTS", "results"], ["TOGGLE_PYTHON", "python"], ["HELP", "help"]]
+    const toggle = [["TOGGLE_RESULTS", "results"], ["TOGGLE_PYTHON", "python"], ["HELP", "help"], ["DEBUG", "debug"]]
       .find(([name]) => SHORTCUTS[name] && matches(event, SHORTCUTS[name]));
     if (toggle) {
       const button = document.querySelector(`[data-toggle="${toggle[1]}"]`);

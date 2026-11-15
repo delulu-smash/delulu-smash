@@ -33,13 +33,18 @@ class Settings(BaseModel):
 
     # Pydantic AI Gateway key (`pylf_...`) in keyring; used by all ds.ai model calls
     pydantic_gateway_api_key: ApiKey | None = None
+    # start.gg personal API token in keyring; used by ds.data.raw.startgg (create one at
+    # https://start.gg/admin/profile/developer)
+    startgg_api_token: ApiKey | None = None
 
 
-def set_settings(pydantic_gateway_api_key: str | None = None) -> None:
-    """Set application settings. Secrets (eg api keys) stored in keyring"""
+def set_settings(pydantic_gateway_api_key: str | None = None, startgg_api_token: str | None = None) -> None:
+    """Set application settings. Secrets (eg api keys) go in keyring; None keeps a value"""
     global SETTINGS  # noqa: PLW0603  # module-level settings by design, read through get_settings()
     if pydantic_gateway_api_key is not None:
         keyring.set_password(KEYRING_SERVICE_NAME, "PYDANTIC_AI_GATEWAY_API_KEY", pydantic_gateway_api_key)
+    if startgg_api_token is not None:
+        keyring.set_password(KEYRING_SERVICE_NAME, "STARTGG_API_TOKEN", startgg_api_token)
     # ensures global setting variable has updates
     SETTINGS = init_settings()
 
@@ -51,7 +56,11 @@ def init_settings() -> Settings:
         os.environ["PYDANTIC_AI_GATEWAY_API_KEY"] = pydantic_gateway_api_key
     # setdefault so an explicitly exported URL (eg another region) still wins
     os.environ.setdefault("PYDANTIC_AI_GATEWAY_BASE_URL", GATEWAY_BASE_URL)
-    return Settings(pydantic_gateway_api_key=pydantic_gateway_api_key)
+    # an exported STARTGG_API_TOKEN wins over the keyring (eg CI, a one-off shell)
+    startgg_api_token = os.environ.get("STARTGG_API_TOKEN") or keyring.get_password(
+        KEYRING_SERVICE_NAME, "STARTGG_API_TOKEN"
+    )
+    return Settings(pydantic_gateway_api_key=pydantic_gateway_api_key, startgg_api_token=startgg_api_token or None)
 
 
 def get_settings() -> Settings:

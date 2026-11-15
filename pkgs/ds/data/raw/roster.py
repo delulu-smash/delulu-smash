@@ -7,12 +7,14 @@
 # ---------------------------------------------------------------------------
 from __future__ import annotations
 
-import httpx2
+from pathlib import Path
+
 import polars as pl
 from bs4 import BeautifulSoup
 
 from ds.data.raw.framedata import BASE_URL
 from ds.data.raw.smashmate import SITE_CHAR_ICON
+from ds.util import http
 
 ROSTER_URL = "https://ultimateframedata.com/smash"
 USER_AGENT = "Mozilla/5.0 (compatible; delulu-smash-framedata-scraper)"
@@ -20,8 +22,10 @@ USER_AGENT = "Mozilla/5.0 (compatible; delulu-smash-framedata-scraper)"
 
 def scrape_character_roster() -> pl.DataFrame:
     """Scrape ultimateframedata.com/smash for every character's URL slug (id) and name."""
-    resp = httpx2.get(ROSTER_URL, headers={"User-Agent": USER_AGENT}, timeout=30, follow_redirects=True)
-    resp.raise_for_status()
+    with http.request(
+        "GET", ROSTER_URL, source="framedata", name="roster", headers={"User-Agent": USER_AGENT}, follow_redirects=True
+    ) as (resp, _):
+        resp.raise_for_status()
     soup = BeautifulSoup(resp.text, "html.parser")
 
     rows: list[dict[str, str]] = []
@@ -36,7 +40,7 @@ def scrape_character_roster() -> pl.DataFrame:
         # TODO: see if framedata_url should store given its just derived by id
         rows.append({"id": slug, "name": link.get("title", ""), "framedata_url": BASE_URL.format(character=slug)})
 
-    return with_char_icon(pl.DataFrame(rows))
+    return with_char_group(with_char_icon(pl.DataFrame(rows)))
 
 
 def with_char_icon(char_df: pl.DataFrame) -> pl.DataFrame:
@@ -49,3 +53,56 @@ def with_char_icon(char_df: pl.DataFrame) -> pl.DataFrame:
 
     icons = {char_id: char_icon(char_id) for char_id in SITE_CHAR_ICON}
     return char_df.with_columns(char_icon=pl.col("id").replace_strict(icons, default=None, return_dtype=pl.String))
+
+
+def with_char_group(char_df: pl.DataFrame) -> pl.DataFrame:
+    """Add (or refresh) the `char_group` column: the character-select entry each fighter
+    belongs to ('pokemon_trainer' for the three Pokemon, 'pyra_mythra' for Pyra and Mythra,
+    the fighter's own id otherwise). Tournament data joins on it (see ds.data.char_group).
+    """
+    # imported here for the same reason as in with_char_icon
+    from ds.data.char_icons import char_group
+
+    return char_df.with_columns(char_group=pl.col("id").map_elements(char_group, return_dtype=pl.String))
+
+
+CHARS_MODULE = Path(__file__).resolve().parents[1] / "chars.py"
+_BEGIN = "# --- generated from char.parquet by `ds data char_enum` (do not edit by hand): begin ---"
+_END = "# --- generated from char.parquet by `ds data char_enum` (do not edit by hand): end ---"
+
+
+def _enum_class(name: str, doc: str, values: list[str]) -> list[str]:
+    members = [f'    {value.upper()} = "{value}"' for value in values]
+    return [f"class {name}(CharEnum):", f'    """{doc}"""', "", *members]
+
+
+def char_enum_source(char_df: pl.DataFrame) -> str:
+    """The generated part of ds/data/chars.py for a character table: `CharId` (one member per
+    row) and `CharGroup` (one per distinct `char_group`), in the table's order.
+    """
+    fighters = char_df["id"].to_list()
+    picks = char_df["char_group"].unique(maintain_order=True).to_list()
+    lines = [
+        _BEGIN,
+        *_enum_class("CharId", "A fighter: one row of char.parquet (`id`)", fighters),
+        "",
+        "",
+        *_enum_class("CharGroup", "A character-select pick: char.parquet's `char_group`", picks),
+        # two blank lines, as ruff-format leaves between a class and a comment: otherwise the
+        # formatter and this generator rewrite each other's output
+        "",
+        "",
+        _END,
+    ]
+    return "\n".join(lines)
+
+
+def write_char_enums(char_df: pl.DataFrame) -> bool:
+    """Rewrite the generated part of ds/data/chars.py from a char table; True if changed"""
+    source = CHARS_MODULE.read_text()
+    start, end = source.index(_BEGIN), source.index(_END) + len(_END)
+    updated = source[:start] + char_enum_source(char_df) + source[end:]
+    if updated == source:
+        return False
+    CHARS_MODULE.write_text(updated)
+    return True

@@ -129,6 +129,9 @@ support a dedicated custom-subagent file format:
   links (SmashWiki, Discord, Twitter, etc.) and writing it into `docs/` (eg `docs/mechanics/`).
 - `.agents/skills/docs-writing/` (hand-authored) — use when writing or editing any page under `docs/` (MyST
   syntax, compact tables, page structure).
+- `.agents/skills/external-review/` (hand-authored) — run by hand to re-check code written from outside sources
+  (API docs, schemas, other repos) against those sources today; also defines the `ds::external-source:` tag to
+  add when writing such code.
 
 ## Cross-Provider Compatibility
 
@@ -232,6 +235,30 @@ directory that references `.agents/` content, never a second copy of it.
 - The shell wrapper should stay thin and call the Python script via `uv run`, unless the user explicitly asks for
   shell-only or Python-only.
 
+## Caching Policy
+
+The user decided against caching (Nov 2026): a cache hides what the code really costs (the start.gg character
+list was silently re-fetched for every page of sets, and that only surfaced when the disk cache was switched
+off), and stale data shows up as wrong answers nobody can explain. The same lookup rarely repeats; if repeat
+lookups become common, the answer is proper data storage (see `spec/pkgs/ds/data/data_storage.md`), not a
+response cache.
+
+- **Never add a cache of any kind without the user's explicit approval first.** That covers disk and memory
+  caches, `functools.lru_cache` / `cache` / `cached_property`, module-level memo dicts, TTL stores, HTTP /
+  response caches, and "just keep the last result" globals. Not even as a small or temporary fix.
+- **If you think a cache would help, stop and ask** (eg with your question tool), before writing it. Offer
+  options, and for each one state:
+  - what is cached and where (memory, which file or folder)
+  - how long it lives (TTL, process lifetime, forever)
+  - how it is invalidated, and how stale data would show up to the user
+  - how to bypass or clear it
+  - the no-cache alternative and its cost (requests, time, rate limits), which is always one of the options
+- **Prefer no cache.** First fix the real cost (fetch something once per call and pass it down, ask for fewer
+  rows, batch requests). If the same data really is needed again and again, raise data storage as the
+  alternative.
+- **Existing caches:** if code turns out to depend on one (it only works or only stays fast because of it), say
+  so before changing that code, and don't remove or extend the cache without asking.
+
 ## Linting
 
 Lint rules live in root `pyproject.toml` (`[tool.ruff]`) and run through the pre-commit hooks in
@@ -282,6 +309,7 @@ Every machine-readable tag created for this repo (comments that AI and tools sea
 | `% ds::research:` | `docs/` pages (MyST comment) | Provenance: source versions, staged copies, scope, code that depends on the page | `.agents/skills/docs-writing/SKILL.md` |
 | `% ds::discrepancy: D-###` | `docs/` pages (MyST comment) | Page is affected by an **unresolved** entry in `docs/scratch/discrepancies.md`. ID only; removed when resolved | `.agents/skills/docs-writing/SKILL.md` |
 | `# ds::docs-source:` | code (`pkgs/`, tests) | Value or rule comes from a docs page/label | `.agents/instructions/pkgs.md` ("Docs-Derived Code") |
+| `# ds::external-source:` | code (`pkgs/`, scripts) | Code written from an outside page (API docs, schema, another repo) that should be re-checked for changes: date checked, url, what depends on it | `.agents/skills/external-review/SKILL.md` |
 
 - **New tag types** use the same `ds::<name>:` shape. Add a row here and define the details where the tag is
   used.

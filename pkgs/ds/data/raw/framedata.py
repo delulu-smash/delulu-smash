@@ -19,9 +19,10 @@ from __future__ import annotations
 # may want to think if want pydantic classes that return from it/establish what should scrape?
 # TODO: have temp/ folder that stores parquet and SmashRawDb so can query easily
 # TOOD: run through every character (as was just made based on little mac)
-import httpx2
 import polars as pl
 from bs4 import BeautifulSoup, Tag
+
+from ds.util import http
 
 BASE_URL = "https://ultimateframedata.com/{character}"
 USER_AGENT = "Mozilla/5.0 (compatible; delulu-smash-framedata-scraper)"
@@ -49,8 +50,10 @@ def scrape_framedata(character: str) -> pl.DataFrame:
     # name -- slugs sometimes differ from what you'd guess (eg donkey_kong not dk, king_dedede
     # not king_ddd)
     url = BASE_URL.format(character=character)
-    resp = httpx2.get(url, headers={"User-Agent": USER_AGENT}, timeout=30, follow_redirects=True)
-    resp.raise_for_status()
+    with http.request(
+        "GET", url, source="framedata", name=character, headers={"User-Agent": USER_AGENT}, follow_redirects=True
+    ) as (resp, _):
+        resp.raise_for_status()
     soup = BeautifulSoup(resp.text, "html.parser")
 
     rows: list[dict[str, str]] = []

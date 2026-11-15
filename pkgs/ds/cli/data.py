@@ -6,7 +6,7 @@ import polars as pl
 import typer
 from ds.data.char_icons import CHAR_ICON_DIR
 from ds.data.raw.framedata import scrape_framedata
-from ds.data.raw.roster import scrape_character_roster, with_char_icon
+from ds.data.raw.roster import CHARS_MODULE, scrape_character_roster, with_char_icon, write_char_enums
 from ds.data.raw.smashmate import SITE_CHAR_ICON, scrape_char_icons
 
 # TODO: consider consolidating to one command for syncing raw
@@ -89,8 +89,20 @@ def roster() -> None:
     if typer.confirm(f"Overwrite {CHAR_PARQUET_PATH} with these {df.height} characters?"):
         df.write_parquet(CHAR_PARQUET_PATH)
         print(f"Wrote {df.height} characters to {CHAR_PARQUET_PATH}")
+        _sync_char_enums(df)
     else:
         print("Skipped write.")
+
+
+def _sync_char_enums(char_df: pl.DataFrame) -> None:
+    changed = write_char_enums(char_df)
+    print(f"{'Updated' if changed else 'Already up to date:'} CharId / CharGroup in {CHARS_MODULE}")
+
+
+@data_app.command("char_enum")
+def char_enum() -> None:
+    """Regenerate the CharId / CharGroup enums (ds/data/chars.py) from data/char.parquet."""
+    _sync_char_enums(pl.read_parquet(CHAR_PARQUET_PATH))
 
 
 @data_app.command("char_icon")

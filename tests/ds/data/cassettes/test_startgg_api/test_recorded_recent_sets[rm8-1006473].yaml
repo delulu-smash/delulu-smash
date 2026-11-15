@@ -1,0 +1,897 @@
+interactions:
+- request:
+    body: '{"query":"\nquery Player($id: ID!) {\n  player(id: $id) { id gamerTag prefix
+      user { slug } }\n}\n","variables":{"id":1006473}}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '126'
+      content-type:
+      - application/json
+      host:
+      - api.start.gg
+      user-agent:
+      - python-httpx2/2.12.0
+    method: POST
+    uri: https://api.start.gg/gql/alpha
+  response:
+    body:
+      string: '{"data":{"player":{"id":1006473,"gamerTag":"rm8","prefix":"","user":{"slug":"user\/293c9ffb"}}},"extensions":{"cacheControl":{"version":1,"hints":null},"queryComplexity":2},"actionRecords":[]}'
+    headers:
+      access-control-allow-credentials:
+      - 'true'
+      access-control-allow-headers:
+      - '*, Content-Type, Authorization'
+      access-control-allow-methods:
+      - POST, GET, OPTIONS
+      access-control-allow-origin:
+      - '*'
+      cache-control:
+      - private, max-age=0, s-maxage=0
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a5af4f3cdc215946-IAD
+      connection:
+      - keep-alive
+      content-length:
+      - '192'
+      content-type:
+      - application/json
+      date:
+      - Sun, 15 Nov 2026 15:32:36 GMT
+      required-client-version:
+      - '20'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=15724800; includeSubDomains
+      transfer-encoding:
+      - chunked
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"query":"\nquery Videogame($id: ID!) {\n  videogame(id: $id) { id name
+      characters { id name } stages { id name } }\n}\n","variables":{"id":1386}}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '146'
+      content-type:
+      - application/json
+      host:
+      - api.start.gg
+      user-agent:
+      - python-httpx2/2.12.0
+    method: POST
+    uri: https://api.start.gg/gql/alpha
+  response:
+    body:
+      string: '{"data":{"videogame":{"id":1386,"name":"Super Smash Bros. Ultimate","characters":[{"id":1271,"name":"Bayonetta"},{"id":1272,"name":"Bowser
+        Jr."},{"id":1273,"name":"Bowser"},{"id":1274,"name":"Captain Falcon"},{"id":1275,"name":"Cloud"},{"id":1276,"name":"Corrin"},{"id":1277,"name":"Daisy"},{"id":1278,"name":"Dark
+        Pit"},{"id":1279,"name":"Diddy Kong"},{"id":1280,"name":"Donkey Kong"},{"id":1282,"name":"Dr.
+        Mario"},{"id":1283,"name":"Duck Hunt"},{"id":1285,"name":"Falco"},{"id":1286,"name":"Fox"},{"id":1287,"name":"Ganondorf"},{"id":1289,"name":"Greninja"},{"id":1290,"name":"Ice
+        Climbers"},{"id":1291,"name":"Ike"},{"id":1292,"name":"Inkling"},{"id":1293,"name":"Jigglypuff"},{"id":1294,"name":"King
+        Dedede"},{"id":1295,"name":"Kirby"},{"id":1296,"name":"Link"},{"id":1297,"name":"Little
+        Mac"},{"id":1298,"name":"Lucario"},{"id":1299,"name":"Lucas"},{"id":1300,"name":"Lucina"},{"id":1301,"name":"Luigi"},{"id":1302,"name":"Mario"},{"id":1304,"name":"Marth"},{"id":1305,"name":"Mega
+        Man"},{"id":1307,"name":"Meta Knight"},{"id":1310,"name":"Mewtwo"},{"id":1311,"name":"Mii
+        Brawler"},{"id":1313,"name":"Ness"},{"id":1314,"name":"Olimar"},{"id":1315,"name":"Pac-Man"},{"id":1316,"name":"Palutena"},{"id":1317,"name":"Peach"},{"id":1318,"name":"Pichu"},{"id":1319,"name":"Pikachu"},{"id":1320,"name":"Pit"},{"id":1321,"name":"Pokemon
+        Trainer"},{"id":1322,"name":"Ridley"},{"id":1323,"name":"R.O.B."},{"id":1324,"name":"Robin"},{"id":1325,"name":"Rosalina"},{"id":1326,"name":"Roy"},{"id":1327,"name":"Ryu"},{"id":1328,"name":"Samus"},{"id":1329,"name":"Sheik"},{"id":1330,"name":"Shulk"},{"id":1331,"name":"Snake"},{"id":1332,"name":"Sonic"},{"id":1333,"name":"Toon
+        Link"},{"id":1334,"name":"Villager"},{"id":1335,"name":"Wario"},{"id":1336,"name":"Wii
+        Fit Trainer"},{"id":1337,"name":"Wolf"},{"id":1338,"name":"Yoshi"},{"id":1339,"name":"Young
+        Link"},{"id":1340,"name":"Zelda"},{"id":1341,"name":"Zero Suit Samus"},{"id":1405,"name":"Mr.
+        Game & Watch"},{"id":1406,"name":"Incineroar"},{"id":1407,"name":"King K.
+        Rool"},{"id":1408,"name":"Dark Samus"},{"id":1409,"name":"Chrom"},{"id":1410,"name":"Ken"},{"id":1411,"name":"Simon
+        Belmont"},{"id":1412,"name":"Richter"},{"id":1413,"name":"Isabelle"},{"id":1414,"name":"Mii
+        Swordfighter"},{"id":1415,"name":"Mii Gunner"},{"id":1441,"name":"Piranha
+        Plant"},{"id":1453,"name":"Joker"},{"id":1526,"name":"Hero"},{"id":1530,"name":"Banjo-Kazooie"},{"id":1532,"name":"Terry"},{"id":1539,"name":"Byleth"},{"id":1746,"name":"Random
+        Character"},{"id":1747,"name":"Min Min"},{"id":1766,"name":"Steve"},{"id":1777,"name":"Sephiroth"},{"id":1795,"name":"Pyra
+        & Mythra"},{"id":1846,"name":"Kazuya"},{"id":1897,"name":"Sora"}],"stages":[{"id":307,"name":"3D
+        Land"},{"id":308,"name":"75m"},{"id":309,"name":"Arena Ferox"},{"id":310,"name":"Balloon
+        Fight"},{"id":311,"name":"Battlefield"},{"id":312,"name":"Big Battlefield"},{"id":313,"name":"Big
+        Blue"},{"id":314,"name":"Boxing Ring"},{"id":315,"name":"Bridge of Eldin"},{"id":316,"name":"Brinstar"},{"id":317,"name":"Brinstar
+        Depths"},{"id":318,"name":"Castle Siege"},{"id":319,"name":"Coliseum"},{"id":320,"name":"Corneria"},{"id":321,"name":"Delfino
+        Plaza"},{"id":322,"name":"Distant Planet"},{"id":323,"name":"Dracula''s Castle"},{"id":324,"name":"Dream
+        Land"},{"id":325,"name":"Dream Land GB"},{"id":326,"name":"Duck Hunt"},{"id":327,"name":"Figure-8
+        Circuit"},{"id":328,"name":"Final Destination"},{"id":329,"name":"Find Mii"},{"id":330,"name":"Flat
+        Zone X"},{"id":331,"name":"Fountain of Dreams"},{"id":332,"name":"Fourside"},{"id":333,"name":"Frigate
+        Orpheon"},{"id":334,"name":"Gamer"},{"id":335,"name":"Garden of Hope"},{"id":336,"name":"Gaur
+        Plain"},{"id":337,"name":"Gerudo Valley"},{"id":338,"name":"Golden Plains"},{"id":339,"name":"Great
+        Bay"},{"id":340,"name":"The Great Cave Offensive"},{"id":341,"name":"Great
+        Plateau Tower"},{"id":342,"name":"Green Greens"},{"id":343,"name":"Green Hill
+        Zone"},{"id":344,"name":"Halberd"},{"id":345,"name":"Hanenbow"},{"id":346,"name":"Hyrule
+        Castle"},{"id":347,"name":"Jungle Japes"},{"id":348,"name":"Kalos Pok\u00e9mon
+        League"},{"id":349,"name":"Kongo Falls"},{"id":350,"name":"Kongo Jungle"},{"id":351,"name":"Living
+        Room"},{"id":352,"name":"Luigi''s Mansion"},{"id":353,"name":"Lylat Cruise"},{"id":354,"name":"Magicant"},{"id":355,"name":"Mario
+        Bros."},{"id":356,"name":"Mario Circuit"},{"id":357,"name":"Mario Galaxy"},{"id":358,"name":"Midgar"},{"id":359,"name":"Moray
+        Towers"},{"id":360,"name":"Mushroom Kingdom"},{"id":361,"name":"Mushroom Kingdom
+        II"},{"id":362,"name":"Mushroomy Kingdom"},{"id":363,"name":"Mushroom Kingdom
+        U"},{"id":364,"name":"Mute City SNES"},{"id":365,"name":"New Donk City Hall"},{"id":366,"name":"New
+        Pork City"},{"id":367,"name":"Norfair"},{"id":368,"name":"Onett"},{"id":369,"name":"Pac-Land"},{"id":370,"name":"Palutena''s
+        Temple"},{"id":371,"name":"Paper Mario"},{"id":372,"name":"Peach''s Castle"},{"id":373,"name":"Princess
+        Peach''s Castle"},{"id":374,"name":"PictoChat 2"},{"id":375,"name":"Pilotwings"},{"id":376,"name":"Pirate
+        Ship"},{"id":377,"name":"Pok\u00e9mon Stadium"},{"id":378,"name":"Pok\u00e9mon
+        Stadium 2"},{"id":379,"name":"Port Town Aero Dive"},{"id":380,"name":"Prism
+        Tower"},{"id":381,"name":"Rainbow Cruise"},{"id":382,"name":"Reset Bomb Forest"},{"id":383,"name":"Saffron
+        City"},{"id":384,"name":"Shadow Moses Island"},{"id":385,"name":"Skyloft"},{"id":386,"name":"Skyworld"},{"id":387,"name":"Smashville"},{"id":388,"name":"Spear
+        Pillar"},{"id":389,"name":"Spirit Train"},{"id":390,"name":"Summit"},{"id":391,"name":"Super
+        Happy Tree"},{"id":392,"name":"Super Mario Maker"},{"id":393,"name":"Suzaku
+        Castle"},{"id":394,"name":"Temple"},{"id":395,"name":"Tomodachi Life"},{"id":396,"name":"Tortimer
+        Island"},{"id":397,"name":"Town and City"},{"id":398,"name":"Umbra Clock Tower"},{"id":399,"name":"Unova
+        Pok\u00e9mon League"},{"id":400,"name":"Venom"},{"id":401,"name":"WarioWare,
+        Inc."},{"id":402,"name":"Wii Fit Studio"},{"id":403,"name":"Windy Hill Zone"},{"id":404,"name":"Wrecking
+        Crew"},{"id":405,"name":"Wuhu Island"},{"id":406,"name":"Yoshi''s Island"},{"id":407,"name":"Yoshi''s
+        Story"},{"id":408,"name":"Wily''s Castle"},{"id":416,"name":"Mementos"},{"id":417,"name":"Yggdrasil\u2019s
+        Altar"},{"id":484,"name":"Small Battlefield"},{"id":497,"name":"Northern Cave"},{"id":513,"name":"Hollow
+        Bastion"}]}},"extensions":{"cacheControl":{"version":1,"hints":null},"queryComplexity":195},"actionRecords":[]}'
+    headers:
+      access-control-allow-credentials:
+      - 'true'
+      access-control-allow-headers:
+      - '*, Content-Type, Authorization'
+      access-control-allow-methods:
+      - POST, GET, OPTIONS
+      access-control-allow-origin:
+      - '*'
+      cache-control:
+      - private, max-age=0, s-maxage=0
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a5af4f3e1f6381d5-IAD
+      connection:
+      - keep-alive
+      content-length:
+      - '6400'
+      content-type:
+      - application/json
+      date:
+      - Sun, 15 Nov 2026 15:32:36 GMT
+      required-client-version:
+      - '20'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=15724800; includeSubDomains
+      transfer-encoding:
+      - chunked
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"query":"\nquery PlayerSets($id: ID!, $page: Int!, $perPage: Int!, $opponentId:
+      ID, $filters: SetFilters) {\n  player(id: $id) {\n    id\n    sets(page: $page,
+      perPage: $perPage, opponentId: $opponentId, filters: $filters) {\n      pageInfo
+      { total totalPages page perPage }\n      nodes {\n        id completedAt fullRoundText
+      round totalGames winnerId displayScore vodUrl state\n        event { ...EventFields
+      tournament { ...TournamentFields } }\n        slots {\n          entrant { ...EntrantFields
+      }\n          standing { placement stats { score { value } } }\n        }\n        games
+      {\n          orderNum winnerId entrant1Score entrant2Score\n          stage
+      { id name }\n          selections { entrant { id } selectionType selectionValue
+      }\n        }\n      }\n    }\n  }\n}\n\nfragment EventFields on Event {\n  id
+      name slug startAt isOnline numEntrants\n  videogame { id }\n}\n\nfragment TournamentFields
+      on Tournament {\n  id name slug startAt endAt city addrState countryCode venueName
+      numAttendees isOnline\n}\n\nfragment EntrantFields on Entrant {\n  id name initialSeedNum
+      isDisqualified\n  participants { player { id gamerTag prefix } }\n}\n","variables":{"id":1006473,"page":1,"perPage":15,"opponentId":null,"filters":null}}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '1244'
+      content-type:
+      - application/json
+      host:
+      - api.start.gg
+      user-agent:
+      - python-httpx2/2.12.0
+    method: POST
+    uri: https://api.start.gg/gql/alpha
+  response:
+    body:
+      string: '{"data":{"player":{"id":1006473,"sets":{"pageInfo":{"total":17913,"totalPages":1195,"page":1,"perPage":15},"nodes":[{"id":109993681,"completedAt":1794374087,"fullRoundText":"Grand
+        Final","round":4,"totalGames":5,"winnerId":25249699,"displayScore":"rm8 3
+        - Ochuko 2","vodUrl":null,"state":3,"event":{"id":1752791,"name":"Smash Ultimate
+        Singles","slug":"tournament\/mru-smash-173\/event\/smash-ultimate-singles","startAt":1794360600,"isOnline":false,"numEntrants":14,"videogame":{"id":1386},"tournament":{"id":973571,"name":"MRU
+        Smash #173","slug":"tournament\/mru-smash-173","startAt":1794360600,"endAt":1794373200,"city":"Calgary","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":14,"isOnline":false}},"slots":[{"entrant":{"id":25249699,"name":"rm8","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":25249755,"name":"Ochuko","initialSeedNum":2,"isDisqualified":null,"participants":[{"player":{"id":3204907,"gamerTag":"Ochuko","prefix":""}}]},"standing":{"placement":2,"stats":{"score":{"value":2}}}}],"games":[{"orderNum":1,"winnerId":25249699,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25249699},"selectionType":"CHARACTER","selectionValue":1746},{"entrant":{"id":25249755},"selectionType":"CHARACTER","selectionValue":1300}]},{"orderNum":2,"winnerId":25249755,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25249699},"selectionType":"CHARACTER","selectionValue":1746},{"entrant":{"id":25249755},"selectionType":"CHARACTER","selectionValue":1300}]},{"orderNum":3,"winnerId":25249699,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25249699},"selectionType":"CHARACTER","selectionValue":1746},{"entrant":{"id":25249755},"selectionType":"CHARACTER","selectionValue":1300}]},{"orderNum":4,"winnerId":25249755,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25249699},"selectionType":"CHARACTER","selectionValue":1746},{"entrant":{"id":25249755},"selectionType":"CHARACTER","selectionValue":1300}]},{"orderNum":5,"winnerId":25249699,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25249699},"selectionType":"CHARACTER","selectionValue":1746},{"entrant":{"id":25249755},"selectionType":"CHARACTER","selectionValue":1300}]}]},{"id":109993680,"completedAt":1794369069,"fullRoundText":"Winners
+        Final","round":3,"totalGames":5,"winnerId":25249699,"displayScore":"rm8 3
+        - Mateo 1","vodUrl":null,"state":3,"event":{"id":1752791,"name":"Smash Ultimate
+        Singles","slug":"tournament\/mru-smash-173\/event\/smash-ultimate-singles","startAt":1794360600,"isOnline":false,"numEntrants":14,"videogame":{"id":1386},"tournament":{"id":973571,"name":"MRU
+        Smash #173","slug":"tournament\/mru-smash-173","startAt":1794360600,"endAt":1794373200,"city":"Calgary","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":14,"isOnline":false}},"slots":[{"entrant":{"id":25249699,"name":"rm8","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":25238222,"name":"Mateo","initialSeedNum":4,"isDisqualified":null,"participants":[{"player":{"id":5237075,"gamerTag":"Mateo","prefix":null}}]},"standing":{"placement":2,"stats":{"score":{"value":1}}}}],"games":[{"orderNum":1,"winnerId":25249699,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25238222},"selectionType":"CHARACTER","selectionValue":1410},{"entrant":{"id":25249699},"selectionType":"CHARACTER","selectionValue":1746}]},{"orderNum":2,"winnerId":25238222,"entrant1Score":0,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25238222},"selectionType":"CHARACTER","selectionValue":1410},{"entrant":{"id":25249699},"selectionType":"CHARACTER","selectionValue":1746}]},{"orderNum":3,"winnerId":25249699,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25238222},"selectionType":"CHARACTER","selectionValue":1410},{"entrant":{"id":25249699},"selectionType":"CHARACTER","selectionValue":1746}]},{"orderNum":4,"winnerId":25249699,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25238222},"selectionType":"CHARACTER","selectionValue":1410},{"entrant":{"id":25249699},"selectionType":"CHARACTER","selectionValue":1746}]}]},{"id":109993678,"completedAt":1794368174,"fullRoundText":"Winners
+        Semi-Final","round":2,"totalGames":5,"winnerId":25249699,"displayScore":"rm8
+        3 - m1tch 0","vodUrl":null,"state":3,"event":{"id":1752791,"name":"Smash Ultimate
+        Singles","slug":"tournament\/mru-smash-173\/event\/smash-ultimate-singles","startAt":1794360600,"isOnline":false,"numEntrants":14,"videogame":{"id":1386},"tournament":{"id":973571,"name":"MRU
+        Smash #173","slug":"tournament\/mru-smash-173","startAt":1794360600,"endAt":1794373200,"city":"Calgary","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":14,"isOnline":false}},"slots":[{"entrant":{"id":25249699,"name":"rm8","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":25246725,"name":"m1tch","initialSeedNum":9,"isDisqualified":null,"participants":[{"player":{"id":5625030,"gamerTag":"justPeachy","prefix":null}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":25249699,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25246725},"selectionType":"CHARACTER","selectionValue":1277},{"entrant":{"id":25249699},"selectionType":"CHARACTER","selectionValue":1746}]},{"orderNum":2,"winnerId":25249699,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25246725},"selectionType":"CHARACTER","selectionValue":1277},{"entrant":{"id":25249699},"selectionType":"CHARACTER","selectionValue":1746}]},{"orderNum":3,"winnerId":25249699,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25246725},"selectionType":"CHARACTER","selectionValue":1277},{"entrant":{"id":25249699},"selectionType":"CHARACTER","selectionValue":1746}]}]},{"id":109993674,"completedAt":1794367159,"fullRoundText":"Winners
+        Quarter-Final","round":1,"totalGames":5,"winnerId":25249699,"displayScore":"rm8
+        3 - SilverRush 0","vodUrl":null,"state":3,"event":{"id":1752791,"name":"Smash
+        Ultimate Singles","slug":"tournament\/mru-smash-173\/event\/smash-ultimate-singles","startAt":1794360600,"isOnline":false,"numEntrants":14,"videogame":{"id":1386},"tournament":{"id":973571,"name":"MRU
+        Smash #173","slug":"tournament\/mru-smash-173","startAt":1794360600,"endAt":1794373200,"city":"Calgary","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":14,"isOnline":false}},"slots":[{"entrant":{"id":25249699,"name":"rm8","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":25240723,"name":"SilverRush","initialSeedNum":7,"isDisqualified":null,"participants":[{"player":{"id":1170155,"gamerTag":"SilverRush","prefix":null}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":25249699,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25240723},"selectionType":"CHARACTER","selectionValue":1273},{"entrant":{"id":25249699},"selectionType":"CHARACTER","selectionValue":1746}]},{"orderNum":2,"winnerId":25249699,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25240723},"selectionType":"CHARACTER","selectionValue":1273},{"entrant":{"id":25249699},"selectionType":"CHARACTER","selectionValue":1746}]},{"orderNum":3,"winnerId":25249699,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25240723},"selectionType":"CHARACTER","selectionValue":1273},{"entrant":{"id":25249699},"selectionType":"CHARACTER","selectionValue":1746}]}]},{"id":109988524,"completedAt":1794364534,"fullRoundText":"Round
+        5","round":5,"totalGames":5,"winnerId":25249699,"displayScore":"rm8 2 - Dicezyy
+        0","vodUrl":null,"state":3,"event":{"id":1752791,"name":"Smash Ultimate Singles","slug":"tournament\/mru-smash-173\/event\/smash-ultimate-singles","startAt":1794360600,"isOnline":false,"numEntrants":14,"videogame":{"id":1386},"tournament":{"id":973571,"name":"MRU
+        Smash #173","slug":"tournament\/mru-smash-173","startAt":1794360600,"endAt":1794373200,"city":"Calgary","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":14,"isOnline":false}},"slots":[{"entrant":{"id":25249699,"name":"rm8","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":2}}}},{"entrant":{"id":25244869,"name":"Dicezyy","initialSeedNum":8,"isDisqualified":null,"participants":[{"player":{"id":5567541,"gamerTag":"dicezyy","prefix":null}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":25249699,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25244869},"selectionType":"CHARACTER","selectionValue":1405},{"entrant":{"id":25249699},"selectionType":"CHARACTER","selectionValue":1746}]},{"orderNum":2,"winnerId":25249699,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25244869},"selectionType":"CHARACTER","selectionValue":1405},{"entrant":{"id":25249699},"selectionType":"CHARACTER","selectionValue":1746}]}]},{"id":109988520,"completedAt":1794363392,"fullRoundText":"Round
+        4","round":4,"totalGames":5,"winnerId":25249699,"displayScore":"rm8 2 - m1tch
+        0","vodUrl":null,"state":3,"event":{"id":1752791,"name":"Smash Ultimate Singles","slug":"tournament\/mru-smash-173\/event\/smash-ultimate-singles","startAt":1794360600,"isOnline":false,"numEntrants":14,"videogame":{"id":1386},"tournament":{"id":973571,"name":"MRU
+        Smash #173","slug":"tournament\/mru-smash-173","startAt":1794360600,"endAt":1794373200,"city":"Calgary","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":14,"isOnline":false}},"slots":[{"entrant":{"id":25249699,"name":"rm8","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":2}}}},{"entrant":{"id":25246725,"name":"m1tch","initialSeedNum":9,"isDisqualified":null,"participants":[{"player":{"id":5625030,"gamerTag":"justPeachy","prefix":null}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":25249699,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25246725},"selectionType":"CHARACTER","selectionValue":1277},{"entrant":{"id":25249699},"selectionType":"CHARACTER","selectionValue":1746}]},{"orderNum":2,"winnerId":25249699,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25246725},"selectionType":"CHARACTER","selectionValue":1277},{"entrant":{"id":25249699},"selectionType":"CHARACTER","selectionValue":1746}]}]},{"id":109988528,"completedAt":1794362212,"fullRoundText":"Round
+        6","round":6,"totalGames":5,"winnerId":25249699,"displayScore":"rm8 2 - Gradient
+        1","vodUrl":null,"state":3,"event":{"id":1752791,"name":"Smash Ultimate Singles","slug":"tournament\/mru-smash-173\/event\/smash-ultimate-singles","startAt":1794360600,"isOnline":false,"numEntrants":14,"videogame":{"id":1386},"tournament":{"id":973571,"name":"MRU
+        Smash #173","slug":"tournament\/mru-smash-173","startAt":1794360600,"endAt":1794373200,"city":"Calgary","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":14,"isOnline":false}},"slots":[{"entrant":{"id":25249699,"name":"rm8","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":2}}}},{"entrant":{"id":25244153,"name":"Gradient","initialSeedNum":5,"isDisqualified":null,"participants":[{"player":{"id":155770,"gamerTag":"Gradient","prefix":null}}]},"standing":{"placement":2,"stats":{"score":{"value":1}}}}],"games":[{"orderNum":1,"winnerId":25244153,"entrant1Score":0,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25244153},"selectionType":"CHARACTER","selectionValue":1295},{"entrant":{"id":25249699},"selectionType":"CHARACTER","selectionValue":1746}]},{"orderNum":2,"winnerId":25249699,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25244153},"selectionType":"CHARACTER","selectionValue":1295},{"entrant":{"id":25249699},"selectionType":"CHARACTER","selectionValue":1746}]},{"orderNum":3,"winnerId":25249699,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25244153},"selectionType":"CHARACTER","selectionValue":1295},{"entrant":{"id":25249699},"selectionType":"CHARACTER","selectionValue":1746}]}]},{"id":109988517,"completedAt":1794361177,"fullRoundText":"Round
+        3","round":3,"totalGames":5,"winnerId":25249699,"displayScore":"rm8 2 - Lemonbutty
+        0","vodUrl":null,"state":3,"event":{"id":1752791,"name":"Smash Ultimate Singles","slug":"tournament\/mru-smash-173\/event\/smash-ultimate-singles","startAt":1794360600,"isOnline":false,"numEntrants":14,"videogame":{"id":1386},"tournament":{"id":973571,"name":"MRU
+        Smash #173","slug":"tournament\/mru-smash-173","startAt":1794360600,"endAt":1794373200,"city":"Calgary","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":14,"isOnline":false}},"slots":[{"entrant":{"id":25249699,"name":"rm8","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":2}}}},{"entrant":{"id":25249343,"name":"Lemonbutty","initialSeedNum":12,"isDisqualified":null,"participants":[{"player":{"id":5669820,"gamerTag":"Lemonbutty","prefix":null}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":25249699,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25249343},"selectionType":"CHARACTER","selectionValue":1333},{"entrant":{"id":25249699},"selectionType":"CHARACTER","selectionValue":1746}]},{"orderNum":2,"winnerId":25249699,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25249343},"selectionType":"CHARACTER","selectionValue":1333},{"entrant":{"id":25249699},"selectionType":"CHARACTER","selectionValue":1746}]}]},{"id":109988513,"completedAt":1794360072,"fullRoundText":"Round
+        2","round":2,"totalGames":5,"winnerId":25249699,"displayScore":"rm8 2 - JoJo
+        0","vodUrl":null,"state":3,"event":{"id":1752791,"name":"Smash Ultimate Singles","slug":"tournament\/mru-smash-173\/event\/smash-ultimate-singles","startAt":1794360600,"isOnline":false,"numEntrants":14,"videogame":{"id":1386},"tournament":{"id":973571,"name":"MRU
+        Smash #173","slug":"tournament\/mru-smash-173","startAt":1794360600,"endAt":1794373200,"city":"Calgary","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":14,"isOnline":false}},"slots":[{"entrant":{"id":25249699,"name":"rm8","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":2}}}},{"entrant":{"id":25249218,"name":"JoJo","initialSeedNum":13,"isDisqualified":null,"participants":[{"player":{"id":5669798,"gamerTag":"JoJo","prefix":null}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":25249699,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25249218},"selectionType":"CHARACTER","selectionValue":1289},{"entrant":{"id":25249699},"selectionType":"CHARACTER","selectionValue":1746}]},{"orderNum":2,"winnerId":25249699,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25249218},"selectionType":"CHARACTER","selectionValue":1289},{"entrant":{"id":25249699},"selectionType":"CHARACTER","selectionValue":1746}]}]},{"id":109988532,"completedAt":1794360007,"fullRoundText":"Round
+        7","round":7,"totalGames":5,"winnerId":25249699,"displayScore":"rm8 2 - Mateo
+        0","vodUrl":null,"state":3,"event":{"id":1752791,"name":"Smash Ultimate Singles","slug":"tournament\/mru-smash-173\/event\/smash-ultimate-singles","startAt":1794360600,"isOnline":false,"numEntrants":14,"videogame":{"id":1386},"tournament":{"id":973571,"name":"MRU
+        Smash #173","slug":"tournament\/mru-smash-173","startAt":1794360600,"endAt":1794373200,"city":"Calgary","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":14,"isOnline":false}},"slots":[{"entrant":{"id":25249699,"name":"rm8","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":2}}}},{"entrant":{"id":25238222,"name":"Mateo","initialSeedNum":4,"isDisqualified":null,"participants":[{"player":{"id":5237075,"gamerTag":"Mateo","prefix":null}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":25249699,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25238222},"selectionType":"CHARACTER","selectionValue":1410},{"entrant":{"id":25249699},"selectionType":"CHARACTER","selectionValue":1746}]},{"orderNum":2,"winnerId":25249699,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25238222},"selectionType":"CHARACTER","selectionValue":1410},{"entrant":{"id":25249699},"selectionType":"CHARACTER","selectionValue":1746}]}]},{"id":109883705,"completedAt":1794106064,"fullRoundText":"Losers
+        Round 4","round":-6,"totalGames":5,"winnerId":24729833,"displayScore":"rm8
+        0 - SZ | Asimo 3","vodUrl":null,"state":3,"event":{"id":1695218,"name":"Ultimate
+        Singles","slug":"tournament\/dialled-in\/event\/ultimate-singles","startAt":1794074400,"isOnline":false,"numEntrants":204,"videogame":{"id":1386},"tournament":{"id":946365,"name":"Dialled
+        In","slug":"tournament\/dialled-in","startAt":1794078000,"endAt":1794117600,"city":"Vancouver","addrState":"BC","countryCode":"CA","venueName":null,"numAttendees":242,"isOnline":false}},"slots":[{"entrant":{"id":25020615,"name":"rm8","initialSeedNum":26,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}},{"entrant":{"id":24729833,"name":"SZ
+        | Asimo","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":1569435,"gamerTag":"Asimo","prefix":"SZ"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}}],"games":[{"orderNum":1,"winnerId":24729833,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24729833},"selectionType":"CHARACTER","selectionValue":1327},{"entrant":{"id":25020615},"selectionType":"CHARACTER","selectionValue":1291}]},{"orderNum":2,"winnerId":24729833,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24729833},"selectionType":"CHARACTER","selectionValue":1327},{"entrant":{"id":25020615},"selectionType":"CHARACTER","selectionValue":1291}]},{"orderNum":3,"winnerId":24729833,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24729833},"selectionType":"CHARACTER","selectionValue":1327},{"entrant":{"id":25020615},"selectionType":"CHARACTER","selectionValue":1291}]}]},{"id":109883643,"completedAt":1794105370,"fullRoundText":"Winners
+        Quarter-Final","round":2,"totalGames":5,"winnerId":24920547,"displayScore":"TXH
+        | Moo 3 - rm8 1","vodUrl":null,"state":3,"event":{"id":1695218,"name":"Ultimate
+        Singles","slug":"tournament\/dialled-in\/event\/ultimate-singles","startAt":1794074400,"isOnline":false,"numEntrants":204,"videogame":{"id":1386},"tournament":{"id":946365,"name":"Dialled
+        In","slug":"tournament\/dialled-in","startAt":1794078000,"endAt":1794117600,"city":"Vancouver","addrState":"BC","countryCode":"CA","venueName":null,"numAttendees":242,"isOnline":false}},"slots":[{"entrant":{"id":24920547,"name":"TXH
+        | Moo","initialSeedNum":18,"isDisqualified":null,"participants":[{"player":{"id":2056527,"gamerTag":"Moo","prefix":"TXH"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":25020615,"name":"rm8","initialSeedNum":26,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":2,"stats":{"score":{"value":1}}}}],"games":[{"orderNum":1,"winnerId":25020615,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24920547},"selectionType":"CHARACTER","selectionValue":1407},{"entrant":{"id":25020615},"selectionType":"CHARACTER","selectionValue":1291}]},{"orderNum":2,"winnerId":24920547,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24920547},"selectionType":"CHARACTER","selectionValue":1407},{"entrant":{"id":25020615},"selectionType":"CHARACTER","selectionValue":1291}]},{"orderNum":3,"winnerId":24920547,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24920547},"selectionType":"CHARACTER","selectionValue":1407},{"entrant":{"id":25020615},"selectionType":"CHARACTER","selectionValue":1291}]},{"orderNum":4,"winnerId":24920547,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24920547},"selectionType":"CHARACTER","selectionValue":1407},{"entrant":{"id":25020615},"selectionType":"CHARACTER","selectionValue":1291}]}]},{"id":109883638,"completedAt":1794102549,"fullRoundText":"Winners
+        Round 1","round":1,"totalGames":5,"winnerId":25020615,"displayScore":"rm8
+        3 - LRA | Quandale Dinglelingleton 0","vodUrl":null,"state":3,"event":{"id":1695218,"name":"Ultimate
+        Singles","slug":"tournament\/dialled-in\/event\/ultimate-singles","startAt":1794074400,"isOnline":false,"numEntrants":204,"videogame":{"id":1386},"tournament":{"id":946365,"name":"Dialled
+        In","slug":"tournament\/dialled-in","startAt":1794078000,"endAt":1794117600,"city":"Vancouver","addrState":"BC","countryCode":"CA","venueName":null,"numAttendees":242,"isOnline":false}},"slots":[{"entrant":{"id":25020615,"name":"rm8","initialSeedNum":26,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":24949782,"name":"LRA
+        | Quandale Dinglelingleton","initialSeedNum":10,"isDisqualified":null,"participants":[{"player":{"id":2286649,"gamerTag":"Quandale
+        Dinglelingleton","prefix":"LRA"}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":25020615,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24949782},"selectionType":"CHARACTER","selectionValue":1766},{"entrant":{"id":25020615},"selectionType":"CHARACTER","selectionValue":1291}]},{"orderNum":2,"winnerId":25020615,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24949782},"selectionType":"CHARACTER","selectionValue":1766},{"entrant":{"id":25020615},"selectionType":"CHARACTER","selectionValue":1291}]},{"orderNum":3,"winnerId":25020615,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24949782},"selectionType":"CHARACTER","selectionValue":1766},{"entrant":{"id":25020615},"selectionType":"CHARACTER","selectionValue":1291}]}]},{"id":109868368,"completedAt":1794096961,"fullRoundText":"Winners
+        Quarter-Final","round":4,"totalGames":5,"winnerId":25020615,"displayScore":"BassMage
+        2 - rm8 3","vodUrl":null,"state":3,"event":{"id":1695218,"name":"Ultimate
+        Singles","slug":"tournament\/dialled-in\/event\/ultimate-singles","startAt":1794074400,"isOnline":false,"numEntrants":204,"videogame":{"id":1386},"tournament":{"id":946365,"name":"Dialled
+        In","slug":"tournament\/dialled-in","startAt":1794078000,"endAt":1794117600,"city":"Vancouver","addrState":"BC","countryCode":"CA","venueName":null,"numAttendees":242,"isOnline":false}},"slots":[{"entrant":{"id":24671102,"name":"BassMage","initialSeedNum":7,"isDisqualified":null,"participants":[{"player":{"id":229756,"gamerTag":"BassMage","prefix":""}}]},"standing":{"placement":2,"stats":{"score":{"value":2}}}},{"entrant":{"id":25020615,"name":"rm8","initialSeedNum":26,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}}],"games":[{"orderNum":1,"winnerId":24671102,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24671102},"selectionType":"CHARACTER","selectionValue":1293},{"entrant":{"id":25020615},"selectionType":"CHARACTER","selectionValue":1291}]},{"orderNum":2,"winnerId":25020615,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24671102},"selectionType":"CHARACTER","selectionValue":1293},{"entrant":{"id":25020615},"selectionType":"CHARACTER","selectionValue":1291}]},{"orderNum":3,"winnerId":24671102,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24671102},"selectionType":"CHARACTER","selectionValue":1293},{"entrant":{"id":25020615},"selectionType":"CHARACTER","selectionValue":1291}]},{"orderNum":4,"winnerId":25020615,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24671102},"selectionType":"CHARACTER","selectionValue":1293},{"entrant":{"id":25020615},"selectionType":"CHARACTER","selectionValue":1291}]},{"orderNum":5,"winnerId":25020615,"entrant1Score":0,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24671102},"selectionType":"CHARACTER","selectionValue":1293},{"entrant":{"id":25020615},"selectionType":"CHARACTER","selectionValue":1291}]}]},{"id":109868363,"completedAt":1794094440,"fullRoundText":"Winners
+        Round 3","round":3,"totalGames":5,"winnerId":25020615,"displayScore":"rm8
+        2 - JoJoDaHoBo 1","vodUrl":null,"state":3,"event":{"id":1695218,"name":"Ultimate
+        Singles","slug":"tournament\/dialled-in\/event\/ultimate-singles","startAt":1794074400,"isOnline":false,"numEntrants":204,"videogame":{"id":1386},"tournament":{"id":946365,"name":"Dialled
+        In","slug":"tournament\/dialled-in","startAt":1794078000,"endAt":1794117600,"city":"Vancouver","addrState":"BC","countryCode":"CA","venueName":null,"numAttendees":242,"isOnline":false}},"slots":[{"entrant":{"id":25020615,"name":"rm8","initialSeedNum":26,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":2}}}},{"entrant":{"id":24871589,"name":"JoJoDaHoBo","initialSeedNum":39,"isDisqualified":null,"participants":[{"player":{"id":156359,"gamerTag":"JoJoDaHoBo","prefix":""}}]},"standing":{"placement":2,"stats":{"score":{"value":1}}}}],"games":[{"orderNum":1,"winnerId":24871589,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24871589},"selectionType":"CHARACTER","selectionValue":1333},{"entrant":{"id":25020615},"selectionType":"CHARACTER","selectionValue":1291}]},{"orderNum":2,"winnerId":25020615,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24871589},"selectionType":"CHARACTER","selectionValue":1333},{"entrant":{"id":25020615},"selectionType":"CHARACTER","selectionValue":1291}]},{"orderNum":3,"winnerId":25020615,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24871589},"selectionType":"CHARACTER","selectionValue":1333},{"entrant":{"id":25020615},"selectionType":"CHARACTER","selectionValue":1291}]}]}]}}},"extensions":{"cacheControl":{"version":1,"hints":null},"queryComplexity":744},"actionRecords":[]}'
+    headers:
+      access-control-allow-credentials:
+      - 'true'
+      access-control-allow-headers:
+      - '*, Content-Type, Authorization'
+      access-control-allow-methods:
+      - POST, GET, OPTIONS
+      access-control-allow-origin:
+      - '*'
+      cache-control:
+      - private, max-age=0, s-maxage=0
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a5af4f3f5b6898bb-IAD
+      connection:
+      - keep-alive
+      content-length:
+      - '28024'
+      content-type:
+      - application/json
+      date:
+      - Sun, 15 Nov 2026 15:32:36 GMT
+      required-client-version:
+      - '20'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=15724800; includeSubDomains
+      transfer-encoding:
+      - chunked
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"query":"\nquery PlayerSets($id: ID!, $page: Int!, $perPage: Int!, $opponentId:
+      ID, $filters: SetFilters) {\n  player(id: $id) {\n    id\n    sets(page: $page,
+      perPage: $perPage, opponentId: $opponentId, filters: $filters) {\n      pageInfo
+      { total totalPages page perPage }\n      nodes {\n        id completedAt fullRoundText
+      round totalGames winnerId displayScore vodUrl state\n        event { ...EventFields
+      tournament { ...TournamentFields } }\n        slots {\n          entrant { ...EntrantFields
+      }\n          standing { placement stats { score { value } } }\n        }\n        games
+      {\n          orderNum winnerId entrant1Score entrant2Score\n          stage
+      { id name }\n          selections { entrant { id } selectionType selectionValue
+      }\n        }\n      }\n    }\n  }\n}\n\nfragment EventFields on Event {\n  id
+      name slug startAt isOnline numEntrants\n  videogame { id }\n}\n\nfragment TournamentFields
+      on Tournament {\n  id name slug startAt endAt city addrState countryCode venueName
+      numAttendees isOnline\n}\n\nfragment EntrantFields on Entrant {\n  id name initialSeedNum
+      isDisqualified\n  participants { player { id gamerTag prefix } }\n}\n","variables":{"id":1006473,"page":2,"perPage":15,"opponentId":null,"filters":null}}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '1244'
+      content-type:
+      - application/json
+      host:
+      - api.start.gg
+      user-agent:
+      - python-httpx2/2.12.0
+    method: POST
+    uri: https://api.start.gg/gql/alpha
+  response:
+    body:
+      string: '{"data":{"player":{"id":1006473,"sets":{"pageInfo":{"total":17913,"totalPages":1195,"page":2,"perPage":15},"nodes":[{"id":109868352,"completedAt":1794092282,"fullRoundText":"Winners
+        Round 2","round":2,"totalGames":5,"winnerId":25020615,"displayScore":"rm8
+        2 - Ipse 0","vodUrl":null,"state":3,"event":{"id":1695218,"name":"Ultimate
+        Singles","slug":"tournament\/dialled-in\/event\/ultimate-singles","startAt":1794074400,"isOnline":false,"numEntrants":204,"videogame":{"id":1386},"tournament":{"id":946365,"name":"Dialled
+        In","slug":"tournament\/dialled-in","startAt":1794078000,"endAt":1794117600,"city":"Vancouver","addrState":"BC","countryCode":"CA","venueName":null,"numAttendees":242,"isOnline":false}},"slots":[{"entrant":{"id":25020615,"name":"rm8","initialSeedNum":26,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":2}}}},{"entrant":{"id":24961085,"name":"Ipse","initialSeedNum":103,"isDisqualified":null,"participants":[{"player":{"id":3665212,"gamerTag":"Ipse","prefix":null}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":25020615,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24961085},"selectionType":"CHARACTER","selectionValue":1795},{"entrant":{"id":25020615},"selectionType":"CHARACTER","selectionValue":1291}]},{"orderNum":2,"winnerId":25020615,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24961085},"selectionType":"CHARACTER","selectionValue":1795},{"entrant":{"id":25020615},"selectionType":"CHARACTER","selectionValue":1291}]}]},{"id":109842992,"completedAt":1794079947,"fullRoundText":"Losers
+        Round 3","round":-6,"totalGames":5,"winnerId":25119104,"displayScore":"SpikeCC
+        \/ Xx_cornbag7_xX 2 - Instant Noodles \/ rm8 0","vodUrl":null,"state":3,"event":{"id":1695219,"name":"Ultimate
+        Doubles","slug":"tournament\/dialled-in\/event\/ultimate-doubles","startAt":1794078000,"isOnline":false,"numEntrants":43,"videogame":{"id":1386},"tournament":{"id":946365,"name":"Dialled
+        In","slug":"tournament\/dialled-in","startAt":1794078000,"endAt":1794117600,"city":"Vancouver","addrState":"BC","countryCode":"CA","venueName":null,"numAttendees":242,"isOnline":false}},"slots":[{"entrant":{"id":25119104,"name":"SpikeCC
+        \/ Xx_cornbag7_xX","initialSeedNum":17,"isDisqualified":null,"participants":[{"player":{"id":1784382,"gamerTag":"Xx_cornbag7_xX","prefix":""}},{"player":{"id":1913021,"gamerTag":"SpikeCC","prefix":"LFT"}}]},"standing":{"placement":1,"stats":{"score":{"value":2}}}},{"entrant":{"id":25031569,"name":"Instant
+        Noodles \/ rm8","initialSeedNum":37,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}},{"player":{"id":4986656,"gamerTag":"Instant
+        Noodles","prefix":null}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":null},{"id":109842984,"completedAt":1794079315,"fullRoundText":"Losers
+        Round 2","round":-5,"totalGames":5,"winnerId":25031569,"displayScore":"Instant
+        Noodles \/ rm8 2 - Jovann \/ Liam 0","vodUrl":null,"state":3,"event":{"id":1695219,"name":"Ultimate
+        Doubles","slug":"tournament\/dialled-in\/event\/ultimate-doubles","startAt":1794078000,"isOnline":false,"numEntrants":43,"videogame":{"id":1386},"tournament":{"id":946365,"name":"Dialled
+        In","slug":"tournament\/dialled-in","startAt":1794078000,"endAt":1794117600,"city":"Vancouver","addrState":"BC","countryCode":"CA","venueName":null,"numAttendees":242,"isOnline":false}},"slots":[{"entrant":{"id":25031569,"name":"Instant
+        Noodles \/ rm8","initialSeedNum":37,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}},{"player":{"id":4986656,"gamerTag":"Instant
+        Noodles","prefix":null}}]},"standing":{"placement":1,"stats":{"score":{"value":2}}}},{"entrant":{"id":24931062,"name":"Jovann
+        \/ Liam","initialSeedNum":31,"isDisqualified":null,"participants":[{"player":{"id":172183,"gamerTag":"Liam","prefix":""}},{"player":{"id":1305515,"gamerTag":"Jovann","prefix":""}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":null},{"id":109842971,"completedAt":1794078318,"fullRoundText":"Losers
+        Round 1","round":-4,"totalGames":5,"winnerId":25031569,"displayScore":"Calen
+        \/ Dtier 1 - Instant Noodles \/ rm8 2","vodUrl":null,"state":3,"event":{"id":1695219,"name":"Ultimate
+        Doubles","slug":"tournament\/dialled-in\/event\/ultimate-doubles","startAt":1794078000,"isOnline":false,"numEntrants":43,"videogame":{"id":1386},"tournament":{"id":946365,"name":"Dialled
+        In","slug":"tournament\/dialled-in","startAt":1794078000,"endAt":1794117600,"city":"Vancouver","addrState":"BC","countryCode":"CA","venueName":null,"numAttendees":242,"isOnline":false}},"slots":[{"entrant":{"id":24978868,"name":"Calen
+        \/ Dtier","initialSeedNum":18,"isDisqualified":null,"participants":[{"player":{"id":1496295,"gamerTag":"Dtier","prefix":""}},{"player":{"id":2277904,"gamerTag":"Calen","prefix":"GG"}}]},"standing":{"placement":2,"stats":{"score":{"value":1}}}},{"entrant":{"id":25031569,"name":"Instant
+        Noodles \/ rm8","initialSeedNum":37,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}},{"player":{"id":4986656,"gamerTag":"Instant
+        Noodles","prefix":null}}]},"standing":{"placement":1,"stats":{"score":{"value":2}}}}],"games":null},{"id":109842833,"completedAt":1794076612,"fullRoundText":"Winners
+        Round 1","round":1,"totalGames":5,"winnerId":24969449,"displayScore":"Phobos
+        \/ Kento 2 - Instant Noodles \/ rm8 0","vodUrl":null,"state":3,"event":{"id":1695219,"name":"Ultimate
+        Doubles","slug":"tournament\/dialled-in\/event\/ultimate-doubles","startAt":1794078000,"isOnline":false,"numEntrants":43,"videogame":{"id":1386},"tournament":{"id":946365,"name":"Dialled
+        In","slug":"tournament\/dialled-in","startAt":1794078000,"endAt":1794117600,"city":"Vancouver","addrState":"BC","countryCode":"CA","venueName":null,"numAttendees":242,"isOnline":false}},"slots":[{"entrant":{"id":24969449,"name":"Phobos
+        \/ Kento","initialSeedNum":28,"isDisqualified":null,"participants":[{"player":{"id":1649431,"gamerTag":"Phobos","prefix":""}},{"player":{"id":4282574,"gamerTag":"Kento","prefix":null}}]},"standing":{"placement":1,"stats":{"score":{"value":2}}}},{"entrant":{"id":25031569,"name":"Instant
+        Noodles \/ rm8","initialSeedNum":37,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}},{"player":{"id":4986656,"gamerTag":"Instant
+        Noodles","prefix":null}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":null},{"id":109801608,"completedAt":1794022804,"fullRoundText":"Grand
+        Final Reset","round":4,"totalGames":5,"winnerId":25213092,"displayScore":"ZG
+        | khaos 1 - rm8 3","vodUrl":null,"state":3,"event":{"id":1748223,"name":"Ultimate
+        Singles ($50 Pot Bonus)","slug":"tournament\/the-arena-arc-chapter-20-the-finale\/event\/ultimate-singles-50-pot-bonus","startAt":1794013200,"isOnline":false,"numEntrants":19,"videogame":{"id":1386},"tournament":{"id":971388,"name":"The
+        Arena Arc - Chapter 20 - The Finale","slug":"tournament\/the-arena-arc-chapter-20-the-finale","startAt":1794013200,"endAt":1794027600,"city":"Calgary","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":27,"isOnline":false}},"slots":[{"entrant":{"id":25211889,"name":"ZG
+        | khaos","initialSeedNum":2,"isDisqualified":null,"participants":[{"player":{"id":337798,"gamerTag":"khaos","prefix":"ZG"}}]},"standing":{"placement":2,"stats":{"score":{"value":1}}}},{"entrant":{"id":25213092,"name":"rm8","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}}],"games":[{"orderNum":1,"winnerId":25213092,"entrant1Score":0,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25211889},"selectionType":"CHARACTER","selectionValue":1532},{"entrant":{"id":25213092},"selectionType":"CHARACTER","selectionValue":1746}]},{"orderNum":2,"winnerId":25213092,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25211889},"selectionType":"CHARACTER","selectionValue":1532},{"entrant":{"id":25213092},"selectionType":"CHARACTER","selectionValue":1746}]},{"orderNum":3,"winnerId":25211889,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25211889},"selectionType":"CHARACTER","selectionValue":1410},{"entrant":{"id":25213092},"selectionType":"CHARACTER","selectionValue":1746}]},{"orderNum":4,"winnerId":25213092,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25211889},"selectionType":"CHARACTER","selectionValue":1410},{"entrant":{"id":25213092},"selectionType":"CHARACTER","selectionValue":1746}]}]},{"id":109801607,"completedAt":1794022777,"fullRoundText":"Grand
+        Final","round":4,"totalGames":5,"winnerId":25211889,"displayScore":"rm8 0
+        - ZG | khaos 3","vodUrl":null,"state":3,"event":{"id":1748223,"name":"Ultimate
+        Singles ($50 Pot Bonus)","slug":"tournament\/the-arena-arc-chapter-20-the-finale\/event\/ultimate-singles-50-pot-bonus","startAt":1794013200,"isOnline":false,"numEntrants":19,"videogame":{"id":1386},"tournament":{"id":971388,"name":"The
+        Arena Arc - Chapter 20 - The Finale","slug":"tournament\/the-arena-arc-chapter-20-the-finale","startAt":1794013200,"endAt":1794027600,"city":"Calgary","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":27,"isOnline":false}},"slots":[{"entrant":{"id":25213092,"name":"rm8","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}},{"entrant":{"id":25211889,"name":"ZG
+        | khaos","initialSeedNum":2,"isDisqualified":null,"participants":[{"player":{"id":337798,"gamerTag":"khaos","prefix":"ZG"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}}],"games":[{"orderNum":1,"winnerId":25211889,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25211889},"selectionType":"CHARACTER","selectionValue":1532},{"entrant":{"id":25213092},"selectionType":"CHARACTER","selectionValue":1746}]},{"orderNum":2,"winnerId":25211889,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25211889},"selectionType":"CHARACTER","selectionValue":1532},{"entrant":{"id":25213092},"selectionType":"CHARACTER","selectionValue":1746}]},{"orderNum":3,"winnerId":25211889,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25211889},"selectionType":"CHARACTER","selectionValue":1532},{"entrant":{"id":25213092},"selectionType":"CHARACTER","selectionValue":1746}]}]},{"id":109801606,"completedAt":1794018663,"fullRoundText":"Winners
+        Final","round":3,"totalGames":5,"winnerId":25213092,"displayScore":"rm8 3
+        - sa\u00ebl 0","vodUrl":null,"state":3,"event":{"id":1748223,"name":"Ultimate
+        Singles ($50 Pot Bonus)","slug":"tournament\/the-arena-arc-chapter-20-the-finale\/event\/ultimate-singles-50-pot-bonus","startAt":1794013200,"isOnline":false,"numEntrants":19,"videogame":{"id":1386},"tournament":{"id":971388,"name":"The
+        Arena Arc - Chapter 20 - The Finale","slug":"tournament\/the-arena-arc-chapter-20-the-finale","startAt":1794013200,"endAt":1794027600,"city":"Calgary","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":27,"isOnline":false}},"slots":[{"entrant":{"id":25213092,"name":"rm8","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":25213603,"name":"sa\u00ebl","initialSeedNum":11,"isDisqualified":null,"participants":[{"player":{"id":2471373,"gamerTag":"sa\u00ebl","prefix":null}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":25213092,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25213092},"selectionType":"CHARACTER","selectionValue":1746},{"entrant":{"id":25213603},"selectionType":"CHARACTER","selectionValue":1285}]},{"orderNum":2,"winnerId":25213092,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25213092},"selectionType":"CHARACTER","selectionValue":1746},{"entrant":{"id":25213603},"selectionType":"CHARACTER","selectionValue":1285}]},{"orderNum":3,"winnerId":25213092,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25213092},"selectionType":"CHARACTER","selectionValue":1746},{"entrant":{"id":25213603},"selectionType":"CHARACTER","selectionValue":1285}]}]},{"id":109801604,"completedAt":1794016983,"fullRoundText":"Winners
+        Semi-Final","round":2,"totalGames":5,"winnerId":25213092,"displayScore":"rm8
+        3 - Instant Noodles 0","vodUrl":null,"state":3,"event":{"id":1748223,"name":"Ultimate
+        Singles ($50 Pot Bonus)","slug":"tournament\/the-arena-arc-chapter-20-the-finale\/event\/ultimate-singles-50-pot-bonus","startAt":1794013200,"isOnline":false,"numEntrants":19,"videogame":{"id":1386},"tournament":{"id":971388,"name":"The
+        Arena Arc - Chapter 20 - The Finale","slug":"tournament\/the-arena-arc-chapter-20-the-finale","startAt":1794013200,"endAt":1794027600,"city":"Calgary","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":27,"isOnline":false}},"slots":[{"entrant":{"id":25213092,"name":"rm8","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":25203983,"name":"Instant
+        Noodles","initialSeedNum":10,"isDisqualified":null,"participants":[{"player":{"id":4986656,"gamerTag":"Instant
+        Noodles","prefix":null}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":25213092,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25203983},"selectionType":"CHARACTER","selectionValue":1294},{"entrant":{"id":25213092},"selectionType":"CHARACTER","selectionValue":1746}]},{"orderNum":2,"winnerId":25213092,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25203983},"selectionType":"CHARACTER","selectionValue":1294},{"entrant":{"id":25213092},"selectionType":"CHARACTER","selectionValue":1746}]},{"orderNum":3,"winnerId":25213092,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25203983},"selectionType":"CHARACTER","selectionValue":1294},{"entrant":{"id":25213092},"selectionType":"CHARACTER","selectionValue":1746}]}]},{"id":109801600,"completedAt":1794015934,"fullRoundText":"Winners
+        Quarter-Final","round":1,"totalGames":5,"winnerId":25213092,"displayScore":"rm8
+        3 - OONGLY | Karoongly 0","vodUrl":null,"state":3,"event":{"id":1748223,"name":"Ultimate
+        Singles ($50 Pot Bonus)","slug":"tournament\/the-arena-arc-chapter-20-the-finale\/event\/ultimate-singles-50-pot-bonus","startAt":1794013200,"isOnline":false,"numEntrants":19,"videogame":{"id":1386},"tournament":{"id":971388,"name":"The
+        Arena Arc - Chapter 20 - The Finale","slug":"tournament\/the-arena-arc-chapter-20-the-finale","startAt":1794013200,"endAt":1794027600,"city":"Calgary","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":27,"isOnline":false}},"slots":[{"entrant":{"id":25213092,"name":"rm8","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":25197341,"name":"OONGLY
+        | Karoongly","initialSeedNum":3,"isDisqualified":null,"participants":[{"player":{"id":2916145,"gamerTag":"Karoongly","prefix":"OONGLY"}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":25213092,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25197341},"selectionType":"CHARACTER","selectionValue":1280},{"entrant":{"id":25213092},"selectionType":"CHARACTER","selectionValue":1746}]},{"orderNum":2,"winnerId":25213092,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25197341},"selectionType":"CHARACTER","selectionValue":1280},{"entrant":{"id":25213092},"selectionType":"CHARACTER","selectionValue":1746}]},{"orderNum":3,"winnerId":25213092,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25197341},"selectionType":"CHARACTER","selectionValue":1280},{"entrant":{"id":25213092},"selectionType":"CHARACTER","selectionValue":1746}]}]},{"id":109794286,"completedAt":1794014679,"fullRoundText":"Round
+        4","round":4,"totalGames":5,"winnerId":25213092,"displayScore":"rm8 2 - FBG
+        | KlodnSkorl 0","vodUrl":null,"state":3,"event":{"id":1748223,"name":"Ultimate
+        Singles ($50 Pot Bonus)","slug":"tournament\/the-arena-arc-chapter-20-the-finale\/event\/ultimate-singles-50-pot-bonus","startAt":1794013200,"isOnline":false,"numEntrants":19,"videogame":{"id":1386},"tournament":{"id":971388,"name":"The
+        Arena Arc - Chapter 20 - The Finale","slug":"tournament\/the-arena-arc-chapter-20-the-finale","startAt":1794013200,"endAt":1794027600,"city":"Calgary","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":27,"isOnline":false}},"slots":[{"entrant":{"id":25213092,"name":"rm8","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":2}}}},{"entrant":{"id":25212864,"name":"FBG
+        | KlodnSkorl","initialSeedNum":9,"isDisqualified":null,"participants":[{"player":{"id":1707338,"gamerTag":"KlodnSkorl","prefix":"FBG"}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":25213092,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25212864},"selectionType":"CHARACTER","selectionValue":1294},{"entrant":{"id":25213092},"selectionType":"CHARACTER","selectionValue":1746}]},{"orderNum":2,"winnerId":25213092,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25212864},"selectionType":"CHARACTER","selectionValue":1294},{"entrant":{"id":25213092},"selectionType":"CHARACTER","selectionValue":1746}]}]},{"id":109794288,"completedAt":1794013799,"fullRoundText":"Round
+        5","round":5,"totalGames":5,"winnerId":25213092,"displayScore":"rm8 2 - Neptune
+        0","vodUrl":null,"state":3,"event":{"id":1748223,"name":"Ultimate Singles
+        ($50 Pot Bonus)","slug":"tournament\/the-arena-arc-chapter-20-the-finale\/event\/ultimate-singles-50-pot-bonus","startAt":1794013200,"isOnline":false,"numEntrants":19,"videogame":{"id":1386},"tournament":{"id":971388,"name":"The
+        Arena Arc - Chapter 20 - The Finale","slug":"tournament\/the-arena-arc-chapter-20-the-finale","startAt":1794013200,"endAt":1794027600,"city":"Calgary","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":27,"isOnline":false}},"slots":[{"entrant":{"id":25213092,"name":"rm8","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":2}}}},{"entrant":{"id":25211977,"name":"Neptune","initialSeedNum":8,"isDisqualified":null,"participants":[{"player":{"id":2384069,"gamerTag":"Neptune","prefix":null}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":25213092,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25211977},"selectionType":"CHARACTER","selectionValue":1317},{"entrant":{"id":25213092},"selectionType":"CHARACTER","selectionValue":1746}]},{"orderNum":2,"winnerId":25213092,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25211977},"selectionType":"CHARACTER","selectionValue":1317},{"entrant":{"id":25213092},"selectionType":"CHARACTER","selectionValue":1746}]}]},{"id":109794282,"completedAt":1794012261,"fullRoundText":"Round
+        2","round":2,"totalGames":5,"winnerId":25213092,"displayScore":"rm8 2 - d4nk
+        0","vodUrl":null,"state":3,"event":{"id":1748223,"name":"Ultimate Singles
+        ($50 Pot Bonus)","slug":"tournament\/the-arena-arc-chapter-20-the-finale\/event\/ultimate-singles-50-pot-bonus","startAt":1794013200,"isOnline":false,"numEntrants":19,"videogame":{"id":1386},"tournament":{"id":971388,"name":"The
+        Arena Arc - Chapter 20 - The Finale","slug":"tournament\/the-arena-arc-chapter-20-the-finale","startAt":1794013200,"endAt":1794027600,"city":"Calgary","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":27,"isOnline":false}},"slots":[{"entrant":{"id":25213092,"name":"rm8","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":2}}}},{"entrant":{"id":25211587,"name":"d4nk","initialSeedNum":17,"isDisqualified":null,"participants":[{"player":{"id":2135564,"gamerTag":"d4nk","prefix":null}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":25213092,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25211587},"selectionType":"CHARACTER","selectionValue":1897},{"entrant":{"id":25213092},"selectionType":"CHARACTER","selectionValue":1746}]},{"orderNum":2,"winnerId":25213092,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25211587},"selectionType":"CHARACTER","selectionValue":1897},{"entrant":{"id":25213092},"selectionType":"CHARACTER","selectionValue":1746}]}]},{"id":109794284,"completedAt":1794011355,"fullRoundText":"Round
+        3","round":3,"totalGames":5,"winnerId":25213092,"displayScore":"rm8 2 - BRAPPA
+        | Kamal 0","vodUrl":null,"state":3,"event":{"id":1748223,"name":"Ultimate
+        Singles ($50 Pot Bonus)","slug":"tournament\/the-arena-arc-chapter-20-the-finale\/event\/ultimate-singles-50-pot-bonus","startAt":1794013200,"isOnline":false,"numEntrants":19,"videogame":{"id":1386},"tournament":{"id":971388,"name":"The
+        Arena Arc - Chapter 20 - The Finale","slug":"tournament\/the-arena-arc-chapter-20-the-finale","startAt":1794013200,"endAt":1794027600,"city":"Calgary","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":27,"isOnline":false}},"slots":[{"entrant":{"id":25213092,"name":"rm8","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":2}}}},{"entrant":{"id":25213126,"name":"BRAPPA
+        | Kamal","initialSeedNum":16,"isDisqualified":null,"participants":[{"player":{"id":5524189,"gamerTag":"Kamal","prefix":"BRAPPA"}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":25213092,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25213092},"selectionType":"CHARACTER","selectionValue":1746},{"entrant":{"id":25213126},"selectionType":"CHARACTER","selectionValue":1331}]},{"orderNum":2,"winnerId":25213092,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25213092},"selectionType":"CHARACTER","selectionValue":1746},{"entrant":{"id":25213126},"selectionType":"CHARACTER","selectionValue":1331}]}]},{"id":109707155,"completedAt":1793772962,"fullRoundText":"Grand
+        Final Reset","round":4,"totalGames":5,"winnerId":25170980,"displayScore":"rm8
+        1 - UMN \/ Weird | Treyara 3","vodUrl":null,"state":3,"event":{"id":1747663,"name":"Smash
+        Ultimate Singles","slug":"tournament\/mru-smash-172-rivals-2\/event\/smash-ultimate-singles","startAt":1793755800,"isOnline":false,"numEntrants":12,"videogame":{"id":1386},"tournament":{"id":971132,"name":"MRU
+        Smash #172 (RIVALS 2!!)","slug":"tournament\/mru-smash-172-rivals-2","startAt":1793755800,"endAt":1793768400,"city":"Calgary","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":13,"isOnline":false}},"slots":[{"entrant":{"id":25184101,"name":"rm8","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":2,"stats":{"score":{"value":1}}}},{"entrant":{"id":25170980,"name":"UMN
+        \/ Weird | Treyara","initialSeedNum":2,"isDisqualified":null,"participants":[{"player":{"id":1769230,"gamerTag":"Treyara","prefix":"UMN
+        \/ Weird"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}}],"games":[{"orderNum":1,"winnerId":25170980,"entrant1Score":0,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25170980},"selectionType":"CHARACTER","selectionValue":1290},{"entrant":{"id":25184101},"selectionType":"CHARACTER","selectionValue":1291}]},{"orderNum":2,"winnerId":25170980,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25170980},"selectionType":"CHARACTER","selectionValue":1290},{"entrant":{"id":25184101},"selectionType":"CHARACTER","selectionValue":1291}]},{"orderNum":3,"winnerId":25184101,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25170980},"selectionType":"CHARACTER","selectionValue":1290},{"entrant":{"id":25184101},"selectionType":"CHARACTER","selectionValue":1291}]},{"orderNum":4,"winnerId":25170980,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25170980},"selectionType":"CHARACTER","selectionValue":1290},{"entrant":{"id":25184101},"selectionType":"CHARACTER","selectionValue":1291}]}]}]}}},"extensions":{"cacheControl":{"version":1,"hints":null},"queryComplexity":668},"actionRecords":[]}'
+    headers:
+      access-control-allow-credentials:
+      - 'true'
+      access-control-allow-headers:
+      - '*, Content-Type, Authorization'
+      access-control-allow-methods:
+      - POST, GET, OPTIONS
+      access-control-allow-origin:
+      - '*'
+      cache-control:
+      - private, max-age=0, s-maxage=0
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a5af4f434def98bb-IAD
+      connection:
+      - keep-alive
+      content-length:
+      - '25508'
+      content-type:
+      - application/json
+      date:
+      - Sun, 15 Nov 2026 15:32:37 GMT
+      required-client-version:
+      - '20'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=15724800; includeSubDomains
+      transfer-encoding:
+      - chunked
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"query":"\nquery PlayerSets($id: ID!, $page: Int!, $perPage: Int!, $opponentId:
+      ID, $filters: SetFilters) {\n  player(id: $id) {\n    id\n    sets(page: $page,
+      perPage: $perPage, opponentId: $opponentId, filters: $filters) {\n      pageInfo
+      { total totalPages page perPage }\n      nodes {\n        id completedAt fullRoundText
+      round totalGames winnerId displayScore vodUrl state\n        event { ...EventFields
+      tournament { ...TournamentFields } }\n        slots {\n          entrant { ...EntrantFields
+      }\n          standing { placement stats { score { value } } }\n        }\n        games
+      {\n          orderNum winnerId entrant1Score entrant2Score\n          stage
+      { id name }\n          selections { entrant { id } selectionType selectionValue
+      }\n        }\n      }\n    }\n  }\n}\n\nfragment EventFields on Event {\n  id
+      name slug startAt isOnline numEntrants\n  videogame { id }\n}\n\nfragment TournamentFields
+      on Tournament {\n  id name slug startAt endAt city addrState countryCode venueName
+      numAttendees isOnline\n}\n\nfragment EntrantFields on Entrant {\n  id name initialSeedNum
+      isDisqualified\n  participants { player { id gamerTag prefix } }\n}\n","variables":{"id":1006473,"page":4,"perPage":15,"opponentId":null,"filters":null}}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '1244'
+      content-type:
+      - application/json
+      host:
+      - api.start.gg
+      user-agent:
+      - python-httpx2/2.12.0
+    method: POST
+    uri: https://api.start.gg/gql/alpha
+  response:
+    body:
+      string: '{"data":{"player":{"id":1006473,"sets":{"pageInfo":{"total":17913,"totalPages":1195,"page":4,"perPage":15},"nodes":[{"id":109698392,"completedAt":1793753789,"fullRoundText":"Round
+        3","round":3,"totalGames":5,"winnerId":25184101,"displayScore":"rm8 2 - Mateo
+        0","vodUrl":null,"state":3,"event":{"id":1747663,"name":"Smash Ultimate Singles","slug":"tournament\/mru-smash-172-rivals-2\/event\/smash-ultimate-singles","startAt":1793755800,"isOnline":false,"numEntrants":12,"videogame":{"id":1386},"tournament":{"id":971132,"name":"MRU
+        Smash #172 (RIVALS 2!!)","slug":"tournament\/mru-smash-172-rivals-2","startAt":1793755800,"endAt":1793768400,"city":"Calgary","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":13,"isOnline":false}},"slots":[{"entrant":{"id":25184101,"name":"rm8","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":2}}}},{"entrant":{"id":25183241,"name":"Mateo","initialSeedNum":8,"isDisqualified":null,"participants":[{"player":{"id":5237075,"gamerTag":"Mateo","prefix":null}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":null},{"id":109681562,"completedAt":1793683822,"fullRoundText":"Losers
+        Quarter-Final","round":-6,"totalGames":5,"winnerId":25171543,"displayScore":"NS
+        | Jome 2 - rm8 1","vodUrl":null,"state":3,"event":{"id":1744411,"name":"Melee
+        Singles","slug":"tournament\/red-deer-smash-300\/event\/melee-singles","startAt":1793667600,"isOnline":false,"numEntrants":10,"videogame":{"id":1},"tournament":{"id":969644,"name":"Red
+        Deer Smash #300!","slug":"tournament\/red-deer-smash-300","startAt":1793667600,"endAt":1793685600,"city":"Red
+        Deer","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":36,"isOnline":false}},"slots":[{"entrant":{"id":25171543,"name":"NS
+        | Jome","initialSeedNum":2,"isDisqualified":null,"participants":[{"player":{"id":1210172,"gamerTag":"Jome","prefix":"NS"}}]},"standing":{"placement":1,"stats":{"score":{"value":2}}}},{"entrant":{"id":25173138,"name":"rm8","initialSeedNum":4,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":2,"stats":{"score":{"value":1}}}}],"games":null},{"id":109681560,"completedAt":1793682570,"fullRoundText":"Losers
+        Round 2","round":-5,"totalGames":5,"winnerId":25173138,"displayScore":"rm8
+        2 - NoFox | LocalWeebVT 0","vodUrl":null,"state":3,"event":{"id":1744411,"name":"Melee
+        Singles","slug":"tournament\/red-deer-smash-300\/event\/melee-singles","startAt":1793667600,"isOnline":false,"numEntrants":10,"videogame":{"id":1},"tournament":{"id":969644,"name":"Red
+        Deer Smash #300!","slug":"tournament\/red-deer-smash-300","startAt":1793667600,"endAt":1793685600,"city":"Red
+        Deer","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":36,"isOnline":false}},"slots":[{"entrant":{"id":25173138,"name":"rm8","initialSeedNum":4,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":2}}}},{"entrant":{"id":25127372,"name":"NoFox
+        | LocalWeebVT","initialSeedNum":8,"isDisqualified":null,"participants":[{"player":{"id":1754275,"gamerTag":"LocalWeebVT","prefix":"NoFox"}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":null},{"id":109673380,"completedAt":1793681614,"fullRoundText":"Losers
+        Final","round":-10,"totalGames":5,"winnerId":25171542,"displayScore":"NS |
+        Jome 3 - rm8 1","vodUrl":null,"state":3,"event":{"id":1744408,"name":"Ultimate
+        Singles","slug":"tournament\/red-deer-smash-300\/event\/ultimate-singles","startAt":1793667600,"isOnline":false,"numEntrants":29,"videogame":{"id":1386},"tournament":{"id":969644,"name":"Red
+        Deer Smash #300!","slug":"tournament\/red-deer-smash-300","startAt":1793667600,"endAt":1793685600,"city":"Red
+        Deer","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":36,"isOnline":false}},"slots":[{"entrant":{"id":25171542,"name":"NS
+        | Jome","initialSeedNum":3,"isDisqualified":null,"participants":[{"player":{"id":1210172,"gamerTag":"Jome","prefix":"NS"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":25173141,"name":"rm8","initialSeedNum":2,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":2,"stats":{"score":{"value":1}}}}],"games":[{"orderNum":1,"winnerId":25171542,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25171542},"selectionType":"CHARACTER","selectionValue":1301},{"entrant":{"id":25173141},"selectionType":"CHARACTER","selectionValue":1291}]},{"orderNum":2,"winnerId":25171542,"entrant1Score":0,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25171542},"selectionType":"CHARACTER","selectionValue":1301},{"entrant":{"id":25173141},"selectionType":"CHARACTER","selectionValue":1291}]},{"orderNum":3,"winnerId":25173141,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25171542},"selectionType":"CHARACTER","selectionValue":1301},{"entrant":{"id":25173141},"selectionType":"CHARACTER","selectionValue":1291}]},{"orderNum":4,"winnerId":25171542,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25171542},"selectionType":"CHARACTER","selectionValue":1301},{"entrant":{"id":25173141},"selectionType":"CHARACTER","selectionValue":1274}]}]},{"id":109673379,"completedAt":1793680700,"fullRoundText":"Losers
+        Semi-Final","round":-9,"totalGames":5,"winnerId":25173141,"displayScore":"rm8
+        3 - GKHDA | Perendeshe 0","vodUrl":null,"state":3,"event":{"id":1744408,"name":"Ultimate
+        Singles","slug":"tournament\/red-deer-smash-300\/event\/ultimate-singles","startAt":1793667600,"isOnline":false,"numEntrants":29,"videogame":{"id":1386},"tournament":{"id":969644,"name":"Red
+        Deer Smash #300!","slug":"tournament\/red-deer-smash-300","startAt":1793667600,"endAt":1793685600,"city":"Red
+        Deer","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":36,"isOnline":false}},"slots":[{"entrant":{"id":25173141,"name":"rm8","initialSeedNum":2,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":25163517,"name":"GKHDA
+        | Perendeshe","initialSeedNum":5,"isDisqualified":null,"participants":[{"player":{"id":2325613,"gamerTag":"Perendeshe","prefix":"GKHDA"}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":25173141,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25163517},"selectionType":"CHARACTER","selectionValue":1328},{"entrant":{"id":25173141},"selectionType":"CHARACTER","selectionValue":1291}]},{"orderNum":2,"winnerId":25173141,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25163517},"selectionType":"CHARACTER","selectionValue":1328},{"entrant":{"id":25173141},"selectionType":"CHARACTER","selectionValue":1291}]},{"orderNum":3,"winnerId":25173141,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25163517},"selectionType":"CHARACTER","selectionValue":1328},{"entrant":{"id":25173141},"selectionType":"CHARACTER","selectionValue":1291}]}]},{"id":109681557,"completedAt":1793679851,"fullRoundText":"Losers
+        Round 1","round":-4,"totalGames":5,"winnerId":25173138,"displayScore":"rm8
+        2 - NECROMANCER 0","vodUrl":null,"state":3,"event":{"id":1744411,"name":"Melee
+        Singles","slug":"tournament\/red-deer-smash-300\/event\/melee-singles","startAt":1793667600,"isOnline":false,"numEntrants":10,"videogame":{"id":1},"tournament":{"id":969644,"name":"Red
+        Deer Smash #300!","slug":"tournament\/red-deer-smash-300","startAt":1793667600,"endAt":1793685600,"city":"Red
+        Deer","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":36,"isOnline":false}},"slots":[{"entrant":{"id":25173138,"name":"rm8","initialSeedNum":4,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":2}}}},{"entrant":{"id":25138665,"name":"NECROMANCER","initialSeedNum":10,"isDisqualified":null,"participants":[{"player":{"id":4376189,"gamerTag":"NECROMANCER","prefix":""}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":null},{"id":109673377,"completedAt":1793679095,"fullRoundText":"Losers
+        Quarter-Final","round":-8,"totalGames":5,"winnerId":25173141,"displayScore":"rm8
+        3 - Masonman 0","vodUrl":null,"state":3,"event":{"id":1744408,"name":"Ultimate
+        Singles","slug":"tournament\/red-deer-smash-300\/event\/ultimate-singles","startAt":1793667600,"isOnline":false,"numEntrants":29,"videogame":{"id":1386},"tournament":{"id":969644,"name":"Red
+        Deer Smash #300!","slug":"tournament\/red-deer-smash-300","startAt":1793667600,"endAt":1793685600,"city":"Red
+        Deer","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":36,"isOnline":false}},"slots":[{"entrant":{"id":25173141,"name":"rm8","initialSeedNum":2,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":25146920,"name":"Masonman","initialSeedNum":10,"isDisqualified":null,"participants":[{"player":{"id":239591,"gamerTag":"Masonman","prefix":null}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":25173141,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25146920},"selectionType":"CHARACTER","selectionValue":1338},{"entrant":{"id":25173141},"selectionType":"CHARACTER","selectionValue":1746}]},{"orderNum":2,"winnerId":25173141,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25146920},"selectionType":"CHARACTER","selectionValue":1338},{"entrant":{"id":25173141},"selectionType":"CHARACTER","selectionValue":1746}]},{"orderNum":3,"winnerId":25173141,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25146920},"selectionType":"CHARACTER","selectionValue":1338},{"entrant":{"id":25173141},"selectionType":"CHARACTER","selectionValue":1746}]}]},{"id":109681527,"completedAt":1793677436,"fullRoundText":"Winners
+        Quarter-Final","round":2,"totalGames":5,"winnerId":25130047,"displayScore":"rm8
+        1 - Woozyy | Erf09 2","vodUrl":null,"state":3,"event":{"id":1744411,"name":"Melee
+        Singles","slug":"tournament\/red-deer-smash-300\/event\/melee-singles","startAt":1793667600,"isOnline":false,"numEntrants":10,"videogame":{"id":1},"tournament":{"id":969644,"name":"Red
+        Deer Smash #300!","slug":"tournament\/red-deer-smash-300","startAt":1793667600,"endAt":1793685600,"city":"Red
+        Deer","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":36,"isOnline":false}},"slots":[{"entrant":{"id":25173138,"name":"rm8","initialSeedNum":4,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":2,"stats":{"score":{"value":1}}}},{"entrant":{"id":25130047,"name":"Woozyy
+        | Erf09","initialSeedNum":5,"isDisqualified":null,"participants":[{"player":{"id":4255791,"gamerTag":"Erf09","prefix":"Woozyy"}}]},"standing":{"placement":1,"stats":{"score":{"value":2}}}}],"games":null},{"id":109673315,"completedAt":1793675505,"fullRoundText":"Winners
+        Semi-Final","round":4,"totalGames":5,"winnerId":25171542,"displayScore":"rm8
+        1 - NS | Jome 3","vodUrl":null,"state":3,"event":{"id":1744408,"name":"Ultimate
+        Singles","slug":"tournament\/red-deer-smash-300\/event\/ultimate-singles","startAt":1793667600,"isOnline":false,"numEntrants":29,"videogame":{"id":1386},"tournament":{"id":969644,"name":"Red
+        Deer Smash #300!","slug":"tournament\/red-deer-smash-300","startAt":1793667600,"endAt":1793685600,"city":"Red
+        Deer","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":36,"isOnline":false}},"slots":[{"entrant":{"id":25173141,"name":"rm8","initialSeedNum":2,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":2,"stats":{"score":{"value":1}}}},{"entrant":{"id":25171542,"name":"NS
+        | Jome","initialSeedNum":3,"isDisqualified":null,"participants":[{"player":{"id":1210172,"gamerTag":"Jome","prefix":"NS"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}}],"games":[{"orderNum":1,"winnerId":25171542,"entrant1Score":0,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25171542},"selectionType":"CHARACTER","selectionValue":1301},{"entrant":{"id":25173141},"selectionType":"CHARACTER","selectionValue":1291}]},{"orderNum":2,"winnerId":25171542,"entrant1Score":0,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25171542},"selectionType":"CHARACTER","selectionValue":1301},{"entrant":{"id":25173141},"selectionType":"CHARACTER","selectionValue":1291}]},{"orderNum":3,"winnerId":25173141,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25171542},"selectionType":"CHARACTER","selectionValue":1301},{"entrant":{"id":25173141},"selectionType":"CHARACTER","selectionValue":1291}]},{"orderNum":4,"winnerId":25171542,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25171542},"selectionType":"CHARACTER","selectionValue":1301},{"entrant":{"id":25173141},"selectionType":"CHARACTER","selectionValue":1291}]}]},{"id":109673312,"completedAt":1793674587,"fullRoundText":"Winners
+        Quarter-Final","round":3,"totalGames":5,"winnerId":25173141,"displayScore":"rm8
+        2 - Pneun 0","vodUrl":null,"state":3,"event":{"id":1744408,"name":"Ultimate
+        Singles","slug":"tournament\/red-deer-smash-300\/event\/ultimate-singles","startAt":1793667600,"isOnline":false,"numEntrants":29,"videogame":{"id":1386},"tournament":{"id":969644,"name":"Red
+        Deer Smash #300!","slug":"tournament\/red-deer-smash-300","startAt":1793667600,"endAt":1793685600,"city":"Red
+        Deer","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":36,"isOnline":false}},"slots":[{"entrant":{"id":25173141,"name":"rm8","initialSeedNum":2,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":2}}}},{"entrant":{"id":25127316,"name":"Pneun","initialSeedNum":7,"isDisqualified":null,"participants":[{"player":{"id":281544,"gamerTag":"Pneun","prefix":""}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":25173141,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25127316},"selectionType":"CHARACTER","selectionValue":1326},{"entrant":{"id":25173141},"selectionType":"CHARACTER","selectionValue":1746}]},{"orderNum":2,"winnerId":25173141,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25127316},"selectionType":"CHARACTER","selectionValue":1326},{"entrant":{"id":25173141},"selectionType":"CHARACTER","selectionValue":1746}]}]},{"id":109673306,"completedAt":1793669166,"fullRoundText":"Winners
+        Round 2","round":2,"totalGames":5,"winnerId":25173141,"displayScore":"rm8
+        2 - Ubique | The_CanadianGunner 0","vodUrl":null,"state":3,"event":{"id":1744408,"name":"Ultimate
+        Singles","slug":"tournament\/red-deer-smash-300\/event\/ultimate-singles","startAt":1793667600,"isOnline":false,"numEntrants":29,"videogame":{"id":1386},"tournament":{"id":969644,"name":"Red
+        Deer Smash #300!","slug":"tournament\/red-deer-smash-300","startAt":1793667600,"endAt":1793685600,"city":"Red
+        Deer","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":36,"isOnline":false}},"slots":[{"entrant":{"id":25173141,"name":"rm8","initialSeedNum":2,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":2}}}},{"entrant":{"id":25163887,"name":"Ubique
+        | The_CanadianGunner","initialSeedNum":18,"isDisqualified":null,"participants":[{"player":{"id":1841434,"gamerTag":"The_CanadianGunner","prefix":"Ubique"}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":25173141,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25163887},"selectionType":"CHARACTER","selectionValue":1539},{"entrant":{"id":25173141},"selectionType":"CHARACTER","selectionValue":1746}]},{"orderNum":2,"winnerId":25173141,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25163887},"selectionType":"CHARACTER","selectionValue":1539},{"entrant":{"id":25173141},"selectionType":"CHARACTER","selectionValue":1746}]}]},{"id":109566782,"completedAt":1793432640,"fullRoundText":"Grand
+        Final","round":3,"totalGames":5,"winnerId":25121549,"displayScore":"Xx_cornbag7_xX
+        3 - rm8 2","vodUrl":null,"state":3,"event":{"id":1738119,"name":"Ultimate
+        Singles","slug":"tournament\/st-albert-arcade-50\/event\/ultimate-singles","startAt":1793408400,"isOnline":false,"numEntrants":72,"videogame":{"id":1386},"tournament":{"id":966598,"name":"St
+        Albert Arcade 50","slug":"tournament\/st-albert-arcade-50","startAt":1793404800,"endAt":1793426340,"city":"St.
+        Albert","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":96,"isOnline":false}},"slots":[{"entrant":{"id":25121549,"name":"Xx_cornbag7_xX","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":1784382,"gamerTag":"Xx_cornbag7_xX","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":25149582,"name":"rm8","initialSeedNum":4,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":2,"stats":{"score":{"value":2}}}}],"games":[{"orderNum":1,"winnerId":25121549,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25121549},"selectionType":"CHARACTER","selectionValue":1280},{"entrant":{"id":25149582},"selectionType":"CHARACTER","selectionValue":1291}]},{"orderNum":2,"winnerId":25149582,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25121549},"selectionType":"CHARACTER","selectionValue":1280},{"entrant":{"id":25149582},"selectionType":"CHARACTER","selectionValue":1291}]},{"orderNum":3,"winnerId":25121549,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25121549},"selectionType":"CHARACTER","selectionValue":1280},{"entrant":{"id":25149582},"selectionType":"CHARACTER","selectionValue":1291}]},{"orderNum":4,"winnerId":25149582,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25121549},"selectionType":"CHARACTER","selectionValue":1280},{"entrant":{"id":25149582},"selectionType":"CHARACTER","selectionValue":1274}]},{"orderNum":5,"winnerId":25121549,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25121549},"selectionType":"CHARACTER","selectionValue":1337},{"entrant":{"id":25149582},"selectionType":"CHARACTER","selectionValue":1274}]}]},{"id":109566797,"completedAt":1793431666,"fullRoundText":"Losers
+        Final","round":-6,"totalGames":5,"winnerId":25149582,"displayScore":"LFT |
+        SpikeCC 2 - rm8 3","vodUrl":null,"state":3,"event":{"id":1738119,"name":"Ultimate
+        Singles","slug":"tournament\/st-albert-arcade-50\/event\/ultimate-singles","startAt":1793408400,"isOnline":false,"numEntrants":72,"videogame":{"id":1386},"tournament":{"id":966598,"name":"St
+        Albert Arcade 50","slug":"tournament\/st-albert-arcade-50","startAt":1793404800,"endAt":1793426340,"city":"St.
+        Albert","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":96,"isOnline":false}},"slots":[{"entrant":{"id":25071887,"name":"LFT
+        | SpikeCC","initialSeedNum":2,"isDisqualified":null,"participants":[{"player":{"id":1913021,"gamerTag":"SpikeCC","prefix":"LFT"}}]},"standing":{"placement":2,"stats":{"score":{"value":2}}}},{"entrant":{"id":25149582,"name":"rm8","initialSeedNum":4,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}}],"games":[{"orderNum":1,"winnerId":25071887,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25071887},"selectionType":"CHARACTER","selectionValue":1328},{"entrant":{"id":25149582},"selectionType":"CHARACTER","selectionValue":1291}]},{"orderNum":2,"winnerId":25149582,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25071887},"selectionType":"CHARACTER","selectionValue":1328},{"entrant":{"id":25149582},"selectionType":"CHARACTER","selectionValue":1291}]},{"orderNum":3,"winnerId":25149582,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25071887},"selectionType":"CHARACTER","selectionValue":1328},{"entrant":{"id":25149582},"selectionType":"CHARACTER","selectionValue":1291}]},{"orderNum":4,"winnerId":25071887,"entrant1Score":0,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25071887},"selectionType":"CHARACTER","selectionValue":1328},{"entrant":{"id":25149582},"selectionType":"CHARACTER","selectionValue":1291}]},{"orderNum":5,"winnerId":25149582,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25071887},"selectionType":"CHARACTER","selectionValue":1328},{"entrant":{"id":25149582},"selectionType":"CHARACTER","selectionValue":1291}]}]},{"id":109566796,"completedAt":1793429562,"fullRoundText":"Losers
+        Semi-Final","round":-5,"totalGames":5,"winnerId":25149582,"displayScore":"NS
+        | Titanium 0 - rm8 3","vodUrl":null,"state":3,"event":{"id":1738119,"name":"Ultimate
+        Singles","slug":"tournament\/st-albert-arcade-50\/event\/ultimate-singles","startAt":1793408400,"isOnline":false,"numEntrants":72,"videogame":{"id":1386},"tournament":{"id":966598,"name":"St
+        Albert Arcade 50","slug":"tournament\/st-albert-arcade-50","startAt":1793404800,"endAt":1793426340,"city":"St.
+        Albert","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":96,"isOnline":false}},"slots":[{"entrant":{"id":25139834,"name":"NS
+        | Titanium","initialSeedNum":3,"isDisqualified":null,"participants":[{"player":{"id":1854202,"gamerTag":"Titanium","prefix":"NS"}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}},{"entrant":{"id":25149582,"name":"rm8","initialSeedNum":4,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}}],"games":[{"orderNum":1,"winnerId":25149582,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25139834},"selectionType":"CHARACTER","selectionValue":1323},{"entrant":{"id":25149582},"selectionType":"CHARACTER","selectionValue":1291}]},{"orderNum":2,"winnerId":25149582,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25139834},"selectionType":"CHARACTER","selectionValue":1323},{"entrant":{"id":25149582},"selectionType":"CHARACTER","selectionValue":1291}]},{"orderNum":3,"winnerId":25149582,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25139834},"selectionType":"CHARACTER","selectionValue":1323},{"entrant":{"id":25149582},"selectionType":"CHARACTER","selectionValue":1291}]}]},{"id":109566795,"completedAt":1793428958,"fullRoundText":"Losers
+        Quarter-Final","round":-4,"totalGames":5,"winnerId":25149582,"displayScore":"rm8
+        3 - Norbridge | Zypher 0","vodUrl":null,"state":3,"event":{"id":1738119,"name":"Ultimate
+        Singles","slug":"tournament\/st-albert-arcade-50\/event\/ultimate-singles","startAt":1793408400,"isOnline":false,"numEntrants":72,"videogame":{"id":1386},"tournament":{"id":966598,"name":"St
+        Albert Arcade 50","slug":"tournament\/st-albert-arcade-50","startAt":1793404800,"endAt":1793426340,"city":"St.
+        Albert","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":96,"isOnline":false}},"slots":[{"entrant":{"id":25149582,"name":"rm8","initialSeedNum":4,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":25135909,"name":"Norbridge
+        | Zypher","initialSeedNum":6,"isDisqualified":null,"participants":[{"player":{"id":2554474,"gamerTag":"Zypher","prefix":"Norbridge"}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":25149582,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25135909},"selectionType":"CHARACTER","selectionValue":1280},{"entrant":{"id":25149582},"selectionType":"CHARACTER","selectionValue":1291}]},{"orderNum":2,"winnerId":25149582,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25135909},"selectionType":"CHARACTER","selectionValue":1280},{"entrant":{"id":25149582},"selectionType":"CHARACTER","selectionValue":1291}]},{"orderNum":3,"winnerId":25149582,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25135909},"selectionType":"CHARACTER","selectionValue":1315},{"entrant":{"id":25149582},"selectionType":"CHARACTER","selectionValue":1291}]}]}]}}},"extensions":{"cacheControl":{"version":1,"hints":null},"queryComplexity":677},"actionRecords":[]}'
+    headers:
+      access-control-allow-credentials:
+      - 'true'
+      access-control-allow-headers:
+      - '*, Content-Type, Authorization'
+      access-control-allow-methods:
+      - POST, GET, OPTIONS
+      access-control-allow-origin:
+      - '*'
+      cache-control:
+      - private, max-age=0, s-maxage=0
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a5af4f43cc062a96-IAD
+      connection:
+      - keep-alive
+      content-length:
+      - '25278'
+      content-type:
+      - application/json
+      date:
+      - Sun, 15 Nov 2026 15:32:37 GMT
+      required-client-version:
+      - '20'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=15724800; includeSubDomains
+      transfer-encoding:
+      - chunked
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"query":"\nquery PlayerSets($id: ID!, $page: Int!, $perPage: Int!, $opponentId:
+      ID, $filters: SetFilters) {\n  player(id: $id) {\n    id\n    sets(page: $page,
+      perPage: $perPage, opponentId: $opponentId, filters: $filters) {\n      pageInfo
+      { total totalPages page perPage }\n      nodes {\n        id completedAt fullRoundText
+      round totalGames winnerId displayScore vodUrl state\n        event { ...EventFields
+      tournament { ...TournamentFields } }\n        slots {\n          entrant { ...EntrantFields
+      }\n          standing { placement stats { score { value } } }\n        }\n        games
+      {\n          orderNum winnerId entrant1Score entrant2Score\n          stage
+      { id name }\n          selections { entrant { id } selectionType selectionValue
+      }\n        }\n      }\n    }\n  }\n}\n\nfragment EventFields on Event {\n  id
+      name slug startAt isOnline numEntrants\n  videogame { id }\n}\n\nfragment TournamentFields
+      on Tournament {\n  id name slug startAt endAt city addrState countryCode venueName
+      numAttendees isOnline\n}\n\nfragment EntrantFields on Entrant {\n  id name initialSeedNum
+      isDisqualified\n  participants { player { id gamerTag prefix } }\n}\n","variables":{"id":1006473,"page":3,"perPage":15,"opponentId":null,"filters":null}}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '1244'
+      content-type:
+      - application/json
+      host:
+      - api.start.gg
+      user-agent:
+      - python-httpx2/2.12.0
+    method: POST
+    uri: https://api.start.gg/gql/alpha
+  response:
+    body:
+      string: '{"data":{"player":{"id":1006473,"sets":{"pageInfo":{"total":17913,"totalPages":1195,"page":3,"perPage":15},"nodes":[{"id":109707154,"completedAt":1793767340,"fullRoundText":"Grand
+        Final","round":4,"totalGames":5,"winnerId":25184101,"displayScore":"UMN \/
+        Weird | Treyara 0 - rm8 3","vodUrl":null,"state":3,"event":{"id":1747663,"name":"Smash
+        Ultimate Singles","slug":"tournament\/mru-smash-172-rivals-2\/event\/smash-ultimate-singles","startAt":1793755800,"isOnline":false,"numEntrants":12,"videogame":{"id":1386},"tournament":{"id":971132,"name":"MRU
+        Smash #172 (RIVALS 2!!)","slug":"tournament\/mru-smash-172-rivals-2","startAt":1793755800,"endAt":1793768400,"city":"Calgary","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":13,"isOnline":false}},"slots":[{"entrant":{"id":25170980,"name":"UMN
+        \/ Weird | Treyara","initialSeedNum":2,"isDisqualified":null,"participants":[{"player":{"id":1769230,"gamerTag":"Treyara","prefix":"UMN
+        \/ Weird"}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}},{"entrant":{"id":25184101,"name":"rm8","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}}],"games":[{"orderNum":1,"winnerId":25184101,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25170980},"selectionType":"CHARACTER","selectionValue":1290},{"entrant":{"id":25184101},"selectionType":"CHARACTER","selectionValue":1291}]},{"orderNum":2,"winnerId":25184101,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25170980},"selectionType":"CHARACTER","selectionValue":1290},{"entrant":{"id":25184101},"selectionType":"CHARACTER","selectionValue":1291}]},{"orderNum":3,"winnerId":25184101,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25170980},"selectionType":"CHARACTER","selectionValue":1290},{"entrant":{"id":25184101},"selectionType":"CHARACTER","selectionValue":1291}]}]},{"id":109707169,"completedAt":1793765856,"fullRoundText":"Losers
+        Final","round":-6,"totalGames":5,"winnerId":25184101,"displayScore":"OONGLY
+        | Karoongly 1 - rm8 3","vodUrl":null,"state":3,"event":{"id":1747663,"name":"Smash
+        Ultimate Singles","slug":"tournament\/mru-smash-172-rivals-2\/event\/smash-ultimate-singles","startAt":1793755800,"isOnline":false,"numEntrants":12,"videogame":{"id":1386},"tournament":{"id":971132,"name":"MRU
+        Smash #172 (RIVALS 2!!)","slug":"tournament\/mru-smash-172-rivals-2","startAt":1793755800,"endAt":1793768400,"city":"Calgary","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":13,"isOnline":false}},"slots":[{"entrant":{"id":25182708,"name":"OONGLY
+        | Karoongly","initialSeedNum":6,"isDisqualified":null,"participants":[{"player":{"id":2916145,"gamerTag":"Karoongly","prefix":"OONGLY"}}]},"standing":{"placement":2,"stats":{"score":{"value":1}}}},{"entrant":{"id":25184101,"name":"rm8","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}}],"games":[{"orderNum":1,"winnerId":25184101,"entrant1Score":0,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25182708},"selectionType":"CHARACTER","selectionValue":1276},{"entrant":{"id":25184101},"selectionType":"CHARACTER","selectionValue":1746}]},{"orderNum":2,"winnerId":25182708,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25182708},"selectionType":"CHARACTER","selectionValue":1276},{"entrant":{"id":25184101},"selectionType":"CHARACTER","selectionValue":1746}]},{"orderNum":3,"winnerId":25184101,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25182708},"selectionType":"CHARACTER","selectionValue":1276},{"entrant":{"id":25184101},"selectionType":"CHARACTER","selectionValue":1746}]},{"orderNum":4,"winnerId":25184101,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25182708},"selectionType":"CHARACTER","selectionValue":1276},{"entrant":{"id":25184101},"selectionType":"CHARACTER","selectionValue":1746}]}]},{"id":109702538,"completedAt":1793764680,"fullRoundText":"Losers
+        Final","round":-6,"totalGames":5,"winnerId":25170981,"displayScore":"DQ","vodUrl":null,"state":3,"event":{"id":1747666,"name":"Rivals
+        2 Singles","slug":"tournament\/mru-smash-172-rivals-2\/event\/rivals-2-singles","startAt":1793755800,"isOnline":false,"numEntrants":6,"videogame":{"id":53945},"tournament":{"id":971132,"name":"MRU
+        Smash #172 (RIVALS 2!!)","slug":"tournament\/mru-smash-172-rivals-2","startAt":1793755800,"endAt":1793768400,"city":"Calgary","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":13,"isOnline":false}},"slots":[{"entrant":{"id":25170981,"name":"UMN
+        \/ Weird | Treyara","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":1769230,"gamerTag":"Treyara","prefix":"UMN
+        \/ Weird"}}]},"standing":{"placement":1,"stats":{"score":{"value":null}}}},{"entrant":{"id":25184104,"name":"rm8","initialSeedNum":3,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":2,"stats":{"score":{"value":-1}}}}],"games":null},{"id":109707168,"completedAt":1793764642,"fullRoundText":"Losers
+        Semi-Final","round":-5,"totalGames":5,"winnerId":25184101,"displayScore":"KV
+        2 - rm8 3","vodUrl":null,"state":3,"event":{"id":1747663,"name":"Smash Ultimate
+        Singles","slug":"tournament\/mru-smash-172-rivals-2\/event\/smash-ultimate-singles","startAt":1793755800,"isOnline":false,"numEntrants":12,"videogame":{"id":1386},"tournament":{"id":971132,"name":"MRU
+        Smash #172 (RIVALS 2!!)","slug":"tournament\/mru-smash-172-rivals-2","startAt":1793755800,"endAt":1793768400,"city":"Calgary","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":13,"isOnline":false}},"slots":[{"entrant":{"id":25183387,"name":"KV","initialSeedNum":3,"isDisqualified":null,"participants":[{"player":{"id":1920690,"gamerTag":"KV","prefix":""}}]},"standing":{"placement":2,"stats":{"score":{"value":2}}}},{"entrant":{"id":25184101,"name":"rm8","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}}],"games":[{"orderNum":1,"winnerId":25183387,"entrant1Score":0,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25183387},"selectionType":"CHARACTER","selectionValue":1272},{"entrant":{"id":25184101},"selectionType":"CHARACTER","selectionValue":1746}]},{"orderNum":2,"winnerId":25184101,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25183387},"selectionType":"CHARACTER","selectionValue":1272},{"entrant":{"id":25184101},"selectionType":"CHARACTER","selectionValue":1746}]},{"orderNum":3,"winnerId":25183387,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25183387},"selectionType":"CHARACTER","selectionValue":1272},{"entrant":{"id":25184101},"selectionType":"CHARACTER","selectionValue":1746}]},{"orderNum":4,"winnerId":25184101,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25183387},"selectionType":"CHARACTER","selectionValue":1272},{"entrant":{"id":25184101},"selectionType":"CHARACTER","selectionValue":1291}]},{"orderNum":5,"winnerId":25184101,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25183387},"selectionType":"CHARACTER","selectionValue":1272},{"entrant":{"id":25184101},"selectionType":"CHARACTER","selectionValue":1291}]}]},{"id":109702537,"completedAt":1793763275,"fullRoundText":"Losers
+        Semi-Final","round":-5,"totalGames":5,"winnerId":25184104,"displayScore":"rm8
+        3 - Tye 0","vodUrl":null,"state":3,"event":{"id":1747666,"name":"Rivals 2
+        Singles","slug":"tournament\/mru-smash-172-rivals-2\/event\/rivals-2-singles","startAt":1793755800,"isOnline":false,"numEntrants":6,"videogame":{"id":53945},"tournament":{"id":971132,"name":"MRU
+        Smash #172 (RIVALS 2!!)","slug":"tournament\/mru-smash-172-rivals-2","startAt":1793755800,"endAt":1793768400,"city":"Calgary","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":13,"isOnline":false}},"slots":[{"entrant":{"id":25184104,"name":"rm8","initialSeedNum":3,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":25170667,"name":"Tye","initialSeedNum":4,"isDisqualified":null,"participants":[{"player":{"id":2188737,"gamerTag":"Tye","prefix":null}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":25184104,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25170667},"selectionType":"CHARACTER","selectionValue":2834},{"entrant":{"id":25184104},"selectionType":"CHARACTER","selectionValue":2503}]},{"orderNum":2,"winnerId":25184104,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25170667},"selectionType":"CHARACTER","selectionValue":2834},{"entrant":{"id":25184104},"selectionType":"CHARACTER","selectionValue":2503}]},{"orderNum":3,"winnerId":25184104,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25170667},"selectionType":"CHARACTER","selectionValue":2834},{"entrant":{"id":25184104},"selectionType":"CHARACTER","selectionValue":2503}]}]},{"id":109702535,"completedAt":1793762517,"fullRoundText":"Losers
+        Quarter-Final","round":-4,"totalGames":5,"winnerId":25184104,"displayScore":"rm8
+        3 - Mateo 0","vodUrl":null,"state":3,"event":{"id":1747666,"name":"Rivals
+        2 Singles","slug":"tournament\/mru-smash-172-rivals-2\/event\/rivals-2-singles","startAt":1793755800,"isOnline":false,"numEntrants":6,"videogame":{"id":53945},"tournament":{"id":971132,"name":"MRU
+        Smash #172 (RIVALS 2!!)","slug":"tournament\/mru-smash-172-rivals-2","startAt":1793755800,"endAt":1793768400,"city":"Calgary","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":13,"isOnline":false}},"slots":[{"entrant":{"id":25184104,"name":"rm8","initialSeedNum":3,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":25183242,"name":"Mateo","initialSeedNum":5,"isDisqualified":null,"participants":[{"player":{"id":5237075,"gamerTag":"Mateo","prefix":null}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":25184104,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25183242},"selectionType":"CHARACTER","selectionValue":2837},{"entrant":{"id":25184104},"selectionType":"CHARACTER","selectionValue":2503}]},{"orderNum":2,"winnerId":25184104,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25183242},"selectionType":"CHARACTER","selectionValue":2837},{"entrant":{"id":25184104},"selectionType":"CHARACTER","selectionValue":2503}]},{"orderNum":3,"winnerId":25184104,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25183242},"selectionType":"CHARACTER","selectionValue":2837},{"entrant":{"id":25184104},"selectionType":"CHARACTER","selectionValue":2503}]}]},{"id":109707167,"completedAt":1793761317,"fullRoundText":"Losers
+        Quarter-Final","round":-4,"totalGames":5,"winnerId":25184101,"displayScore":"Seb
+        1 - rm8 3","vodUrl":null,"state":3,"event":{"id":1747663,"name":"Smash Ultimate
+        Singles","slug":"tournament\/mru-smash-172-rivals-2\/event\/smash-ultimate-singles","startAt":1793755800,"isOnline":false,"numEntrants":12,"videogame":{"id":1386},"tournament":{"id":971132,"name":"MRU
+        Smash #172 (RIVALS 2!!)","slug":"tournament\/mru-smash-172-rivals-2","startAt":1793755800,"endAt":1793768400,"city":"Calgary","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":13,"isOnline":false}},"slots":[{"entrant":{"id":25183954,"name":"Seb","initialSeedNum":4,"isDisqualified":null,"participants":[{"player":{"id":1837100,"gamerTag":"Seb","prefix":""}}]},"standing":{"placement":2,"stats":{"score":{"value":1}}}},{"entrant":{"id":25184101,"name":"rm8","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}}],"games":[{"orderNum":1,"winnerId":25184101,"entrant1Score":0,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25183954},"selectionType":"CHARACTER","selectionValue":1294},{"entrant":{"id":25184101},"selectionType":"CHARACTER","selectionValue":1746}]},{"orderNum":2,"winnerId":25183954,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25183954},"selectionType":"CHARACTER","selectionValue":1272},{"entrant":{"id":25184101},"selectionType":"CHARACTER","selectionValue":1746}]},{"orderNum":3,"winnerId":25184101,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25183954},"selectionType":"CHARACTER","selectionValue":1272},{"entrant":{"id":25184101},"selectionType":"CHARACTER","selectionValue":1291}]},{"orderNum":4,"winnerId":25184101,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25183954},"selectionType":"CHARACTER","selectionValue":1272},{"entrant":{"id":25184101},"selectionType":"CHARACTER","selectionValue":1291}]}]},{"id":109707165,"completedAt":1793760153,"fullRoundText":"Losers
+        Round 1","round":-3,"totalGames":5,"winnerId":25184101,"displayScore":"FBG
+        | KlodnSkorl 0 - rm8 3","vodUrl":null,"state":3,"event":{"id":1747663,"name":"Smash
+        Ultimate Singles","slug":"tournament\/mru-smash-172-rivals-2\/event\/smash-ultimate-singles","startAt":1793755800,"isOnline":false,"numEntrants":12,"videogame":{"id":1386},"tournament":{"id":971132,"name":"MRU
+        Smash #172 (RIVALS 2!!)","slug":"tournament\/mru-smash-172-rivals-2","startAt":1793755800,"endAt":1793768400,"city":"Calgary","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":13,"isOnline":false}},"slots":[{"entrant":{"id":25180334,"name":"FBG
+        | KlodnSkorl","initialSeedNum":9,"isDisqualified":null,"participants":[{"player":{"id":1707338,"gamerTag":"KlodnSkorl","prefix":"FBG"}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}},{"entrant":{"id":25184101,"name":"rm8","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}}],"games":[{"orderNum":1,"winnerId":25184101,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25180334},"selectionType":"CHARACTER","selectionValue":1294},{"entrant":{"id":25184101},"selectionType":"CHARACTER","selectionValue":1746}]},{"orderNum":2,"winnerId":25184101,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25180334},"selectionType":"CHARACTER","selectionValue":1294},{"entrant":{"id":25184101},"selectionType":"CHARACTER","selectionValue":1746}]},{"orderNum":3,"winnerId":25184101,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25180334},"selectionType":"CHARACTER","selectionValue":1294},{"entrant":{"id":25184101},"selectionType":"CHARACTER","selectionValue":1746}]}]},{"id":109702521,"completedAt":1793759488,"fullRoundText":"Winners
+        Semi-Final","round":2,"totalGames":5,"winnerId":25171941,"displayScore":"Highwayman
+        3 - rm8 1","vodUrl":null,"state":3,"event":{"id":1747666,"name":"Rivals 2
+        Singles","slug":"tournament\/mru-smash-172-rivals-2\/event\/rivals-2-singles","startAt":1793755800,"isOnline":false,"numEntrants":6,"videogame":{"id":53945},"tournament":{"id":971132,"name":"MRU
+        Smash #172 (RIVALS 2!!)","slug":"tournament\/mru-smash-172-rivals-2","startAt":1793755800,"endAt":1793768400,"city":"Calgary","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":13,"isOnline":false}},"slots":[{"entrant":{"id":25171941,"name":"Highwayman","initialSeedNum":2,"isDisqualified":null,"participants":[{"player":{"id":1229538,"gamerTag":"Highwayman","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":25184104,"name":"rm8","initialSeedNum":3,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":2,"stats":{"score":{"value":1}}}}],"games":null},{"id":109707150,"completedAt":1793759470,"fullRoundText":"Winners
+        Quarter-Final","round":1,"totalGames":5,"winnerId":25170980,"displayScore":"rm8
+        2 - UMN \/ Weird | Treyara 3","vodUrl":null,"state":3,"event":{"id":1747663,"name":"Smash
+        Ultimate Singles","slug":"tournament\/mru-smash-172-rivals-2\/event\/smash-ultimate-singles","startAt":1793755800,"isOnline":false,"numEntrants":12,"videogame":{"id":1386},"tournament":{"id":971132,"name":"MRU
+        Smash #172 (RIVALS 2!!)","slug":"tournament\/mru-smash-172-rivals-2","startAt":1793755800,"endAt":1793768400,"city":"Calgary","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":13,"isOnline":false}},"slots":[{"entrant":{"id":25184101,"name":"rm8","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":2,"stats":{"score":{"value":2}}}},{"entrant":{"id":25170980,"name":"UMN
+        \/ Weird | Treyara","initialSeedNum":2,"isDisqualified":null,"participants":[{"player":{"id":1769230,"gamerTag":"Treyara","prefix":"UMN
+        \/ Weird"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}}],"games":[{"orderNum":1,"winnerId":25184101,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25170980},"selectionType":"CHARACTER","selectionValue":1290},{"entrant":{"id":25184101},"selectionType":"CHARACTER","selectionValue":1291}]},{"orderNum":2,"winnerId":25170980,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25170980},"selectionType":"CHARACTER","selectionValue":1290},{"entrant":{"id":25184101},"selectionType":"CHARACTER","selectionValue":1291}]},{"orderNum":3,"winnerId":25170980,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25170980},"selectionType":"CHARACTER","selectionValue":1290},{"entrant":{"id":25184101},"selectionType":"CHARACTER","selectionValue":1291}]},{"orderNum":4,"winnerId":25184101,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25170980},"selectionType":"CHARACTER","selectionValue":1290},{"entrant":{"id":25184101},"selectionType":"CHARACTER","selectionValue":1291}]},{"orderNum":5,"winnerId":25170980,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25170980},"selectionType":"CHARACTER","selectionValue":1290},{"entrant":{"id":25184101},"selectionType":"CHARACTER","selectionValue":1291}]}]},{"id":109698395,"completedAt":1793757160,"fullRoundText":"Round
+        4","round":4,"totalGames":5,"winnerId":25184101,"displayScore":"rm8 2 - Tye
+        1","vodUrl":null,"state":3,"event":{"id":1747663,"name":"Smash Ultimate Singles","slug":"tournament\/mru-smash-172-rivals-2\/event\/smash-ultimate-singles","startAt":1793755800,"isOnline":false,"numEntrants":12,"videogame":{"id":1386},"tournament":{"id":971132,"name":"MRU
+        Smash #172 (RIVALS 2!!)","slug":"tournament\/mru-smash-172-rivals-2","startAt":1793755800,"endAt":1793768400,"city":"Calgary","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":13,"isOnline":false}},"slots":[{"entrant":{"id":25184101,"name":"rm8","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":2}}}},{"entrant":{"id":25170666,"name":"Tye","initialSeedNum":5,"isDisqualified":null,"participants":[{"player":{"id":2188737,"gamerTag":"Tye","prefix":null}}]},"standing":{"placement":2,"stats":{"score":{"value":1}}}}],"games":[{"orderNum":1,"winnerId":25170666,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25170666},"selectionType":"CHARACTER","selectionValue":1766},{"entrant":{"id":25184101},"selectionType":"CHARACTER","selectionValue":1746}]},{"orderNum":2,"winnerId":25184101,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25170666},"selectionType":"CHARACTER","selectionValue":1766},{"entrant":{"id":25184101},"selectionType":"CHARACTER","selectionValue":1746}]},{"orderNum":3,"winnerId":25184101,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25170666},"selectionType":"CHARACTER","selectionValue":1766},{"entrant":{"id":25184101},"selectionType":"CHARACTER","selectionValue":1746}]}]},{"id":109698398,"completedAt":1793756473,"fullRoundText":"Round
+        5","round":5,"totalGames":5,"winnerId":25183954,"displayScore":"rm8 0 - Seb
+        2","vodUrl":null,"state":3,"event":{"id":1747663,"name":"Smash Ultimate Singles","slug":"tournament\/mru-smash-172-rivals-2\/event\/smash-ultimate-singles","startAt":1793755800,"isOnline":false,"numEntrants":12,"videogame":{"id":1386},"tournament":{"id":971132,"name":"MRU
+        Smash #172 (RIVALS 2!!)","slug":"tournament\/mru-smash-172-rivals-2","startAt":1793755800,"endAt":1793768400,"city":"Calgary","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":13,"isOnline":false}},"slots":[{"entrant":{"id":25184101,"name":"rm8","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}},{"entrant":{"id":25183954,"name":"Seb","initialSeedNum":4,"isDisqualified":null,"participants":[{"player":{"id":1837100,"gamerTag":"Seb","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":2}}}}],"games":[{"orderNum":1,"winnerId":25183954,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25183954},"selectionType":"CHARACTER","selectionValue":1294},{"entrant":{"id":25184101},"selectionType":"CHARACTER","selectionValue":1746}]},{"orderNum":2,"winnerId":25183954,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25183954},"selectionType":"CHARACTER","selectionValue":1294},{"entrant":{"id":25184101},"selectionType":"CHARACTER","selectionValue":1746}]}]},{"id":109698389,"completedAt":1793755849,"fullRoundText":"Round
+        2","round":2,"totalGames":5,"winnerId":25184101,"displayScore":"rm8 2 - FBG
+        | KlodnSkorl 0","vodUrl":null,"state":3,"event":{"id":1747663,"name":"Smash
+        Ultimate Singles","slug":"tournament\/mru-smash-172-rivals-2\/event\/smash-ultimate-singles","startAt":1793755800,"isOnline":false,"numEntrants":12,"videogame":{"id":1386},"tournament":{"id":971132,"name":"MRU
+        Smash #172 (RIVALS 2!!)","slug":"tournament\/mru-smash-172-rivals-2","startAt":1793755800,"endAt":1793768400,"city":"Calgary","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":13,"isOnline":false}},"slots":[{"entrant":{"id":25184101,"name":"rm8","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":2}}}},{"entrant":{"id":25180334,"name":"FBG
+        | KlodnSkorl","initialSeedNum":9,"isDisqualified":null,"participants":[{"player":{"id":1707338,"gamerTag":"KlodnSkorl","prefix":"FBG"}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":25184101,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25180334},"selectionType":"CHARACTER","selectionValue":1294},{"entrant":{"id":25184101},"selectionType":"CHARACTER","selectionValue":1746}]},{"orderNum":2,"winnerId":25184101,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25180334},"selectionType":"CHARACTER","selectionValue":1294},{"entrant":{"id":25184101},"selectionType":"CHARACTER","selectionValue":1746}]}]},{"id":109702519,"completedAt":1793755672,"fullRoundText":"Winners
+        Quarter-Final","round":1,"totalGames":5,"winnerId":25184104,"displayScore":"rm8
+        3 - FBG | KlodnSkorl 0","vodUrl":null,"state":3,"event":{"id":1747666,"name":"Rivals
+        2 Singles","slug":"tournament\/mru-smash-172-rivals-2\/event\/rivals-2-singles","startAt":1793755800,"isOnline":false,"numEntrants":6,"videogame":{"id":53945},"tournament":{"id":971132,"name":"MRU
+        Smash #172 (RIVALS 2!!)","slug":"tournament\/mru-smash-172-rivals-2","startAt":1793755800,"endAt":1793768400,"city":"Calgary","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":13,"isOnline":false}},"slots":[{"entrant":{"id":25184104,"name":"rm8","initialSeedNum":3,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":25184089,"name":"FBG
+        | KlodnSkorl","initialSeedNum":6,"isDisqualified":null,"participants":[{"player":{"id":1707338,"gamerTag":"KlodnSkorl","prefix":"FBG"}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":null},{"id":109698386,"completedAt":1793754154,"fullRoundText":"Round
+        1","round":1,"totalGames":5,"winnerId":25184101,"displayScore":"rm8 2 - CrystalPixl
+        0","vodUrl":null,"state":3,"event":{"id":1747663,"name":"Smash Ultimate Singles","slug":"tournament\/mru-smash-172-rivals-2\/event\/smash-ultimate-singles","startAt":1793755800,"isOnline":false,"numEntrants":12,"videogame":{"id":1386},"tournament":{"id":971132,"name":"MRU
+        Smash #172 (RIVALS 2!!)","slug":"tournament\/mru-smash-172-rivals-2","startAt":1793755800,"endAt":1793768400,"city":"Calgary","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":13,"isOnline":false}},"slots":[{"entrant":{"id":25184101,"name":"rm8","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":2}}}},{"entrant":{"id":25184161,"name":"CrystalPixl","initialSeedNum":12,"isDisqualified":null,"participants":[{"player":{"id":5658722,"gamerTag":"CrystalPixl","prefix":""}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":25184101,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25184101},"selectionType":"CHARACTER","selectionValue":1746},{"entrant":{"id":25184161},"selectionType":"CHARACTER","selectionValue":1408}]},{"orderNum":2,"winnerId":25184101,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25184101},"selectionType":"CHARACTER","selectionValue":1746},{"entrant":{"id":25184161},"selectionType":"CHARACTER","selectionValue":1408}]}]}]}}},"extensions":{"cacheControl":{"version":1,"hints":null},"queryComplexity":705},"actionRecords":[]}'
+    headers:
+      access-control-allow-credentials:
+      - 'true'
+      access-control-allow-headers:
+      - '*, Content-Type, Authorization'
+      access-control-allow-methods:
+      - POST, GET, OPTIONS
+      access-control-allow-origin:
+      - '*'
+      cache-control:
+      - private, max-age=0, s-maxage=0
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a5af4f43bc27f5be-IAD
+      connection:
+      - keep-alive
+      content-length:
+      - '26781'
+      content-type:
+      - application/json
+      date:
+      - Sun, 15 Nov 2026 15:32:37 GMT
+      required-client-version:
+      - '20'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=15724800; includeSubDomains
+      transfer-encoding:
+      - chunked
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"query":"\nquery PlayerSets($id: ID!, $page: Int!, $perPage: Int!, $opponentId:
+      ID, $filters: SetFilters) {\n  player(id: $id) {\n    id\n    sets(page: $page,
+      perPage: $perPage, opponentId: $opponentId, filters: $filters) {\n      pageInfo
+      { total totalPages page perPage }\n      nodes {\n        id completedAt fullRoundText
+      round totalGames winnerId displayScore vodUrl state\n        event { ...EventFields
+      tournament { ...TournamentFields } }\n        slots {\n          entrant { ...EntrantFields
+      }\n          standing { placement stats { score { value } } }\n        }\n        games
+      {\n          orderNum winnerId entrant1Score entrant2Score\n          stage
+      { id name }\n          selections { entrant { id } selectionType selectionValue
+      }\n        }\n      }\n    }\n  }\n}\n\nfragment EventFields on Event {\n  id
+      name slug startAt isOnline numEntrants\n  videogame { id }\n}\n\nfragment TournamentFields
+      on Tournament {\n  id name slug startAt endAt city addrState countryCode venueName
+      numAttendees isOnline\n}\n\nfragment EntrantFields on Entrant {\n  id name initialSeedNum
+      isDisqualified\n  participants { player { id gamerTag prefix } }\n}\n","variables":{"id":1006473,"page":5,"perPage":15,"opponentId":null,"filters":null}}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '1244'
+      content-type:
+      - application/json
+      host:
+      - api.start.gg
+      user-agent:
+      - python-httpx2/2.12.0
+    method: POST
+    uri: https://api.start.gg/gql/alpha
+  response:
+    body:
+      string: '{"data":{"player":{"id":1006473,"sets":{"pageInfo":{"total":17913,"totalPages":1195,"page":5,"perPage":15},"nodes":[{"id":109566779,"completedAt":1793428124,"fullRoundText":"Winners
+        Semi-Final","round":1,"totalGames":5,"winnerId":25121549,"displayScore":"Xx_cornbag7_xX
+        3 - rm8 0","vodUrl":null,"state":3,"event":{"id":1738119,"name":"Ultimate
+        Singles","slug":"tournament\/st-albert-arcade-50\/event\/ultimate-singles","startAt":1793408400,"isOnline":false,"numEntrants":72,"videogame":{"id":1386},"tournament":{"id":966598,"name":"St
+        Albert Arcade 50","slug":"tournament\/st-albert-arcade-50","startAt":1793404800,"endAt":1793426340,"city":"St.
+        Albert","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":96,"isOnline":false}},"slots":[{"entrant":{"id":25121549,"name":"Xx_cornbag7_xX","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":1784382,"gamerTag":"Xx_cornbag7_xX","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":25149582,"name":"rm8","initialSeedNum":4,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":25121549,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25121549},"selectionType":"CHARACTER","selectionValue":1280},{"entrant":{"id":25149582},"selectionType":"CHARACTER","selectionValue":1291}]},{"orderNum":2,"winnerId":25121549,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25121549},"selectionType":"CHARACTER","selectionValue":1280},{"entrant":{"id":25149582},"selectionType":"CHARACTER","selectionValue":1291}]},{"orderNum":3,"winnerId":25121549,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25121549},"selectionType":"CHARACTER","selectionValue":1280},{"entrant":{"id":25149582},"selectionType":"CHARACTER","selectionValue":1302}]}]},{"id":109554776,"completedAt":1793427346,"fullRoundText":"Grand
+        Final","round":6,"totalGames":5,"winnerId":25046349,"displayScore":"SNIFF
+        | The Reek 3 - rm8 0","vodUrl":null,"state":3,"event":{"id":1738122,"name":"Rivals
+        of Aether 2 Singles","slug":"tournament\/st-albert-arcade-50\/event\/rivals-of-aether-2-singles","startAt":1793410200,"isOnline":false,"numEntrants":19,"videogame":{"id":53945},"tournament":{"id":966598,"name":"St
+        Albert Arcade 50","slug":"tournament\/st-albert-arcade-50","startAt":1793404800,"endAt":1793426340,"city":"St.
+        Albert","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":96,"isOnline":false}},"slots":[{"entrant":{"id":25046349,"name":"SNIFF
+        | The Reek","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":31171,"gamerTag":"The
+        Reek","prefix":"SNIFF"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":25149586,"name":"rm8","initialSeedNum":4,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":25046349,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25046349},"selectionType":"CHARACTER","selectionValue":2505},{"entrant":{"id":25149586},"selectionType":"CHARACTER","selectionValue":2503}]},{"orderNum":2,"winnerId":25046349,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25046349},"selectionType":"CHARACTER","selectionValue":2505},{"entrant":{"id":25149586},"selectionType":"CHARACTER","selectionValue":2503}]},{"orderNum":3,"winnerId":25046349,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25046349},"selectionType":"CHARACTER","selectionValue":2505},{"entrant":{"id":25149586},"selectionType":"CHARACTER","selectionValue":2503}]}]},{"id":109554839,"completedAt":1793426708,"fullRoundText":"Losers
+        Final","round":-10,"totalGames":5,"winnerId":25149586,"displayScore":"Likwd
+        incorp | Shlingelfan1738 0 - rm8 3","vodUrl":null,"state":3,"event":{"id":1738122,"name":"Rivals
+        of Aether 2 Singles","slug":"tournament\/st-albert-arcade-50\/event\/rivals-of-aether-2-singles","startAt":1793410200,"isOnline":false,"numEntrants":19,"videogame":{"id":53945},"tournament":{"id":966598,"name":"St
+        Albert Arcade 50","slug":"tournament\/st-albert-arcade-50","startAt":1793404800,"endAt":1793426340,"city":"St.
+        Albert","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":96,"isOnline":false}},"slots":[{"entrant":{"id":25096150,"name":"Likwd
+        incorp | Shlingelfan1738","initialSeedNum":6,"isDisqualified":null,"participants":[{"player":{"id":4271691,"gamerTag":"Shlingelfan1738","prefix":"Likwd
+        incorp"}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}},{"entrant":{"id":25149586,"name":"rm8","initialSeedNum":4,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}}],"games":[{"orderNum":1,"winnerId":25149586,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25096150},"selectionType":"CHARACTER","selectionValue":2505},{"entrant":{"id":25149586},"selectionType":"CHARACTER","selectionValue":2503}]},{"orderNum":2,"winnerId":25149586,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25096150},"selectionType":"CHARACTER","selectionValue":2505},{"entrant":{"id":25149586},"selectionType":"CHARACTER","selectionValue":2503}]},{"orderNum":3,"winnerId":25149586,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25096150},"selectionType":"CHARACTER","selectionValue":2505},{"entrant":{"id":25149586},"selectionType":"CHARACTER","selectionValue":2503}]}]},{"id":109554838,"completedAt":1793425986,"fullRoundText":"Losers
+        Semi-Final","round":-9,"totalGames":5,"winnerId":25149586,"displayScore":"amber
+        | weedcops 1 - rm8 3","vodUrl":null,"state":3,"event":{"id":1738122,"name":"Rivals
+        of Aether 2 Singles","slug":"tournament\/st-albert-arcade-50\/event\/rivals-of-aether-2-singles","startAt":1793410200,"isOnline":false,"numEntrants":19,"videogame":{"id":53945},"tournament":{"id":966598,"name":"St
+        Albert Arcade 50","slug":"tournament\/st-albert-arcade-50","startAt":1793404800,"endAt":1793426340,"city":"St.
+        Albert","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":96,"isOnline":false}},"slots":[{"entrant":{"id":25068541,"name":"amber
+        | weedcops","initialSeedNum":5,"isDisqualified":null,"participants":[{"player":{"id":4939344,"gamerTag":"weedcops","prefix":"amber"}}]},"standing":{"placement":2,"stats":{"score":{"value":1}}}},{"entrant":{"id":25149586,"name":"rm8","initialSeedNum":4,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}}],"games":[{"orderNum":1,"winnerId":25149586,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25068541},"selectionType":"CHARACTER","selectionValue":2597},{"entrant":{"id":25149586},"selectionType":"CHARACTER","selectionValue":2503}]},{"orderNum":2,"winnerId":25149586,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25068541},"selectionType":"CHARACTER","selectionValue":2597},{"entrant":{"id":25149586},"selectionType":"CHARACTER","selectionValue":2503}]},{"orderNum":3,"winnerId":25068541,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25068541},"selectionType":"CHARACTER","selectionValue":2498},{"entrant":{"id":25149586},"selectionType":"CHARACTER","selectionValue":2503}]},{"orderNum":4,"winnerId":25149586,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25068541},"selectionType":"CHARACTER","selectionValue":2498},{"entrant":{"id":25149586},"selectionType":"CHARACTER","selectionValue":2503}]}]},{"id":109554837,"completedAt":1793425160,"fullRoundText":"Losers
+        Quarter-Final","round":-8,"totalGames":5,"winnerId":25149586,"displayScore":"rm8
+        3 - FN | Utiga 0","vodUrl":null,"state":3,"event":{"id":1738122,"name":"Rivals
+        of Aether 2 Singles","slug":"tournament\/st-albert-arcade-50\/event\/rivals-of-aether-2-singles","startAt":1793410200,"isOnline":false,"numEntrants":19,"videogame":{"id":53945},"tournament":{"id":966598,"name":"St
+        Albert Arcade 50","slug":"tournament\/st-albert-arcade-50","startAt":1793404800,"endAt":1793426340,"city":"St.
+        Albert","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":96,"isOnline":false}},"slots":[{"entrant":{"id":25149586,"name":"rm8","initialSeedNum":4,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":25137274,"name":"FN
+        | Utiga","initialSeedNum":3,"isDisqualified":null,"participants":[{"player":{"id":1792712,"gamerTag":"Utiga","prefix":"FN"}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":25149586,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25137274},"selectionType":"CHARACTER","selectionValue":2503},{"entrant":{"id":25149586},"selectionType":"CHARACTER","selectionValue":2503}]},{"orderNum":2,"winnerId":25149586,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25137274},"selectionType":"CHARACTER","selectionValue":2503},{"entrant":{"id":25149586},"selectionType":"CHARACTER","selectionValue":2503}]},{"orderNum":3,"winnerId":25149586,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25137274},"selectionType":"CHARACTER","selectionValue":2503},{"entrant":{"id":25149586},"selectionType":"CHARACTER","selectionValue":2503}]}]},{"id":109562841,"completedAt":1793423722,"fullRoundText":"Winners
+        Quarter-Final","round":1,"totalGames":5,"winnerId":25149582,"displayScore":"rm8
+        2 - PWR BRAIDEN 0","vodUrl":null,"state":3,"event":{"id":1738119,"name":"Ultimate
+        Singles","slug":"tournament\/st-albert-arcade-50\/event\/ultimate-singles","startAt":1793408400,"isOnline":false,"numEntrants":72,"videogame":{"id":1386},"tournament":{"id":966598,"name":"St
+        Albert Arcade 50","slug":"tournament\/st-albert-arcade-50","startAt":1793404800,"endAt":1793426340,"city":"St.
+        Albert","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":96,"isOnline":false}},"slots":[{"entrant":{"id":25149582,"name":"rm8","initialSeedNum":4,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":2}}}},{"entrant":{"id":25113386,"name":"PWR
+        BRAIDEN","initialSeedNum":12,"isDisqualified":null,"participants":[{"player":{"id":3315242,"gamerTag":"PWR
+        BRAIDEN","prefix":""}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":25149582,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25113386},"selectionType":"CHARACTER","selectionValue":1532},{"entrant":{"id":25149582},"selectionType":"CHARACTER","selectionValue":1291}]},{"orderNum":2,"winnerId":25149582,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25113386},"selectionType":"CHARACTER","selectionValue":1532},{"entrant":{"id":25149582},"selectionType":"CHARACTER","selectionValue":1291}]}]},{"id":109554773,"completedAt":1793423051,"fullRoundText":"Winners
+        Semi-Final","round":4,"totalGames":5,"winnerId":25046349,"displayScore":"SNIFF
+        | The Reek 3 - rm8 0","vodUrl":null,"state":3,"event":{"id":1738122,"name":"Rivals
+        of Aether 2 Singles","slug":"tournament\/st-albert-arcade-50\/event\/rivals-of-aether-2-singles","startAt":1793410200,"isOnline":false,"numEntrants":19,"videogame":{"id":53945},"tournament":{"id":966598,"name":"St
+        Albert Arcade 50","slug":"tournament\/st-albert-arcade-50","startAt":1793404800,"endAt":1793426340,"city":"St.
+        Albert","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":96,"isOnline":false}},"slots":[{"entrant":{"id":25046349,"name":"SNIFF
+        | The Reek","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":31171,"gamerTag":"The
+        Reek","prefix":"SNIFF"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":25149586,"name":"rm8","initialSeedNum":4,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":25046349,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25046349},"selectionType":"CHARACTER","selectionValue":2505},{"entrant":{"id":25149586},"selectionType":"CHARACTER","selectionValue":2503}]},{"orderNum":2,"winnerId":25046349,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25046349},"selectionType":"CHARACTER","selectionValue":2505},{"entrant":{"id":25149586},"selectionType":"CHARACTER","selectionValue":2503}]},{"orderNum":3,"winnerId":25046349,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25046349},"selectionType":"CHARACTER","selectionValue":2505},{"entrant":{"id":25149586},"selectionType":"CHARACTER","selectionValue":2503}]}]},{"id":109553884,"completedAt":1793422098,"fullRoundText":"Winners
+        Quarter-Final","round":4,"totalGames":5,"winnerId":25149582,"displayScore":"rm8
+        2 - Likwd incorp | Shlingelfan1738 0","vodUrl":null,"state":3,"event":{"id":1738119,"name":"Ultimate
+        Singles","slug":"tournament\/st-albert-arcade-50\/event\/ultimate-singles","startAt":1793408400,"isOnline":false,"numEntrants":72,"videogame":{"id":1386},"tournament":{"id":966598,"name":"St
+        Albert Arcade 50","slug":"tournament\/st-albert-arcade-50","startAt":1793404800,"endAt":1793426340,"city":"St.
+        Albert","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":96,"isOnline":false}},"slots":[{"entrant":{"id":25149582,"name":"rm8","initialSeedNum":4,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":2}}}},{"entrant":{"id":25050456,"name":"Likwd
+        incorp | Shlingelfan1738","initialSeedNum":20,"isDisqualified":null,"participants":[{"player":{"id":4271691,"gamerTag":"Shlingelfan1738","prefix":"Likwd
+        incorp"}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":25149582,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25050456},"selectionType":"CHARACTER","selectionValue":1326},{"entrant":{"id":25149582},"selectionType":"CHARACTER","selectionValue":1291}]},{"orderNum":2,"winnerId":25149582,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25050456},"selectionType":"CHARACTER","selectionValue":1326},{"entrant":{"id":25149582},"selectionType":"CHARACTER","selectionValue":1291}]}]},{"id":109554453,"completedAt":1793420629,"fullRoundText":"Losers
+        Round 4","round":-7,"totalGames":5,"winnerId":25141824,"displayScore":"rm8
+        0 - Saybn 2","vodUrl":null,"state":3,"event":{"id":1738121,"name":"Melee Singles","slug":"tournament\/st-albert-arcade-50\/event\/melee-singles","startAt":1793410200,"isOnline":false,"numEntrants":39,"videogame":{"id":1},"tournament":{"id":966598,"name":"St
+        Albert Arcade 50","slug":"tournament\/st-albert-arcade-50","startAt":1793404800,"endAt":1793426340,"city":"St.
+        Albert","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":96,"isOnline":false}},"slots":[{"entrant":{"id":25149585,"name":"rm8","initialSeedNum":12,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}},{"entrant":{"id":25141824,"name":"Saybn","initialSeedNum":13,"isDisqualified":null,"participants":[{"player":{"id":2827659,"gamerTag":"Saybn","prefix":null}}]},"standing":{"placement":1,"stats":{"score":{"value":2}}}}],"games":[{"orderNum":1,"winnerId":25141824,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25141824},"selectionType":"CHARACTER","selectionValue":8},{"entrant":{"id":25149585},"selectionType":"CHARACTER","selectionValue":14}]},{"orderNum":2,"winnerId":25141824,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25141824},"selectionType":"CHARACTER","selectionValue":8},{"entrant":{"id":25149585},"selectionType":"CHARACTER","selectionValue":14}]}]},{"id":109553878,"completedAt":1793419529,"fullRoundText":"Winners
+        Round 3","round":3,"totalGames":5,"winnerId":25149582,"displayScore":"rm8
+        2 - CHUD 2 | Ninjapugs 0","vodUrl":null,"state":3,"event":{"id":1738119,"name":"Ultimate
+        Singles","slug":"tournament\/st-albert-arcade-50\/event\/ultimate-singles","startAt":1793408400,"isOnline":false,"numEntrants":72,"videogame":{"id":1386},"tournament":{"id":966598,"name":"St
+        Albert Arcade 50","slug":"tournament\/st-albert-arcade-50","startAt":1793404800,"endAt":1793426340,"city":"St.
+        Albert","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":96,"isOnline":false}},"slots":[{"entrant":{"id":25149582,"name":"rm8","initialSeedNum":4,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":2}}}},{"entrant":{"id":25146688,"name":"CHUD
+        2 | Ninjapugs","initialSeedNum":29,"isDisqualified":null,"participants":[{"player":{"id":3053523,"gamerTag":"Ninjapugs","prefix":"CHUD
+        2"}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":25149582,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25146688},"selectionType":"CHARACTER","selectionValue":1323},{"entrant":{"id":25149582},"selectionType":"CHARACTER","selectionValue":1291}]},{"orderNum":2,"winnerId":25149582,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25146688},"selectionType":"CHARACTER","selectionValue":1323},{"entrant":{"id":25149582},"selectionType":"CHARACTER","selectionValue":1291}]}]},{"id":109553866,"completedAt":1793419168,"fullRoundText":"Winners
+        Round 2","round":2,"totalGames":5,"winnerId":25149582,"displayScore":"rm8
+        2 - NECROMANCER 0","vodUrl":null,"state":3,"event":{"id":1738119,"name":"Ultimate
+        Singles","slug":"tournament\/st-albert-arcade-50\/event\/ultimate-singles","startAt":1793408400,"isOnline":false,"numEntrants":72,"videogame":{"id":1386},"tournament":{"id":966598,"name":"St
+        Albert Arcade 50","slug":"tournament\/st-albert-arcade-50","startAt":1793404800,"endAt":1793426340,"city":"St.
+        Albert","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":96,"isOnline":false}},"slots":[{"entrant":{"id":25149582,"name":"rm8","initialSeedNum":4,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":2}}}},{"entrant":{"id":25064636,"name":"NECROMANCER","initialSeedNum":61,"isDisqualified":null,"participants":[{"player":{"id":4376189,"gamerTag":"NECROMANCER","prefix":""}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":25149582,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25064636},"selectionType":"CHARACTER","selectionValue":1407},{"entrant":{"id":25149582},"selectionType":"CHARACTER","selectionValue":1746}]},{"orderNum":2,"winnerId":25149582,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25064636},"selectionType":"CHARACTER","selectionValue":1407},{"entrant":{"id":25149582},"selectionType":"CHARACTER","selectionValue":1746}]}]},{"id":109554450,"completedAt":1793418724,"fullRoundText":"Losers
+        Round 3","round":-6,"totalGames":5,"winnerId":25149585,"displayScore":"rm8
+        2 - Ps3 0","vodUrl":null,"state":3,"event":{"id":1738121,"name":"Melee Singles","slug":"tournament\/st-albert-arcade-50\/event\/melee-singles","startAt":1793410200,"isOnline":false,"numEntrants":39,"videogame":{"id":1},"tournament":{"id":966598,"name":"St
+        Albert Arcade 50","slug":"tournament\/st-albert-arcade-50","startAt":1793404800,"endAt":1793426340,"city":"St.
+        Albert","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":96,"isOnline":false}},"slots":[{"entrant":{"id":25149585,"name":"rm8","initialSeedNum":12,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":2}}}},{"entrant":{"id":25138844,"name":"Ps3","initialSeedNum":25,"isDisqualified":null,"participants":[{"player":{"id":430775,"gamerTag":"Ps3","prefix":""}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":25149585,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25138844},"selectionType":"CHARACTER","selectionValue":6},{"entrant":{"id":25149585},"selectionType":"CHARACTER","selectionValue":14}]},{"orderNum":2,"winnerId":25149585,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25138844},"selectionType":"CHARACTER","selectionValue":6},{"entrant":{"id":25149585},"selectionType":"CHARACTER","selectionValue":14}]}]},{"id":109554390,"completedAt":1793417290,"fullRoundText":"Winners
+        Quarter-Final","round":3,"totalGames":5,"winnerId":25063806,"displayScore":"Rose
+        Hall 2 - rm8 0","vodUrl":null,"state":3,"event":{"id":1738121,"name":"Melee
+        Singles","slug":"tournament\/st-albert-arcade-50\/event\/melee-singles","startAt":1793410200,"isOnline":false,"numEntrants":39,"videogame":{"id":1},"tournament":{"id":966598,"name":"St
+        Albert Arcade 50","slug":"tournament\/st-albert-arcade-50","startAt":1793404800,"endAt":1793426340,"city":"St.
+        Albert","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":96,"isOnline":false}},"slots":[{"entrant":{"id":25063806,"name":"Rose
+        Hall","initialSeedNum":5,"isDisqualified":null,"participants":[{"player":{"id":56411,"gamerTag":"Rose
+        Hall","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":2}}}},{"entrant":{"id":25149585,"name":"rm8","initialSeedNum":12,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":25063806,"entrant1Score":null,"entrant2Score":null,"stage":{"id":19,"name":"Battlefield"},"selections":[{"entrant":{"id":25063806},"selectionType":"CHARACTER","selectionValue":23},{"entrant":{"id":25149585},"selectionType":"CHARACTER","selectionValue":14}]},{"orderNum":2,"winnerId":25063806,"entrant1Score":null,"entrant2Score":null,"stage":{"id":15,"name":"Pok\u00e9mon
+        Stadium"},"selections":[{"entrant":{"id":25063806},"selectionType":"CHARACTER","selectionValue":23},{"entrant":{"id":25149585},"selectionType":"CHARACTER","selectionValue":14}]}]},{"id":109554770,"completedAt":1793414741,"fullRoundText":"Winners
+        Quarter-Final","round":3,"totalGames":5,"winnerId":25149586,"displayScore":"rm8
+        3 - amber | weedcops 1","vodUrl":null,"state":3,"event":{"id":1738122,"name":"Rivals
+        of Aether 2 Singles","slug":"tournament\/st-albert-arcade-50\/event\/rivals-of-aether-2-singles","startAt":1793410200,"isOnline":false,"numEntrants":19,"videogame":{"id":53945},"tournament":{"id":966598,"name":"St
+        Albert Arcade 50","slug":"tournament\/st-albert-arcade-50","startAt":1793404800,"endAt":1793426340,"city":"St.
+        Albert","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":96,"isOnline":false}},"slots":[{"entrant":{"id":25149586,"name":"rm8","initialSeedNum":4,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":25068541,"name":"amber
+        | weedcops","initialSeedNum":5,"isDisqualified":null,"participants":[{"player":{"id":4939344,"gamerTag":"weedcops","prefix":"amber"}}]},"standing":{"placement":2,"stats":{"score":{"value":1}}}}],"games":[{"orderNum":1,"winnerId":25149586,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25068541},"selectionType":"CHARACTER","selectionValue":2597},{"entrant":{"id":25149586},"selectionType":"CHARACTER","selectionValue":2503}]},{"orderNum":2,"winnerId":25149586,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25068541},"selectionType":"CHARACTER","selectionValue":2597},{"entrant":{"id":25149586},"selectionType":"CHARACTER","selectionValue":2503}]},{"orderNum":3,"winnerId":25068541,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25068541},"selectionType":"CHARACTER","selectionValue":2597},{"entrant":{"id":25149586},"selectionType":"CHARACTER","selectionValue":2503}]},{"orderNum":4,"winnerId":25149586,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25068541},"selectionType":"CHARACTER","selectionValue":2597},{"entrant":{"id":25149586},"selectionType":"CHARACTER","selectionValue":2503}]}]},{"id":109554386,"completedAt":1793412498,"fullRoundText":"Winners
+        Round 2","round":2,"totalGames":5,"winnerId":25149585,"displayScore":"rm8
+        2 - Woozyy | Erf09 0","vodUrl":null,"state":3,"event":{"id":1738121,"name":"Melee
+        Singles","slug":"tournament\/st-albert-arcade-50\/event\/melee-singles","startAt":1793410200,"isOnline":false,"numEntrants":39,"videogame":{"id":1},"tournament":{"id":966598,"name":"St
+        Albert Arcade 50","slug":"tournament\/st-albert-arcade-50","startAt":1793404800,"endAt":1793426340,"city":"St.
+        Albert","addrState":"AB","countryCode":"CA","venueName":null,"numAttendees":96,"isOnline":false}},"slots":[{"entrant":{"id":25149585,"name":"rm8","initialSeedNum":12,"isDisqualified":null,"participants":[{"player":{"id":1006473,"gamerTag":"rm8","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":2}}}},{"entrant":{"id":25086682,"name":"Woozyy
+        | Erf09","initialSeedNum":21,"isDisqualified":null,"participants":[{"player":{"id":4255791,"gamerTag":"Erf09","prefix":"Woozyy"}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":25149585,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25086682},"selectionType":"CHARACTER","selectionValue":14},{"entrant":{"id":25149585},"selectionType":"CHARACTER","selectionValue":14}]},{"orderNum":2,"winnerId":25149585,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25086682},"selectionType":"CHARACTER","selectionValue":14},{"entrant":{"id":25149585},"selectionType":"CHARACTER","selectionValue":14}]}]}]}}},"extensions":{"cacheControl":{"version":1,"hints":null},"queryComplexity":702},"actionRecords":[]}'
+    headers:
+      access-control-allow-credentials:
+      - 'true'
+      access-control-allow-headers:
+      - '*, Content-Type, Authorization'
+      access-control-allow-methods:
+      - POST, GET, OPTIONS
+      access-control-allow-origin:
+      - '*'
+      cache-control:
+      - private, max-age=0, s-maxage=0
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a5af4f43bf2113b9-IAD
+      connection:
+      - keep-alive
+      content-length:
+      - '26893'
+      content-type:
+      - application/json
+      date:
+      - Sun, 15 Nov 2026 15:32:37 GMT
+      required-client-version:
+      - '20'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=15724800; includeSubDomains
+      transfer-encoding:
+      - chunked
+    status:
+      code: 200
+      message: OK
+version: 1

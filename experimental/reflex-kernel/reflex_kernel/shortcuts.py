@@ -22,10 +22,11 @@ class Binding:
 class Shortcut(Enum):
     # Handled by assets/panes.js (window.SHORTCUTS).
     FULL_SCREEN = Binding("Alt+F", "result, pane", "Full screen: float the result you are in, else fill with your pane")
-    CLOSE = Binding("Escape", "floating result, menu, help", "Close it")
+    CLOSE = Binding("Escape", "floating result, menu, help, debug log", "Close it")
     TOGGLE_RESULTS = Binding("Alt+R", "anywhere", "Show or hide the Results pane")
     TOGGLE_PYTHON = Binding("Alt+P", "anywhere", "Show or hide the Python (Jupyter) pane")
     HELP = Binding("Alt+H", "anywhere", "Show or hide this help")
+    DEBUG = Binding("Alt+D", "anywhere", "Show or hide the debug log: every request the app made, memory")
     # Handled by the chat box (a form textarea).
     SEND = Binding("Enter", "chat", "Send")
     NEW_LINE = Binding("Shift+Enter", "chat", "New line")
@@ -54,6 +55,7 @@ BROWSER_SHORTCUTS = (
     Shortcut.TOGGLE_RESULTS,
     Shortcut.TOGGLE_PYTHON,
     Shortcut.HELP,
+    Shortcut.DEBUG,
 )
 
 

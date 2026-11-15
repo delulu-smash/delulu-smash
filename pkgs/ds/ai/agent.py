@@ -5,12 +5,13 @@ from pydantic import BaseModel
 from pydantic_ai import Agent
 from pydantic_ai_harness import Coder  # noqa: F401  # used by the commented-out Coder agent below
 
+from ds.ai.call_log import ToolCallLog
 from ds.ai.knowledge import knowledge_capability
 from ds.ai.little_mac import little_mac_capability
 from ds.ai.mechanics import mechanics_capability
 from ds.ai.smashdb import smashdb_capability
 from ds.ai.smashtube import smashtube_capability
-from ds.ai.supermajor import supermajor_capability
+from ds.ai.startgg import startgg_capability
 from ds.util.const import DEFAULT_AI_MODEL
 
 __all__ = ["agent"]
@@ -39,11 +40,15 @@ agent = Agent(
     # cost. Override per run with model_settings={"cache": False}
     model_settings={"cache": True},
     capabilities=[
+        # a log record per tool call; links the call's requests to it (an app's debug panel)
+        ToolCallLog(),
         knowledge_capability,
         smashdb_capability,
         mechanics_capability,
         little_mac_capability,
-        supermajor_capability,
+        # player picks from start.gg; replaced supermajor_capability (ds.ai.supermajor), whose
+        # site blocks automated clients since Nov 2026
+        startgg_capability,
         smashtube_capability,
     ],
 )

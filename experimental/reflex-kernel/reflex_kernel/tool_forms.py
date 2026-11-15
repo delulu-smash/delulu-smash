@@ -15,6 +15,7 @@ import typing
 from functools import cached_property
 from typing import TYPE_CHECKING, Any
 
+from ds.data.chars import CharEnum
 from pydantic import ValidationError
 from pydantic_ai import Tool
 
@@ -29,12 +30,18 @@ class FormField:
     name: str
     label: str
     kind: str = "text"
-    """text | number | select | check"""
+    """text | number | select | check | character (a parameter typed with a ds.data.CharEnum)"""
     value: str = ""
     options: list[str] = dataclasses.field(default_factory=list)
     """select only; "" means not set."""
     help: str = ""
     """The parameter's description from the tool's schema, shown as the field's tooltip."""
+    choices: list[dict[str, str]] = dataclasses.field(default_factory=list)
+    """character only: every member as value, label, icon (a path under pkgs/ds/data/)."""
+    shown: str = ""
+    """character only: the label of `value` ("" when nothing is picked)."""
+    icon: str = ""
+    """character only: the icon of `value`."""
 
 
 def schema_fields(schema: dict[str, Any], values: dict[str, Any], hide: tuple[str, ...] = ()) -> list[FormField]:
@@ -119,8 +126,28 @@ class ToolForm:
     def result_type(self) -> type:
         return typing.get_type_hints(self.function)["return"]
 
+    @cached_property
+    def character_types(self) -> dict[str, type[CharEnum]]:
+        """Parameters typed with a character enum (CharId, CharGroup, also `| None`): name -> the enum.
+        The form reads the type, not the parameter's name, so any tool gets the picker by typing
+        an argument that way."""
+        hints = typing.get_type_hints(self.function)
+        found = {}
+        for name, hint in hints.items():
+            for arg in [hint, *typing.get_args(hint)]:
+                if isinstance(arg, type) and issubclass(arg, CharEnum):
+                    found[name] = arg
+        return found
+
     def fields(self, values: dict[str, Any]) -> list[FormField]:
-        return schema_fields(self.schema, values, self.hide)
+        fields = schema_fields(self.schema, values, self.hide)
+        for field in fields:
+            if enum := self.character_types.get(field.name):
+                choices = [choice.model_dump() for choice in enum.choices()]
+                field.kind, field.choices = "character", choices
+                picked = next((c for c in choices if c["value"] == field.value), None)
+                field.shown, field.icon = (picked["label"], picked["icon"]) if picked else ("", "")
+        return fields
 
     def arguments(self, raw: dict[str, Any]) -> dict[str, Any]:
         """A submitted form as the tool's arguments, checked by the validator pydantic-ai uses for
@@ -136,6 +163,8 @@ class ToolForm:
             elif isinstance(value, str) and prop.get("type") != "string" and not _choices(prop):
                 if value.strip():  # an empty number box = the default
                     given[name] = value.strip()
+            elif value == "" and (choices := _choices(prop)) and "" not in choices:
+                continue  # a select left out of the submitted inputs = the default
             else:
                 given[name] = value.strip() if isinstance(value, str) else value
         try:

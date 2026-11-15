@@ -9,7 +9,17 @@ from __future__ import annotations
 import polars as pl
 import pytest
 from ds.cli.data import CHAR_PARQUET_PATH, DATA_DIR
-from ds.data import CHAR_ICON_DIR, char_icon, char_icon_by_name, char_icon_path
+from ds.data import (
+    CHAR_GROUPS,
+    CHAR_ICON_DIR,
+    char_group,
+    char_group_by_name,
+    char_group_members,
+    char_icon,
+    char_icon_by_name,
+    char_icon_path,
+    char_id_by_name,
+)
 from ds.data.raw.smashmate import PNG_MAGIC, SITE_CHAR_ICON, char_icon_file
 
 CHARS = pl.read_parquet(CHAR_PARQUET_PATH)
@@ -68,3 +78,59 @@ def test_icon_by_display_name(name, file):
 
 def test_icon_by_unknown_name():
     assert char_icon_by_name("Not A Character") is None
+
+
+def test_char_group_column_matches_the_lookup():
+    """char.parquet's `char_group` is the character-select entry: its own id unless grouped"""
+    groups = dict(CHARS.select("id", "char_group").iter_rows())
+    assert groups == {char_id: char_group(char_id) for char_id in CHARS["id"]}
+    grouped = {char_id: group for char_id, group in groups.items() if char_id != group}
+    assert grouped == {
+        "pt_squirtle": "pokemon_trainer",
+        "pt_ivysaur": "pokemon_trainer",
+        "pt_charizard": "pokemon_trainer",
+        "pyra": "pyra_mythra",
+        "mythra": "pyra_mythra",
+    }
+    # no group id collides with a fighter's id, and every member is a real fighter
+    assert not set(CHAR_GROUPS) & set(CHARS["id"])
+    assert {member for members in CHAR_GROUPS.values() for member in members} <= set(CHARS["id"])
+
+
+def test_a_group_shares_one_icon_named_after_it():
+    for group, members in CHAR_GROUPS.items():
+        assert {char_icon_file(member) for member in members} == {f"{group}.png"}
+
+
+def test_joining_a_pick_to_fighters_gives_every_member():
+    """What tournament data (a pick) joins to: all of the group's fighters, not one stand-in"""
+    picks = pl.DataFrame({"char_group": ["pokemon_trainer", "little_mac"], "games": [5, 3]})
+    joined = picks.join(CHARS, on="char_group")
+    assert sorted(joined["id"]) == ["little_mac", "pt_charizard", "pt_ivysaur", "pt_squirtle"]
+    assert char_group_members("pokemon_trainer") == ("pt_squirtle", "pt_ivysaur", "pt_charizard")
+    assert char_group_members("little_mac") == ("little_mac",)
+
+
+@pytest.mark.parametrize(
+    ("name", "group"),
+    [
+        ("Pokemon Trainer", "pokemon_trainer"),
+        ("Squirtle", "pokemon_trainer"),
+        ("pt_ivysaur", "pokemon_trainer"),
+        ("pokemon_trainer", "pokemon_trainer"),
+        ("Pyra & Mythra", "pyra_mythra"),
+        ("Pyra/Mythra", "pyra_mythra"),
+        ("Mythra", "pyra_mythra"),
+        ("Banjo-Kazooie", "banjo_and_kazooie"),
+        ("Mr. Game & Watch", "mr_game_and_watch"),
+        ("Random Character", None),
+    ],
+)
+def test_char_group_by_name(name, group):
+    assert char_group_by_name(name) == group
+
+
+def test_char_id_by_name_is_one_fighter_or_none():
+    assert char_id_by_name("Banjo-Kazooie") == "banjo_and_kazooie"
+    assert char_id_by_name("Squirtle") == "pt_squirtle"
+    assert char_id_by_name("Pokemon Trainer") is None  # a pick, not a fighter

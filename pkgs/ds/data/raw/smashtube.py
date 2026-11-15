@@ -53,9 +53,10 @@ import datetime as dt
 import re
 from typing import Literal, get_args
 
-import httpx2
 from bs4 import BeautifulSoup
 from pydantic import BaseModel, Field, computed_field
+
+from ds.util import http
 
 # A regular desktop Chrome UA, so requests look like a normal browser visit
 USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
@@ -241,16 +242,18 @@ def search_params(query: VideoQuery, page: int = 1) -> dict[str, str]:
 
 def fetch_result_page(params: dict[str, str]) -> tuple[str, str]:
     """(final url, html) of a result page."""
-    resp = httpx2.get(
+    with http.request(
+        "GET",
         RESULT_URL,
+        source="smashtube",
+        name="video search",
         params=params,
         # without browser-like headers the result page answers 403 (see Site notes)
         headers={"User-Agent": USER_AGENT, "Referer": HOME_URL, "Accept-Language": "en"},
-        timeout=30,
         follow_redirects=True,
-    )
-    resp.raise_for_status()
-    return str(resp.url), resp.text
+    ) as (resp, _):
+        resp.raise_for_status()
+        return str(resp.url), resp.text
 
 
 def _parse_date(text: str) -> dt.date | None:

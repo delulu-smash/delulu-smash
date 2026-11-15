@@ -14,11 +14,15 @@ from typing import Any
 import reflex as rx
 
 from ds.data.raw.smashtube import MatchVideos, search_videos
+from ds.util.logging import logger
 
-from .render import Ui, ViewData, apply_event, fill_defaults
+from . import logs
+from .render import Ui, ViewData, apply_event, fill_defaults, rerun_inputs
 from .tool_forms import ToolRequest
 from .widgets import form_by_key, form_for, widget_of
-from .session import Session, get_session, split_trace
+from .session import BUILTIN_NAMES, Session, get_session, split_trace
+
+logs.install()
 
 
 # Cell result grids are compact: short rows, a few visible, scroll for the rest.
@@ -54,6 +58,10 @@ class ChatItem:
     kind: str
     name: str = ""
     """step: the tool; ref: the result's name (r1, r2, ...)."""
+    key: str = ""
+    """The row's DOM id, what State.reveal and the debug log link to: user 'turn-<n>' (the
+    records of that agent turn carry it as `turn`), step 'call-<tool_call_id>'. A ref's is
+    'ref-<name>' (set in reflex_kernel.ref_item)."""
     text: str = ""
     open: bool = False
     """ref only: whether the result is shown inline, under the row (collapsed by default)."""
@@ -63,6 +71,32 @@ class ChatItem:
     trace: list[dict[str, str]] = dataclasses.field(default_factory=list)
     trace_hidden: list[dict[str, str]] = dataclasses.field(default_factory=list)
     trace_more: str = ""
+
+    def __setstate__(self, state: dict[str, Any]) -> None:
+        fill_defaults(self, state)
+
+
+@dataclasses.dataclass
+class LogRow:
+    """One debug-panel row (logs.rows): a record of an outside call, formatted by its kind."""
+
+    id: str
+    time: str
+    kind: str
+    error: bool = False
+    summary: str = ""
+    badges: list[str] = dataclasses.field(default_factory=list)
+    details: list[dict[str, str]] = dataclasses.field(default_factory=list)
+    """{"label", "text"} pairs, shown when the row is unfolded."""
+    copy: str = ""
+    """The whole record as JSON, for the copy button."""
+    curl: str = ""
+    """The request as a curl command (http / graphql records; secrets as $VARIABLES), else ""."""
+    session: str = ""
+    target: str = ""
+    """Where the record came from, for State.reveal: a chat row ('call-<id>', 'turn-<n>'), a
+    result tab ('tab:<name>') or a cell ('cell:<id>'); "" when there is none on this page."""
+    target_label: str = ""
 
     def __setstate__(self, state: dict[str, Any]) -> None:
         fill_defaults(self, state)
@@ -91,6 +125,8 @@ class State(rx.State):
 
     cells: list[Cell] = [Cell(id="c1")]
     cell_seq: int = 1
+    # agent turns so far: the n of a user row's key 'turn-<n>'
+    turn_seq: int = 0
     exec_count: int = 0
     running: bool = False
 
@@ -114,9 +150,53 @@ class State(rx.State):
     show_help: bool = False
     # The Results tab bar's "+" menu (at menu_x / menu_y).
     add_menu: bool = False
+    # The debug panel (bug icon in the title bar, Shortcut.DEBUG): the app's outside calls (logs.py).
+    # Loaded when opened, on Refresh and after a turn / form / cell finishes while it is open;
+    # never pushed as calls happen, so it costs nothing while closed.
+    show_debug: bool = False
+    debug_rows: list[LogRow] = []
+    debug_count: int = 0
+    debug_stats: str = ""
+    debug_kinds: list[str] = list(logs.LOG_FORMATS)
+    # kinds shown ([] = all) and whether only this tab's session
+    debug_shown: list[str] = []
+    debug_mine: bool = False
+    # only the records of one thing (State.show_logs; logs.in_focus): a tool call, an agent turn,
+    # a result, a cell; "" = all. Same ids as the rows' ↖ links (State.reveal).
+    debug_focus: str = ""
+    debug_focus_label: str = ""
 
     def _session(self) -> Session:
         return get_session(self.router.session.client_token)
+
+    def _log_context(self, origin: str, **where: str) -> Any:
+        """Tag the log records of what runs inside with this tab's session and where it started
+        (chat | form | view | cell). Follows asyncio tasks and asyncio.to_thread.
+
+        where: what the debug log links back to (logs.target): turn='turn-<n>' for a chat
+        turn, slot='tab:<name>' / 'cell:<id>' for a form, page or cell run."""
+        session = logs.session_id(self.router.session.client_token)
+        return logger.contextualize(session=session, origin=origin, **where)
+
+    def _load_debug(self) -> None:
+        mine = logs.session_id(self.router.session.client_token)
+        # a focus is always this tab's: turn and cell ids repeat across sessions
+        session = mine if self.debug_mine or self.debug_focus else ""
+        name = self.debug_focus.removeprefix("tab:")
+        made_by = self._session().tool_call_ids.get(name, "") if self.debug_focus.startswith("tab:") else ""
+        found, self.debug_count = logs.rows(self.debug_shown, session, self.debug_focus, made_by)
+        # a link only where its target is on this page: this session's records
+        self.debug_rows = [
+            LogRow(**row) if row["session"] == mine else LogRow(**row | {"target": "", "target_label": ""})
+            for row in found
+        ]
+        self.debug_kinds = list(dict.fromkeys([*logs.LOG_FORMATS, *logs.kinds()]))
+        self.debug_stats = logs.stats(self._session().namespace, BUILTIN_NAMES)
+
+    def _refresh_debug(self) -> None:
+        """After something finished: reload the debug panel if it is open."""
+        if self.show_debug:
+            self._load_debug()
 
     def _sync(self, prefer: str = "") -> None:
         """Re-read the session's viewable values into the tab list and redraw the selected one."""
@@ -272,20 +352,120 @@ class State(rx.State):
         self.menu_tab = ""
         self.add_menu = False
         self.show_help = False
+        self.show_debug = False
 
     @rx.event
     def show_in_chat(self, name: str):
         """Scroll the chat to the row of the tool call that returned a result, and flash it."""
-        self.menu_tab = ""
-        self.show_chat = True
-        if self.zoomed not in ("", "chat"):
-            self.zoomed = ""
-        yield  # let the chat pane show before scrolling
-        yield rx.call_script(f"window.showInChat && window.showInChat({json.dumps('ref-' + name)})")
+        yield from self._reveal(f"ref-{name}")
+
+    @rx.event
+    def reveal(self, target: str):
+        """Go to a part of the page and flash it (see _reveal)."""
+        yield from self._reveal(target)
+
+    def _reveal(self, target: str):
+        """The one way the app takes you somewhere: show the pane, scroll to it, flash it
+        (assets/panes.js window.reveal, the same animation everywhere).
+
+        target: a chat row's id ('ref-<name>', 'call-<tool_call_id>', 'turn-<n>'), a result's
+        tab ('tab:<name>', opened again if it was closed) or a cell ('cell:<id>').
+        """
+        self.menu_tab, self.add_menu, self.show_help, self.show_debug = "", False, False, False
+        kind, _, key = target.partition(":")
+        if kind == "tab":
+            if key not in self._session().views():
+                return
+            self._reveal_results()
+            if self._session().closed.pop(key, None) is not None:
+                self._sync(prefer=key)
+            else:
+                self._select(key)
+                self._show(target)
+            element = f"tab-{key}"
+        elif kind == "cell":
+            self.show_python = True
+            if self.zoomed not in ("", "python"):
+                self.zoomed = ""
+            element = f"cell-{key}"
+        else:
+            self.show_chat = True
+            if self.zoomed not in ("", "chat"):
+                self.zoomed = ""
+            element = target
+        yield  # let the pane show before scrolling
+        yield rx.call_script(f"window.reveal && window.reveal({json.dumps(element)})")
 
     @rx.event
     def toggle_help(self):
+        self.show_debug = False
         self.show_help = not self.show_help
+
+    # -- debug panel (logs.py) ---------------------------------------------------
+
+    @rx.event
+    def toggle_debug(self):
+        self.show_help = False
+        self.show_debug = not self.show_debug
+        if self.show_debug:
+            self.debug_focus = self.debug_focus_label = ""  # the icon / Alt+D opens everything
+            self._load_debug()
+        else:
+            self.debug_rows = []  # nothing big kept in the tab's state while closed
+
+    @rx.event
+    def show_logs(self, target: str):
+        """Open the debug log on just the records of one thing: the reverse of a row's ↖ link.
+
+        target: a tool call's chat row ('call-<id>'), an agent turn ('turn-<n>'), a result
+        ('tab:<name>': the call that made it and its form runs) or a cell ('cell:<id>').
+        """
+        self.menu_tab, self.add_menu, self.show_help = "", False, False
+        self.debug_focus, self.debug_focus_label = target, self._focus_label(target)
+        self.show_debug = True
+        self._load_debug()
+
+    def _focus_label(self, target: str) -> str:
+        """What a focus is called at the top of the debug log, eg 'tool call get_player_usage'."""
+        kind, _, key = target.partition(":")
+        if kind == "tab":
+            return f"result {key}: the call that made it and its form runs"
+        if kind == "cell":
+            index = self._cell_index(key)
+            count = self.cells[index].count if index >= 0 else ""
+            return f"cell [{count}]" if count else "this cell"
+        item = next((item for item in self.chat if item.key == target), None)
+        if target.startswith("call-"):
+            return f"tool call {item.name}" if item else "tool call"
+        text = item.text if item else ""
+        return f"chat turn: {text[:60]}{'…' if len(text) > 60 else ''}"  # noqa: PLR2004  # label length
+
+    @rx.event
+    def clear_debug_focus(self):
+        self.debug_focus = self.debug_focus_label = ""
+        self._load_debug()
+
+    @rx.event
+    def refresh_debug(self):
+        self._load_debug()
+
+    @rx.event
+    def clear_debug(self):
+        """Forget the log: this session's records when "this session only" is on, else all."""
+        logs.clear(logs.session_id(self.router.session.client_token) if self.debug_mine else "")
+        self._load_debug()
+
+    @rx.event
+    def toggle_debug_kind(self, kind: str):
+        """A kind chip: show only the picked kinds; none picked shows all."""
+        shown = self.debug_shown
+        self.debug_shown = [k for k in shown if k != kind] if kind in shown else [*shown, kind]
+        self._load_debug()
+
+    @rx.event
+    def toggle_debug_mine(self):
+        self.debug_mine = not self.debug_mine
+        self._load_debug()
 
     @rx.event
     def toggle_inline(self, name: str):
@@ -316,6 +496,11 @@ class State(rx.State):
             async for update in self._run_form(slot, view, ui, dict(arg or {})):
                 yield update
             return
+        # an event that changes what the tool is asked for, eg a usage view's Offline / Online
+        if (inputs := rerun_inputs(view, action, arg)) is not None:
+            async for update in self._run_form(slot, view, ui, inputs):
+                yield update
+            return
         if action == "form_reset":
             if session.restore_original(slot):
                 self._new_result(slot, ui)
@@ -331,7 +516,8 @@ class State(rx.State):
         self._show(slot)
         yield
         try:
-            page = await asyncio.to_thread(search_videos, **current.query.model_dump(), page=current.page + arg)
+            with self._log_context("view", slot=slot):
+                page = await asyncio.to_thread(search_videos, **current.query.model_dump(), page=current.page + arg)
         except Exception as error:  # noqa: BLE001  # network / site errors are shown in the view
             ui.error = f"Couldn't load that page: {error}"
         else:
@@ -341,6 +527,7 @@ class State(rx.State):
             self._sync()  # the tab's label changes with the page (and it redraws chat slots)
         else:
             self._show(slot)
+        self._refresh_debug()
 
     async def _run_form(self, slot: str, view: Any, ui: Ui, inputs: dict[str, Any]):
         """Run a view's tool with the form's inputs; the result replaces the value at the slot."""
@@ -352,13 +539,15 @@ class State(rx.State):
         yield
         session = self._session()
         try:
-            result, used = await asyncio.to_thread(form.run, inputs)
+            with self._log_context("form", slot=slot):
+                result, used = await asyncio.to_thread(form.run, inputs)
         except Exception as error:  # noqa: BLE001  # bad input / site errors are shown in the view
             ui.error = f"{form.title}: {error}"
         else:
             session.put(slot, result, inputs=used)
         ui.running = False
         self._new_result(slot, ui, replaced=not ui.error)
+        self._refresh_debug()
 
     def _new_result(self, slot: str, ui: Ui, replaced: bool = True) -> None:
         """Redraw a slot after its tool form ran (or was reset); replaced = it holds another result."""
@@ -433,7 +622,8 @@ class State(rx.State):
         cell_id = self.cells[index].id
         before = set(session.tabs())
         # exec blocks, so keep it off the event loop
-        result = await asyncio.to_thread(session.run_python, code, f"In [{self.exec_count + 1}]")
+        with self._log_context("cell", slot=f"cell:{cell_id}"):
+            result = await asyncio.to_thread(session.run_python, code, f"In [{self.exec_count + 1}]")
         self.exec_count += 1
         if result.view is None:
             session.outputs.pop(cell_id, None)
@@ -453,6 +643,7 @@ class State(rx.State):
         # a new name, or a closed tab's name bound to something new
         new = [name for name in session.tabs() if name not in before]
         self._sync(prefer=new[-1] if new else "")
+        self._refresh_debug()
 
     async def _start(self, index: int, code: str):
         self.running = True
@@ -548,19 +739,24 @@ class State(rx.State):
                 return
             self.busy = True
             self.streaming = ""
-            self.chat.append(ChatItem(kind="user", text=prompt))
+            self.turn_seq += 1
+            turn = f"turn-{self.turn_seq}"
+            self.chat.append(ChatItem(kind="user", text=prompt, key=turn))
             session = self._session()
+            log_context = self._log_context("chat", turn=turn)
 
         async def on_delta(delta: str) -> None:
             async with self:
                 self.streaming += delta
 
-        result = await session.ask(prompt, on_delta)
+        with log_context:
+            result = await session.ask(prompt, on_delta)
 
         async with self:
             last_table = ""
             for step in result.steps:
-                self.chat.append(ChatItem(kind="step", name=step.tool, text=step.args))
+                key = f"call-{step.call_id}" if step.call_id else ""
+                self.chat.append(ChatItem(kind="step", name=step.tool, text=step.args, key=key))
                 if step.result_name:
                     last_table = step.result_name
                     text = f"{step.tool} · {step.result_label}"
@@ -575,3 +771,4 @@ class State(rx.State):
             self.streaming = ""
             self.busy = False
             self._sync(prefer=last_table)
+            self._refresh_debug()

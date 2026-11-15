@@ -24,16 +24,21 @@ ICON_PY = ""
 # Copy (two sheets) and a tick, for copy_button.
 ICON_COPY, ICON_COPIED = "\U000f018f", "\U000f012c"
 ICON_CHAT, ICON_RESULTS = "\U000f06a9", "\U000f04eb"
+# A bug, for the debug panel's button.
+ICON_BUG = "\U000f00e4"
 # The help panel's notes on results.
 RESULT_NOTES = [
     "Each tool call the agent makes that returns data (frame data, match videos, …) becomes a tab: r1, r2, …",
     "The same result has a row in the chat under its tool call: click it to unfold it there, or open → for its tab.",
     "↖ chat on a tab (or Show in Chat when you right-click it) jumps back to that row.",
+    "Debug log (bug icon, Alt+D): every request the app made; ↖ on a row jumps to the tool call, tab or cell behind it.",
+    "The bug on a tool call, your message or a cell (on hover), or Show Requests on a tab, opens the log on just its requests.",
     "Closing a tab keeps the name in Python; open → in the chat brings it back.",
     "Inputs ▸ on a match video search: what the tool was called with; change it and run again (Enter).",
     "After re-running an agent's result, × in its inputs puts the agent's original call and result back.",
     "+ in the Results tab bar: add a result by hand, eg a match video search or a player's usage.",
-    "Player usage: a player's characters and stages as bars; pick 6 mo / All time / Last 10, hover for counts.",
+    "Player usage: a player's characters and stages as bars; pick All games / Game 1 / Events, hover for counts.",
+    "Player usage: All / Offline / Online at its top re-counts everything for in-person or online events only.",
     "SQL ▸ on a table: query it as self with polars SQL (PostgreSQL syntax), eg select name from self limit 5.",
     'Values you make in the Python cells get a tab too, eg chars = db.sql("select * from char").',
 ]
@@ -58,16 +63,39 @@ def zoom_button(pane: str) -> rx.Component:
     )
 
 
+def logs_button(target: rx.Var | str, what: str) -> rx.Component:
+    """The small bug button that opens the debug log on one thing's requests (State.show_logs),
+    the reverse of a log row's ↖ link. Shown on hover of its row (.log-btn in app.css)."""
+    return rx.el.button(
+        ICON_BUG,
+        title=f"Requests {what} made (debug log)",
+        aria_label=f"Requests {what} made",
+        on_click=State.show_logs(target).stop_propagation,
+        class_name="log-btn mono",
+    )
+
+
 def chat_item(item: rx.Var) -> rx.Component:
     return rx.match(
         item.kind,
-        ("user", rx.el.div(item.text, class_name="bubble is-user")),
+        # ids: what State.reveal scrolls to (the debug log's links, see ChatItem.key)
+        (
+            "user",
+            rx.el.div(
+                item.text,
+                rx.cond(item.key != "", logs_button(item.key, "this turn")),
+                id=item.key,
+                class_name="bubble is-user",
+            ),
+        ),
         (
             "step",
             rx.el.div(
                 rx.el.span("▸", class_name="dim"),
                 rx.el.span(item.name, class_name="tool-name"),
                 rx.el.span(item.text, class_name="tool-args"),
+                rx.cond(item.key != "", logs_button(item.key, "this tool call")),
+                id=item.key,
                 class_name="tool-step mono",
             ),
         ),
@@ -97,6 +125,8 @@ def ref_item(item: rx.Var) -> rx.Component:
             rx.el.button("open →", title="Open as a tab in Results", on_click=open_tab, class_name="ref-open"),
             on_click=State.toggle_inline(item.name),
             title=rx.cond(item.open, "Hide the result", "Show the result here"),
+            # what flashes when this row is revealed (rather than the whole unfolded view)
+            custom_attrs={"data-flash": ""},
             class_name=rx.cond(item.open, "ref is-open", "ref"),
         ),
         # the same component as a tab shows, sized to its content (slot chat:<name>)
@@ -108,7 +138,7 @@ def ref_item(item: rx.Var) -> rx.Component:
                 rx.el.div("No longer available (the name was deleted or rebound).", class_name="ref-gone dim"),
             ),
         ),
-        # the target of "Show in Chat" (State.show_in_chat, assets/panes.js)
+        # the target of "Show in Chat" and debug-log links (State.reveal, assets/panes.js)
         id="ref-" + item.name.to(str),
         class_name="chat-ref",
     )
@@ -188,6 +218,7 @@ def object_tab(obj: rx.Var) -> rx.Component:
         on_click=State.select_object(name),
         on_context_menu=lambda event: State.open_tab_menu(name, event).prevent_default,
         role="tab",
+        id="tab-" + name.to(str),  # State.reveal('tab:<name>')
         class_name=rx.cond(State.selected == name, "tab is-active", "tab"),
     )
 
@@ -200,7 +231,7 @@ def overlays() -> rx.Component:
     """What floats over the page: a tab's right-click menu and the help panel. Clicking outside
     (or Esc, assets/panes.js) closes them."""
     return rx.cond(
-        (State.menu_tab != "") | State.show_help | State.add_menu,
+        (State.menu_tab != "") | State.show_help | State.add_menu | State.show_debug,
         rx.fragment(
             rx.el.div(
                 on_click=State.close_menus,
@@ -217,6 +248,8 @@ def overlays() -> rx.Component:
                             rx.el.div(class_name="menu-sep"),
                         ),
                     ),
+                    menu_item("Show Requests", State.show_logs("tab:" + State.menu_tab)),
+                    rx.el.div(class_name="menu-sep"),
                     menu_item("Close", State.close_tab(State.menu_tab)),
                     menu_item("Close Others", State.close_other_tabs(State.menu_tab)),
                     menu_item("Close to the Right", State.close_tabs_right(State.menu_tab)),
@@ -236,7 +269,102 @@ def overlays() -> rx.Component:
                 ),
             ),
             rx.cond(State.show_help, help_panel()),
+            rx.cond(State.show_debug, debug_panel()),
         ),
+    )
+
+
+def debug_row(row: rx.Var) -> rx.Component:
+    """One record: time, kind, summary; unfolds to its details (state.LogRow, logs.py)."""
+    return rx.el.details(
+        rx.el.summary(
+            rx.el.span(row.time, class_name="dbg-time mono dim"),
+            rx.el.span(row.kind, class_name="dbg-kind"),
+            rx.el.span(row.summary, class_name="dbg-summary mono"),
+            rx.foreach(row.badges, lambda badge: rx.el.span(badge, class_name="dbg-badge")),
+            # where it came from: the tool call's chat row, the turn, the tab or the cell
+            rx.cond(
+                row.target != "",
+                rx.el.button(
+                    row.target_label,
+                    title="Show where this came from",
+                    # a click in <summary> would also fold the row open
+                    on_click=State.reveal(row.target).stop_propagation.prevent_default,
+                    class_name="dbg-link link-btn",
+                ),
+            ),
+        ),
+        rx.el.div(
+            rx.el.div(
+                rx.cond(row.curl != "", copy_button(row.curl, "the request as a curl command", "curl")),
+                copy_button(row.copy, "this record as JSON", "JSON"),
+                class_name="dbg-actions",
+            ),
+            rx.foreach(
+                row.details,
+                lambda detail: rx.el.div(
+                    rx.el.div(detail["label"], class_name="dbg-label dim"),
+                    rx.el.pre(detail["text"], class_name="dbg-text mono"),
+                ),
+            ),
+            class_name="dbg-details",
+        ),
+        class_name=rx.cond(row.error, "dbg-row is-error", "dbg-row"),
+        key=row.id,
+    )
+
+
+def debug_panel() -> rx.Component:
+    """The debug log (bug icon, Shortcut.DEBUG): what the app asked of outside services, newest first."""
+    return rx.el.div(
+        rx.el.div(
+            rx.el.span("Debug log", class_name="help-title"),
+            rx.el.span(class_name="spacer"),
+            rx.el.button("Refresh", on_click=State.refresh_debug, class_name="act"),
+            rx.el.button("Clear", on_click=State.clear_debug, class_name="act", title="Forget the shown records"),
+            class_name="dbg-head",
+        ),
+        rx.el.div(State.debug_stats, class_name="dbg-stats mono"),
+        rx.el.div(
+            rx.foreach(
+                State.debug_kinds,
+                lambda kind: rx.el.button(
+                    kind,
+                    on_click=State.toggle_debug_kind(kind),
+                    class_name=rx.cond(State.debug_shown.contains(kind), "dbg-chip is-on", "dbg-chip"),
+                ),
+            ),
+            rx.cond(
+                State.debug_focus != "",
+                rx.el.span(
+                    "only ",
+                    rx.el.b(State.debug_focus_label),
+                    rx.el.button(
+                        "↖", title="Go to it", on_click=State.reveal(State.debug_focus), class_name="link-btn"
+                    ),
+                    rx.el.button(
+                        "×", title="Show all records", on_click=State.clear_debug_focus, class_name="link-btn"
+                    ),
+                    class_name="dbg-focus",
+                ),
+            ),
+            rx.el.label(
+                rx.el.input(type="checkbox", checked=State.debug_mine, on_change=State.toggle_debug_mine),
+                "this session only",
+                class_name="dbg-mine",
+            ),
+            rx.el.span(
+                State.debug_rows.length().to(str) + " of " + State.debug_count.to(str),
+                class_name="dbg-count dim",
+            ),
+            class_name="dbg-filters",
+        ),
+        rx.cond(
+            State.debug_count > 0,
+            rx.el.div(rx.foreach(State.debug_rows, debug_row), class_name="dbg-list"),
+            rx.el.div("Nothing logged yet: ask the agent, or run a form.", class_name="empty"),
+        ),
+        class_name="debug-panel sans",
     )
 
 
@@ -326,12 +454,12 @@ def trace_part(part: rx.Var) -> rx.Component:
     )
 
 
-def copy_button(text: rx.Var[str] | str, what: str = "") -> rx.Component:
+def copy_button(text: rx.Var[str] | str, what: str = "", label: str = "") -> rx.Component:
     """The small copy button of a code block: copies text; assets/panes.js does it (data-copy)
-    and shows a tick for a moment."""
+    and shows a tick for a moment. label: a word instead of the copy icon, eg "curl"."""
     return rx.el.button(
-        rx.el.span(ICON_COPY, class_name="when-idle"),
-        rx.el.span(ICON_COPIED, class_name="when-copied"),
+        rx.el.span(f"{ICON_COPY} {label}" if label else ICON_COPY, class_name="when-idle"),
+        rx.el.span(f"{ICON_COPIED} {label}" if label else ICON_COPIED, class_name="when-copied"),
         title=f"Copy {what}".strip(),
         aria_label=f"Copy {what}".strip(),
         type="button",
@@ -382,6 +510,7 @@ def cell_view(cell: rx.Var) -> rx.Component:
             ),
             rx.el.button("▶", title=Shortcut.RUN.hint("Run"), on_click=State.run_saved(cell.id), class_name="cell-btn"),
             rx.el.button("×", title="Delete cell", on_click=State.delete_cell(cell.id), class_name="cell-btn"),
+            logs_button("cell:" + cell.id.to(str), "this cell"),
             class_name="cell-in",
         ),
         rx.cond(cell.stdout != "", rx.el.pre(cell.stdout, class_name="cell-out mono")),
@@ -409,6 +538,7 @@ def cell_view(cell: rx.Var) -> rx.Component:
             traceback_view(cell.trace, cell.trace_hidden, cell.trace_more, cell.error),
         ),
         key=cell.id,
+        id="cell-" + cell.id.to(str),  # State.reveal('cell:<id>')
         class_name="cell",
     )
 
@@ -509,6 +639,15 @@ def index() -> rx.Component:
             rx.el.span("SmashGPT", class_name="title"),
             rx.el.span(class_name="spacer"),
             rx.el.button(
+                ICON_BUG,
+                title=Shortcut.DEBUG.hint("Debug log: requests the app made"),
+                aria_label="Debug log",
+                # assets/panes.js clicks it on Shortcut.DEBUG
+                custom_attrs={"data-toggle": "debug"},
+                on_click=State.toggle_debug,
+                class_name=rx.cond(State.show_debug, "help-btn debug-btn mono is-on", "help-btn debug-btn mono"),
+            ),
+            rx.el.button(
                 "?",
                 title=Shortcut.HELP.hint("Help: keyboard shortcuts"),
                 aria_label="Help",
@@ -545,6 +684,8 @@ app = rx.App(
         # window.SHORTCUTS (shortcuts.py), then panes.js: full screen, float a view, close menus
         rx.el.script(shortcuts_script()),
         rx.el.script(src="/panes.js", defer=True),
+        # character pickers in tool forms (render._character_picker)
+        rx.el.script(src="/combo.js", defer=True),
     ],
 )
 # The page title is the web app window's title (SmashGPT); see .os/scripts/keybindings/smashgpt.py.

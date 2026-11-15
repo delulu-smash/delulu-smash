@@ -212,7 +212,7 @@ def test_no_skill_signals() -> None:
 def test_bot_check_raises_site_blocked(monkeypatch: pytest.MonkeyPatch, status: int, headers: dict, body: str) -> None:
     request = httpx2.Request("GET", "https://www.supermajor.gg/ultimate/player/player?id=S1")
     response = httpx2.Response(status, headers=headers, text=body, request=request)
-    monkeypatch.setattr(httpx2, "get", lambda *_args, **_kwargs: response)
+    monkeypatch.setattr(httpx2, "request", lambda *_args, **_kwargs: response)
     with pytest.raises(SiteBlockedError, match="turning away automated requests"):
         fetch_player_page(str(request.url))
 
@@ -220,6 +220,6 @@ def test_bot_check_raises_site_blocked(monkeypatch: pytest.MonkeyPatch, status: 
 def test_other_server_errors_stay_http_errors(monkeypatch: pytest.MonkeyPatch) -> None:
     request = httpx2.Request("GET", "https://www.supermajor.gg/ultimate/player/player?id=S1")
     response = httpx2.Response(503, text="upstream down", request=request)
-    monkeypatch.setattr(httpx2, "get", lambda *_args, **_kwargs: response)
+    monkeypatch.setattr(httpx2, "request", lambda *_args, **_kwargs: response)
     with pytest.raises(httpx2.HTTPStatusError):
         fetch_player_page(str(request.url))

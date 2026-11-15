@@ -37,6 +37,8 @@ from typing import TYPE_CHECKING
 import httpx2
 import polars as pl
 
+from ds.util import http
+
 if TYPE_CHECKING:
     from pathlib import Path
 
@@ -163,8 +165,9 @@ def scrape_char_icons(dest: Path) -> pl.DataFrame:
     rows = []
     with httpx2.Client(headers={"User-Agent": USER_AGENT}, timeout=30, follow_redirects=True) as client:
         for file, (site_name, char_ids) in by_file.items():
-            resp = client.get(CHAR_ICON_URL.format(name=site_name))
-            resp.raise_for_status()
+            url = CHAR_ICON_URL.format(name=site_name)
+            with http.request("GET", url, source="smashmate", name=f"icon {site_name}", client=client) as (resp, _):
+                resp.raise_for_status()
             if not resp.content.startswith(PNG_MAGIC):  # eg the site's HTML 404 page
                 raise ValueError(f"{resp.url} did not return a PNG")
             (dest / file).write_bytes(resp.content)

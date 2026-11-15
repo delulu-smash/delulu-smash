@@ -30,6 +30,11 @@ table (primary key, foreign keys, grain), not as an arbitrary data dump.
 
 - `pkgs/ds/data/*.parquet` are the synced "database" tables; `pkgs/ds/data/raw/` holds the scraping scripts and any
   hand-copied source data used to produce them.
+- **External sources: one place, one vocabulary.** All code that calls another site or API lives under
+  `pkgs/ds/data/`, and its public functions take and return this repo's standards (`char_id` for a fighter
+  and `char_group` for a character-select pick, both from `char.parquet`, `char_icon`, UTC datetimes, shared field names), never a site's own ids. Read
+  `spec/pkgs/ds/data/external_sources.md` before adding or changing a source; it has the rules for mapping a
+  site's character names to `char_id` and a table of where each source stands.
 - `pkgs/ds/data/*.parquet` are tracked via Git LFS (see root `.gitattributes`, `*.parquet filter=lfs diff=lfs
   merge=lfs -text`), not committed as regular git blobs. Requires `git-lfs` installed (`brew install git-lfs` +
   `git lfs install`) on any machine that will commit/pull these files.
@@ -53,6 +58,24 @@ table (primary key, foreign keys, grain), not as an arbitrary data dump.
   `pkgs/ds/ai/supermajor.py`) is server-rendered Next.js: data is JSON in the RSC payload, not HTML classes, and
   tag search uses the site's public search key, committed in that file. Read the "Site notes" comment at the top
   of it (findings, decisions, dead ends, how to update the key) before changing it.
+  Its player pages are blocked by the site's bot check since Nov 2026; only its tag search is still used.
+- start.gg (sets, games, characters, stages, tournaments, entrants; `pkgs/ds/data/raw/startgg/`, derived stats
+  in `pkgs/ds/data/startgg/`, agent tools in `pkgs/ds/ai/startgg.py`) is an official
+  GraphQL API, not a scrape. Read the "Site notes" at the top of `client.py` before changing it. Rules:
+  - **Two layers.** `ds/data/raw/startgg/` is the API as it is: one function per query, normalization only
+    (char ids, datetimes, paging). Anything computed (usage, head-to-head, aggregates) goes in
+    `ds/data/startgg/`.
+  - **Results stay out of the agent, not out of the data.** The data layer returns everything, including
+    winners, scores, seeds and placements. Agent tools (`ds/ai/`) must not expose a result field, function or
+    parameter. `ds/data/startgg/results.py` is Python-only and never imported by `ds/ai`;
+    `tests/ds/ai/test_startgg_capability.py` enforces all of this. What was left out is listed in the NOTE at
+    the top of `pkgs/ds/ai/startgg.py`.
+  - **Token:** `get_settings().startgg_api_token` (keyring, set with `ds settings sync`; env
+    `STARTGG_API_TOKEN` wins). Limits: 80 requests / 60 s, 1000 objects / request.
+  - **Tag what comes from its docs** with `# ds::external-source:` (see
+    `.agents/skills/external-review/SKILL.md`), so the review skill can re-check it.
+- New secrets (API keys, tokens) are a `Settings` field stored in the keyring and prompted for by
+  `ds settings sync`, like `pydantic_gateway_api_key`. Never a committed value or a loose `.env`.
 - smash-tube.com (YouTube match video search, `pkgs/ds/data/raw/smashtube.py`, agent tool in
   `pkgs/ds/ai/smashtube.py`) is server-rendered PHP: plain HTML per video, characters sent as Japanese names
   (`SITE_CHARACTER` maps `char.id` to them), and the result page answers 403 without browser-like headers. Read
@@ -91,11 +114,51 @@ Applies to pydantic-ai tools, capabilities and agents (eg `pkgs/ds/ai/`). Refere
   (the site is down or blocking us, an HTTP error, a missing resource). `ModelRetry` makes the model call
   again, and a second failure exceeds the tool's retry budget, which ends the whole run with
   `UnexpectedModelBehavior` instead of an answer. `ToolFailed` shows the model the failure so it can tell the
-  user. Example: `get_player_usage` in `pkgs/ds/ai/supermajor.py`.
+  user. Example: `_run` in `pkgs/ds/ai/startgg.py`.
 - **Keep results small:** cap row and character counts (eg `MAX_ROWS`, `MAX_SEARCH_HITS`) so a broad call
   doesn't flood the context window.
 - **Package domain tools as a `Capability`** with `defer_loading=True`, so its instructions and tool
   definitions only enter context when relevant.
+
+## Outside Calls: `ds.util.http` / `ds.util.graphql`
+
+Every request to an outside site or API goes through these two wrappers, never `httpx2` directly
+(`tests/ds/util/test_http.py` fails on a direct `httpx2.get/post/request` call under `pkgs/`).
+
+- `with http.request(method, url, source=..., name=..., **httpx_kwargs) as (resp, call):` (async:
+  `async with http.arequest(...)`). Plain httpx2 underneath; pass `client=` to reuse a connection. Add what
+  only the caller knows to `call`, eg `call["rows"] = len(matches)`. The response isn't checked: call
+  `resp.raise_for_status()` inside the block, so a failure is the record's `error`.
+- `await graphql.gql(url, query, variables, source=..., headers=..., extensions=..., check=...)` for
+  GraphQL: returns status + body; `check` raises the API's own errors inside the record.
+- Each call logs one record (`ds.util.logging.log_call`): the full request with secret headers filtered
+  (`http.SECRET_HEADERS`; add a new auth header name there), the response's status, type, size, `cf-ray` /
+  bot-check headers and the start of an error body, timing, and for GraphQL the operation, variables,
+  query, rows / page info and `errors`. SmashGPT's debug panel (Alt+D) shows them, with copy-as-curl.
+- Wrap work that makes many calls in `log_group("<name>")` so its records share a `group` id (start.gg's
+  `player_sets` and the agent tools' `_run` do).
+- Agent tool calls: `ds.ai.call_log.ToolCallLog` (in `ds.ai.agent`'s capabilities) logs each call as a timed
+  'tool' record and puts its `tool_call_id` on every record made inside it, which is how an app links a
+  request back to the tool call (SmashGPT's debug log does).
+- The wrappers only send and log. Retries, rate limits and anything cache-like stay with each source
+  (caches need the user's approval first, see "Caching Policy" in `.agents/agents.md`).
+
+## Tests Against External APIs
+
+Tests never spend real requests (start.gg allows 80 per 60 s per token, shared with the app).
+
+- **Recorded, not live.** A test that needs a real API answer is a `@pytest.mark.vcr` test
+  (pytest-recording / VCR.py, which supports `httpx2`); it replays a cassette under `tests/<area>/cassettes/`.
+  For anything else, fake the transport (`httpx2.MockTransport`) or the client function.
+- **Network blocked by default:** `--block-network` is in pytest's `addopts` (root `pyproject.toml`), so a plain
+  `uv run pytest` can't reach the internet, and a `vcr` test with no recording fails instead of calling out.
+- **Re-recording is a deliberate act:** `uv run pytest <test file> --record-mode=rewrite` with a stored token.
+  Keep recordings small (eg 20 sets, not 150), and only public data.
+- **No secrets in cassettes.** `tests/conftest.py`'s `vcr_config` filters the `Authorization` header and stores
+  bodies decompressed so they can be read. Before staging a cassette, grep it for the token and for
+  `authorization` / `bearer` / `cookie`; only response CORS headers may mention `Authorization`.
+- A test that replays with a fake token takes the real one only while recording (see `recorded_token` in
+  `tests/ds/data/test_startgg_api.py`).
 
 ## Docs-Derived Code
 

@@ -41,6 +41,25 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   on hover) that copies the full plain-text traceback.
   Each tool result gets a row (`r1 · tool · 10 videos`): click it to unfold the result inline (grid,
   gallery, fields; folded by default), or `open →` to open it as a tab in Results.
+- **Debug log** (bug icon in the title bar, `Alt+D`): every outside call the app made, newest first:
+  start.gg GraphQL requests (operation, page, status, time, start.gg's object count), other HTTP fetches
+  (supermajor search, smash-tube), agent turns (time, tool calls, tokens) and tool steps. A row unfolds to its
+  details: the request as sent (method, url, headers with secrets filtered, body or GraphQL query and
+  variables), the response (status, type, size, `cf-ray`, the start of an error body), page info, timing
+  (including the wait for start.gg's rate budget), the lookup's `group`, session, origin
+  (`chat` / `form` / `view` / `cell`) and error. Copy buttons give the record as JSON and the request as a curl
+  command (secrets as `$AUTHORIZATION` / `$APIKEY`, set them before running it). A row's `↖` link goes to
+  where it came from, with the same scroll-and-flash as Show in Chat (`State.reveal`, `window.reveal` in
+  `assets/panes.js`, the app's one way of navigating): the tool call's row in the chat (records made during a
+  tool call carry its `tool_call_id`, from `ds.ai.call_log.ToolCallLog`), the chat turn, the result tab whose
+  form ran it, or the cell. The other way round, the bug on a tool call or your message in the chat, or on a
+  cell (on hover), or Show Requests in a result tab's right-click menu, opens the log on just that thing's
+  requests (`State.show_logs`, `logs.in_focus`; the same target ids as the links). On top:
+  start.gg requests in the last 60 s against the 80 allowed, the backend's memory, and this session's variables
+  (count, rough size). Filter by kind or to this session; Clear forgets them. Records come from
+  `ds.util.http` / `ds.util.graphql` and are kept in memory only (`reflex_kernel/logs.py`, newest 2000, gone on restart);
+  the panel loads them when opened, on Refresh and when a turn, form or cell finishes, never while closed.
+  A new kind of record is one function in `logs.LOG_FORMATS`.
 - **Tables**: click a tab to switch, type in the filter box to search. Click a column header to sort
   (ascending, descending, unsorted); filter and sort work the same in a tab and in a cell's result.
   The grid shows at most 2000 rows; the DataFrame itself is never truncated.
@@ -57,9 +76,21 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   Today: `table`, `videos` (`find_match_videos`, addable), `usage` (`get_player_usage`, addable, unfolded in
   chat), `fields`, `tool`. A new attribute is a field on `Widget` plus the one place that reads it. A new widget
   is a row, a `case` in `render.to_view`, and its component in `render.render_component`.
-- **Player usage** (kind `usage`, supermajor.gg's `PlayerUsage`): a player at a glance. Characters as ranked bars
-  with their stock icons (switch between last 6 months, all time and last 10 events), starter and counterpick
-  stages the same way, and the characters played at each recent event as icons. Past 6 rows the tail folds
+- **Links look like links, in every widget**: text that opens a url is drawn with `render.link(text, href)`:
+  blue and underlined, exactly as a link in the agent's markdown reply (`.md a, a.link` in `assets/app.css`),
+  opening in a new tab. Don't style a hyperlink as plain text, and don't give a widget its own link style.
+  The one other form is a link drawn as a button (the video player's `YouTube ↗`, class `act`).
+- **Player usage** (kind `usage`, `ds.data.startgg.PlayerUsage`, built from start.gg sets; it replaced the
+  supermajor.gg version when that site began blocking automated clients): a player at a glance. Its form has
+  `player`, `vs character` (only games against that character), `months` and `setting`. An All / Offline /
+  Online toggle at the top picks which events the whole view counts; it runs the tool again with that
+  `setting` (a few seconds the first time, since offline-only reaches further back than the capped mix), and
+  each recent event carries an `offline` (filled) or `online` (outlined) tag and its name is a link to the
+  event's start.gg page. Characters as ranked bars with
+  their stock icons (switch between all games, game 1 and events), one line on how often they change
+  character within a set, stages in three groups (starters, counterpicks, taken to; often empty, since many
+  brackets report no stages), and the characters played at each recent event as icons (hover for games). The
+  tab's note gives the real date span and the set / game counts. No results are shown. Past 6 rows the tail folds
   into one "N others" row; hover a row for the count. Bars rather than a pie: lengths on one baseline compare
   close shares exactly, and the icons, not colours, say which character. The icons are
   `pkgs/ds/data/char_icons/` (`ds.data.char_icon_by_name`), served by the backend (`api.py`).

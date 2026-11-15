@@ -65,8 +65,9 @@ button { font: inherit; color: inherit; }
 .ref-open:hover { text-decoration: underline; }
 .ref-caret { width: 1ch; }
 /* "Show in Chat" from a result tab */
-.ref.is-flash { animation: ref-flash 1.6s ease-out; }
-@keyframes ref-flash { 0%, 40% { border-color: var(--green); box-shadow: 0 0 0 2px var(--green); } 100% { box-shadow: 0 0 0 2px transparent; } }
+/* State.reveal's flash (assets/panes.js window.reveal), the same on every target: chat rows, tabs, cells */
+.is-flash { animation: flash 1.6s ease-out; }
+@keyframes flash { 0%, 40% { border-color: var(--green); box-shadow: 0 0 0 2px var(--green); } 100% { box-shadow: 0 0 0 2px transparent; } }
 .ref.is-open { border-color: var(--bg4); }
 /* a tool result shown inline: the cell output component, without the cell's In[n] gutter */
 .chat-ref { display: flex; flex-direction: column; }
@@ -97,7 +98,10 @@ button { font: inherit; color: inherit; }
 .md pre { background: var(--bg1); padding: 8px; border-radius: 6px; overflow: auto; margin: 0 0 0.6em; }
 .md table { border-collapse: collapse; font-size: 12.5px; margin: 0 0 0.6em; display: block; overflow-x: auto; }
 .md th, .md td { border-bottom: 1px solid var(--bg2); padding: 2px 10px 2px 0; text-align: left; white-space: nowrap; }
-.md a { color: var(--blue); }
+/* a hyperlink looks the same everywhere: in the agent's markdown and in every widget
+   (render.link). Blue and underlined, so a link is never mistaken for plain text. */
+.md a, a.link { color: var(--blue); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+.md a:hover, a.link:hover { color: var(--fg); }
 .md strong { color: var(--fg); font-weight: 600; }
 
 /* workspace */
@@ -324,6 +328,22 @@ a.act { text-decoration: none; color: var(--fg); }
   border-radius: 4px; }
 .form-input:focus { outline: none; border-color: var(--blue); }
 select.form-input { width: auto; }
+/* a character picker (render._character_picker, assets/combo.js): a text box with the picked
+   character's icon inside it, and a list of icon + name to type-filter and pick from */
+.combo { position: relative; display: inline-flex; align-items: center; }
+.combo-text { width: 150px; }
+.combo.has-value .combo-text { padding-left: 24px; }
+.combo .combo-icon { position: absolute; left: 4px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; pointer-events: none; display: none; }
+.combo.has-value .combo-icon { display: block; }
+/* position: fixed, placed by combo.js under (or above) the box, so a scrolling parent can't clip it */
+.combo-list { display: none; position: fixed; z-index: 60; flex-direction: column; overflow-y: auto; padding: 3px;
+  background: var(--bg1); border: 1px solid var(--bg3); border-radius: 6px; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35); }
+.combo.is-open .combo-list { display: flex; }
+.combo-option { display: flex; align-items: center; gap: 7px; flex: none; padding: 2px 8px 2px 4px; border: 0; border-radius: 4px;
+  background: transparent; color: var(--fg); font: inherit; font-size: 12px; text-align: left; white-space: nowrap; cursor: pointer; }
+.combo-option[hidden] { display: none; }
+.combo-option:hover, .combo-option.is-active { background: var(--bg3); }
+.combo-option .char-icon { width: 20px; height: 20px; }
 .tool-form .act { font-size: 11px; padding: 0 8px; }
 /* the Results tab bar's "+" (add a tool form by hand) */
 .tab-add { flex: none; border: 0; background: transparent; color: var(--grey1); cursor: pointer; font-size: 16px; padding: 0 10px; }
@@ -335,6 +355,15 @@ select.form-input { width: auto; }
   align-content: flex-start; font-size: 12px; background: var(--bg0); }
 .usage-group { flex: 1 1 200px; min-width: 200px; max-width: 340px; }
 .usage-group.is-events { flex: 2 1 260px; max-width: 460px; }
+/* the line on character changes: its own full-width row between the characters and the stages */
+.usage-switches { flex: 1 1 100%; font-size: 12px; }
+/* which events the whole view counts (all / offline / online): its own row above everything */
+.usage-settings { flex: 1 1 100%; display: flex; align-items: center; gap: 8px; font-size: 12px; }
+.seg:disabled { opacity: 0.5; cursor: default; }
+/* where an event was played: filled = in person, outlined = online; the word says it too */
+.event-where { font-size: 10px; line-height: 14px; padding: 0 5px; border-radius: 7px; border: 1px solid transparent; color: var(--grey2); text-align: center; }
+.event-where.is-offline { background: var(--bg3); color: var(--fg); }
+.event-where.is-online { border-color: var(--bg3); }
 .usage-head { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; margin-bottom: 5px; white-space: nowrap; }
 .usage-title { font-weight: 600; }
 .segs { display: inline-flex; border: 1px solid var(--bg3); border-radius: 4px; overflow: hidden; }
@@ -352,7 +381,7 @@ select.form-input { width: auto; }
 .bar-track { height: 8px; border-radius: 4px; background: var(--bg2); overflow: hidden; }
 .bar-fill { display: block; height: 100%; border-radius: 4px; background: var(--blue); }
 .bar-value { text-align: right; color: var(--fg); font-variant-numeric: tabular-nums; }
-.event-rows { display: grid; grid-template-columns: max-content max-content minmax(0, 1fr); gap: 2px 8px; align-items: center; }
+.event-rows { display: grid; grid-template-columns: max-content max-content max-content minmax(0, 1fr); gap: 2px 8px; align-items: center; }
 .event-row { display: contents; }
 .event-date { color: var(--grey1); font-size: 11px; }
 .event-icons { display: inline-flex; gap: 1px; min-height: 20px; align-items: center; }
@@ -370,3 +399,46 @@ select.form-input { width: auto; }
 .copy-btn:hover { color: var(--fg); border-color: var(--blue); }
 .copy-btn .when-copied, .copy-btn.is-copied .when-idle { display: none; }
 .copy-btn.is-copied .when-copied { display: inline; color: var(--green); }
+/* the debug log (debug_panel in reflex_kernel.py, logs.py): a right-hand panel over the page */
+.debug-btn { font-size: 13px; font-weight: 400; }
+.debug-panel { position: fixed; z-index: 51; top: 38px; right: 10px; bottom: 34px; width: min(720px, calc(100vw - 20px));
+  display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; background: var(--bg1); border: 1px solid var(--bg3);
+  border-radius: 8px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4); font-size: 12.5px; }
+.dbg-head { display: flex; align-items: center; gap: 6px; }
+.dbg-head .help-title { margin: 0; }
+.dbg-stats { font-size: 11.5px; color: var(--grey2); background: var(--bg0); border-radius: 4px; padding: 4px 8px; }
+.dbg-filters { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.dbg-chip { font: inherit; font-size: 11.5px; padding: 1px 8px; border-radius: 10px; border: 1px solid var(--bg3);
+  background: transparent; color: var(--grey2); cursor: pointer; }
+.dbg-chip:hover { border-color: var(--blue); }
+.dbg-chip.is-on { color: var(--bg0); background: var(--blue); border-color: var(--blue); }
+.dbg-mine { display: inline-flex; align-items: center; gap: 4px; color: var(--grey2); cursor: pointer; }
+.dbg-count { margin-left: auto; font-size: 11.5px; }
+.dbg-list { flex: 1; min-height: 0; overflow: auto; border-top: 1px solid var(--bg3); }
+.dbg-row { border-bottom: 1px solid var(--bg2); }
+.dbg-row > summary { display: flex; align-items: baseline; gap: 8px; padding: 3px 2px; cursor: pointer; list-style: none; }
+.dbg-row > summary::-webkit-details-marker { display: none; }
+.dbg-row > summary:hover { background: var(--bg2); }
+.dbg-row[open] > summary { background: var(--bg2); }
+.dbg-time { flex: none; font-size: 11.5px; }
+.dbg-kind { flex: none; min-width: 52px; font-size: 11px; color: var(--yellow); }
+.dbg-summary { flex: 1; min-width: 0; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dbg-badge { flex: none; font-size: 10.5px; padding: 0 6px; border-radius: 8px; background: var(--bg3); color: var(--grey2); }
+.dbg-row.is-error .dbg-summary { color: var(--red); }
+.dbg-row.is-error .dbg-badge:last-child { background: rgba(230, 126, 128, 0.2); color: var(--red); }
+.dbg-details { position: relative; padding: 4px 8px 8px 12px; background: var(--bg0); }
+.dbg-details:hover .copy-btn { opacity: 1; }
+.dbg-label { font-size: 11px; margin-top: 4px; }
+.dbg-text { margin: 0; font-size: 11.5px; white-space: pre-wrap; word-break: break-word; max-height: 240px; overflow: auto; }
+.dbg-actions { display: flex; justify-content: flex-end; gap: 6px; padding-top: 4px; }
+.dbg-actions .copy-btn { position: static; opacity: 1; padding: 1px 6px; }
+.dbg-link { flex: none; font-size: 11.5px; }
+/* the bug that opens the debug log on one thing's requests (logs_button), shown on hover of its row */
+.log-btn { flex: none; border: 0; background: transparent; color: var(--grey1); cursor: pointer; padding: 0 4px; font-size: 12px;
+  opacity: 0; margin-left: auto; }
+.tool-step:hover .log-btn, .bubble.is-user:hover .log-btn, .cell:hover .log-btn, .log-btn:focus-visible { opacity: 1; }
+.log-btn:hover { color: var(--blue); }
+.bubble.is-user .log-btn { float: right; margin: 0 -4px 0 6px; }
+.dbg-focus { display: inline-flex; align-items: center; gap: 6px; padding: 1px 8px; border-radius: 10px; background: rgba(127, 187, 179, 0.16);
+  color: var(--blue); font-size: 11.5px; }
+.dbg-focus b { font-weight: 600; color: var(--fg); }

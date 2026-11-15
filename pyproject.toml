@@ -52,6 +52,7 @@ ds = "ds.cli.__main__:app"
 dev = [
     "pre-commit>=4.5.1",
     "pytest>=9.1.1",
+    "pytest-recording>=0.14.1",
 ]
 
 ###############################################################################################
@@ -79,8 +80,11 @@ xfail_strict=true
 # where would like to set breakpoint
 # NOTE: below helps with:
 # 1. ensuring debugger is the more user friendly ipdb (instead of default)
+# 2. --block-network (pytest-recording): no test reaches the internet; tests against outside
+#    APIs replay recorded cassettes (see tests/conftest.py for how to re-record)
 addopts = """
 --pdbcls=IPython.terminal.debugger:Pdb
+--block-network
 """
 
 ###############################################################################################

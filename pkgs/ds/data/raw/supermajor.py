@@ -6,6 +6,11 @@
 # Usage: `player_usage("DeLulu")` with a tag, player id or page url
 # (see `scripts/supermajor_usage.py`).
 # ---------------------------------------------------------------------------
+# NOT WORKING since Nov 2026: player pages are blocked by the site's bot check (see "Blocked by
+# the site's bot check" below), so `player_usage` / `fetch_player_page` raise SiteBlockedError.
+# Superseded by ds.data.raw.startgg (start.gg's official API). Still working and still used:
+# `search_players` / `pick_player` (tag -> player id, a different host).
+#
 # TODO: normalize the character_id to what database has
 #
 # Site notes: context the code doesn't show (findings, decisions, dead ends), as of Oct 2026.
@@ -98,10 +103,14 @@ import datetime as dt
 import json
 import re
 from collections import Counter
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
-import httpx2
 from pydantic import BaseModel, Field, computed_field
+
+from ds.util import http
+
+if TYPE_CHECKING:
+    import httpx2
 
 # A regular desktop Chrome UA, so requests look like a normal browser visit
 USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
@@ -242,20 +251,24 @@ def search_players(tag: str) -> list[PlayerMatch]:
     if not _SUPABASE_ANON_KEY:
         raise ValueError(f"supermajor search key not set; {fix}")
     key = _SUPABASE_ANON_KEY
-    resp = httpx2.post(
+    with http.request(
+        "POST",
         _SEARCH_URL,
+        source="supermajor",
+        name="player search",
         headers={
             "User-Agent": USER_AGENT,
             "apikey": key,
             "Authorization": f"Bearer {key}",
         },
         json={"sport": "ultimate", "searchTerm": tag, "searchMode": "all-players", "limitToOldRankings": False},
-        timeout=30,
-    )
-    if resp.status_code in {401, 403}:
-        raise ValueError(f"supermajor search key rejected (HTTP {resp.status_code}); {fix}")
-    resp.raise_for_status()
-    return [PlayerMatch.model_validate(p) for p in resp.json()["data"]]
+    ) as (resp, call):
+        if resp.status_code in {401, 403}:
+            raise ValueError(f"supermajor search key rejected (HTTP {resp.status_code}); {fix}")
+        resp.raise_for_status()
+        matches = [PlayerMatch.model_validate(p) for p in resp.json()["data"]]
+        call["rows"] = len(matches)
+        return matches
 
 
 def pick_player(tag: str, matches: list[PlayerMatch]) -> PlayerLookup:
@@ -318,15 +331,17 @@ def _blocked_reason(resp: httpx2.Response) -> str:
 
 def fetch_player_page(url: str) -> str:
     """Download a supermajor.gg player page's HTML (SiteBlockedError on its bot check)"""
-    resp = httpx2.get(url, headers={"User-Agent": USER_AGENT}, timeout=30, follow_redirects=True)
-    if reason := _blocked_reason(resp):
-        wait = resp.headers.get("retry-after", "")
-        again = f"; it asks to wait {wait}s" if wait.isdigit() else ""
-        raise SiteBlockedError(
-            f"supermajor.gg is turning away automated requests ({reason}, HTTP {resp.status_code}){again}"
-        )
-    resp.raise_for_status()
-    return resp.text
+    with http.request(
+        "GET", url, source="supermajor", name="player page", headers={"User-Agent": USER_AGENT}, follow_redirects=True
+    ) as (resp, _):
+        if reason := _blocked_reason(resp):
+            wait = resp.headers.get("retry-after", "")
+            again = f"; it asks to wait {wait}s" if wait.isdigit() else ""
+            raise SiteBlockedError(
+                f"supermajor.gg is turning away automated requests ({reason}, HTTP {resp.status_code}){again}"
+            )
+        resp.raise_for_status()
+        return resp.text
 
 
 def _flight_payload(html: str) -> str:

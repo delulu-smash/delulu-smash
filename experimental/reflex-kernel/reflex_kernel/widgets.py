@@ -15,7 +15,7 @@ from functools import cached_property
 from typing import TYPE_CHECKING, Any
 
 from ds.ai.smashtube import find_match_videos
-from ds.ai.supermajor import get_player_usage
+from ds.ai.startgg import get_player_usage
 
 from .tool_forms import ToolForm, ToolRequest
 

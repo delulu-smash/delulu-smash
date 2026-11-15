@@ -25,6 +25,8 @@ import polars as pl
 from pydantic_ai import capture_run_messages
 from pydantic_ai.messages import ToolCallPart, ToolReturnPart
 
+from ds.util.logging import log_call
+
 from .render import Ui, View, ViewData, to_view
 
 if TYPE_CHECKING:
@@ -54,6 +56,8 @@ class PyResult:
 class ToolStep:
     tool: str
     args: str
+    call_id: str = ""
+    """pydantic-ai's tool_call_id: log records made during the call carry it (ToolCallLog)."""
     result_name: str = ""
     """Name the result was bound to (eg 'r1'), '' when the tool's result has no view (eg plain text)."""
     result_label: str = ""
@@ -219,6 +223,9 @@ class Session:
         # The tool call behind a value, by the name it is bound to (r1, ...) or a cell's slot
         # ("cell:<id>"): recorded when the agent's tool returns and when a tool form is run.
         self.calls: dict[str, Call] = {}
+        # The agent's tool call that made each result (r1 -> its tool_call_id), for the debug
+        # log's "requests of this result" (logs.in_focus). Kept when the name is rebound.
+        self.tool_call_ids: dict[str, str] = {}
         self._table_count = 0
 
     # -- python ---------------------------------------------------------------
@@ -354,12 +361,15 @@ class Session:
             can_restore=bool(call and call.changed and call.original),
         )
 
-    def bind_result(self, value: Any, source: str, inputs: dict[str, Any] | None = None) -> str:
-        """Bind a tool result to the next r<n> name. inputs: the arguments the tool was called with."""
+    def bind_result(self, value: Any, source: str, inputs: dict[str, Any] | None = None, tool_call_id: str = "") -> str:
+        """Bind a tool result to the next r<n> name. inputs: the arguments the tool was called with;
+        tool_call_id: the agent's call that returned it ("" for a form added by hand)."""
         self._table_count += 1
         name = f"r{self._table_count}"
         self.namespace[name] = value
         self.sources[name] = source
+        if tool_call_id:
+            self.tool_call_ids[name] = tool_call_id
         if inputs is not None:
             self.calls[name] = Call(inputs, value, original=(inputs, value))
         return name
@@ -369,7 +379,9 @@ class Session:
     async def ask(self, prompt: str, on_delta: Callable[[str], Awaitable[None]]) -> AiResult:
         """One agent turn. Text streams through on_delta; tool results with a view (tables, videos, models) become r1, r2, ..."""
         result = AiResult()
-        with capture_run_messages() as captured:
+        # one "agent" record per turn (the debug panel, logs.py); each tool call logs its own
+        # "tool" record, tagged with its tool_call_id (ds.ai.call_log.ToolCallLog)
+        with log_call("agent", "smash-agent", name="turn", prompt=prompt) as call, capture_run_messages() as captured:
             try:
                 async with ds.ai.agent.run_stream(prompt, message_history=self.ai_history) as stream:
                     async for delta in stream.stream_text(delta=True):
@@ -377,11 +389,16 @@ class Session:
                     result.text = str(await stream.get_output())
                     new_messages = stream.new_messages()
                     self.ai_history = stream.all_messages()
+                    usage = stream.usage()
+                    call["input_tokens"] = getattr(usage, "input_tokens", None)
+                    call["output_tokens"] = getattr(usage, "output_tokens", None)
             except Exception as error:  # noqa: BLE001  # model/tool failures are shown in the chat
                 result.error = "".join(traceback.format_exception(error))
                 result.trace = trace_parts(error, error.__traceback__)
                 new_messages = captured[len(self.ai_history) :]
-        result.steps = self._steps(new_messages)
+                call["error"] = f"{type(error).__name__}: {error}"
+            result.steps = self._steps(new_messages)
+            call["steps"] = len(result.steps)
         return result
 
     def _steps(self, messages: list[Any]) -> list[ToolStep]:
@@ -393,7 +410,7 @@ class Session:
                     args = part.args_as_json_str()
                     if len(args) > MAX_ARGS_CHARS:
                         args = args[:MAX_ARGS_CHARS] + "…"
-                    steps[part.tool_call_id] = ToolStep(tool=part.tool_name, args=args)
+                    steps[part.tool_call_id] = ToolStep(tool=part.tool_name, args=args, call_id=part.tool_call_id)
                     with contextlib.suppress(Exception):  # arguments the model sent that aren't valid JSON
                         inputs[part.tool_call_id] = part.args_as_dict()
                 elif isinstance(part, ToolReturnPart):
@@ -402,7 +419,7 @@ class Session:
                         continue
                     # a table is bound as its DataFrame; anything else as the object the tool returned
                     value = view.frame if isinstance(part.content, ds.ai.TableResult) else part.content
-                    name = self.bind_result(value, part.tool_name, inputs.get(part.tool_call_id))
+                    name = self.bind_result(value, part.tool_name, inputs.get(part.tool_call_id), part.tool_call_id)
                     if part.tool_call_id in steps:
                         steps[part.tool_call_id].result_name = name
                         steps[part.tool_call_id].result_label = view.summary

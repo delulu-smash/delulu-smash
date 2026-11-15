@@ -14,7 +14,18 @@ import polars as pl
 
 from ds.data.raw.smashmate import SHARED_FILE, char_icon_file
 
-__all__ = ["CHAR_ICON_DIR", "char_icon", "char_icon_by_name", "char_icon_path"]
+__all__ = [
+    "CHAR_GROUPS",
+    "CHAR_GROUP_NAMES",
+    "CHAR_ICON_DIR",
+    "char_group",
+    "char_group_by_name",
+    "char_group_members",
+    "char_icon",
+    "char_icon_by_name",
+    "char_icon_path",
+    "char_id_by_name",
+]
 
 CHAR_ICON_DIR = Path(__file__).resolve().parent / "char_icons"
 # Display names other sites use for an icon several of our char ids share -> its file's stem
@@ -45,6 +56,63 @@ def char_icon_by_name(name: str) -> str | None:
     no character matches. Punctuation, case, '&' / 'and' don't matter; a char id works too.
     """
     return _icons_by_name().get(_name_key(name))
+
+
+# Character-select entries that are several fighters (char.parquet rows): group id -> members.
+# A group id is what tournament data can know (the pick); see `char_group` and
+# spec/pkgs/ds/data/external_sources.md, "Fighters and picks".
+CHAR_GROUPS: dict[str, tuple[str, ...]] = {
+    "pokemon_trainer": ("pt_squirtle", "pt_ivysaur", "pt_charizard"),
+    "pyra_mythra": ("pyra", "mythra"),
+}
+# What a group is called (a fighter's name is in char.parquet)
+CHAR_GROUP_NAMES: dict[str, str] = {"pokemon_trainer": "Pokemon Trainer", "pyra_mythra": "Pyra & Mythra"}
+_GROUP_OF = {member: group for group, members in CHAR_GROUPS.items() for member in members}
+# Names other sites use for a group -> its id
+_GROUP_NAMES = {"pokemon trainer": "pokemon_trainer", "pyra mythra": "pyra_mythra", "aegis": "pyra_mythra"}
+_GROUP_NAMES |= {_name_key(group): group for group in CHAR_GROUPS}  # the group ids themselves
+
+
+@cache
+def _ids_by_name() -> dict[str, str]:
+    chars = pl.read_parquet(CHAR_ICON_DIR.parent / "char.parquet")
+    by_name = {_name_key(name): char_id for char_id, name in chars.select("id", "name").iter_rows()}
+    return by_name | {_name_key(char_id): char_id for char_id in chars["id"]}
+
+
+def char_id_by_name(name: str) -> str | None:
+    """char.parquet's `id` for one fighter's display name as another site writes it (eg
+    'Banjo-Kazooie' -> 'banjo_and_kazooie'), matched like `char_icon_by_name`. None when it
+    isn't one fighter: a group ('Pokemon Trainer', use `char_group_by_name`) or 'Random'.
+    """
+    return _ids_by_name().get(_name_key(name))
+
+
+def char_group(char_id: str) -> str:
+    """The character-select entry a fighter belongs to, as in char.parquet's `char_group`
+    column: 'pt_ivysaur' -> 'pokemon_trainer', 'mythra' -> 'pyra_mythra', 'little_mac' ->
+    'little_mac'. A group id is returned as is.
+    """
+    return _GROUP_OF.get(char_id, char_id)
+
+
+def char_group_members(group: str) -> tuple[str, ...]:
+    """The fighters (char.parquet ids) of a character-select entry: 'pokemon_trainer' ->
+    ('pt_squirtle', 'pt_ivysaur', 'pt_charizard'), 'little_mac' -> ('little_mac',).
+    """
+    return CHAR_GROUPS.get(group, (group,))
+
+
+def char_group_by_name(name: str) -> str | None:
+    """The `char_group` for a pick as another site names it, or for any char / group id:
+    'Pokemon Trainer' -> 'pokemon_trainer', 'Squirtle' -> 'pokemon_trainer', 'Pyra & Mythra'
+    -> 'pyra_mythra', 'Pac-Man' -> 'pac_man'. None when nothing matches, eg 'Random'.
+    """
+    key = _name_key(name)
+    if key in _GROUP_NAMES:
+        return _GROUP_NAMES[key]
+    char_id = _ids_by_name().get(key)
+    return char_group(char_id) if char_id else None
 
 
 def char_icon(char_id: str) -> str:

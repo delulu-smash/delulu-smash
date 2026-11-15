@@ -1,0 +1,985 @@
+interactions:
+- request:
+    body: '{"query":"\nquery Player($id: ID!) {\n  player(id: $id) { id gamerTag prefix
+      user { slug } }\n}\n","variables":{"id":158026}}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '125'
+      content-type:
+      - application/json
+      host:
+      - api.start.gg
+      user-agent:
+      - python-httpx2/2.12.0
+    method: POST
+    uri: https://api.start.gg/gql/alpha
+  response:
+    body:
+      string: '{"data":{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe","user":{"slug":"user\/b5230de8"}}},"extensions":{"cacheControl":{"version":1,"hints":null},"queryComplexity":2},"actionRecords":[]}'
+    headers:
+      access-control-allow-credentials:
+      - 'true'
+      access-control-allow-headers:
+      - '*, Content-Type, Authorization'
+      access-control-allow-methods:
+      - POST, GET, OPTIONS
+      access-control-allow-origin:
+      - '*'
+      cache-control:
+      - private, max-age=0, s-maxage=0
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a5af4f2eed3554b2-IAD
+      connection:
+      - keep-alive
+      content-length:
+      - '198'
+      content-type:
+      - application/json
+      date:
+      - Sun, 15 Nov 2026 15:32:33 GMT
+      required-client-version:
+      - '20'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=15724800; includeSubDomains
+      transfer-encoding:
+      - chunked
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"query":"\nquery Videogame($id: ID!) {\n  videogame(id: $id) { id name
+      characters { id name } stages { id name } }\n}\n","variables":{"id":1386}}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '146'
+      content-type:
+      - application/json
+      host:
+      - api.start.gg
+      user-agent:
+      - python-httpx2/2.12.0
+    method: POST
+    uri: https://api.start.gg/gql/alpha
+  response:
+    body:
+      string: '{"data":{"videogame":{"id":1386,"name":"Super Smash Bros. Ultimate","characters":[{"id":1271,"name":"Bayonetta"},{"id":1272,"name":"Bowser
+        Jr."},{"id":1273,"name":"Bowser"},{"id":1274,"name":"Captain Falcon"},{"id":1275,"name":"Cloud"},{"id":1276,"name":"Corrin"},{"id":1277,"name":"Daisy"},{"id":1278,"name":"Dark
+        Pit"},{"id":1279,"name":"Diddy Kong"},{"id":1280,"name":"Donkey Kong"},{"id":1282,"name":"Dr.
+        Mario"},{"id":1283,"name":"Duck Hunt"},{"id":1285,"name":"Falco"},{"id":1286,"name":"Fox"},{"id":1287,"name":"Ganondorf"},{"id":1289,"name":"Greninja"},{"id":1290,"name":"Ice
+        Climbers"},{"id":1291,"name":"Ike"},{"id":1292,"name":"Inkling"},{"id":1293,"name":"Jigglypuff"},{"id":1294,"name":"King
+        Dedede"},{"id":1295,"name":"Kirby"},{"id":1296,"name":"Link"},{"id":1297,"name":"Little
+        Mac"},{"id":1298,"name":"Lucario"},{"id":1299,"name":"Lucas"},{"id":1300,"name":"Lucina"},{"id":1301,"name":"Luigi"},{"id":1302,"name":"Mario"},{"id":1304,"name":"Marth"},{"id":1305,"name":"Mega
+        Man"},{"id":1307,"name":"Meta Knight"},{"id":1310,"name":"Mewtwo"},{"id":1311,"name":"Mii
+        Brawler"},{"id":1313,"name":"Ness"},{"id":1314,"name":"Olimar"},{"id":1315,"name":"Pac-Man"},{"id":1316,"name":"Palutena"},{"id":1317,"name":"Peach"},{"id":1318,"name":"Pichu"},{"id":1319,"name":"Pikachu"},{"id":1320,"name":"Pit"},{"id":1321,"name":"Pokemon
+        Trainer"},{"id":1322,"name":"Ridley"},{"id":1323,"name":"R.O.B."},{"id":1324,"name":"Robin"},{"id":1325,"name":"Rosalina"},{"id":1326,"name":"Roy"},{"id":1327,"name":"Ryu"},{"id":1328,"name":"Samus"},{"id":1329,"name":"Sheik"},{"id":1330,"name":"Shulk"},{"id":1331,"name":"Snake"},{"id":1332,"name":"Sonic"},{"id":1333,"name":"Toon
+        Link"},{"id":1334,"name":"Villager"},{"id":1335,"name":"Wario"},{"id":1336,"name":"Wii
+        Fit Trainer"},{"id":1337,"name":"Wolf"},{"id":1338,"name":"Yoshi"},{"id":1339,"name":"Young
+        Link"},{"id":1340,"name":"Zelda"},{"id":1341,"name":"Zero Suit Samus"},{"id":1405,"name":"Mr.
+        Game & Watch"},{"id":1406,"name":"Incineroar"},{"id":1407,"name":"King K.
+        Rool"},{"id":1408,"name":"Dark Samus"},{"id":1409,"name":"Chrom"},{"id":1410,"name":"Ken"},{"id":1411,"name":"Simon
+        Belmont"},{"id":1412,"name":"Richter"},{"id":1413,"name":"Isabelle"},{"id":1414,"name":"Mii
+        Swordfighter"},{"id":1415,"name":"Mii Gunner"},{"id":1441,"name":"Piranha
+        Plant"},{"id":1453,"name":"Joker"},{"id":1526,"name":"Hero"},{"id":1530,"name":"Banjo-Kazooie"},{"id":1532,"name":"Terry"},{"id":1539,"name":"Byleth"},{"id":1746,"name":"Random
+        Character"},{"id":1747,"name":"Min Min"},{"id":1766,"name":"Steve"},{"id":1777,"name":"Sephiroth"},{"id":1795,"name":"Pyra
+        & Mythra"},{"id":1846,"name":"Kazuya"},{"id":1897,"name":"Sora"}],"stages":[{"id":307,"name":"3D
+        Land"},{"id":308,"name":"75m"},{"id":309,"name":"Arena Ferox"},{"id":310,"name":"Balloon
+        Fight"},{"id":311,"name":"Battlefield"},{"id":312,"name":"Big Battlefield"},{"id":313,"name":"Big
+        Blue"},{"id":314,"name":"Boxing Ring"},{"id":315,"name":"Bridge of Eldin"},{"id":316,"name":"Brinstar"},{"id":317,"name":"Brinstar
+        Depths"},{"id":318,"name":"Castle Siege"},{"id":319,"name":"Coliseum"},{"id":320,"name":"Corneria"},{"id":321,"name":"Delfino
+        Plaza"},{"id":322,"name":"Distant Planet"},{"id":323,"name":"Dracula''s Castle"},{"id":324,"name":"Dream
+        Land"},{"id":325,"name":"Dream Land GB"},{"id":326,"name":"Duck Hunt"},{"id":327,"name":"Figure-8
+        Circuit"},{"id":328,"name":"Final Destination"},{"id":329,"name":"Find Mii"},{"id":330,"name":"Flat
+        Zone X"},{"id":331,"name":"Fountain of Dreams"},{"id":332,"name":"Fourside"},{"id":333,"name":"Frigate
+        Orpheon"},{"id":334,"name":"Gamer"},{"id":335,"name":"Garden of Hope"},{"id":336,"name":"Gaur
+        Plain"},{"id":337,"name":"Gerudo Valley"},{"id":338,"name":"Golden Plains"},{"id":339,"name":"Great
+        Bay"},{"id":340,"name":"The Great Cave Offensive"},{"id":341,"name":"Great
+        Plateau Tower"},{"id":342,"name":"Green Greens"},{"id":343,"name":"Green Hill
+        Zone"},{"id":344,"name":"Halberd"},{"id":345,"name":"Hanenbow"},{"id":346,"name":"Hyrule
+        Castle"},{"id":347,"name":"Jungle Japes"},{"id":348,"name":"Kalos Pok\u00e9mon
+        League"},{"id":349,"name":"Kongo Falls"},{"id":350,"name":"Kongo Jungle"},{"id":351,"name":"Living
+        Room"},{"id":352,"name":"Luigi''s Mansion"},{"id":353,"name":"Lylat Cruise"},{"id":354,"name":"Magicant"},{"id":355,"name":"Mario
+        Bros."},{"id":356,"name":"Mario Circuit"},{"id":357,"name":"Mario Galaxy"},{"id":358,"name":"Midgar"},{"id":359,"name":"Moray
+        Towers"},{"id":360,"name":"Mushroom Kingdom"},{"id":361,"name":"Mushroom Kingdom
+        II"},{"id":362,"name":"Mushroomy Kingdom"},{"id":363,"name":"Mushroom Kingdom
+        U"},{"id":364,"name":"Mute City SNES"},{"id":365,"name":"New Donk City Hall"},{"id":366,"name":"New
+        Pork City"},{"id":367,"name":"Norfair"},{"id":368,"name":"Onett"},{"id":369,"name":"Pac-Land"},{"id":370,"name":"Palutena''s
+        Temple"},{"id":371,"name":"Paper Mario"},{"id":372,"name":"Peach''s Castle"},{"id":373,"name":"Princess
+        Peach''s Castle"},{"id":374,"name":"PictoChat 2"},{"id":375,"name":"Pilotwings"},{"id":376,"name":"Pirate
+        Ship"},{"id":377,"name":"Pok\u00e9mon Stadium"},{"id":378,"name":"Pok\u00e9mon
+        Stadium 2"},{"id":379,"name":"Port Town Aero Dive"},{"id":380,"name":"Prism
+        Tower"},{"id":381,"name":"Rainbow Cruise"},{"id":382,"name":"Reset Bomb Forest"},{"id":383,"name":"Saffron
+        City"},{"id":384,"name":"Shadow Moses Island"},{"id":385,"name":"Skyloft"},{"id":386,"name":"Skyworld"},{"id":387,"name":"Smashville"},{"id":388,"name":"Spear
+        Pillar"},{"id":389,"name":"Spirit Train"},{"id":390,"name":"Summit"},{"id":391,"name":"Super
+        Happy Tree"},{"id":392,"name":"Super Mario Maker"},{"id":393,"name":"Suzaku
+        Castle"},{"id":394,"name":"Temple"},{"id":395,"name":"Tomodachi Life"},{"id":396,"name":"Tortimer
+        Island"},{"id":397,"name":"Town and City"},{"id":398,"name":"Umbra Clock Tower"},{"id":399,"name":"Unova
+        Pok\u00e9mon League"},{"id":400,"name":"Venom"},{"id":401,"name":"WarioWare,
+        Inc."},{"id":402,"name":"Wii Fit Studio"},{"id":403,"name":"Windy Hill Zone"},{"id":404,"name":"Wrecking
+        Crew"},{"id":405,"name":"Wuhu Island"},{"id":406,"name":"Yoshi''s Island"},{"id":407,"name":"Yoshi''s
+        Story"},{"id":408,"name":"Wily''s Castle"},{"id":416,"name":"Mementos"},{"id":417,"name":"Yggdrasil\u2019s
+        Altar"},{"id":484,"name":"Small Battlefield"},{"id":497,"name":"Northern Cave"},{"id":513,"name":"Hollow
+        Bastion"}]}},"extensions":{"cacheControl":{"version":1,"hints":null},"queryComplexity":195},"actionRecords":[]}'
+    headers:
+      access-control-allow-credentials:
+      - 'true'
+      access-control-allow-headers:
+      - '*, Content-Type, Authorization'
+      access-control-allow-methods:
+      - POST, GET, OPTIONS
+      access-control-allow-origin:
+      - '*'
+      cache-control:
+      - private, max-age=0, s-maxage=0
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a5af4f303988e5fd-IAD
+      connection:
+      - keep-alive
+      content-length:
+      - '6400'
+      content-type:
+      - application/json
+      date:
+      - Sun, 15 Nov 2026 15:32:34 GMT
+      required-client-version:
+      - '20'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=15724800; includeSubDomains
+      transfer-encoding:
+      - chunked
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"query":"\nquery PlayerSets($id: ID!, $page: Int!, $perPage: Int!, $opponentId:
+      ID, $filters: SetFilters) {\n  player(id: $id) {\n    id\n    sets(page: $page,
+      perPage: $perPage, opponentId: $opponentId, filters: $filters) {\n      pageInfo
+      { total totalPages page perPage }\n      nodes {\n        id completedAt fullRoundText
+      round totalGames winnerId displayScore vodUrl state\n        event { ...EventFields
+      tournament { ...TournamentFields } }\n        slots {\n          entrant { ...EntrantFields
+      }\n          standing { placement stats { score { value } } }\n        }\n        games
+      {\n          orderNum winnerId entrant1Score entrant2Score\n          stage
+      { id name }\n          selections { entrant { id } selectionType selectionValue
+      }\n        }\n      }\n    }\n  }\n}\n\nfragment EventFields on Event {\n  id
+      name slug startAt isOnline numEntrants\n  videogame { id }\n}\n\nfragment TournamentFields
+      on Tournament {\n  id name slug startAt endAt city addrState countryCode venueName
+      numAttendees isOnline\n}\n\nfragment EntrantFields on Entrant {\n  id name initialSeedNum
+      isDisqualified\n  participants { player { id gamerTag prefix } }\n}\n","variables":{"id":158026,"page":1,"perPage":15,"opponentId":null,"filters":null}}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '1243'
+      content-type:
+      - application/json
+      host:
+      - api.start.gg
+      user-agent:
+      - python-httpx2/2.12.0
+    method: POST
+    uri: https://api.start.gg/gql/alpha
+  response:
+    body:
+      string: '{"data":{"player":{"id":158026,"sets":{"pageInfo":{"total":5620,"totalPages":375,"page":1,"perPage":15},"nodes":[{"id":110055143,"completedAt":1794551098,"fullRoundText":"Grand
+        Final Reset","round":5,"totalGames":5,"winnerId":25282156,"displayScore":"OUT
+        | PSK | WaKa 0 - FaZe | Sparg0 3","vodUrl":null,"state":3,"event":{"id":1752350,"name":"Singles","slug":"tournament\/the-double-shot-19\/event\/singles","startAt":1794535200,"isOnline":false,"numEntrants":16,"videogame":{"id":1386},"tournament":{"id":973359,"name":"The
+        Double Shot #19","slug":"tournament\/the-double-shot-19","startAt":1794535200,"endAt":1794556800,"city":"Tijuana","addrState":"B.C.","countryCode":"MX","venueName":null,"numAttendees":16,"isOnline":false}},"slots":[{"entrant":{"id":25281887,"name":"OUT
+        | PSK | WaKa","initialSeedNum":2,"isDisqualified":null,"participants":[{"player":{"id":504366,"gamerTag":"WaKa","prefix":"OUT
+        | PSK"}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}},{"entrant":{"id":25282156,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}}],"games":[{"orderNum":1,"winnerId":25282156,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25281887},"selectionType":"CHARACTER","selectionValue":1301},{"entrant":{"id":25282156},"selectionType":"CHARACTER","selectionValue":1275}]},{"orderNum":2,"winnerId":25282156,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25281887},"selectionType":"CHARACTER","selectionValue":1301},{"entrant":{"id":25282156},"selectionType":"CHARACTER","selectionValue":1275}]},{"orderNum":3,"winnerId":25282156,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25281887},"selectionType":"CHARACTER","selectionValue":1301},{"entrant":{"id":25282156},"selectionType":"CHARACTER","selectionValue":1275}]}]},{"id":110055142,"completedAt":1794550606,"fullRoundText":"Grand
+        Final","round":5,"totalGames":5,"winnerId":25281887,"displayScore":"FaZe |
+        Sparg0 1 - OUT | PSK | WaKa 3","vodUrl":null,"state":3,"event":{"id":1752350,"name":"Singles","slug":"tournament\/the-double-shot-19\/event\/singles","startAt":1794535200,"isOnline":false,"numEntrants":16,"videogame":{"id":1386},"tournament":{"id":973359,"name":"The
+        Double Shot #19","slug":"tournament\/the-double-shot-19","startAt":1794535200,"endAt":1794556800,"city":"Tijuana","addrState":"B.C.","countryCode":"MX","venueName":null,"numAttendees":16,"isOnline":false}},"slots":[{"entrant":{"id":25282156,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":2,"stats":{"score":{"value":1}}}},{"entrant":{"id":25281887,"name":"OUT
+        | PSK | WaKa","initialSeedNum":2,"isDisqualified":null,"participants":[{"player":{"id":504366,"gamerTag":"WaKa","prefix":"OUT
+        | PSK"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}}],"games":[{"orderNum":1,"winnerId":25281887,"entrant1Score":0,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25281887},"selectionType":"CHARACTER","selectionValue":1301},{"entrant":{"id":25282156},"selectionType":"CHARACTER","selectionValue":1275}]},{"orderNum":2,"winnerId":25282156,"entrant1Score":0,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25281887},"selectionType":"CHARACTER","selectionValue":1301},{"entrant":{"id":25282156},"selectionType":"CHARACTER","selectionValue":1275}]},{"orderNum":3,"winnerId":25281887,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25281887},"selectionType":"CHARACTER","selectionValue":1301},{"entrant":{"id":25282156},"selectionType":"CHARACTER","selectionValue":1275}]},{"orderNum":4,"winnerId":25281887,"entrant1Score":0,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25281887},"selectionType":"CHARACTER","selectionValue":1301},{"entrant":{"id":25282156},"selectionType":"CHARACTER","selectionValue":1275}]}]},{"id":110055957,"completedAt":1794550377,"fullRoundText":"Grand
+        Final Reset","round":5,"totalGames":5,"winnerId":25251057,"displayScore":"FaZe
+        | Sparg0 2 - Archi 3","vodUrl":null,"state":3,"event":{"id":1752351,"name":"Melee
+        Singles","slug":"tournament\/the-double-shot-melee-15\/event\/melee-singles","startAt":1794535200,"isOnline":false,"numEntrants":9,"videogame":{"id":1},"tournament":{"id":973360,"name":"The
+        Double Shot Melee #15","slug":"tournament\/the-double-shot-melee-15","startAt":1794535200,"endAt":1794556800,"city":"Tijuana","addrState":"B.C.","countryCode":"MX","venueName":null,"numAttendees":9,"isOnline":false}},"slots":[{"entrant":{"id":25282160,"name":"FaZe
+        | Sparg0","initialSeedNum":5,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":2,"stats":{"score":{"value":2}}}},{"entrant":{"id":25251057,"name":"Archi","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":179993,"gamerTag":"Archi","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}}],"games":null},{"id":110055956,"completedAt":1794548851,"fullRoundText":"Grand
+        Final","round":5,"totalGames":5,"winnerId":25282160,"displayScore":"Archi
+        1 - FaZe | Sparg0 3","vodUrl":null,"state":3,"event":{"id":1752351,"name":"Melee
+        Singles","slug":"tournament\/the-double-shot-melee-15\/event\/melee-singles","startAt":1794535200,"isOnline":false,"numEntrants":9,"videogame":{"id":1},"tournament":{"id":973360,"name":"The
+        Double Shot Melee #15","slug":"tournament\/the-double-shot-melee-15","startAt":1794535200,"endAt":1794556800,"city":"Tijuana","addrState":"B.C.","countryCode":"MX","venueName":null,"numAttendees":9,"isOnline":false}},"slots":[{"entrant":{"id":25251057,"name":"Archi","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":179993,"gamerTag":"Archi","prefix":""}}]},"standing":{"placement":2,"stats":{"score":{"value":1}}}},{"entrant":{"id":25282160,"name":"FaZe
+        | Sparg0","initialSeedNum":5,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}}],"games":null},{"id":110055987,"completedAt":1794548090,"fullRoundText":"Losers
+        Final","round":-8,"totalGames":5,"winnerId":25282160,"displayScore":"PRK |
+        WoTuKin 2 - FaZe | Sparg0 3","vodUrl":null,"state":3,"event":{"id":1752351,"name":"Melee
+        Singles","slug":"tournament\/the-double-shot-melee-15\/event\/melee-singles","startAt":1794535200,"isOnline":false,"numEntrants":9,"videogame":{"id":1},"tournament":{"id":973360,"name":"The
+        Double Shot Melee #15","slug":"tournament\/the-double-shot-melee-15","startAt":1794535200,"endAt":1794556800,"city":"Tijuana","addrState":"B.C.","countryCode":"MX","venueName":null,"numAttendees":9,"isOnline":false}},"slots":[{"entrant":{"id":25260725,"name":"PRK
+        | WoTuKin","initialSeedNum":2,"isDisqualified":null,"participants":[{"player":{"id":225416,"gamerTag":"WoTuKin","prefix":"PRK"}}]},"standing":{"placement":2,"stats":{"score":{"value":2}}}},{"entrant":{"id":25282160,"name":"FaZe
+        | Sparg0","initialSeedNum":5,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}}],"games":null},{"id":110055986,"completedAt":1794545724,"fullRoundText":"Losers
+        Semi-Final","round":-7,"totalGames":5,"winnerId":25282160,"displayScore":"FaZe
+        | Sparg0 3 - Skips 2","vodUrl":null,"state":3,"event":{"id":1752351,"name":"Melee
+        Singles","slug":"tournament\/the-double-shot-melee-15\/event\/melee-singles","startAt":1794535200,"isOnline":false,"numEntrants":9,"videogame":{"id":1},"tournament":{"id":973360,"name":"The
+        Double Shot Melee #15","slug":"tournament\/the-double-shot-melee-15","startAt":1794535200,"endAt":1794556800,"city":"Tijuana","addrState":"B.C.","countryCode":"MX","venueName":null,"numAttendees":9,"isOnline":false}},"slots":[{"entrant":{"id":25282160,"name":"FaZe
+        | Sparg0","initialSeedNum":5,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":25280196,"name":"Skips","initialSeedNum":3,"isDisqualified":null,"participants":[{"player":{"id":1388830,"gamerTag":"Skips","prefix":""}}]},"standing":{"placement":2,"stats":{"score":{"value":2}}}}],"games":null},{"id":110055984,"completedAt":1794544747,"fullRoundText":"Losers
+        Quarter-Final","round":-6,"totalGames":5,"winnerId":25282160,"displayScore":"FaZe
+        | Sparg0 3 - TDS | Soid 2","vodUrl":null,"state":3,"event":{"id":1752351,"name":"Melee
+        Singles","slug":"tournament\/the-double-shot-melee-15\/event\/melee-singles","startAt":1794535200,"isOnline":false,"numEntrants":9,"videogame":{"id":1},"tournament":{"id":973360,"name":"The
+        Double Shot Melee #15","slug":"tournament\/the-double-shot-melee-15","startAt":1794535200,"endAt":1794556800,"city":"Tijuana","addrState":"B.C.","countryCode":"MX","venueName":null,"numAttendees":9,"isOnline":false}},"slots":[{"entrant":{"id":25282160,"name":"FaZe
+        | Sparg0","initialSeedNum":5,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":25263731,"name":"TDS
+        | Soid","initialSeedNum":6,"isDisqualified":null,"participants":[{"player":{"id":50177,"gamerTag":"Soid","prefix":"TDS"}}]},"standing":{"placement":2,"stats":{"score":{"value":2}}}}],"games":null},{"id":110055141,"completedAt":1794543687,"fullRoundText":"Winners
+        Final","round":4,"totalGames":5,"winnerId":25282156,"displayScore":"FaZe |
+        Sparg0 3 - OUT | PSK | WaKa 1","vodUrl":null,"state":3,"event":{"id":1752350,"name":"Singles","slug":"tournament\/the-double-shot-19\/event\/singles","startAt":1794535200,"isOnline":false,"numEntrants":16,"videogame":{"id":1386},"tournament":{"id":973359,"name":"The
+        Double Shot #19","slug":"tournament\/the-double-shot-19","startAt":1794535200,"endAt":1794556800,"city":"Tijuana","addrState":"B.C.","countryCode":"MX","venueName":null,"numAttendees":16,"isOnline":false}},"slots":[{"entrant":{"id":25282156,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":25281887,"name":"OUT
+        | PSK | WaKa","initialSeedNum":2,"isDisqualified":null,"participants":[{"player":{"id":504366,"gamerTag":"WaKa","prefix":"OUT
+        | PSK"}}]},"standing":{"placement":2,"stats":{"score":{"value":1}}}}],"games":[{"orderNum":1,"winnerId":25281887,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25281887},"selectionType":"CHARACTER","selectionValue":1301},{"entrant":{"id":25282156},"selectionType":"CHARACTER","selectionValue":1275}]},{"orderNum":2,"winnerId":25282156,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25281887},"selectionType":"CHARACTER","selectionValue":1301},{"entrant":{"id":25282156},"selectionType":"CHARACTER","selectionValue":1275}]},{"orderNum":3,"winnerId":25282156,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25281887},"selectionType":"CHARACTER","selectionValue":1301},{"entrant":{"id":25282156},"selectionType":"CHARACTER","selectionValue":1275}]},{"orderNum":4,"winnerId":25282156,"entrant1Score":0,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25281887},"selectionType":"CHARACTER","selectionValue":1301},{"entrant":{"id":25282156},"selectionType":"CHARACTER","selectionValue":1275}]}]},{"id":110055139,"completedAt":1794542847,"fullRoundText":"Winners
+        Semi-Final","round":3,"totalGames":5,"winnerId":25282156,"displayScore":"FaZe
+        | Sparg0 3 - PSK | Motomami 0","vodUrl":null,"state":3,"event":{"id":1752350,"name":"Singles","slug":"tournament\/the-double-shot-19\/event\/singles","startAt":1794535200,"isOnline":false,"numEntrants":16,"videogame":{"id":1386},"tournament":{"id":973359,"name":"The
+        Double Shot #19","slug":"tournament\/the-double-shot-19","startAt":1794535200,"endAt":1794556800,"city":"Tijuana","addrState":"B.C.","countryCode":"MX","venueName":null,"numAttendees":16,"isOnline":false}},"slots":[{"entrant":{"id":25282156,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":25282318,"name":"PSK
+        | Motomami","initialSeedNum":4,"isDisqualified":null,"participants":[{"player":{"id":282018,"gamerTag":"Motomami","prefix":"PSK"}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":25282156,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25282156},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25282318},"selectionType":"CHARACTER","selectionValue":1294}]},{"orderNum":2,"winnerId":25282156,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25282156},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25282318},"selectionType":"CHARACTER","selectionValue":1294}]},{"orderNum":3,"winnerId":25282156,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25282156},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25282318},"selectionType":"CHARACTER","selectionValue":1294}]}]},{"id":110055953,"completedAt":1794542268,"fullRoundText":"Winners
+        Semi-Final","round":3,"totalGames":5,"winnerId":25251057,"displayScore":"Archi
+        3 - FaZe | Sparg0 1","vodUrl":null,"state":3,"event":{"id":1752351,"name":"Melee
+        Singles","slug":"tournament\/the-double-shot-melee-15\/event\/melee-singles","startAt":1794535200,"isOnline":false,"numEntrants":9,"videogame":{"id":1},"tournament":{"id":973360,"name":"The
+        Double Shot Melee #15","slug":"tournament\/the-double-shot-melee-15","startAt":1794535200,"endAt":1794556800,"city":"Tijuana","addrState":"B.C.","countryCode":"MX","venueName":null,"numAttendees":9,"isOnline":false}},"slots":[{"entrant":{"id":25251057,"name":"Archi","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":179993,"gamerTag":"Archi","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":25282160,"name":"FaZe
+        | Sparg0","initialSeedNum":5,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":2,"stats":{"score":{"value":1}}}}],"games":[{"orderNum":1,"winnerId":25282160,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25251057},"selectionType":"CHARACTER","selectionValue":6},{"entrant":{"id":25282160},"selectionType":"CHARACTER","selectionValue":14}]},{"orderNum":2,"winnerId":25251057,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25251057},"selectionType":"CHARACTER","selectionValue":6},{"entrant":{"id":25282160},"selectionType":"CHARACTER","selectionValue":14}]},{"orderNum":3,"winnerId":25251057,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25251057},"selectionType":"CHARACTER","selectionValue":6},{"entrant":{"id":25282160},"selectionType":"CHARACTER","selectionValue":14}]},{"orderNum":4,"winnerId":25251057,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25251057},"selectionType":"CHARACTER","selectionValue":6},{"entrant":{"id":25282160},"selectionType":"CHARACTER","selectionValue":14}]}]},{"id":110055135,"completedAt":1794541150,"fullRoundText":"Winners
+        Quarter-Final","round":2,"totalGames":5,"winnerId":25282156,"displayScore":"FaZe
+        | Sparg0 2 - DT | Reikken 0","vodUrl":null,"state":3,"event":{"id":1752350,"name":"Singles","slug":"tournament\/the-double-shot-19\/event\/singles","startAt":1794535200,"isOnline":false,"numEntrants":16,"videogame":{"id":1386},"tournament":{"id":973359,"name":"The
+        Double Shot #19","slug":"tournament\/the-double-shot-19","startAt":1794535200,"endAt":1794556800,"city":"Tijuana","addrState":"B.C.","countryCode":"MX","venueName":null,"numAttendees":16,"isOnline":false}},"slots":[{"entrant":{"id":25282156,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":2}}}},{"entrant":{"id":25282320,"name":"DT
+        | Reikken","initialSeedNum":9,"isDisqualified":null,"participants":[{"player":{"id":400020,"gamerTag":"Reikken","prefix":"DT"}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":25282156,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25282156},"selectionType":"CHARACTER","selectionValue":1339},{"entrant":{"id":25282320},"selectionType":"CHARACTER","selectionValue":1287}]},{"orderNum":2,"winnerId":25282156,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25282156},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25282320},"selectionType":"CHARACTER","selectionValue":1287}]}]},{"id":110055950,"completedAt":1794540631,"fullRoundText":"Winners
+        Quarter-Final","round":2,"totalGames":5,"winnerId":25282160,"displayScore":"MogX
+        2 - FaZe | Sparg0 3","vodUrl":null,"state":3,"event":{"id":1752351,"name":"Melee
+        Singles","slug":"tournament\/the-double-shot-melee-15\/event\/melee-singles","startAt":1794535200,"isOnline":false,"numEntrants":9,"videogame":{"id":1},"tournament":{"id":973360,"name":"The
+        Double Shot Melee #15","slug":"tournament\/the-double-shot-melee-15","startAt":1794535200,"endAt":1794556800,"city":"Tijuana","addrState":"B.C.","countryCode":"MX","venueName":null,"numAttendees":9,"isOnline":false}},"slots":[{"entrant":{"id":25282597,"name":"MogX","initialSeedNum":4,"isDisqualified":null,"participants":[{"player":{"id":949654,"gamerTag":"MogX","prefix":""}}]},"standing":{"placement":2,"stats":{"score":{"value":2}}}},{"entrant":{"id":25282160,"name":"FaZe
+        | Sparg0","initialSeedNum":5,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}}],"games":null},{"id":110055127,"completedAt":1794538033,"fullRoundText":"Winners
+        Round 1","round":1,"totalGames":5,"winnerId":25282156,"displayScore":"FaZe
+        | Sparg0 2 - MR|XTR | Edelgard 0","vodUrl":null,"state":3,"event":{"id":1752350,"name":"Singles","slug":"tournament\/the-double-shot-19\/event\/singles","startAt":1794535200,"isOnline":false,"numEntrants":16,"videogame":{"id":1386},"tournament":{"id":973359,"name":"The
+        Double Shot #19","slug":"tournament\/the-double-shot-19","startAt":1794535200,"endAt":1794556800,"city":"Tijuana","addrState":"B.C.","countryCode":"MX","venueName":null,"numAttendees":16,"isOnline":false}},"slots":[{"entrant":{"id":25282156,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":2}}}},{"entrant":{"id":25282550,"name":"MR|XTR
+        | Edelgard","initialSeedNum":16,"isDisqualified":null,"participants":[{"player":{"id":4509071,"gamerTag":"Edelgard","prefix":"MR|XTR"}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":25282156,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25282156},"selectionType":"CHARACTER","selectionValue":1339},{"entrant":{"id":25282550},"selectionType":"CHARACTER","selectionValue":1747}]},{"orderNum":2,"winnerId":25282156,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25282156},"selectionType":"CHARACTER","selectionValue":1339},{"entrant":{"id":25282550},"selectionType":"CHARACTER","selectionValue":1526}]}]},{"id":109625692,"completedAt":1793523237,"fullRoundText":"Grand
+        Final","round":3,"totalGames":5,"winnerId":24601233,"displayScore":"FaZe |
+        Sparg0 3 - Monte 2","vodUrl":null,"state":3,"event":{"id":1695873,"name":"Singles
+        Ultimate","slug":"tournament\/psx-horror-land\/event\/singles-ultimate","startAt":1793491200,"isOnline":false,"numEntrants":138,"videogame":{"id":1386},"tournament":{"id":944262,"name":"PSX:
+        Horror Land","slug":"tournament\/psx-horror-land","startAt":1793480400,"endAt":1793530800,"city":"Tijuana","addrState":"B.C.","countryCode":"MX","venueName":null,"numAttendees":142,"isOnline":false}},"slots":[{"entrant":{"id":24601233,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":25123116,"name":"Monte","initialSeedNum":2,"isDisqualified":null,"participants":[{"player":{"id":1541586,"gamerTag":"Monte","prefix":""}}]},"standing":{"placement":2,"stats":{"score":{"value":2}}}}],"games":[{"orderNum":1,"winnerId":24601233,"entrant1Score":null,"entrant2Score":0,"stage":{"id":378,"name":"Pok\u00e9mon
+        Stadium 2"},"selections":[{"entrant":{"id":24601233},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25123116},"selectionType":"CHARACTER","selectionValue":1405}]},{"orderNum":2,"winnerId":24601233,"entrant1Score":null,"entrant2Score":0,"stage":{"id":328,"name":"Final
+        Destination"},"selections":[{"entrant":{"id":24601233},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25123116},"selectionType":"CHARACTER","selectionValue":1405}]},{"orderNum":3,"winnerId":25123116,"entrant1Score":0,"entrant2Score":null,"stage":{"id":328,"name":"Final
+        Destination"},"selections":[{"entrant":{"id":24601233},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25123116},"selectionType":"CHARACTER","selectionValue":1405}]},{"orderNum":4,"winnerId":25123116,"entrant1Score":0,"entrant2Score":null,"stage":{"id":513,"name":"Hollow
+        Bastion"},"selections":[{"entrant":{"id":24601233},"selectionType":"CHARACTER","selectionValue":1339},{"entrant":{"id":25123116},"selectionType":"CHARACTER","selectionValue":1405}]},{"orderNum":5,"winnerId":24601233,"entrant1Score":null,"entrant2Score":0,"stage":{"id":513,"name":"Hollow
+        Bastion"},"selections":[{"entrant":{"id":24601233},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25123116},"selectionType":"CHARACTER","selectionValue":1405}]}]},{"id":109625691,"completedAt":1793519897,"fullRoundText":"Winners
+        Final","round":2,"totalGames":5,"winnerId":24601233,"displayScore":"FaZe |
+        Sparg0 3 - Monte 1","vodUrl":null,"state":3,"event":{"id":1695873,"name":"Singles
+        Ultimate","slug":"tournament\/psx-horror-land\/event\/singles-ultimate","startAt":1793491200,"isOnline":false,"numEntrants":138,"videogame":{"id":1386},"tournament":{"id":944262,"name":"PSX:
+        Horror Land","slug":"tournament\/psx-horror-land","startAt":1793480400,"endAt":1793530800,"city":"Tijuana","addrState":"B.C.","countryCode":"MX","venueName":null,"numAttendees":142,"isOnline":false}},"slots":[{"entrant":{"id":24601233,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":25123116,"name":"Monte","initialSeedNum":2,"isDisqualified":null,"participants":[{"player":{"id":1541586,"gamerTag":"Monte","prefix":""}}]},"standing":{"placement":2,"stats":{"score":{"value":1}}}}],"games":[{"orderNum":1,"winnerId":24601233,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24601233},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25123116},"selectionType":"CHARACTER","selectionValue":1405}]},{"orderNum":2,"winnerId":25123116,"entrant1Score":0,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24601233},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25123116},"selectionType":"CHARACTER","selectionValue":1405}]},{"orderNum":3,"winnerId":24601233,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24601233},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25123116},"selectionType":"CHARACTER","selectionValue":1405}]},{"orderNum":4,"winnerId":24601233,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24601233},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25123116},"selectionType":"CHARACTER","selectionValue":1405}]}]}]}}},"extensions":{"cacheControl":{"version":1,"hints":null},"queryComplexity":660},"actionRecords":[]}'
+    headers:
+      access-control-allow-credentials:
+      - 'true'
+      access-control-allow-headers:
+      - '*, Content-Type, Authorization'
+      access-control-allow-methods:
+      - POST, GET, OPTIONS
+      access-control-allow-origin:
+      - '*'
+      cache-control:
+      - private, max-age=0, s-maxage=0
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a5af4f31caa3d690-IAD
+      connection:
+      - keep-alive
+      content-length:
+      - '24795'
+      content-type:
+      - application/json
+      date:
+      - Sun, 15 Nov 2026 15:32:34 GMT
+      required-client-version:
+      - '20'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=15724800; includeSubDomains
+      transfer-encoding:
+      - chunked
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"query":"\nquery PlayerSets($id: ID!, $page: Int!, $perPage: Int!, $opponentId:
+      ID, $filters: SetFilters) {\n  player(id: $id) {\n    id\n    sets(page: $page,
+      perPage: $perPage, opponentId: $opponentId, filters: $filters) {\n      pageInfo
+      { total totalPages page perPage }\n      nodes {\n        id completedAt fullRoundText
+      round totalGames winnerId displayScore vodUrl state\n        event { ...EventFields
+      tournament { ...TournamentFields } }\n        slots {\n          entrant { ...EntrantFields
+      }\n          standing { placement stats { score { value } } }\n        }\n        games
+      {\n          orderNum winnerId entrant1Score entrant2Score\n          stage
+      { id name }\n          selections { entrant { id } selectionType selectionValue
+      }\n        }\n      }\n    }\n  }\n}\n\nfragment EventFields on Event {\n  id
+      name slug startAt isOnline numEntrants\n  videogame { id }\n}\n\nfragment TournamentFields
+      on Tournament {\n  id name slug startAt endAt city addrState countryCode venueName
+      numAttendees isOnline\n}\n\nfragment EntrantFields on Entrant {\n  id name initialSeedNum
+      isDisqualified\n  participants { player { id gamerTag prefix } }\n}\n","variables":{"id":158026,"page":3,"perPage":15,"opponentId":null,"filters":null}}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '1243'
+      content-type:
+      - application/json
+      host:
+      - api.start.gg
+      user-agent:
+      - python-httpx2/2.12.0
+    method: POST
+    uri: https://api.start.gg/gql/alpha
+  response:
+    body:
+      string: '{"data":{"player":{"id":158026,"sets":{"pageInfo":{"total":5620,"totalPages":375,"page":3,"perPage":15},"nodes":[{"id":109332783,"completedAt":1792871539,"fullRoundText":"Winners
+        Round 2","round":2,"totalGames":5,"winnerId":24975667,"displayScore":"FaZe
+        | Sparg0 3 - Fake_Bar0 0","vodUrl":null,"state":3,"event":{"id":1687524,"name":"ULTIMATE
+        Singles","slug":"tournament\/legends7\/event\/ultimate-singles","startAt":1792857600,"isOnline":false,"numEntrants":343,"videogame":{"id":1386},"tournament":{"id":942547,"name":"LEGENDS7\u00ad","slug":"tournament\/legends7","startAt":1792854000,"endAt":1792987200,"city":"San
+        Salvador","addrState":"La Libertad","countryCode":"SV","venueName":null,"numAttendees":343,"isOnline":false}},"slots":[{"entrant":{"id":24975667,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":24429927,"name":"Fake_Bar0","initialSeedNum":257,"isDisqualified":null,"participants":[{"player":{"id":4767676,"gamerTag":"Fake_Bar0","prefix":null}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":24975667,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24429927},"selectionType":"CHARACTER","selectionValue":1328},{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1275}]},{"orderNum":2,"winnerId":24975667,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24429927},"selectionType":"CHARACTER","selectionValue":1328},{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1275}]},{"orderNum":3,"winnerId":24975667,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24429927},"selectionType":"CHARACTER","selectionValue":1328},{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1275}]}]},{"id":108997652,"completedAt":1792217023,"fullRoundText":"Grand
+        Final","round":7,"totalGames":5,"winnerId":24999446,"displayScore":"FaZe |
+        Sparg0 3 - OUT | PSK | WaKa 0","vodUrl":null,"state":3,"event":{"id":1734559,"name":"Pros
+        Singles","slug":"tournament\/tramahouse10\/event\/pros-singles","startAt":1792204200,"isOnline":false,"numEntrants":35,"videogame":{"id":1386},"tournament":{"id":963047,"name":"tramahouse10","slug":"tournament\/tramahouse10","startAt":1792198800,"endAt":1792220340,"city":"Tijuana","addrState":"B.C.","countryCode":"MX","venueName":null,"numAttendees":36,"isOnline":false}},"slots":[{"entrant":{"id":24999446,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":25019071,"name":"OUT
+        | PSK | WaKa","initialSeedNum":2,"isDisqualified":null,"participants":[{"player":{"id":504366,"gamerTag":"WaKa","prefix":"OUT
+        | PSK"}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":24999446,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24999446},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25019071},"selectionType":"CHARACTER","selectionValue":1301}]},{"orderNum":2,"winnerId":24999446,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24999446},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25019071},"selectionType":"CHARACTER","selectionValue":1301}]},{"orderNum":3,"winnerId":24999446,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24999446},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25019071},"selectionType":"CHARACTER","selectionValue":1301}]}]},{"id":108997651,"completedAt":1792214555,"fullRoundText":"Winners
+        Final","round":6,"totalGames":5,"winnerId":24999446,"displayScore":"FaZe |
+        Sparg0 3 - OUT | PSK | WaKa 1","vodUrl":null,"state":3,"event":{"id":1734559,"name":"Pros
+        Singles","slug":"tournament\/tramahouse10\/event\/pros-singles","startAt":1792204200,"isOnline":false,"numEntrants":35,"videogame":{"id":1386},"tournament":{"id":963047,"name":"tramahouse10","slug":"tournament\/tramahouse10","startAt":1792198800,"endAt":1792220340,"city":"Tijuana","addrState":"B.C.","countryCode":"MX","venueName":null,"numAttendees":36,"isOnline":false}},"slots":[{"entrant":{"id":24999446,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":25019071,"name":"OUT
+        | PSK | WaKa","initialSeedNum":2,"isDisqualified":null,"participants":[{"player":{"id":504366,"gamerTag":"WaKa","prefix":"OUT
+        | PSK"}}]},"standing":{"placement":2,"stats":{"score":{"value":1}}}}],"games":[{"orderNum":1,"winnerId":24999446,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24999446},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25019071},"selectionType":"CHARACTER","selectionValue":1301}]},{"orderNum":2,"winnerId":25019071,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24999446},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25019071},"selectionType":"CHARACTER","selectionValue":1301}]},{"orderNum":3,"winnerId":24999446,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24999446},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25019071},"selectionType":"CHARACTER","selectionValue":1301}]},{"orderNum":4,"winnerId":24999446,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24999446},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25019071},"selectionType":"CHARACTER","selectionValue":1301}]}]},{"id":108997649,"completedAt":1792210173,"fullRoundText":"Winners
+        Semi-Final","round":5,"totalGames":5,"winnerId":24999446,"displayScore":"FaZe
+        | Sparg0 3 - MR|TUC | Astromer 2","vodUrl":null,"state":3,"event":{"id":1734559,"name":"Pros
+        Singles","slug":"tournament\/tramahouse10\/event\/pros-singles","startAt":1792204200,"isOnline":false,"numEntrants":35,"videogame":{"id":1386},"tournament":{"id":963047,"name":"tramahouse10","slug":"tournament\/tramahouse10","startAt":1792198800,"endAt":1792220340,"city":"Tijuana","addrState":"B.C.","countryCode":"MX","venueName":null,"numAttendees":36,"isOnline":false}},"slots":[{"entrant":{"id":24999446,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":25007153,"name":"MR|TUC
+        | Astromer","initialSeedNum":4,"isDisqualified":null,"participants":[{"player":{"id":3951503,"gamerTag":"Astromer","prefix":"MR|TUC"}}]},"standing":{"placement":2,"stats":{"score":{"value":2}}}}],"games":[{"orderNum":1,"winnerId":24999446,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24999446},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25007153},"selectionType":"CHARACTER","selectionValue":1532}]},{"orderNum":2,"winnerId":25007153,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24999446},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25007153},"selectionType":"CHARACTER","selectionValue":1532}]},{"orderNum":3,"winnerId":24999446,"entrant1Score":0,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24999446},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25007153},"selectionType":"CHARACTER","selectionValue":1532}]},{"orderNum":4,"winnerId":25007153,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24999446},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25007153},"selectionType":"CHARACTER","selectionValue":1532}]},{"orderNum":5,"winnerId":24999446,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24999446},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25007153},"selectionType":"CHARACTER","selectionValue":1532}]}]},{"id":108997645,"completedAt":1792208918,"fullRoundText":"Winners
+        Quarter-Final","round":4,"totalGames":5,"winnerId":24999446,"displayScore":"FaZe
+        | Sparg0 2 - Azool 0","vodUrl":null,"state":3,"event":{"id":1734559,"name":"Pros
+        Singles","slug":"tournament\/tramahouse10\/event\/pros-singles","startAt":1792204200,"isOnline":false,"numEntrants":35,"videogame":{"id":1386},"tournament":{"id":963047,"name":"tramahouse10","slug":"tournament\/tramahouse10","startAt":1792198800,"endAt":1792220340,"city":"Tijuana","addrState":"B.C.","countryCode":"MX","venueName":null,"numAttendees":36,"isOnline":false}},"slots":[{"entrant":{"id":24999446,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":2}}}},{"entrant":{"id":25007658,"name":"Azool","initialSeedNum":8,"isDisqualified":null,"participants":[{"player":{"id":1088218,"gamerTag":"Azool","prefix":""}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":24999446,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24999446},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25007658},"selectionType":"CHARACTER","selectionValue":1276}]},{"orderNum":2,"winnerId":24999446,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24999446},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25007658},"selectionType":"CHARACTER","selectionValue":1276}]}]},{"id":108997637,"completedAt":1792207493,"fullRoundText":"Winners
+        Round 3","round":3,"totalGames":5,"winnerId":24999446,"displayScore":"FaZe
+        | Sparg0 2 - linckario 0","vodUrl":null,"state":3,"event":{"id":1734559,"name":"Pros
+        Singles","slug":"tournament\/tramahouse10\/event\/pros-singles","startAt":1792204200,"isOnline":false,"numEntrants":35,"videogame":{"id":1386},"tournament":{"id":963047,"name":"tramahouse10","slug":"tournament\/tramahouse10","startAt":1792198800,"endAt":1792220340,"city":"Tijuana","addrState":"B.C.","countryCode":"MX","venueName":null,"numAttendees":36,"isOnline":false}},"slots":[{"entrant":{"id":24999446,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":2}}}},{"entrant":{"id":25014019,"name":"linckario","initialSeedNum":17,"isDisqualified":null,"participants":[{"player":{"id":2031242,"gamerTag":"linckario","prefix":""}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":24999446,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24999446},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25014019},"selectionType":"CHARACTER","selectionValue":1453}]},{"orderNum":2,"winnerId":24999446,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24999446},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25014019},"selectionType":"CHARACTER","selectionValue":1453}]}]},{"id":108997621,"completedAt":1792206233,"fullRoundText":"Winners
+        Round 2","round":2,"totalGames":5,"winnerId":24999446,"displayScore":"DQ","vodUrl":null,"state":3,"event":{"id":1734559,"name":"Pros
+        Singles","slug":"tournament\/tramahouse10\/event\/pros-singles","startAt":1792204200,"isOnline":false,"numEntrants":35,"videogame":{"id":1386},"tournament":{"id":963047,"name":"tramahouse10","slug":"tournament\/tramahouse10","startAt":1792198800,"endAt":1792220340,"city":"Tijuana","addrState":"B.C.","countryCode":"MX","venueName":null,"numAttendees":36,"isOnline":false}},"slots":[{"entrant":{"id":24999446,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":null}}}},{"entrant":{"id":25019256,"name":"SteveCG24","initialSeedNum":32,"isDisqualified":true,"participants":[{"player":{"id":5375290,"gamerTag":"SteveCG24","prefix":null}}]},"standing":{"placement":2,"stats":{"score":{"value":-1}}}}],"games":null},{"id":108950305,"completedAt":1792126260,"fullRoundText":"Grand
+        Final","round":6,"totalGames":5,"winnerId":25005028,"displayScore":"FaZe |
+        Sparg0 3 - OUT | PSK | WaKa 1","vodUrl":null,"state":3,"event":{"id":1733027,"name":"Singles","slug":"tournament\/the-double-shot-16\/event\/singles","startAt":1792112400,"isOnline":false,"numEntrants":21,"videogame":{"id":1386},"tournament":{"id":964073,"name":"The
+        Double Shot #16","slug":"tournament\/the-double-shot-16","startAt":1792112400,"endAt":1792134000,"city":"Tijuana","addrState":"B.C.","countryCode":"MX","venueName":null,"numAttendees":21,"isOnline":false}},"slots":[{"entrant":{"id":25005028,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":25007246,"name":"OUT
+        | PSK | WaKa","initialSeedNum":2,"isDisqualified":null,"participants":[{"player":{"id":504366,"gamerTag":"WaKa","prefix":"OUT
+        | PSK"}}]},"standing":{"placement":2,"stats":{"score":{"value":1}}}}],"games":[{"orderNum":1,"winnerId":25005028,"entrant1Score":0,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25005028},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25007246},"selectionType":"CHARACTER","selectionValue":1301}]},{"orderNum":2,"winnerId":25007246,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25005028},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25007246},"selectionType":"CHARACTER","selectionValue":1301}]},{"orderNum":3,"winnerId":25005028,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25005028},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25007246},"selectionType":"CHARACTER","selectionValue":1301}]},{"orderNum":4,"winnerId":25005028,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25005028},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25007246},"selectionType":"CHARACTER","selectionValue":1301}]}]},{"id":108950304,"completedAt":1792125038,"fullRoundText":"Winners
+        Final","round":5,"totalGames":5,"winnerId":25005028,"displayScore":"FaZe |
+        Sparg0 3 - OUT | PSK | WaKa 0","vodUrl":null,"state":3,"event":{"id":1733027,"name":"Singles","slug":"tournament\/the-double-shot-16\/event\/singles","startAt":1792112400,"isOnline":false,"numEntrants":21,"videogame":{"id":1386},"tournament":{"id":964073,"name":"The
+        Double Shot #16","slug":"tournament\/the-double-shot-16","startAt":1792112400,"endAt":1792134000,"city":"Tijuana","addrState":"B.C.","countryCode":"MX","venueName":null,"numAttendees":21,"isOnline":false}},"slots":[{"entrant":{"id":25005028,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":25007246,"name":"OUT
+        | PSK | WaKa","initialSeedNum":2,"isDisqualified":null,"participants":[{"player":{"id":504366,"gamerTag":"WaKa","prefix":"OUT
+        | PSK"}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":25005028,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25005028},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25007246},"selectionType":"CHARACTER","selectionValue":1301}]},{"orderNum":2,"winnerId":25005028,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25005028},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25007246},"selectionType":"CHARACTER","selectionValue":1301}]},{"orderNum":3,"winnerId":25005028,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25005028},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25007246},"selectionType":"CHARACTER","selectionValue":1301}]}]},{"id":108951516,"completedAt":1792124398,"fullRoundText":"Losers
+        Final","round":-6,"totalGames":5,"winnerId":25007342,"displayScore":"LFG |
+        Fist Mexico 3 - FaZe | Sparg0 2","vodUrl":null,"state":3,"event":{"id":1733026,"name":"Melee
+        Singles","slug":"tournament\/the-double-shot-melee-12\/event\/melee-singles","startAt":1792112400,"isOnline":false,"numEntrants":6,"videogame":{"id":1},"tournament":{"id":964072,"name":"The
+        Double Shot Melee #12","slug":"tournament\/the-double-shot-melee-12","startAt":1792112400,"endAt":1792134000,"city":"Tijuana","addrState":"B.C.","countryCode":"MX","venueName":null,"numAttendees":6,"isOnline":false}},"slots":[{"entrant":{"id":25007342,"name":"LFG
+        | Fist Mexico","initialSeedNum":2,"isDisqualified":null,"participants":[{"player":{"id":35258,"gamerTag":"Fist
+        Mexico","prefix":"LFG"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":25007762,"name":"FaZe
+        | Sparg0","initialSeedNum":3,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":2,"stats":{"score":{"value":2}}}}],"games":[{"orderNum":1,"winnerId":25007762,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25007342},"selectionType":"CHARACTER","selectionValue":2},{"entrant":{"id":25007762},"selectionType":"CHARACTER","selectionValue":14}]},{"orderNum":2,"winnerId":25007342,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25007342},"selectionType":"CHARACTER","selectionValue":2},{"entrant":{"id":25007762},"selectionType":"CHARACTER","selectionValue":14}]},{"orderNum":3,"winnerId":25007762,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25007342},"selectionType":"CHARACTER","selectionValue":2},{"entrant":{"id":25007762},"selectionType":"CHARACTER","selectionValue":14}]},{"orderNum":4,"winnerId":25007342,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25007342},"selectionType":"CHARACTER","selectionValue":2},{"entrant":{"id":25007762},"selectionType":"CHARACTER","selectionValue":14}]},{"orderNum":5,"winnerId":25007342,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25007342},"selectionType":"CHARACTER","selectionValue":2},{"entrant":{"id":25007762},"selectionType":"CHARACTER","selectionValue":14}]}]},{"id":108951515,"completedAt":1792123427,"fullRoundText":"Losers
+        Semi-Final","round":-5,"totalGames":5,"winnerId":25007762,"displayScore":"FaZe
+        | Sparg0 3 - TDS | Soid 2","vodUrl":null,"state":3,"event":{"id":1733026,"name":"Melee
+        Singles","slug":"tournament\/the-double-shot-melee-12\/event\/melee-singles","startAt":1792112400,"isOnline":false,"numEntrants":6,"videogame":{"id":1},"tournament":{"id":964072,"name":"The
+        Double Shot Melee #12","slug":"tournament\/the-double-shot-melee-12","startAt":1792112400,"endAt":1792134000,"city":"Tijuana","addrState":"B.C.","countryCode":"MX","venueName":null,"numAttendees":6,"isOnline":false}},"slots":[{"entrant":{"id":25007762,"name":"FaZe
+        | Sparg0","initialSeedNum":3,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":24986615,"name":"TDS
+        | Soid","initialSeedNum":5,"isDisqualified":null,"participants":[{"player":{"id":50177,"gamerTag":"Soid","prefix":"TDS"}}]},"standing":{"placement":2,"stats":{"score":{"value":2}}}}],"games":[{"orderNum":1,"winnerId":24986615,"entrant1Score":0,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24986615},"selectionType":"CHARACTER","selectionValue":14},{"entrant":{"id":25007762},"selectionType":"CHARACTER","selectionValue":14}]},{"orderNum":2,"winnerId":25007762,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24986615},"selectionType":"CHARACTER","selectionValue":14},{"entrant":{"id":25007762},"selectionType":"CHARACTER","selectionValue":14}]},{"orderNum":3,"winnerId":25007762,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24986615},"selectionType":"CHARACTER","selectionValue":14},{"entrant":{"id":25007762},"selectionType":"CHARACTER","selectionValue":14}]},{"orderNum":4,"winnerId":24986615,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24986615},"selectionType":"CHARACTER","selectionValue":14},{"entrant":{"id":25007762},"selectionType":"CHARACTER","selectionValue":14}]},{"orderNum":5,"winnerId":25007762,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24986615},"selectionType":"CHARACTER","selectionValue":14},{"entrant":{"id":25007762},"selectionType":"CHARACTER","selectionValue":14}]}]},{"id":108951513,"completedAt":1792122436,"fullRoundText":"Losers
+        Quarter-Final","round":-4,"totalGames":5,"winnerId":25007762,"displayScore":"FaZe
+        | Sparg0 3 - MogX 1","vodUrl":null,"state":3,"event":{"id":1733026,"name":"Melee
+        Singles","slug":"tournament\/the-double-shot-melee-12\/event\/melee-singles","startAt":1792112400,"isOnline":false,"numEntrants":6,"videogame":{"id":1},"tournament":{"id":964072,"name":"The
+        Double Shot Melee #12","slug":"tournament\/the-double-shot-melee-12","startAt":1792112400,"endAt":1792134000,"city":"Tijuana","addrState":"B.C.","countryCode":"MX","venueName":null,"numAttendees":6,"isOnline":false}},"slots":[{"entrant":{"id":25007762,"name":"FaZe
+        | Sparg0","initialSeedNum":3,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":25006853,"name":"MogX","initialSeedNum":4,"isDisqualified":null,"participants":[{"player":{"id":949654,"gamerTag":"MogX","prefix":""}}]},"standing":{"placement":2,"stats":{"score":{"value":1}}}}],"games":[{"orderNum":1,"winnerId":25007762,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25006853},"selectionType":"CHARACTER","selectionValue":22},{"entrant":{"id":25007762},"selectionType":"CHARACTER","selectionValue":14}]},{"orderNum":2,"winnerId":25007762,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25006853},"selectionType":"CHARACTER","selectionValue":22},{"entrant":{"id":25007762},"selectionType":"CHARACTER","selectionValue":14}]},{"orderNum":3,"winnerId":25006853,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25006853},"selectionType":"CHARACTER","selectionValue":22},{"entrant":{"id":25007762},"selectionType":"CHARACTER","selectionValue":14}]},{"orderNum":4,"winnerId":25007762,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25006853},"selectionType":"CHARACTER","selectionValue":22},{"entrant":{"id":25007762},"selectionType":"CHARACTER","selectionValue":14}]}]},{"id":108950302,"completedAt":1792121143,"fullRoundText":"Winners
+        Semi-Final","round":4,"totalGames":5,"winnerId":25005028,"displayScore":"FaZe
+        | Sparg0 3 - DT | Jeshua 2","vodUrl":null,"state":3,"event":{"id":1733027,"name":"Singles","slug":"tournament\/the-double-shot-16\/event\/singles","startAt":1792112400,"isOnline":false,"numEntrants":21,"videogame":{"id":1386},"tournament":{"id":964073,"name":"The
+        Double Shot #16","slug":"tournament\/the-double-shot-16","startAt":1792112400,"endAt":1792134000,"city":"Tijuana","addrState":"B.C.","countryCode":"MX","venueName":null,"numAttendees":21,"isOnline":false}},"slots":[{"entrant":{"id":25005028,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":25007087,"name":"DT
+        | Jeshua","initialSeedNum":4,"isDisqualified":null,"participants":[{"player":{"id":128287,"gamerTag":"Jeshua","prefix":"DT"}}]},"standing":{"placement":2,"stats":{"score":{"value":2}}}}],"games":[{"orderNum":1,"winnerId":25007087,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25005028},"selectionType":"CHARACTER","selectionValue":1339},{"entrant":{"id":25007087},"selectionType":"CHARACTER","selectionValue":1302}]},{"orderNum":2,"winnerId":25005028,"entrant1Score":0,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25005028},"selectionType":"CHARACTER","selectionValue":1339},{"entrant":{"id":25007087},"selectionType":"CHARACTER","selectionValue":1302}]},{"orderNum":3,"winnerId":25007087,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25005028},"selectionType":"CHARACTER","selectionValue":1339},{"entrant":{"id":25007087},"selectionType":"CHARACTER","selectionValue":1302}]},{"orderNum":4,"winnerId":25005028,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25005028},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25007087},"selectionType":"CHARACTER","selectionValue":1302}]},{"orderNum":5,"winnerId":25005028,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":25005028},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25007087},"selectionType":"CHARACTER","selectionValue":1302}]}]},{"id":108950298,"completedAt":1792119962,"fullRoundText":"Winners
+        Quarter-Final","round":3,"totalGames":5,"winnerId":25005028,"displayScore":"FaZe
+        | Sparg0 2 - MR\/TUC | Minazuki 0","vodUrl":null,"state":3,"event":{"id":1733027,"name":"Singles","slug":"tournament\/the-double-shot-16\/event\/singles","startAt":1792112400,"isOnline":false,"numEntrants":21,"videogame":{"id":1386},"tournament":{"id":964073,"name":"The
+        Double Shot #16","slug":"tournament\/the-double-shot-16","startAt":1792112400,"endAt":1792134000,"city":"Tijuana","addrState":"B.C.","countryCode":"MX","venueName":null,"numAttendees":21,"isOnline":false}},"slots":[{"entrant":{"id":25005028,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":2}}}},{"entrant":{"id":25007499,"name":"MR\/TUC
+        | Minazuki","initialSeedNum":9,"isDisqualified":null,"participants":[{"player":{"id":1331127,"gamerTag":"Minazuki","prefix":"MR\/TUC"}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":25005028,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25005028},"selectionType":"CHARACTER","selectionValue":1339},{"entrant":{"id":25007499},"selectionType":"CHARACTER","selectionValue":1301}]},{"orderNum":2,"winnerId":25005028,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25005028},"selectionType":"CHARACTER","selectionValue":1339},{"entrant":{"id":25007499},"selectionType":"CHARACTER","selectionValue":1301}]}]},{"id":108951499,"completedAt":1792119397,"fullRoundText":"Winners
+        Semi-Final","round":2,"totalGames":5,"winnerId":25007342,"displayScore":"LFG
+        | Fist Mexico 3 - FaZe | Sparg0 0","vodUrl":null,"state":3,"event":{"id":1733026,"name":"Melee
+        Singles","slug":"tournament\/the-double-shot-melee-12\/event\/melee-singles","startAt":1792112400,"isOnline":false,"numEntrants":6,"videogame":{"id":1},"tournament":{"id":964072,"name":"The
+        Double Shot Melee #12","slug":"tournament\/the-double-shot-melee-12","startAt":1792112400,"endAt":1792134000,"city":"Tijuana","addrState":"B.C.","countryCode":"MX","venueName":null,"numAttendees":6,"isOnline":false}},"slots":[{"entrant":{"id":25007342,"name":"LFG
+        | Fist Mexico","initialSeedNum":2,"isDisqualified":null,"participants":[{"player":{"id":35258,"gamerTag":"Fist
+        Mexico","prefix":"LFG"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":25007762,"name":"FaZe
+        | Sparg0","initialSeedNum":3,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":25007342,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25007342},"selectionType":"CHARACTER","selectionValue":2},{"entrant":{"id":25007762},"selectionType":"CHARACTER","selectionValue":14}]},{"orderNum":2,"winnerId":25007342,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25007342},"selectionType":"CHARACTER","selectionValue":2},{"entrant":{"id":25007762},"selectionType":"CHARACTER","selectionValue":14}]},{"orderNum":3,"winnerId":25007342,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25007342},"selectionType":"CHARACTER","selectionValue":2},{"entrant":{"id":25007762},"selectionType":"CHARACTER","selectionValue":14}]}]}]}}},"extensions":{"cacheControl":{"version":1,"hints":null},"queryComplexity":769},"actionRecords":[]}'
+    headers:
+      access-control-allow-credentials:
+      - 'true'
+      access-control-allow-headers:
+      - '*, Content-Type, Authorization'
+      access-control-allow-methods:
+      - POST, GET, OPTIONS
+      access-control-allow-origin:
+      - '*'
+      cache-control:
+      - private, max-age=0, s-maxage=0
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a5af4f36a96ec932-IAD
+      connection:
+      - keep-alive
+      content-length:
+      - '29440'
+      content-type:
+      - application/json
+      date:
+      - Sun, 15 Nov 2026 15:32:35 GMT
+      required-client-version:
+      - '20'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=15724800; includeSubDomains
+      transfer-encoding:
+      - chunked
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"query":"\nquery PlayerSets($id: ID!, $page: Int!, $perPage: Int!, $opponentId:
+      ID, $filters: SetFilters) {\n  player(id: $id) {\n    id\n    sets(page: $page,
+      perPage: $perPage, opponentId: $opponentId, filters: $filters) {\n      pageInfo
+      { total totalPages page perPage }\n      nodes {\n        id completedAt fullRoundText
+      round totalGames winnerId displayScore vodUrl state\n        event { ...EventFields
+      tournament { ...TournamentFields } }\n        slots {\n          entrant { ...EntrantFields
+      }\n          standing { placement stats { score { value } } }\n        }\n        games
+      {\n          orderNum winnerId entrant1Score entrant2Score\n          stage
+      { id name }\n          selections { entrant { id } selectionType selectionValue
+      }\n        }\n      }\n    }\n  }\n}\n\nfragment EventFields on Event {\n  id
+      name slug startAt isOnline numEntrants\n  videogame { id }\n}\n\nfragment TournamentFields
+      on Tournament {\n  id name slug startAt endAt city addrState countryCode venueName
+      numAttendees isOnline\n}\n\nfragment EntrantFields on Entrant {\n  id name initialSeedNum
+      isDisqualified\n  participants { player { id gamerTag prefix } }\n}\n","variables":{"id":158026,"page":4,"perPage":15,"opponentId":null,"filters":null}}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '1243'
+      content-type:
+      - application/json
+      host:
+      - api.start.gg
+      user-agent:
+      - python-httpx2/2.12.0
+    method: POST
+    uri: https://api.start.gg/gql/alpha
+  response:
+    body:
+      string: '{"data":{"player":{"id":158026,"sets":{"pageInfo":{"total":5620,"totalPages":375,"page":4,"perPage":15},"nodes":[{"id":108951497,"completedAt":1792118717,"fullRoundText":"Winners
+        Quarter-Final","round":1,"totalGames":5,"winnerId":25007762,"displayScore":"FaZe
+        | Sparg0 3 - TDS|S4 | Colette 0","vodUrl":null,"state":3,"event":{"id":1733026,"name":"Melee
+        Singles","slug":"tournament\/the-double-shot-melee-12\/event\/melee-singles","startAt":1792112400,"isOnline":false,"numEntrants":6,"videogame":{"id":1},"tournament":{"id":964072,"name":"The
+        Double Shot Melee #12","slug":"tournament\/the-double-shot-melee-12","startAt":1792112400,"endAt":1792134000,"city":"Tijuana","addrState":"B.C.","countryCode":"MX","venueName":null,"numAttendees":6,"isOnline":false}},"slots":[{"entrant":{"id":25007762,"name":"FaZe
+        | Sparg0","initialSeedNum":3,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":24978967,"name":"TDS|S4
+        | Colette","initialSeedNum":6,"isDisqualified":null,"participants":[{"player":{"id":2528822,"gamerTag":"Colette","prefix":"TDS|S4"}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":25007762,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24978967},"selectionType":"CHARACTER","selectionValue":5},{"entrant":{"id":25007762},"selectionType":"CHARACTER","selectionValue":14}]},{"orderNum":2,"winnerId":25007762,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24978967},"selectionType":"CHARACTER","selectionValue":5},{"entrant":{"id":25007762},"selectionType":"CHARACTER","selectionValue":14}]},{"orderNum":3,"winnerId":25007762,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24978967},"selectionType":"CHARACTER","selectionValue":5},{"entrant":{"id":25007762},"selectionType":"CHARACTER","selectionValue":14}]}]},{"id":108950290,"completedAt":1792117938,"fullRoundText":"Winners
+        Round 2","round":2,"totalGames":5,"winnerId":25005028,"displayScore":"FaZe
+        | Sparg0 2 - Usax 0","vodUrl":null,"state":3,"event":{"id":1733027,"name":"Singles","slug":"tournament\/the-double-shot-16\/event\/singles","startAt":1792112400,"isOnline":false,"numEntrants":21,"videogame":{"id":1386},"tournament":{"id":964073,"name":"The
+        Double Shot #16","slug":"tournament\/the-double-shot-16","startAt":1792112400,"endAt":1792134000,"city":"Tijuana","addrState":"B.C.","countryCode":"MX","venueName":null,"numAttendees":21,"isOnline":false}},"slots":[{"entrant":{"id":25005028,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":2}}}},{"entrant":{"id":25003581,"name":"Usax","initialSeedNum":17,"isDisqualified":null,"participants":[{"player":{"id":128273,"gamerTag":"Usax","prefix":""}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":25005028,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25003581},"selectionType":"CHARACTER","selectionValue":1319},{"entrant":{"id":25005028},"selectionType":"CHARACTER","selectionValue":1339}]},{"orderNum":2,"winnerId":25005028,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":25003581},"selectionType":"CHARACTER","selectionValue":1319},{"entrant":{"id":25005028},"selectionType":"CHARACTER","selectionValue":1339}]}]},{"id":108923680,"completedAt":1792048115,"fullRoundText":"Grand
+        Final Reset","round":3,"totalGames":5,"winnerId":24993476,"displayScore":"OUT
+        | PSK | WaKa 2 - FaZe | Sparg0 3","vodUrl":null,"state":3,"event":{"id":1724791,"name":"Singles
+        Ultimate","slug":"tournament\/tryhaaards-43-reach-out-to-the-truth\/event\/singles-ultimate","startAt":1792027800,"isOnline":false,"numEntrants":54,"videogame":{"id":1386},"tournament":{"id":960314,"name":"TRYHAAARDS
+        #43: Reach Out To The Truth","slug":"tournament\/tryhaaards-43-reach-out-to-the-truth","startAt":1792027800,"endAt":1792044000,"city":"Tijuana","addrState":"B.C.","countryCode":"MX","venueName":null,"numAttendees":57,"isOnline":false}},"slots":[{"entrant":{"id":24996817,"name":"OUT
+        | PSK | WaKa","initialSeedNum":2,"isDisqualified":null,"participants":[{"player":{"id":504366,"gamerTag":"WaKa","prefix":"OUT
+        | PSK"}}]},"standing":{"placement":2,"stats":{"score":{"value":2}}}},{"entrant":{"id":24993476,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}}],"games":[{"orderNum":1,"winnerId":24993476,"entrant1Score":0,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24993476},"selectionType":"CHARACTER","selectionValue":1339},{"entrant":{"id":24996817},"selectionType":"CHARACTER","selectionValue":1301}]},{"orderNum":2,"winnerId":24993476,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24993476},"selectionType":"CHARACTER","selectionValue":1339},{"entrant":{"id":24996817},"selectionType":"CHARACTER","selectionValue":1301}]},{"orderNum":3,"winnerId":24996817,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24993476},"selectionType":"CHARACTER","selectionValue":1339},{"entrant":{"id":24996817},"selectionType":"CHARACTER","selectionValue":1301}]},{"orderNum":4,"winnerId":24996817,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24993476},"selectionType":"CHARACTER","selectionValue":1339},{"entrant":{"id":24996817},"selectionType":"CHARACTER","selectionValue":1301}]},{"orderNum":5,"winnerId":24993476,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24993476},"selectionType":"CHARACTER","selectionValue":1339},{"entrant":{"id":24996817},"selectionType":"CHARACTER","selectionValue":1301}]}]},{"id":108923679,"completedAt":1792047138,"fullRoundText":"Grand
+        Final","round":3,"totalGames":5,"winnerId":24996817,"displayScore":"FaZe |
+        Sparg0 0 - OUT | PSK | WaKa 3","vodUrl":null,"state":3,"event":{"id":1724791,"name":"Singles
+        Ultimate","slug":"tournament\/tryhaaards-43-reach-out-to-the-truth\/event\/singles-ultimate","startAt":1792027800,"isOnline":false,"numEntrants":54,"videogame":{"id":1386},"tournament":{"id":960314,"name":"TRYHAAARDS
+        #43: Reach Out To The Truth","slug":"tournament\/tryhaaards-43-reach-out-to-the-truth","startAt":1792027800,"endAt":1792044000,"city":"Tijuana","addrState":"B.C.","countryCode":"MX","venueName":null,"numAttendees":57,"isOnline":false}},"slots":[{"entrant":{"id":24993476,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}},{"entrant":{"id":24996817,"name":"OUT
+        | PSK | WaKa","initialSeedNum":2,"isDisqualified":null,"participants":[{"player":{"id":504366,"gamerTag":"WaKa","prefix":"OUT
+        | PSK"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}}],"games":[{"orderNum":1,"winnerId":24996817,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24993476},"selectionType":"CHARACTER","selectionValue":1339},{"entrant":{"id":24996817},"selectionType":"CHARACTER","selectionValue":1301}]},{"orderNum":2,"winnerId":24996817,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24993476},"selectionType":"CHARACTER","selectionValue":1339},{"entrant":{"id":24996817},"selectionType":"CHARACTER","selectionValue":1301}]},{"orderNum":3,"winnerId":24996817,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24993476},"selectionType":"CHARACTER","selectionValue":1339},{"entrant":{"id":24996817},"selectionType":"CHARACTER","selectionValue":1301}]}]},{"id":108923678,"completedAt":1792042906,"fullRoundText":"Winners
+        Final","round":2,"totalGames":5,"winnerId":24993476,"displayScore":"FaZe |
+        Sparg0 3 - OUT | PSK | WaKa 2","vodUrl":null,"state":3,"event":{"id":1724791,"name":"Singles
+        Ultimate","slug":"tournament\/tryhaaards-43-reach-out-to-the-truth\/event\/singles-ultimate","startAt":1792027800,"isOnline":false,"numEntrants":54,"videogame":{"id":1386},"tournament":{"id":960314,"name":"TRYHAAARDS
+        #43: Reach Out To The Truth","slug":"tournament\/tryhaaards-43-reach-out-to-the-truth","startAt":1792027800,"endAt":1792044000,"city":"Tijuana","addrState":"B.C.","countryCode":"MX","venueName":null,"numAttendees":57,"isOnline":false}},"slots":[{"entrant":{"id":24993476,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":24996817,"name":"OUT
+        | PSK | WaKa","initialSeedNum":2,"isDisqualified":null,"participants":[{"player":{"id":504366,"gamerTag":"WaKa","prefix":"OUT
+        | PSK"}}]},"standing":{"placement":2,"stats":{"score":{"value":2}}}}],"games":[{"orderNum":1,"winnerId":24993476,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24993476},"selectionType":"CHARACTER","selectionValue":1339},{"entrant":{"id":24996817},"selectionType":"CHARACTER","selectionValue":1301}]},{"orderNum":2,"winnerId":24993476,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24993476},"selectionType":"CHARACTER","selectionValue":1339},{"entrant":{"id":24996817},"selectionType":"CHARACTER","selectionValue":1301}]},{"orderNum":3,"winnerId":24996817,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24993476},"selectionType":"CHARACTER","selectionValue":1339},{"entrant":{"id":24996817},"selectionType":"CHARACTER","selectionValue":1301}]},{"orderNum":4,"winnerId":24996817,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24993476},"selectionType":"CHARACTER","selectionValue":1339},{"entrant":{"id":24996817},"selectionType":"CHARACTER","selectionValue":1301}]},{"orderNum":5,"winnerId":24993476,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24993476},"selectionType":"CHARACTER","selectionValue":1339},{"entrant":{"id":24996817},"selectionType":"CHARACTER","selectionValue":1301}]}]},{"id":108923676,"completedAt":1792041879,"fullRoundText":"Winners
+        Semi-Final","round":1,"totalGames":5,"winnerId":24993476,"displayScore":"FaZe
+        | Sparg0 3 - DT | PSK | BICI 0","vodUrl":null,"state":3,"event":{"id":1724791,"name":"Singles
+        Ultimate","slug":"tournament\/tryhaaards-43-reach-out-to-the-truth\/event\/singles-ultimate","startAt":1792027800,"isOnline":false,"numEntrants":54,"videogame":{"id":1386},"tournament":{"id":960314,"name":"TRYHAAARDS
+        #43: Reach Out To The Truth","slug":"tournament\/tryhaaards-43-reach-out-to-the-truth","startAt":1792027800,"endAt":1792044000,"city":"Tijuana","addrState":"B.C.","countryCode":"MX","venueName":null,"numAttendees":57,"isOnline":false}},"slots":[{"entrant":{"id":24993476,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":24994534,"name":"DT
+        | PSK | BICI","initialSeedNum":4,"isDisqualified":null,"participants":[{"player":{"id":126381,"gamerTag":"BICI","prefix":"DT
+        | PSK"}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":24993476,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24993476},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":24994534},"selectionType":"CHARACTER","selectionValue":1286}]},{"orderNum":2,"winnerId":24993476,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24993476},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":24994534},"selectionType":"CHARACTER","selectionValue":1286}]},{"orderNum":3,"winnerId":24993476,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24993476},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":24994534},"selectionType":"CHARACTER","selectionValue":1286}]}]},{"id":108920319,"completedAt":1792038995,"fullRoundText":"Winners
+        Quarter-Final","round":4,"totalGames":5,"winnerId":24993476,"displayScore":"FaZe
+        | Sparg0 3 - PB|MR | Magnolia 0","vodUrl":null,"state":3,"event":{"id":1724791,"name":"Singles
+        Ultimate","slug":"tournament\/tryhaaards-43-reach-out-to-the-truth\/event\/singles-ultimate","startAt":1792027800,"isOnline":false,"numEntrants":54,"videogame":{"id":1386},"tournament":{"id":960314,"name":"TRYHAAARDS
+        #43: Reach Out To The Truth","slug":"tournament\/tryhaaards-43-reach-out-to-the-truth","startAt":1792027800,"endAt":1792044000,"city":"Tijuana","addrState":"B.C.","countryCode":"MX","venueName":null,"numAttendees":57,"isOnline":false}},"slots":[{"entrant":{"id":24993476,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":24983131,"name":"PB|MR
+        | Magnolia","initialSeedNum":9,"isDisqualified":null,"participants":[{"player":{"id":349372,"gamerTag":"Magnolia","prefix":"PB|MR"}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":24993476,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24983131},"selectionType":"CHARACTER","selectionValue":1453},{"entrant":{"id":24993476},"selectionType":"CHARACTER","selectionValue":1339}]},{"orderNum":2,"winnerId":24993476,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24983131},"selectionType":"CHARACTER","selectionValue":1453},{"entrant":{"id":24993476},"selectionType":"CHARACTER","selectionValue":1339}]},{"orderNum":3,"winnerId":24993476,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24983131},"selectionType":"CHARACTER","selectionValue":1453},{"entrant":{"id":24993476},"selectionType":"CHARACTER","selectionValue":1339}]}]},{"id":108920311,"completedAt":1792035265,"fullRoundText":"Winners
+        Round 3","round":3,"totalGames":5,"winnerId":24993476,"displayScore":"FaZe
+        | Sparg0 3 - Auty 0","vodUrl":null,"state":3,"event":{"id":1724791,"name":"Singles
+        Ultimate","slug":"tournament\/tryhaaards-43-reach-out-to-the-truth\/event\/singles-ultimate","startAt":1792027800,"isOnline":false,"numEntrants":54,"videogame":{"id":1386},"tournament":{"id":960314,"name":"TRYHAAARDS
+        #43: Reach Out To The Truth","slug":"tournament\/tryhaaards-43-reach-out-to-the-truth","startAt":1792027800,"endAt":1792044000,"city":"Tijuana","addrState":"B.C.","countryCode":"MX","venueName":null,"numAttendees":57,"isOnline":false}},"slots":[{"entrant":{"id":24993476,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":24996649,"name":"Auty","initialSeedNum":16,"isDisqualified":null,"participants":[{"player":{"id":2224212,"gamerTag":"Auty","prefix":null}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":24993476,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24993476},"selectionType":"CHARACTER","selectionValue":1339},{"entrant":{"id":24996649},"selectionType":"CHARACTER","selectionValue":1274}]},{"orderNum":2,"winnerId":24993476,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24993476},"selectionType":"CHARACTER","selectionValue":1339},{"entrant":{"id":24996649},"selectionType":"CHARACTER","selectionValue":1274}]},{"orderNum":3,"winnerId":24993476,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24993476},"selectionType":"CHARACTER","selectionValue":1339},{"entrant":{"id":24996649},"selectionType":"CHARACTER","selectionValue":1407}]}]},{"id":108920295,"completedAt":1792033576,"fullRoundText":"Winners
+        Round 2","round":2,"totalGames":5,"winnerId":24993476,"displayScore":"FaZe
+        | Sparg0 3 - SX\/TF | Doppelg\u00e4nger 0","vodUrl":null,"state":3,"event":{"id":1724791,"name":"Singles
+        Ultimate","slug":"tournament\/tryhaaards-43-reach-out-to-the-truth\/event\/singles-ultimate","startAt":1792027800,"isOnline":false,"numEntrants":54,"videogame":{"id":1386},"tournament":{"id":960314,"name":"TRYHAAARDS
+        #43: Reach Out To The Truth","slug":"tournament\/tryhaaards-43-reach-out-to-the-truth","startAt":1792027800,"endAt":1792044000,"city":"Tijuana","addrState":"B.C.","countryCode":"MX","venueName":null,"numAttendees":57,"isOnline":false}},"slots":[{"entrant":{"id":24993476,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":24968494,"name":"SX\/TF
+        | Doppelg\u00e4nger","initialSeedNum":32,"isDisqualified":null,"participants":[{"player":{"id":4751832,"gamerTag":"Doppelg\u00e4nger","prefix":"SX\/FUCKTF"}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":24993476,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24968494},"selectionType":"CHARACTER","selectionValue":1339},{"entrant":{"id":24993476},"selectionType":"CHARACTER","selectionValue":1339}]},{"orderNum":2,"winnerId":24993476,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24968494},"selectionType":"CHARACTER","selectionValue":1339},{"entrant":{"id":24993476},"selectionType":"CHARACTER","selectionValue":1339}]},{"orderNum":3,"winnerId":24993476,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24968494},"selectionType":"CHARACTER","selectionValue":1339},{"entrant":{"id":24993476},"selectionType":"CHARACTER","selectionValue":1339}]}]},{"id":108648301,"completedAt":1791435145,"fullRoundText":"Grand
+        Final Reset","round":3,"totalGames":5,"winnerId":24916131,"displayScore":"FaZe
+        | Sparg0 3 - LRA | Syrup 0","vodUrl":null,"state":3,"event":{"id":1726207,"name":"Ultimate
+        Singles","slug":"tournament\/the-cashbox-43\/event\/ultimate-singles","startAt":1791410400,"isOnline":true,"numEntrants":477,"videogame":{"id":1386},"tournament":{"id":961028,"name":"The
+        Cashbox #43","slug":"tournament\/the-cashbox-43","startAt":1791410400,"endAt":1791432000,"city":null,"addrState":null,"countryCode":null,"venueName":null,"numAttendees":477,"isOnline":true}},"slots":[{"entrant":{"id":24916131,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":24924711,"name":"LRA
+        | Syrup","initialSeedNum":3,"isDisqualified":null,"participants":[{"player":{"id":1216463,"gamerTag":"Syrup","prefix":"LRA"}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":24916131,"entrant1Score":null,"entrant2Score":null,"stage":{"id":397,"name":"Town
+        and City"},"selections":[{"entrant":{"id":24916131},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":24924711},"selectionType":"CHARACTER","selectionValue":1766}]},{"orderNum":2,"winnerId":24916131,"entrant1Score":null,"entrant2Score":null,"stage":{"id":513,"name":"Hollow
+        Bastion"},"selections":[{"entrant":{"id":24916131},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":24924711},"selectionType":"CHARACTER","selectionValue":1766}]},{"orderNum":3,"winnerId":24916131,"entrant1Score":null,"entrant2Score":null,"stage":{"id":378,"name":"Pok\u00e9mon
+        Stadium 2"},"selections":[{"entrant":{"id":24916131},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":24924711},"selectionType":"CHARACTER","selectionValue":1766}]}]},{"id":108648300,"completedAt":1791434338,"fullRoundText":"Grand
+        Final","round":3,"totalGames":5,"winnerId":24916131,"displayScore":"LRA |
+        Syrup 2 - FaZe | Sparg0 3","vodUrl":null,"state":3,"event":{"id":1726207,"name":"Ultimate
+        Singles","slug":"tournament\/the-cashbox-43\/event\/ultimate-singles","startAt":1791410400,"isOnline":true,"numEntrants":477,"videogame":{"id":1386},"tournament":{"id":961028,"name":"The
+        Cashbox #43","slug":"tournament\/the-cashbox-43","startAt":1791410400,"endAt":1791432000,"city":null,"addrState":null,"countryCode":null,"venueName":null,"numAttendees":477,"isOnline":true}},"slots":[{"entrant":{"id":24924711,"name":"LRA
+        | Syrup","initialSeedNum":3,"isDisqualified":null,"participants":[{"player":{"id":1216463,"gamerTag":"Syrup","prefix":"LRA"}}]},"standing":{"placement":2,"stats":{"score":{"value":2}}}},{"entrant":{"id":24916131,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}}],"games":[{"orderNum":1,"winnerId":24916131,"entrant1Score":null,"entrant2Score":null,"stage":{"id":378,"name":"Pok\u00e9mon
+        Stadium 2"},"selections":[{"entrant":{"id":24924711},"selectionType":"CHARACTER","selectionValue":1766},{"entrant":{"id":24916131},"selectionType":"CHARACTER","selectionValue":1275}]},{"orderNum":2,"winnerId":24916131,"entrant1Score":null,"entrant2Score":null,"stage":{"id":387,"name":"Smashville"},"selections":[{"entrant":{"id":24924711},"selectionType":"CHARACTER","selectionValue":1766},{"entrant":{"id":24916131},"selectionType":"CHARACTER","selectionValue":1275}]},{"orderNum":3,"winnerId":24924711,"entrant1Score":null,"entrant2Score":null,"stage":{"id":311,"name":"Battlefield"},"selections":[{"entrant":{"id":24924711},"selectionType":"CHARACTER","selectionValue":1766},{"entrant":{"id":24916131},"selectionType":"CHARACTER","selectionValue":1275}]},{"orderNum":4,"winnerId":24924711,"entrant1Score":null,"entrant2Score":null,"stage":{"id":397,"name":"Town
+        and City"},"selections":[{"entrant":{"id":24924711},"selectionType":"CHARACTER","selectionValue":1766},{"entrant":{"id":24916131},"selectionType":"CHARACTER","selectionValue":1275}]},{"orderNum":5,"winnerId":24916131,"entrant1Score":null,"entrant2Score":null,"stage":{"id":397,"name":"Town
+        and City"},"selections":[{"entrant":{"id":24924711},"selectionType":"CHARACTER","selectionValue":1766},{"entrant":{"id":24916131},"selectionType":"CHARACTER","selectionValue":1275}]}]},{"id":108648315,"completedAt":1791433082,"fullRoundText":"Losers
+        Final","round":-6,"totalGames":5,"winnerId":24916131,"displayScore":"ABT3
+        | Wrath 2 - FaZe | Sparg0 3","vodUrl":null,"state":3,"event":{"id":1726207,"name":"Ultimate
+        Singles","slug":"tournament\/the-cashbox-43\/event\/ultimate-singles","startAt":1791410400,"isOnline":true,"numEntrants":477,"videogame":{"id":1386},"tournament":{"id":961028,"name":"The
+        Cashbox #43","slug":"tournament\/the-cashbox-43","startAt":1791410400,"endAt":1791432000,"city":null,"addrState":null,"countryCode":null,"venueName":null,"numAttendees":477,"isOnline":true}},"slots":[{"entrant":{"id":24924657,"name":"ABT3
+        | Wrath","initialSeedNum":4,"isDisqualified":null,"participants":[{"player":{"id":70538,"gamerTag":"Wrath","prefix":"ABT3"}}]},"standing":{"placement":2,"stats":{"score":{"value":2}}}},{"entrant":{"id":24916131,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}}],"games":[{"orderNum":1,"winnerId":24924657,"entrant1Score":null,"entrant2Score":null,"stage":{"id":484,"name":"Small
+        Battlefield"},"selections":[{"entrant":{"id":24924657},"selectionType":"CHARACTER","selectionValue":1332},{"entrant":{"id":24916131},"selectionType":"CHARACTER","selectionValue":1326}]},{"orderNum":2,"winnerId":24916131,"entrant1Score":null,"entrant2Score":null,"stage":{"id":484,"name":"Small
+        Battlefield"},"selections":[{"entrant":{"id":24924657},"selectionType":"CHARACTER","selectionValue":1332},{"entrant":{"id":24916131},"selectionType":"CHARACTER","selectionValue":1326}]},{"orderNum":3,"winnerId":24916131,"entrant1Score":null,"entrant2Score":null,"stage":{"id":513,"name":"Hollow
+        Bastion"},"selections":[{"entrant":{"id":24924657},"selectionType":"CHARACTER","selectionValue":1332},{"entrant":{"id":24916131},"selectionType":"CHARACTER","selectionValue":1326}]},{"orderNum":4,"winnerId":24924657,"entrant1Score":null,"entrant2Score":null,"stage":{"id":513,"name":"Hollow
+        Bastion"},"selections":[{"entrant":{"id":24916131},"selectionType":"CHARACTER","selectionValue":1326},{"entrant":{"id":24924657},"selectionType":"CHARACTER","selectionValue":1332}]},{"orderNum":5,"winnerId":24916131,"entrant1Score":null,"entrant2Score":null,"stage":{"id":311,"name":"Battlefield"},"selections":[{"entrant":{"id":24924657},"selectionType":"CHARACTER","selectionValue":1332},{"entrant":{"id":24916131},"selectionType":"CHARACTER","selectionValue":1326}]}]},{"id":108648314,"completedAt":1791431340,"fullRoundText":"Losers
+        Semi-Final","round":-5,"totalGames":5,"winnerId":24916131,"displayScore":"FaZe
+        | Sparg0 3 - Maister 0","vodUrl":null,"state":3,"event":{"id":1726207,"name":"Ultimate
+        Singles","slug":"tournament\/the-cashbox-43\/event\/ultimate-singles","startAt":1791410400,"isOnline":true,"numEntrants":477,"videogame":{"id":1386},"tournament":{"id":961028,"name":"The
+        Cashbox #43","slug":"tournament\/the-cashbox-43","startAt":1791410400,"endAt":1791432000,"city":null,"addrState":null,"countryCode":null,"venueName":null,"numAttendees":477,"isOnline":true}},"slots":[{"entrant":{"id":24916131,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":24916527,"name":"Maister","initialSeedNum":9,"isDisqualified":null,"participants":[{"player":{"id":135042,"gamerTag":"Maister","prefix":""}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":24916131,"entrant1Score":null,"entrant2Score":null,"stage":{"id":484,"name":"Small
+        Battlefield"},"selections":[{"entrant":{"id":24916131},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":24916527},"selectionType":"CHARACTER","selectionValue":1405}]},{"orderNum":2,"winnerId":24916131,"entrant1Score":null,"entrant2Score":null,"stage":{"id":484,"name":"Small
+        Battlefield"},"selections":[{"entrant":{"id":24916131},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":24916527},"selectionType":"CHARACTER","selectionValue":1405}]},{"orderNum":3,"winnerId":24916131,"entrant1Score":null,"entrant2Score":null,"stage":{"id":513,"name":"Hollow
+        Bastion"},"selections":[{"entrant":{"id":24916131},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":24916527},"selectionType":"CHARACTER","selectionValue":1405}]}]},{"id":108648312,"completedAt":1791430481,"fullRoundText":"Losers
+        Quarter-Final","round":-4,"totalGames":5,"winnerId":24916131,"displayScore":"Jakal
+        2 - FaZe | Sparg0 3","vodUrl":null,"state":3,"event":{"id":1726207,"name":"Ultimate
+        Singles","slug":"tournament\/the-cashbox-43\/event\/ultimate-singles","startAt":1791410400,"isOnline":true,"numEntrants":477,"videogame":{"id":1386},"tournament":{"id":961028,"name":"The
+        Cashbox #43","slug":"tournament\/the-cashbox-43","startAt":1791410400,"endAt":1791432000,"city":null,"addrState":null,"countryCode":null,"venueName":null,"numAttendees":477,"isOnline":true}},"slots":[{"entrant":{"id":24915733,"name":"Jakal","initialSeedNum":15,"isDisqualified":null,"participants":[{"player":{"id":231113,"gamerTag":"Jakal","prefix":""}}]},"standing":{"placement":2,"stats":{"score":{"value":2}}}},{"entrant":{"id":24916131,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}}],"games":[{"orderNum":1,"winnerId":24916131,"entrant1Score":null,"entrant2Score":null,"stage":{"id":484,"name":"Small
+        Battlefield"},"selections":[{"entrant":{"id":24915733},"selectionType":"CHARACTER","selectionValue":1337},{"entrant":{"id":24916131},"selectionType":"CHARACTER","selectionValue":1795}]},{"orderNum":2,"winnerId":24916131,"entrant1Score":null,"entrant2Score":null,"stage":{"id":397,"name":"Town
+        and City"},"selections":[{"entrant":{"id":24915733},"selectionType":"CHARACTER","selectionValue":1337},{"entrant":{"id":24916131},"selectionType":"CHARACTER","selectionValue":1795}]},{"orderNum":3,"winnerId":24915733,"entrant1Score":null,"entrant2Score":null,"stage":{"id":378,"name":"Pok\u00e9mon
+        Stadium 2"},"selections":[{"entrant":{"id":24915733},"selectionType":"CHARACTER","selectionValue":1337},{"entrant":{"id":24916131},"selectionType":"CHARACTER","selectionValue":1795}]},{"orderNum":4,"winnerId":24915733,"entrant1Score":null,"entrant2Score":null,"stage":{"id":328,"name":"Final
+        Destination"},"selections":[{"entrant":{"id":24915733},"selectionType":"CHARACTER","selectionValue":1337},{"entrant":{"id":24916131},"selectionType":"CHARACTER","selectionValue":1795}]},{"orderNum":5,"winnerId":24916131,"entrant1Score":null,"entrant2Score":null,"stage":{"id":328,"name":"Final
+        Destination"},"selections":[{"entrant":{"id":24915733},"selectionType":"CHARACTER","selectionValue":1337},{"entrant":{"id":24916131},"selectionType":"CHARACTER","selectionValue":1795}]}]},{"id":108648310,"completedAt":1791427877,"fullRoundText":"Losers
+        Round 1","round":-3,"totalGames":5,"winnerId":24916131,"displayScore":"FaZe
+        | Sparg0 3 - Sonix 0","vodUrl":null,"state":3,"event":{"id":1726207,"name":"Ultimate
+        Singles","slug":"tournament\/the-cashbox-43\/event\/ultimate-singles","startAt":1791410400,"isOnline":true,"numEntrants":477,"videogame":{"id":1386},"tournament":{"id":961028,"name":"The
+        Cashbox #43","slug":"tournament\/the-cashbox-43","startAt":1791410400,"endAt":1791432000,"city":null,"addrState":null,"countryCode":null,"venueName":null,"numAttendees":477,"isOnline":true}},"slots":[{"entrant":{"id":24916131,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":24923849,"name":"Sonix","initialSeedNum":2,"isDisqualified":null,"participants":[{"player":{"id":258371,"gamerTag":"Sonix","prefix":""}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":24916131,"entrant1Score":null,"entrant2Score":0,"stage":{"id":484,"name":"Small
+        Battlefield"},"selections":[{"entrant":{"id":24916131},"selectionType":"CHARACTER","selectionValue":1326},{"entrant":{"id":24923849},"selectionType":"CHARACTER","selectionValue":1332}]},{"orderNum":2,"winnerId":24916131,"entrant1Score":null,"entrant2Score":0,"stage":{"id":378,"name":"Pok\u00e9mon
+        Stadium 2"},"selections":[{"entrant":{"id":24916131},"selectionType":"CHARACTER","selectionValue":1326},{"entrant":{"id":24923849},"selectionType":"CHARACTER","selectionValue":1332}]},{"orderNum":3,"winnerId":24916131,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24916131},"selectionType":"CHARACTER","selectionValue":1326},{"entrant":{"id":24923849},"selectionType":"CHARACTER","selectionValue":1332}]}]}]}}},"extensions":{"cacheControl":{"version":1,"hints":null},"queryComplexity":792},"actionRecords":[]}'
+    headers:
+      access-control-allow-credentials:
+      - 'true'
+      access-control-allow-headers:
+      - '*, Content-Type, Authorization'
+      access-control-allow-methods:
+      - POST, GET, OPTIONS
+      access-control-allow-origin:
+      - '*'
+      cache-control:
+      - private, max-age=0, s-maxage=0
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a5af4f369adee5b4-IAD
+      connection:
+      - keep-alive
+      content-length:
+      - '31825'
+      content-type:
+      - application/json
+      date:
+      - Sun, 15 Nov 2026 15:32:35 GMT
+      required-client-version:
+      - '20'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=15724800; includeSubDomains
+      transfer-encoding:
+      - chunked
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"query":"\nquery PlayerSets($id: ID!, $page: Int!, $perPage: Int!, $opponentId:
+      ID, $filters: SetFilters) {\n  player(id: $id) {\n    id\n    sets(page: $page,
+      perPage: $perPage, opponentId: $opponentId, filters: $filters) {\n      pageInfo
+      { total totalPages page perPage }\n      nodes {\n        id completedAt fullRoundText
+      round totalGames winnerId displayScore vodUrl state\n        event { ...EventFields
+      tournament { ...TournamentFields } }\n        slots {\n          entrant { ...EntrantFields
+      }\n          standing { placement stats { score { value } } }\n        }\n        games
+      {\n          orderNum winnerId entrant1Score entrant2Score\n          stage
+      { id name }\n          selections { entrant { id } selectionType selectionValue
+      }\n        }\n      }\n    }\n  }\n}\n\nfragment EventFields on Event {\n  id
+      name slug startAt isOnline numEntrants\n  videogame { id }\n}\n\nfragment TournamentFields
+      on Tournament {\n  id name slug startAt endAt city addrState countryCode venueName
+      numAttendees isOnline\n}\n\nfragment EntrantFields on Entrant {\n  id name initialSeedNum
+      isDisqualified\n  participants { player { id gamerTag prefix } }\n}\n","variables":{"id":158026,"page":5,"perPage":15,"opponentId":null,"filters":null}}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '1243'
+      content-type:
+      - application/json
+      host:
+      - api.start.gg
+      user-agent:
+      - python-httpx2/2.12.0
+    method: POST
+    uri: https://api.start.gg/gql/alpha
+  response:
+    body:
+      string: '{"data":{"player":{"id":158026,"sets":{"pageInfo":{"total":5620,"totalPages":375,"page":5,"perPage":15},"nodes":[{"id":108640885,"completedAt":1791423812,"fullRoundText":"Losers
+        Round 6","round":-8,"totalGames":5,"winnerId":24916131,"displayScore":"FaZe
+        | Sparg0 2 - OUT | LittN! \u0d9e 0","vodUrl":null,"state":3,"event":{"id":1726207,"name":"Ultimate
+        Singles","slug":"tournament\/the-cashbox-43\/event\/ultimate-singles","startAt":1791410400,"isOnline":true,"numEntrants":477,"videogame":{"id":1386},"tournament":{"id":961028,"name":"The
+        Cashbox #43","slug":"tournament\/the-cashbox-43","startAt":1791410400,"endAt":1791432000,"city":null,"addrState":null,"countryCode":null,"venueName":null,"numAttendees":477,"isOnline":true}},"slots":[{"entrant":{"id":24916131,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":2}}}},{"entrant":{"id":24925531,"name":"OUT
+        | LittN! \u0d9e","initialSeedNum":22,"isDisqualified":null,"participants":[{"player":{"id":2252178,"gamerTag":"LittN!
+        \u0d9e","prefix":"OUT"}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":24916131,"entrant1Score":null,"entrant2Score":null,"stage":{"id":484,"name":"Small
+        Battlefield"},"selections":[{"entrant":{"id":24916131},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":24925531},"selectionType":"CHARACTER","selectionValue":1406}]},{"orderNum":2,"winnerId":24916131,"entrant1Score":null,"entrant2Score":null,"stage":{"id":484,"name":"Small
+        Battlefield"},"selections":[{"entrant":{"id":24916131},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":24925531},"selectionType":"CHARACTER","selectionValue":1406}]}]},{"id":108640758,"completedAt":1791422107,"fullRoundText":"Winners
+        Quarter-Final","round":3,"totalGames":5,"winnerId":24916527,"displayScore":"FaZe
+        | Sparg0 0 - Maister 3","vodUrl":null,"state":3,"event":{"id":1726207,"name":"Ultimate
+        Singles","slug":"tournament\/the-cashbox-43\/event\/ultimate-singles","startAt":1791410400,"isOnline":true,"numEntrants":477,"videogame":{"id":1386},"tournament":{"id":961028,"name":"The
+        Cashbox #43","slug":"tournament\/the-cashbox-43","startAt":1791410400,"endAt":1791432000,"city":null,"addrState":null,"countryCode":null,"venueName":null,"numAttendees":477,"isOnline":true}},"slots":[{"entrant":{"id":24916131,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}},{"entrant":{"id":24916527,"name":"Maister","initialSeedNum":9,"isDisqualified":null,"participants":[{"player":{"id":135042,"gamerTag":"Maister","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}}],"games":[{"orderNum":1,"winnerId":24916527,"entrant1Score":null,"entrant2Score":null,"stage":{"id":311,"name":"Battlefield"},"selections":[{"entrant":{"id":24916131},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":24916527},"selectionType":"CHARACTER","selectionValue":1405}]},{"orderNum":2,"winnerId":24916527,"entrant1Score":null,"entrant2Score":null,"stage":{"id":378,"name":"Pok\u00e9mon
+        Stadium 2"},"selections":[{"entrant":{"id":24916131},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":24916527},"selectionType":"CHARACTER","selectionValue":1405}]},{"orderNum":3,"winnerId":24916527,"entrant1Score":null,"entrant2Score":null,"stage":{"id":378,"name":"Pok\u00e9mon
+        Stadium 2"},"selections":[{"entrant":{"id":24916131},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":24916527},"selectionType":"CHARACTER","selectionValue":1405}]}]},{"id":108640750,"completedAt":1791421040,"fullRoundText":"Winners
+        Round 2","round":2,"totalGames":5,"winnerId":24916131,"displayScore":"FaZe
+        | Sparg0 3 - SIR YES SIR | SGT HAMILTON 2","vodUrl":null,"state":3,"event":{"id":1726207,"name":"Ultimate
+        Singles","slug":"tournament\/the-cashbox-43\/event\/ultimate-singles","startAt":1791410400,"isOnline":true,"numEntrants":477,"videogame":{"id":1386},"tournament":{"id":961028,"name":"The
+        Cashbox #43","slug":"tournament\/the-cashbox-43","startAt":1791410400,"endAt":1791432000,"city":null,"addrState":null,"countryCode":null,"venueName":null,"numAttendees":477,"isOnline":true}},"slots":[{"entrant":{"id":24916131,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":24925526,"name":"SIR
+        YES SIR | SGT HAMILTON","initialSeedNum":17,"isDisqualified":null,"participants":[{"player":{"id":3289497,"gamerTag":"SGT
+        HAMILTON","prefix":"SIR YES SIR"}}]},"standing":{"placement":2,"stats":{"score":{"value":2}}}}],"games":[{"orderNum":1,"winnerId":24916131,"entrant1Score":null,"entrant2Score":null,"stage":{"id":311,"name":"Battlefield"},"selections":[{"entrant":{"id":24916131},"selectionType":"CHARACTER","selectionValue":1339},{"entrant":{"id":24925526},"selectionType":"CHARACTER","selectionValue":1846}]},{"orderNum":2,"winnerId":24925526,"entrant1Score":null,"entrant2Score":null,"stage":{"id":378,"name":"Pok\u00e9mon
+        Stadium 2"},"selections":[{"entrant":{"id":24916131},"selectionType":"CHARACTER","selectionValue":1339},{"entrant":{"id":24925526},"selectionType":"CHARACTER","selectionValue":1846}]},{"orderNum":3,"winnerId":24916131,"entrant1Score":null,"entrant2Score":null,"stage":{"id":378,"name":"Pok\u00e9mon
+        Stadium 2"},"selections":[{"entrant":{"id":24925526},"selectionType":"CHARACTER","selectionValue":1846},{"entrant":{"id":24916131},"selectionType":"CHARACTER","selectionValue":1339}]},{"orderNum":4,"winnerId":24925526,"entrant1Score":null,"entrant2Score":null,"stage":{"id":378,"name":"Pok\u00e9mon
+        Stadium 2"},"selections":[{"entrant":{"id":24916131},"selectionType":"CHARACTER","selectionValue":1339},{"entrant":{"id":24925526},"selectionType":"CHARACTER","selectionValue":1846}]},{"orderNum":5,"winnerId":24916131,"entrant1Score":null,"entrant2Score":null,"stage":{"id":378,"name":"Pok\u00e9mon
+        Stadium 2"},"selections":[{"entrant":{"id":24916131},"selectionType":"CHARACTER","selectionValue":1795},{"entrant":{"id":24925526},"selectionType":"CHARACTER","selectionValue":1846}]}]},{"id":108640734,"completedAt":1791419151,"fullRoundText":"Winners
+        Round 1","round":1,"totalGames":5,"winnerId":24916131,"displayScore":"FaZe
+        | Sparg0 3 - Glider 2","vodUrl":null,"state":3,"event":{"id":1726207,"name":"Ultimate
+        Singles","slug":"tournament\/the-cashbox-43\/event\/ultimate-singles","startAt":1791410400,"isOnline":true,"numEntrants":477,"videogame":{"id":1386},"tournament":{"id":961028,"name":"The
+        Cashbox #43","slug":"tournament\/the-cashbox-43","startAt":1791410400,"endAt":1791432000,"city":null,"addrState":null,"countryCode":null,"venueName":null,"numAttendees":477,"isOnline":true}},"slots":[{"entrant":{"id":24916131,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":24919646,"name":"Glider","initialSeedNum":32,"isDisqualified":null,"participants":[{"player":{"id":2588888,"gamerTag":"Glider","prefix":""}}]},"standing":{"placement":2,"stats":{"score":{"value":2}}}}],"games":[{"orderNum":1,"winnerId":24919646,"entrant1Score":null,"entrant2Score":null,"stage":{"id":311,"name":"Battlefield"},"selections":[{"entrant":{"id":24916131},"selectionType":"CHARACTER","selectionValue":1441},{"entrant":{"id":24919646},"selectionType":"CHARACTER","selectionValue":1336}]},{"orderNum":2,"winnerId":24916131,"entrant1Score":null,"entrant2Score":null,"stage":{"id":311,"name":"Battlefield"},"selections":[{"entrant":{"id":24916131},"selectionType":"CHARACTER","selectionValue":1441},{"entrant":{"id":24919646},"selectionType":"CHARACTER","selectionValue":1336}]},{"orderNum":3,"winnerId":24919646,"entrant1Score":null,"entrant2Score":null,"stage":{"id":378,"name":"Pok\u00e9mon
+        Stadium 2"},"selections":[{"entrant":{"id":24916131},"selectionType":"CHARACTER","selectionValue":1441},{"entrant":{"id":24919646},"selectionType":"CHARACTER","selectionValue":1336}]},{"orderNum":4,"winnerId":24916131,"entrant1Score":null,"entrant2Score":null,"stage":{"id":378,"name":"Pok\u00e9mon
+        Stadium 2"},"selections":[{"entrant":{"id":24916131},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":24919646},"selectionType":"CHARACTER","selectionValue":1336}]},{"orderNum":5,"winnerId":24916131,"entrant1Score":null,"entrant2Score":null,"stage":{"id":378,"name":"Pok\u00e9mon
+        Stadium 2"},"selections":[{"entrant":{"id":24916131},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":24919646},"selectionType":"CHARACTER","selectionValue":1336}]}]},{"id":108629654,"completedAt":1791415081,"fullRoundText":"Winners
+        Semi-Final","round":4,"totalGames":5,"winnerId":24916131,"displayScore":"FaZe
+        | Sparg0 2 - Condy 0","vodUrl":null,"state":3,"event":{"id":1726207,"name":"Ultimate
+        Singles","slug":"tournament\/the-cashbox-43\/event\/ultimate-singles","startAt":1791410400,"isOnline":true,"numEntrants":477,"videogame":{"id":1386},"tournament":{"id":961028,"name":"The
+        Cashbox #43","slug":"tournament\/the-cashbox-43","startAt":1791410400,"endAt":1791432000,"city":null,"addrState":null,"countryCode":null,"venueName":null,"numAttendees":477,"isOnline":true}},"slots":[{"entrant":{"id":24916131,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":2}}}},{"entrant":{"id":24925306,"name":"Condy","initialSeedNum":192,"isDisqualified":null,"participants":[{"player":{"id":3552179,"gamerTag":"Condy","prefix":""}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":24916131,"entrant1Score":null,"entrant2Score":null,"stage":{"id":484,"name":"Small
+        Battlefield"},"selections":[{"entrant":{"id":24916131},"selectionType":"CHARACTER","selectionValue":1409},{"entrant":{"id":24925306},"selectionType":"CHARACTER","selectionValue":1340}]},{"orderNum":2,"winnerId":24916131,"entrant1Score":null,"entrant2Score":null,"stage":{"id":484,"name":"Small
+        Battlefield"},"selections":[{"entrant":{"id":24916131},"selectionType":"CHARACTER","selectionValue":1409},{"entrant":{"id":24925306},"selectionType":"CHARACTER","selectionValue":1340}]}]},{"id":108629650,"completedAt":1791413202,"fullRoundText":"Winners
+        Quarter-Final","round":3,"totalGames":5,"winnerId":24916131,"displayScore":"FaZe
+        | Sparg0 2 - Juuilan 0","vodUrl":null,"state":3,"event":{"id":1726207,"name":"Ultimate
+        Singles","slug":"tournament\/the-cashbox-43\/event\/ultimate-singles","startAt":1791410400,"isOnline":true,"numEntrants":477,"videogame":{"id":1386},"tournament":{"id":961028,"name":"The
+        Cashbox #43","slug":"tournament\/the-cashbox-43","startAt":1791410400,"endAt":1791432000,"city":null,"addrState":null,"countryCode":null,"venueName":null,"numAttendees":477,"isOnline":true}},"slots":[{"entrant":{"id":24916131,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":2}}}},{"entrant":{"id":24918201,"name":"Juuilan","initialSeedNum":384,"isDisqualified":null,"participants":[{"player":{"id":5012947,"gamerTag":"Juuilan","prefix":null}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":24916131,"entrant1Score":null,"entrant2Score":null,"stage":{"id":311,"name":"Battlefield"},"selections":[{"entrant":{"id":24916131},"selectionType":"CHARACTER","selectionValue":1409},{"entrant":{"id":24918201},"selectionType":"CHARACTER","selectionValue":1413}]},{"orderNum":2,"winnerId":24916131,"entrant1Score":null,"entrant2Score":null,"stage":{"id":513,"name":"Hollow
+        Bastion"},"selections":[{"entrant":{"id":24916131},"selectionType":"CHARACTER","selectionValue":1409},{"entrant":{"id":24918201},"selectionType":"CHARACTER","selectionValue":1413}]}]},{"id":108629642,"completedAt":1791412587,"fullRoundText":"Winners
+        Round 2","round":2,"totalGames":5,"winnerId":24916131,"displayScore":"FaZe
+        | Sparg0 2 - BTL | Raykiri 0","vodUrl":null,"state":3,"event":{"id":1726207,"name":"Ultimate
+        Singles","slug":"tournament\/the-cashbox-43\/event\/ultimate-singles","startAt":1791410400,"isOnline":true,"numEntrants":477,"videogame":{"id":1386},"tournament":{"id":961028,"name":"The
+        Cashbox #43","slug":"tournament\/the-cashbox-43","startAt":1791410400,"endAt":1791432000,"city":null,"addrState":null,"countryCode":null,"venueName":null,"numAttendees":477,"isOnline":true}},"slots":[{"entrant":{"id":24916131,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":2}}}},{"entrant":{"id":24922403,"name":"BTL
+        | Raykiri","initialSeedNum":257,"isDisqualified":null,"participants":[{"player":{"id":3468412,"gamerTag":"Raykiri","prefix":"BTL"}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":24916131,"entrant1Score":null,"entrant2Score":null,"stage":{"id":378,"name":"Pok\u00e9mon
+        Stadium 2"},"selections":[{"entrant":{"id":24916131},"selectionType":"CHARACTER","selectionValue":1295},{"entrant":{"id":24922403},"selectionType":"CHARACTER","selectionValue":1313}]},{"orderNum":2,"winnerId":24916131,"entrant1Score":null,"entrant2Score":null,"stage":{"id":513,"name":"Hollow
+        Bastion"},"selections":[{"entrant":{"id":24916131},"selectionType":"CHARACTER","selectionValue":1295},{"entrant":{"id":24922403},"selectionType":"CHARACTER","selectionValue":1313}]}]},{"id":108611370,"completedAt":1791333073,"fullRoundText":"Losers
+        Round 2","round":-5,"totalGames":5,"winnerId":24915575,"displayScore":"DQ","vodUrl":null,"state":3,"event":{"id":1723433,"name":"Ultimate
+        Random Singles","slug":"tournament\/100-anything-but-the-3-150-random-singles\/event\/ultimate-random-singles","startAt":1791331200,"isOnline":true,"numEntrants":89,"videogame":{"id":1386},"tournament":{"id":959651,"name":"$100
+        Anything But The 3 #150: Random Singles","slug":"tournament\/100-anything-but-the-3-150-random-singles","startAt":1791331200,"endAt":1791345600,"city":null,"addrState":null,"countryCode":null,"venueName":null,"numAttendees":89,"isOnline":true}},"slots":[{"entrant":{"id":24915575,"name":"Strke","initialSeedNum":33,"isDisqualified":null,"participants":[{"player":{"id":250835,"gamerTag":"Strke","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":0}}}},{"entrant":{"id":24915529,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":true,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":2,"stats":{"score":{"value":-1}}}}],"games":null},{"id":108611366,"completedAt":1791332597,"fullRoundText":"Losers
+        Round 1","round":-4,"totalGames":5,"winnerId":24915529,"displayScore":"DQ","vodUrl":null,"state":3,"event":{"id":1723433,"name":"Ultimate
+        Random Singles","slug":"tournament\/100-anything-but-the-3-150-random-singles\/event\/ultimate-random-singles","startAt":1791331200,"isOnline":true,"numEntrants":89,"videogame":{"id":1386},"tournament":{"id":959651,"name":"$100
+        Anything But The 3 #150: Random Singles","slug":"tournament\/100-anything-but-the-3-150-random-singles","startAt":1791331200,"endAt":1791345600,"city":null,"addrState":null,"countryCode":null,"venueName":null,"numAttendees":89,"isOnline":true}},"slots":[{"entrant":{"id":24915529,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":true,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":-1}}}},{"entrant":{"id":24917623,"name":"ABT3\/TAMUSA
+        | bunny","initialSeedNum":41,"isDisqualified":true,"participants":[{"player":{"id":3258629,"gamerTag":"Kobe","prefix":"ABT3\/TAMUSA"}}]},"standing":{"placement":2,"stats":{"score":{"value":-1}}}}],"games":null},{"id":108611302,"completedAt":1791332235,"fullRoundText":"Winners
+        Round 2","round":2,"totalGames":5,"winnerId":24918241,"displayScore":"DQ","vodUrl":null,"state":3,"event":{"id":1723433,"name":"Ultimate
+        Random Singles","slug":"tournament\/100-anything-but-the-3-150-random-singles\/event\/ultimate-random-singles","startAt":1791331200,"isOnline":true,"numEntrants":89,"videogame":{"id":1386},"tournament":{"id":959651,"name":"$100
+        Anything But The 3 #150: Random Singles","slug":"tournament\/100-anything-but-the-3-150-random-singles","startAt":1791331200,"endAt":1791345600,"city":null,"addrState":null,"countryCode":null,"venueName":null,"numAttendees":89,"isOnline":true}},"slots":[{"entrant":{"id":24915529,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":true,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":2,"stats":{"score":{"value":-1}}}},{"entrant":{"id":24918241,"name":"SleepyZon","initialSeedNum":64,"isDisqualified":null,"participants":[{"player":{"id":3258681,"gamerTag":"SleepyZon","prefix":null}}]},"standing":{"placement":1,"stats":{"score":{"value":0}}}}],"games":null},{"id":108587162,"completedAt":1791246737,"fullRoundText":"Losers
+        Round 1","round":-4,"totalGames":5,"winnerId":24905830,"displayScore":"DQ","vodUrl":null,"state":3,"event":{"id":1725163,"name":"Ultimate
+        Singles","slug":"tournament\/100-tiara-takedown-x-smu5h-43\/event\/ultimate-singles","startAt":1791244800,"isOnline":true,"numEntrants":92,"videogame":{"id":1386},"tournament":{"id":960521,"name":"$100
+        Tiara Takedown X SmU5h #43","slug":"tournament\/100-tiara-takedown-x-smu5h-43","startAt":1791244800,"endAt":1791252000,"city":null,"addrState":null,"countryCode":null,"venueName":null,"numAttendees":92,"isOnline":true}},"slots":[{"entrant":{"id":24905730,"name":"FaZe
+        | Sparg0","initialSeedNum":2,"isDisqualified":true,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":2,"stats":{"score":{"value":-1}}}},{"entrant":{"id":24905830,"name":"Lovewell","initialSeedNum":87,"isDisqualified":null,"participants":[{"player":{"id":4099984,"gamerTag":"Lovewell","prefix":""}}]},"standing":{"placement":1,"stats":{"score":{"value":0}}}}],"games":null},{"id":108587098,"completedAt":1791246194,"fullRoundText":"Winners
+        Round 2","round":2,"totalGames":5,"winnerId":24906383,"displayScore":"DQ","vodUrl":null,"state":3,"event":{"id":1725163,"name":"Ultimate
+        Singles","slug":"tournament\/100-tiara-takedown-x-smu5h-43\/event\/ultimate-singles","startAt":1791244800,"isOnline":true,"numEntrants":92,"videogame":{"id":1386},"tournament":{"id":960521,"name":"$100
+        Tiara Takedown X SmU5h #43","slug":"tournament\/100-tiara-takedown-x-smu5h-43","startAt":1791244800,"endAt":1791252000,"city":null,"addrState":null,"countryCode":null,"venueName":null,"numAttendees":92,"isOnline":true}},"slots":[{"entrant":{"id":24905730,"name":"FaZe
+        | Sparg0","initialSeedNum":2,"isDisqualified":true,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":2,"stats":{"score":{"value":-1}}}},{"entrant":{"id":24906383,"name":"RDR
+        | Sharingan","initialSeedNum":66,"isDisqualified":null,"participants":[{"player":{"id":3836626,"gamerTag":"Sharingan","prefix":"RDR"}}]},"standing":{"placement":1,"stats":{"score":{"value":0}}}}],"games":null},{"id":108455690,"completedAt":1791047520,"fullRoundText":"Grand
+        Final","round":3,"totalGames":5,"winnerId":24852660,"displayScore":"FaZe |
+        Sparg0 3 - Team Var$ | Lui$ 0","vodUrl":null,"state":3,"event":{"id":1718538,"name":"Smash
+        Ultimate Singles","slug":"tournament\/the-get-back-5-1-000-prize-pot\/event\/smash-ultimate-singles","startAt":1790982000,"isOnline":true,"numEntrants":185,"videogame":{"id":1386},"tournament":{"id":957379,"name":"The
+        Get Back 5! ($1,000 Prize Pot)","slug":"tournament\/the-get-back-5-1-000-prize-pot","startAt":1790982000,"endAt":1791000000,"city":null,"addrState":null,"countryCode":null,"venueName":null,"numAttendees":185,"isOnline":true}},"slots":[{"entrant":{"id":24852660,"name":"FaZe
+        | Sparg0","initialSeedNum":2,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":24865382,"name":"Team
+        Var$ | Lui$","initialSeedNum":9,"isDisqualified":null,"participants":[{"player":{"id":173403,"gamerTag":"Lui$","prefix":"Team
+        Var$"}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":24852660,"entrant1Score":null,"entrant2Score":null,"stage":{"id":397,"name":"Town
+        and City"},"selections":[{"entrant":{"id":24852660},"selectionType":"CHARACTER","selectionValue":1292},{"entrant":{"id":24865382},"selectionType":"CHARACTER","selectionValue":1316}]},{"orderNum":2,"winnerId":24852660,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24852660},"selectionType":"CHARACTER","selectionValue":1292},{"entrant":{"id":24865382},"selectionType":"CHARACTER","selectionValue":1316}]},{"orderNum":3,"winnerId":24852660,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24852660},"selectionType":"CHARACTER","selectionValue":1292},{"entrant":{"id":24865382},"selectionType":"CHARACTER","selectionValue":1282}]}]},{"id":108455689,"completedAt":1790999622,"fullRoundText":"Winners
+        Final","round":2,"totalGames":5,"winnerId":24852660,"displayScore":"DGS |
+        KSU | spickles 0 - FaZe | Sparg0 3","vodUrl":null,"state":3,"event":{"id":1718538,"name":"Smash
+        Ultimate Singles","slug":"tournament\/the-get-back-5-1-000-prize-pot\/event\/smash-ultimate-singles","startAt":1790982000,"isOnline":true,"numEntrants":185,"videogame":{"id":1386},"tournament":{"id":957379,"name":"The
+        Get Back 5! ($1,000 Prize Pot)","slug":"tournament\/the-get-back-5-1-000-prize-pot","startAt":1790982000,"endAt":1791000000,"city":null,"addrState":null,"countryCode":null,"venueName":null,"numAttendees":185,"isOnline":true}},"slots":[{"entrant":{"id":24876416,"name":"DGS
+        | KSU | spickles","initialSeedNum":20,"isDisqualified":null,"participants":[{"player":{"id":1154793,"gamerTag":"spickles","prefix":"DGS
+        | KSU"}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}},{"entrant":{"id":24852660,"name":"FaZe
+        | Sparg0","initialSeedNum":2,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}}],"games":[{"orderNum":1,"winnerId":24852660,"entrant1Score":null,"entrant2Score":null,"stage":{"id":348,"name":"Kalos
+        Pok\u00e9mon League"},"selections":[{"entrant":{"id":24876416},"selectionType":"CHARACTER","selectionValue":1301},{"entrant":{"id":24852660},"selectionType":"CHARACTER","selectionValue":1275}]},{"orderNum":2,"winnerId":24852660,"entrant1Score":null,"entrant2Score":null,"stage":{"id":484,"name":"Small
+        Battlefield"},"selections":[{"entrant":{"id":24876416},"selectionType":"CHARACTER","selectionValue":1301},{"entrant":{"id":24852660},"selectionType":"CHARACTER","selectionValue":1275}]},{"orderNum":3,"winnerId":24852660,"entrant1Score":null,"entrant2Score":null,"stage":{"id":311,"name":"Battlefield"},"selections":[{"entrant":{"id":24876416},"selectionType":"CHARACTER","selectionValue":1301},{"entrant":{"id":24852660},"selectionType":"CHARACTER","selectionValue":1275}]}]},{"id":108455688,"completedAt":1790996776,"fullRoundText":"Winners
+        Semi-Final","round":1,"totalGames":5,"winnerId":24852660,"displayScore":"FaZe
+        | Sparg0 3 - Yikes! ebs Kqt | FD 2","vodUrl":null,"state":3,"event":{"id":1718538,"name":"Smash
+        Ultimate Singles","slug":"tournament\/the-get-back-5-1-000-prize-pot\/event\/smash-ultimate-singles","startAt":1790982000,"isOnline":true,"numEntrants":185,"videogame":{"id":1386},"tournament":{"id":957379,"name":"The
+        Get Back 5! ($1,000 Prize Pot)","slug":"tournament\/the-get-back-5-1-000-prize-pot","startAt":1790982000,"endAt":1791000000,"city":null,"addrState":null,"countryCode":null,"venueName":null,"numAttendees":185,"isOnline":true}},"slots":[{"entrant":{"id":24852660,"name":"FaZe
+        | Sparg0","initialSeedNum":2,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":24877172,"name":"Yikes!
+        ebs Kqt | FD","initialSeedNum":14,"isDisqualified":null,"participants":[{"player":{"id":1810011,"gamerTag":"FD","prefix":""}}]},"standing":{"placement":2,"stats":{"score":{"value":2}}}}],"games":[{"orderNum":1,"winnerId":24877172,"entrant1Score":null,"entrant2Score":null,"stage":{"id":378,"name":"Pok\u00e9mon
+        Stadium 2"},"selections":[{"entrant":{"id":24852660},"selectionType":"CHARACTER","selectionValue":1333},{"entrant":{"id":24877172},"selectionType":"CHARACTER","selectionValue":1279}]},{"orderNum":2,"winnerId":24852660,"entrant1Score":null,"entrant2Score":null,"stage":{"id":378,"name":"Pok\u00e9mon
+        Stadium 2"},"selections":[{"entrant":{"id":24852660},"selectionType":"CHARACTER","selectionValue":1333},{"entrant":{"id":24877172},"selectionType":"CHARACTER","selectionValue":1279}]},{"orderNum":3,"winnerId":24877172,"entrant1Score":null,"entrant2Score":null,"stage":{"id":484,"name":"Small
+        Battlefield"},"selections":[{"entrant":{"id":24852660},"selectionType":"CHARACTER","selectionValue":1333},{"entrant":{"id":24877172},"selectionType":"CHARACTER","selectionValue":1279}]},{"orderNum":4,"winnerId":24852660,"entrant1Score":null,"entrant2Score":null,"stage":{"id":378,"name":"Pok\u00e9mon
+        Stadium 2"},"selections":[{"entrant":{"id":24852660},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":24877172},"selectionType":"CHARACTER","selectionValue":1279}]},{"orderNum":5,"winnerId":24852660,"entrant1Score":null,"entrant2Score":null,"stage":{"id":397,"name":"Town
+        and City"},"selections":[{"entrant":{"id":24852660},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":24877172},"selectionType":"CHARACTER","selectionValue":1846}]}]}]}}},"extensions":{"cacheControl":{"version":1,"hints":null},"queryComplexity":665},"actionRecords":[]}'
+    headers:
+      access-control-allow-credentials:
+      - 'true'
+      access-control-allow-headers:
+      - '*, Content-Type, Authorization'
+      access-control-allow-methods:
+      - POST, GET, OPTIONS
+      access-control-allow-origin:
+      - '*'
+      cache-control:
+      - private, max-age=0, s-maxage=0
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a5af4f36ac49fbd0-IAD
+      connection:
+      - keep-alive
+      content-length:
+      - '26365'
+      content-type:
+      - application/json
+      date:
+      - Sun, 15 Nov 2026 15:32:35 GMT
+      required-client-version:
+      - '20'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=15724800; includeSubDomains
+      transfer-encoding:
+      - chunked
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"query":"\nquery PlayerSets($id: ID!, $page: Int!, $perPage: Int!, $opponentId:
+      ID, $filters: SetFilters) {\n  player(id: $id) {\n    id\n    sets(page: $page,
+      perPage: $perPage, opponentId: $opponentId, filters: $filters) {\n      pageInfo
+      { total totalPages page perPage }\n      nodes {\n        id completedAt fullRoundText
+      round totalGames winnerId displayScore vodUrl state\n        event { ...EventFields
+      tournament { ...TournamentFields } }\n        slots {\n          entrant { ...EntrantFields
+      }\n          standing { placement stats { score { value } } }\n        }\n        games
+      {\n          orderNum winnerId entrant1Score entrant2Score\n          stage
+      { id name }\n          selections { entrant { id } selectionType selectionValue
+      }\n        }\n      }\n    }\n  }\n}\n\nfragment EventFields on Event {\n  id
+      name slug startAt isOnline numEntrants\n  videogame { id }\n}\n\nfragment TournamentFields
+      on Tournament {\n  id name slug startAt endAt city addrState countryCode venueName
+      numAttendees isOnline\n}\n\nfragment EntrantFields on Entrant {\n  id name initialSeedNum
+      isDisqualified\n  participants { player { id gamerTag prefix } }\n}\n","variables":{"id":158026,"page":2,"perPage":15,"opponentId":null,"filters":null}}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '1243'
+      content-type:
+      - application/json
+      host:
+      - api.start.gg
+      user-agent:
+      - python-httpx2/2.12.0
+    method: POST
+    uri: https://api.start.gg/gql/alpha
+  response:
+    body:
+      string: '{"data":{"player":{"id":158026,"sets":{"pageInfo":{"total":5620,"totalPages":375,"page":2,"perPage":15},"nodes":[{"id":109625689,"completedAt":1793517584,"fullRoundText":"Winners
+        Semi-Final","round":1,"totalGames":5,"winnerId":24601233,"displayScore":"FaZe
+        | Sparg0 3 - Yikes! ebs Kqt | FD 0","vodUrl":null,"state":3,"event":{"id":1695873,"name":"Singles
+        Ultimate","slug":"tournament\/psx-horror-land\/event\/singles-ultimate","startAt":1793491200,"isOnline":false,"numEntrants":138,"videogame":{"id":1386},"tournament":{"id":944262,"name":"PSX:
+        Horror Land","slug":"tournament\/psx-horror-land","startAt":1793480400,"endAt":1793530800,"city":"Tijuana","addrState":"B.C.","countryCode":"MX","venueName":null,"numAttendees":142,"isOnline":false}},"slots":[{"entrant":{"id":24601233,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":25059046,"name":"Yikes!
+        ebs Kqt | FD","initialSeedNum":4,"isDisqualified":null,"participants":[{"player":{"id":1810011,"gamerTag":"FD","prefix":""}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":24601233,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24601233},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25059046},"selectionType":"CHARACTER","selectionValue":1846}]},{"orderNum":2,"winnerId":24601233,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24601233},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25059046},"selectionType":"CHARACTER","selectionValue":1846}]},{"orderNum":3,"winnerId":24601233,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24601233},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25059046},"selectionType":"CHARACTER","selectionValue":1846}]}]},{"id":109622987,"completedAt":1793512090,"fullRoundText":"Winners
+        Quarter-Final","round":2,"totalGames":5,"winnerId":24601233,"displayScore":"FaZe
+        | Sparg0 3 - PablitoElPro67 0","vodUrl":null,"state":3,"event":{"id":1695873,"name":"Singles
+        Ultimate","slug":"tournament\/psx-horror-land\/event\/singles-ultimate","startAt":1793491200,"isOnline":false,"numEntrants":138,"videogame":{"id":1386},"tournament":{"id":944262,"name":"PSX:
+        Horror Land","slug":"tournament\/psx-horror-land","startAt":1793480400,"endAt":1793530800,"city":"Tijuana","addrState":"B.C.","countryCode":"MX","venueName":null,"numAttendees":142,"isOnline":false}},"slots":[{"entrant":{"id":24601233,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":25137216,"name":"PablitoElPro67","initialSeedNum":8,"isDisqualified":null,"participants":[{"player":{"id":2054286,"gamerTag":"PablitoElPro67","prefix":""}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":24601233,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24601233},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25137216},"selectionType":"CHARACTER","selectionValue":1766}]},{"orderNum":2,"winnerId":24601233,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24601233},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25137216},"selectionType":"CHARACTER","selectionValue":1766}]},{"orderNum":3,"winnerId":24601233,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24601233},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25137216},"selectionType":"CHARACTER","selectionValue":1766}]}]},{"id":109622979,"completedAt":1793509876,"fullRoundText":"Winners
+        Round 1","round":1,"totalGames":5,"winnerId":24601233,"displayScore":"FaZe
+        | Sparg0 3 - SDG | Groggy 0","vodUrl":null,"state":3,"event":{"id":1695873,"name":"Singles
+        Ultimate","slug":"tournament\/psx-horror-land\/event\/singles-ultimate","startAt":1793491200,"isOnline":false,"numEntrants":138,"videogame":{"id":1386},"tournament":{"id":944262,"name":"PSX:
+        Horror Land","slug":"tournament\/psx-horror-land","startAt":1793480400,"endAt":1793530800,"city":"Tijuana","addrState":"B.C.","countryCode":"MX","venueName":null,"numAttendees":142,"isOnline":false}},"slots":[{"entrant":{"id":24601233,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":24640150,"name":"SDG
+        | Groggy","initialSeedNum":16,"isDisqualified":null,"participants":[{"player":{"id":2252522,"gamerTag":"Groggy","prefix":"SDG"}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":24601233,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24601233},"selectionType":"CHARACTER","selectionValue":1326},{"entrant":{"id":24640150},"selectionType":"CHARACTER","selectionValue":1332}]},{"orderNum":2,"winnerId":24601233,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24601233},"selectionType":"CHARACTER","selectionValue":1326},{"entrant":{"id":24640150},"selectionType":"CHARACTER","selectionValue":1332}]},{"orderNum":3,"winnerId":24601233,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24601233},"selectionType":"CHARACTER","selectionValue":1326},{"entrant":{"id":24640150},"selectionType":"CHARACTER","selectionValue":1332}]}]},{"id":109615226,"completedAt":1793499413,"fullRoundText":"Winners
+        Quarter-Final","round":4,"totalGames":5,"winnerId":24601233,"displayScore":"FaZe
+        | Sparg0 3 - La Peste 0","vodUrl":null,"state":3,"event":{"id":1695873,"name":"Singles
+        Ultimate","slug":"tournament\/psx-horror-land\/event\/singles-ultimate","startAt":1793491200,"isOnline":false,"numEntrants":138,"videogame":{"id":1386},"tournament":{"id":944262,"name":"PSX:
+        Horror Land","slug":"tournament\/psx-horror-land","startAt":1793480400,"endAt":1793530800,"city":"Tijuana","addrState":"B.C.","countryCode":"MX","venueName":null,"numAttendees":142,"isOnline":false}},"slots":[{"entrant":{"id":24601233,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":24995004,"name":"La
+        Peste","initialSeedNum":32,"isDisqualified":null,"participants":[{"player":{"id":2357398,"gamerTag":"La
+        Peste","prefix":""}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":24601233,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24601233},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":24995004},"selectionType":"CHARACTER","selectionValue":1279}]},{"orderNum":2,"winnerId":24601233,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24601233},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":24995004},"selectionType":"CHARACTER","selectionValue":1279}]},{"orderNum":3,"winnerId":24601233,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24601233},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":24995004},"selectionType":"CHARACTER","selectionValue":1279}]}]},{"id":109615218,"completedAt":1793497318,"fullRoundText":"Winners
+        Round 3","round":3,"totalGames":5,"winnerId":24601233,"displayScore":"FaZe
+        | Sparg0 2 - Euforia 0","vodUrl":null,"state":3,"event":{"id":1695873,"name":"Singles
+        Ultimate","slug":"tournament\/psx-horror-land\/event\/singles-ultimate","startAt":1793491200,"isOnline":false,"numEntrants":138,"videogame":{"id":1386},"tournament":{"id":944262,"name":"PSX:
+        Horror Land","slug":"tournament\/psx-horror-land","startAt":1793480400,"endAt":1793530800,"city":"Tijuana","addrState":"B.C.","countryCode":"MX","venueName":null,"numAttendees":142,"isOnline":false}},"slots":[{"entrant":{"id":24601233,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":2}}}},{"entrant":{"id":25070182,"name":"Euforia","initialSeedNum":65,"isDisqualified":null,"participants":[{"player":{"id":4978998,"gamerTag":"Euforia","prefix":null}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":24601233,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24601233},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25070182},"selectionType":"CHARACTER","selectionValue":1275}]},{"orderNum":2,"winnerId":24601233,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24601233},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25070182},"selectionType":"CHARACTER","selectionValue":1275}]}]},{"id":109615202,"completedAt":1793496428,"fullRoundText":"Winners
+        Round 2","round":2,"totalGames":5,"winnerId":24601233,"displayScore":"FaZe
+        | Sparg0 2 - ShinaMoonRol 0","vodUrl":null,"state":3,"event":{"id":1695873,"name":"Singles
+        Ultimate","slug":"tournament\/psx-horror-land\/event\/singles-ultimate","startAt":1793491200,"isOnline":false,"numEntrants":138,"videogame":{"id":1386},"tournament":{"id":944262,"name":"PSX:
+        Horror Land","slug":"tournament\/psx-horror-land","startAt":1793480400,"endAt":1793530800,"city":"Tijuana","addrState":"B.C.","countryCode":"MX","venueName":null,"numAttendees":142,"isOnline":false}},"slots":[{"entrant":{"id":24601233,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":2}}}},{"entrant":{"id":25103158,"name":"ShinaMoonRol","initialSeedNum":129,"isDisqualified":null,"participants":[{"player":{"id":1688926,"gamerTag":"ShinaMoonRol","prefix":""}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":24601233,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24601233},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25103158},"selectionType":"CHARACTER","selectionValue":1453}]},{"orderNum":2,"winnerId":24601233,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24601233},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25103158},"selectionType":"CHARACTER","selectionValue":1777}]}]},{"id":109413325,"completedAt":1792981032,"fullRoundText":"Losers
+        Semi-Final","round":-5,"totalGames":5,"winnerId":24851741,"displayScore":"FaZe
+        | Sparg0 1 - IJC | Neo 3","vodUrl":null,"state":3,"event":{"id":1687524,"name":"ULTIMATE
+        Singles","slug":"tournament\/legends7\/event\/ultimate-singles","startAt":1792857600,"isOnline":false,"numEntrants":343,"videogame":{"id":1386},"tournament":{"id":942547,"name":"LEGENDS7\u00ad","slug":"tournament\/legends7","startAt":1792854000,"endAt":1792987200,"city":"San
+        Salvador","addrState":"La Libertad","countryCode":"SV","venueName":null,"numAttendees":343,"isOnline":false}},"slots":[{"entrant":{"id":24975667,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":2,"stats":{"score":{"value":1}}}},{"entrant":{"id":24851741,"name":"IJC
+        | Neo","initialSeedNum":3,"isDisqualified":null,"participants":[{"player":{"id":1497801,"gamerTag":"Neo","prefix":"IJC"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}}],"games":[{"orderNum":1,"winnerId":24975667,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24851741},"selectionType":"CHARACTER","selectionValue":1276},{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1275}]},{"orderNum":2,"winnerId":24851741,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24851741},"selectionType":"CHARACTER","selectionValue":1276},{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1275}]},{"orderNum":3,"winnerId":24851741,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24851741},"selectionType":"CHARACTER","selectionValue":1276},{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1275}]},{"orderNum":4,"winnerId":24851741,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24851741},"selectionType":"CHARACTER","selectionValue":1276},{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1275}]}]},{"id":109413323,"completedAt":1792978648,"fullRoundText":"Losers
+        Quarter-Final","round":-4,"totalGames":5,"winnerId":24975667,"displayScore":"OUT
+        | PSK | WaKa 0 - FaZe | Sparg0 3","vodUrl":null,"state":3,"event":{"id":1687524,"name":"ULTIMATE
+        Singles","slug":"tournament\/legends7\/event\/ultimate-singles","startAt":1792857600,"isOnline":false,"numEntrants":343,"videogame":{"id":1386},"tournament":{"id":942547,"name":"LEGENDS7\u00ad","slug":"tournament\/legends7","startAt":1792854000,"endAt":1792987200,"city":"San
+        Salvador","addrState":"La Libertad","countryCode":"SV","venueName":null,"numAttendees":343,"isOnline":false}},"slots":[{"entrant":{"id":24787613,"name":"OUT
+        | PSK | WaKa","initialSeedNum":6,"isDisqualified":null,"participants":[{"player":{"id":504366,"gamerTag":"WaKa","prefix":"OUT
+        | PSK"}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}},{"entrant":{"id":24975667,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}}],"games":[{"orderNum":1,"winnerId":24975667,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24787613},"selectionType":"CHARACTER","selectionValue":1301},{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1275}]},{"orderNum":2,"winnerId":24975667,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24787613},"selectionType":"CHARACTER","selectionValue":1301},{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1275}]},{"orderNum":3,"winnerId":24975667,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24787613},"selectionType":"CHARACTER","selectionValue":1301},{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1275}]}]},{"id":109413321,"completedAt":1792973386,"fullRoundText":"Losers
+        Round 1","round":-3,"totalGames":5,"winnerId":24975667,"displayScore":"FaZe
+        | Sparg0 3 - SG | ShinyMark 0","vodUrl":null,"state":3,"event":{"id":1687524,"name":"ULTIMATE
+        Singles","slug":"tournament\/legends7\/event\/ultimate-singles","startAt":1792857600,"isOnline":false,"numEntrants":343,"videogame":{"id":1386},"tournament":{"id":942547,"name":"LEGENDS7\u00ad","slug":"tournament\/legends7","startAt":1792854000,"endAt":1792987200,"city":"San
+        Salvador","addrState":"La Libertad","countryCode":"SV","venueName":null,"numAttendees":343,"isOnline":false}},"slots":[{"entrant":{"id":24975667,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":24982971,"name":"SG
+        | ShinyMark","initialSeedNum":4,"isDisqualified":null,"participants":[{"player":{"id":184005,"gamerTag":"ShinyMark","prefix":"SG"}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":24975667,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":24982971},"selectionType":"CHARACTER","selectionValue":1319}]},{"orderNum":2,"winnerId":24975667,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":24982971},"selectionType":"CHARACTER","selectionValue":1319}]},{"orderNum":3,"winnerId":24975667,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":24982971},"selectionType":"CHARACTER","selectionValue":1319}]}]},{"id":109401869,"completedAt":1792963680,"fullRoundText":"Losers
+        Round 2","round":-4,"totalGames":5,"winnerId":24975667,"displayScore":"FaZe
+        | Sparg0 3 - FG\/MDH | ROBOT3050 0","vodUrl":null,"state":3,"event":{"id":1687524,"name":"ULTIMATE
+        Singles","slug":"tournament\/legends7\/event\/ultimate-singles","startAt":1792857600,"isOnline":false,"numEntrants":343,"videogame":{"id":1386},"tournament":{"id":942547,"name":"LEGENDS7\u00ad","slug":"tournament\/legends7","startAt":1792854000,"endAt":1792987200,"city":"San
+        Salvador","addrState":"La Libertad","countryCode":"SV","venueName":null,"numAttendees":343,"isOnline":false}},"slots":[{"entrant":{"id":24975667,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":24389623,"name":"FG\/MDH
+        | ROBOT3050","initialSeedNum":11,"isDisqualified":null,"participants":[{"player":{"id":1284808,"gamerTag":"ROBOT3050","prefix":"FG\/MDH"}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":24975667,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24389623},"selectionType":"CHARACTER","selectionValue":1331},{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1275}]},{"orderNum":2,"winnerId":24975667,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24389623},"selectionType":"CHARACTER","selectionValue":1331},{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1275}]},{"orderNum":3,"winnerId":24975667,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24389623},"selectionType":"CHARACTER","selectionValue":1331},{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1275}]}]},{"id":109401837,"completedAt":1792962545,"fullRoundText":"Winners
+        Quarter-Final","round":1,"totalGames":5,"winnerId":24890205,"displayScore":"FaZe
+        | Sparg0 0 - ISG | Chag 3","vodUrl":null,"state":3,"event":{"id":1687524,"name":"ULTIMATE
+        Singles","slug":"tournament\/legends7\/event\/ultimate-singles","startAt":1792857600,"isOnline":false,"numEntrants":343,"videogame":{"id":1386},"tournament":{"id":942547,"name":"LEGENDS7\u00ad","slug":"tournament\/legends7","startAt":1792854000,"endAt":1792987200,"city":"San
+        Salvador","addrState":"La Libertad","countryCode":"SV","venueName":null,"numAttendees":343,"isOnline":false}},"slots":[{"entrant":{"id":24975667,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}},{"entrant":{"id":24890205,"name":"ISG
+        | Chag","initialSeedNum":8,"isDisqualified":null,"participants":[{"player":{"id":70916,"gamerTag":"Chag","prefix":"ISG"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}}],"games":[{"orderNum":1,"winnerId":24890205,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24890205},"selectionType":"CHARACTER","selectionValue":1747},{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1326}]},{"orderNum":2,"winnerId":24890205,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24890205},"selectionType":"CHARACTER","selectionValue":1747},{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1326}]},{"orderNum":3,"winnerId":24890205,"entrant1Score":0,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24890205},"selectionType":"CHARACTER","selectionValue":1747},{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1275}]}]},{"id":109392404,"completedAt":1792957410,"fullRoundText":"Winners
+        Quarter-Final","round":2,"totalGames":5,"winnerId":24975667,"displayScore":"FaZe
+        | Sparg0 3 - CUERVOS | Vanitas 0","vodUrl":null,"state":3,"event":{"id":1687524,"name":"ULTIMATE
+        Singles","slug":"tournament\/legends7\/event\/ultimate-singles","startAt":1792857600,"isOnline":false,"numEntrants":343,"videogame":{"id":1386},"tournament":{"id":942547,"name":"LEGENDS7\u00ad","slug":"tournament\/legends7","startAt":1792854000,"endAt":1792987200,"city":"San
+        Salvador","addrState":"La Libertad","countryCode":"SV","venueName":null,"numAttendees":343,"isOnline":false}},"slots":[{"entrant":{"id":24975667,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":24947656,"name":"CUERVOS
+        | Vanitas","initialSeedNum":17,"isDisqualified":null,"participants":[{"player":{"id":71071,"gamerTag":"Vanitas","prefix":"CUERVOS"}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":24975667,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24947656},"selectionType":"CHARACTER","selectionValue":1274},{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1275}]},{"orderNum":2,"winnerId":24975667,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24947656},"selectionType":"CHARACTER","selectionValue":1274},{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1275}]},{"orderNum":3,"winnerId":24975667,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24947656},"selectionType":"CHARACTER","selectionValue":1274},{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1275}]}]},{"id":109392396,"completedAt":1792954387,"fullRoundText":"Winners
+        Round 1","round":1,"totalGames":5,"winnerId":24975667,"displayScore":"FaZe
+        | Sparg0 3 - Cuervos | Cesmi 0","vodUrl":null,"state":3,"event":{"id":1687524,"name":"ULTIMATE
+        Singles","slug":"tournament\/legends7\/event\/ultimate-singles","startAt":1792857600,"isOnline":false,"numEntrants":343,"videogame":{"id":1386},"tournament":{"id":942547,"name":"LEGENDS7\u00ad","slug":"tournament\/legends7","startAt":1792854000,"endAt":1792987200,"city":"San
+        Salvador","addrState":"La Libertad","countryCode":"SV","venueName":null,"numAttendees":343,"isOnline":false}},"slots":[{"entrant":{"id":24975667,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":24633082,"name":"Cuervos
+        | Cesmi","initialSeedNum":32,"isDisqualified":null,"participants":[{"player":{"id":2562155,"gamerTag":"Cesmi","prefix":"Cuervos"}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":24975667,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24633082},"selectionType":"CHARACTER","selectionValue":1328},{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1795}]},{"orderNum":2,"winnerId":24975667,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24633082},"selectionType":"CHARACTER","selectionValue":1328},{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1795}]},{"orderNum":3,"winnerId":24975667,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24633082},"selectionType":"CHARACTER","selectionValue":1328},{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1795}]}]},{"id":109332807,"completedAt":1792876673,"fullRoundText":"Winners
+        Quarter-Final","round":4,"totalGames":5,"winnerId":24975667,"displayScore":"FaZe
+        | Sparg0 3 - Cuervos | Polar 0","vodUrl":null,"state":3,"event":{"id":1687524,"name":"ULTIMATE
+        Singles","slug":"tournament\/legends7\/event\/ultimate-singles","startAt":1792857600,"isOnline":false,"numEntrants":343,"videogame":{"id":1386},"tournament":{"id":942547,"name":"LEGENDS7\u00ad","slug":"tournament\/legends7","startAt":1792854000,"endAt":1792987200,"city":"San
+        Salvador","addrState":"La Libertad","countryCode":"SV","venueName":null,"numAttendees":343,"isOnline":false}},"slots":[{"entrant":{"id":24975667,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":24905614,"name":"Cuervos
+        | Polar","initialSeedNum":64,"isDisqualified":null,"participants":[{"player":{"id":3608233,"gamerTag":"Polar","prefix":"Cuervos"}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":24975667,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24905614},"selectionType":"CHARACTER","selectionValue":1407},{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1339}]},{"orderNum":2,"winnerId":24975667,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24905614},"selectionType":"CHARACTER","selectionValue":1407},{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1339}]},{"orderNum":3,"winnerId":24975667,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24905614},"selectionType":"CHARACTER","selectionValue":1407},{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1339}]}]},{"id":109332799,"completedAt":1792874105,"fullRoundText":"Winners
+        Round 3","round":3,"totalGames":5,"winnerId":24975667,"displayScore":"FaZe
+        | Sparg0 3 - SUN\/QF | GODPIA 0","vodUrl":null,"state":3,"event":{"id":1687524,"name":"ULTIMATE
+        Singles","slug":"tournament\/legends7\/event\/ultimate-singles","startAt":1792857600,"isOnline":false,"numEntrants":343,"videogame":{"id":1386},"tournament":{"id":942547,"name":"LEGENDS7\u00ad","slug":"tournament\/legends7","startAt":1792854000,"endAt":1792987200,"city":"San
+        Salvador","addrState":"La Libertad","countryCode":"SV","venueName":null,"numAttendees":343,"isOnline":false}},"slots":[{"entrant":{"id":24975667,"name":"FaZe
+        | Sparg0","initialSeedNum":1,"isDisqualified":null,"participants":[{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe"}}]},"standing":{"placement":1,"stats":{"score":{"value":3}}}},{"entrant":{"id":24818883,"name":"SUN\/QF
+        | GODPIA","initialSeedNum":128,"isDisqualified":null,"participants":[{"player":{"id":1500057,"gamerTag":"GODPIA","prefix":"SUN\/QF"}}]},"standing":{"placement":2,"stats":{"score":{"value":0}}}}],"games":[{"orderNum":1,"winnerId":24975667,"entrant1Score":null,"entrant2Score":null,"stage":null,"selections":[{"entrant":{"id":24818883},"selectionType":"CHARACTER","selectionValue":1295},{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1275}]},{"orderNum":2,"winnerId":24975667,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24818883},"selectionType":"CHARACTER","selectionValue":1295},{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1275}]},{"orderNum":3,"winnerId":24975667,"entrant1Score":null,"entrant2Score":0,"stage":null,"selections":[{"entrant":{"id":24818883},"selectionType":"CHARACTER","selectionValue":1295},{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1339}]}]}]}}},"extensions":{"cacheControl":{"version":1,"hints":null},"queryComplexity":732},"actionRecords":[]}'
+    headers:
+      access-control-allow-credentials:
+      - 'true'
+      access-control-allow-headers:
+      - '*, Content-Type, Authorization'
+      access-control-allow-methods:
+      - POST, GET, OPTIONS
+      access-control-allow-origin:
+      - '*'
+      cache-control:
+      - private, max-age=0, s-maxage=0
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a5af4f3638a0d690-IAD
+      connection:
+      - keep-alive
+      content-length:
+      - '28168'
+      content-type:
+      - application/json
+      date:
+      - Sun, 15 Nov 2026 15:32:35 GMT
+      required-client-version:
+      - '20'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=15724800; includeSubDomains
+      transfer-encoding:
+      - chunked
+    status:
+      code: 200
+      message: OK
+version: 1

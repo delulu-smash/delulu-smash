@@ -37,6 +37,38 @@ Character roster. Synced via `ds data roster` (see [raw/roster.py](raw/roster.py
 | `name`          | Character display name (eg `Little Mac`)                                     |
 | `framedata_url` | Full ultimateframedata.com URL for this character's move frame data          |
 | `char_icon`     | Stock icon file, relative to this folder (eg `char_icons/little_mac.png`); see below |
+| `char_group`    | The character-select entry this fighter belongs to: `pokemon_trainer` for `pt_squirtle` / `pt_ivysaur` / `pt_charizard`, `pyra_mythra` for `pyra` / `mythra`, the fighter's own `id` for everyone else; see below |
+
+### Fighters and picks (`char_group`)
+
+A row here is a **fighter**: something with its own moves and frame data. A **pick** is an entry on the
+character-select screen. They are the same thing except for two picks that are several fighters:
+
+| pick (`char_group`) | fighters (`id`) |
+| ------------------- | --------------- |
+| `pokemon_trainer`   | `pt_squirtle`, `pt_ivysaur`, `pt_charizard` |
+| `pyra_mythra`       | `pyra`, `mythra` |
+
+- **Frame data is per fighter:** `framedata.parquet.char_id` -> `char.parquet.id`.
+- **Tournament data is per pick:** start.gg records what was picked, not which Pokemon was out, so its
+  rows carry `char_group` (eg `ds.data.startgg.PlayerUsage`). `char_group` is not unique in this table: joining
+  on it gives one row per fighter of the pick, which is what you want when going on to frame data.
+- The groups are defined in `ds.data.CHAR_GROUPS`; `ds data roster` writes the column
+  ([raw/roster.py](raw/roster.py), `with_char_group`).
+
+```python
+import polars as pl
+import ds.data
+
+usage = pl.DataFrame({"char_group": ["pokemon_trainer", "cloud"], "games": [12, 30]})  # eg from start.gg
+char_df = pl.read_parquet("pkgs/ds/data/char.parquet")
+fighters = usage.join(char_df, on="char_group")  # 3 rows for pokemon_trainer, 1 for cloud
+moves = fighters.join(pl.read_parquet("pkgs/ds/data/framedata.parquet"), left_on="id", right_on="char_id")
+
+ds.data.char_group("pt_ivysaur")                 # "pokemon_trainer"
+ds.data.char_group_members("pokemon_trainer")    # ("pt_squirtle", "pt_ivysaur", "pt_charizard")
+ds.data.char_group_by_name("Pyra & Mythra")      # "pyra_mythra": a pick as another site names it
+```
 
 ### `char_icons/`
 
