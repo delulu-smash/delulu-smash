@@ -16,22 +16,25 @@ import { tags as t } from "@lezer/highlight";
 
 // Everforest dark, medium contrast. Token colors follow everforest.vim's highlight groups,
 // the same mapping experimental/textual-kernel's theme.py uses.
-const c = {
+export const c = {
   bg1: "#343f44", bg3: "#475258", bg4: "#4f585e", fg: "#d3c6aa", red: "#e67e80", orange: "#e69875",
   yellow: "#dbbc7f", green: "#a7c080", aqua: "#83c092", blue: "#7fbbb3", purple: "#d699b6", grey1: "#859289",
 };
 
+// Shared with sql_editor.jsx, which only swaps the token colors.
+export const editorSettings = {
+  background: "transparent",
+  foreground: c.fg,
+  caret: c.fg,
+  selection: c.bg4,
+  selectionMatch: c.bg3,
+  lineHighlight: "transparent",
+  fontFamily: '"JetBrainsMono Nerd Font", "JetBrains Mono", monospace',
+};
+
 const everforest = createTheme({
   theme: "dark",
-  settings: {
-    background: "transparent",
-    foreground: c.fg,
-    caret: c.fg,
-    selection: c.bg4,
-    selectionMatch: c.bg3,
-    lineHighlight: "transparent",
-    fontFamily: '"JetBrainsMono Nerd Font", "JetBrains Mono", monospace',
-  },
+  settings: editorSettings,
   styles: [
     { tag: [t.keyword, t.controlKeyword, t.moduleKeyword, t.operatorKeyword, t.definitionKeyword], color: c.red, fontStyle: "italic" },
     { tag: [t.string, t.special(t.string)], color: c.green },
@@ -67,7 +70,7 @@ function focusNextCell(node) {
   }, 100);
 }
 
-export function CellEditor({ initialCode, completeUrl, token, onRun, onSave }) {
+export function CellEditor({ initialCode, completeUrl, token, keys, onRun, onSave }) {
   // Props change identity on every render; the editor's extensions are built once and read these.
   const live = useRef({});
   live.current = { completeUrl, token, onRun, onSave };
@@ -119,10 +122,11 @@ export function CellEditor({ initialCode, completeUrl, token, onRun, onSave }) {
       tooltips({ parent: document.body }),
       Prec.highest(
         keymap.of([
-          // Tab, as in Jupyter: accept the open suggestion, or ask for one after a name or dot;
+          // keys come from shortcuts.py (Shortcut.COMPLETE / RUN_AND_ADVANCE / RUN), read once at mount.
+          // Complete, as in Jupyter's Tab: accept the open suggestion, or ask for one after a name or dot;
           // anywhere else it falls through and indents.
           {
-            key: "Tab",
+            key: keys?.complete || "Tab",
             run: (view) => {
               if (completionStatus(view.state) === "active") return acceptCompletion(view);
               const { head, empty } = view.state.selection.main;
@@ -131,8 +135,8 @@ export function CellEditor({ initialCode, completeUrl, token, onRun, onSave }) {
               return false;
             },
           },
-          { key: "Shift-Enter", run: run(true) },
-          { key: "Mod-Enter", run: run(false) },
+          { key: keys?.runAndAdvance || "Shift-Enter", run: run(true) },
+          { key: keys?.run || "Mod-Enter", run: run(false) },
         ]),
       ),
     ];

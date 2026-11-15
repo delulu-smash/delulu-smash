@@ -44,6 +44,7 @@ keep track of how staled players move is, whether a move on average likely be st
 15. teach AI how to write docs properly, the moveset.md good example where duplicating information, using specific AI reference information, not specific to little mac and general org of docs, etc
 16. use this https://youtu.be/a6xiegauaWE?si=s2ZMsQ02pxuCRYzH to update progcc control stick deadzone at top (perhaps can use )
 17. for matches, have recommendation capability, that ideally i would use data from supermajor and schustats to find the top players and especially ones that have good winning record against MU (as most likely to use those matches), more recent matches, etc (all the things i look at to find good matches). perhaps way for MUs to give personal preference and log 
+18. in additon to ideas of gathering smash data as play via skyline smash mod, are there things like https://skpeter.github.io/smart-user-guide/ that could let us gather data from vod? so we can do similar analysis?
 
 # TUI
 1. create own AI Tui

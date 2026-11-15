@@ -3,6 +3,8 @@
 # Purpose: Extra backend route for reflex-kernel. POST /complete returns Python
 #          completions for a cell, called straight from the editor so typing
 #          doesn't go through Reflex state.
+#          GET /char_icons/<file>.png serves the character stock icons (ds.data.CHAR_ICON_DIR)
+#          for views that show them (render.ICON_URL).
 # Usage: mounted by reflex_kernel.py via rx.App(api_transformer=api).
 # ---------------------------------------------------------------------------
 from __future__ import annotations
@@ -14,7 +16,10 @@ from starlette.applications import Starlette
 from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
-from starlette.routing import Route
+from starlette.routing import Mount, Route
+from starlette.staticfiles import StaticFiles
+
+from ds.data import CHAR_ICON_DIR
 
 from .session import complete as complete_code
 
@@ -37,6 +42,10 @@ async def complete(request: Request) -> JSONResponse:
 
 # The frontend (port 3000) calls the backend (port 8000), so the browser needs CORS headers.
 api = Starlette(
-    routes=[Route("/complete", complete, methods=["POST"])],
-    middleware=[Middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["POST"], allow_headers=["*"])],
+    routes=[
+        Route("/complete", complete, methods=["POST"]),
+        # the folder's name is the url prefix, so char.parquet's `char_icon` value is the path
+        Mount(f"/{CHAR_ICON_DIR.name}", StaticFiles(directory=CHAR_ICON_DIR), name="char_icons"),
+    ],
+    middleware=[Middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["GET", "POST"], allow_headers=["*"])],
 )

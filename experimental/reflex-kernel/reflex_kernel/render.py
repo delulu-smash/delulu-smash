@@ -27,14 +27,30 @@ from typing import TYPE_CHECKING, Any
 
 import polars as pl
 import reflex as rx
+from reflex.event import no_args_event_spec, passthrough_event_spec
 from ds.ai import TableResult
+from ds.data import char_icon_by_name
 from ds.data.raw.smashtube import MatchVideos
+from ds.data.raw.supermajor import CharacterStats, PlayerUsage, StageStats
 from pydantic import BaseModel
+
+from .editor import sql_editor
+from .shortcuts import Shortcut, sql_keys
+from .tool_forms import FormField, ToolRequest
+from .widgets import form_for
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
 MAX_GRID_ROWS = 2000
+# Two diagonal arrows pointing apart / together, as on Zed's zoom button (JetBrainsMono Nerd Font).
+ICON_EXPAND, ICON_COLLAPSE = "\U000f0616", "\U000f0615"
+# A table view's SQL box starts with this; running it unchanged shows the table as it is.
+DEFAULT_SQL = "select * from self"
+# Most rows of one ranked-bar list (characters, stages) in a usage view; the rest fold into one row.
+MAX_BAR_ROWS = 6
+# The backend serves the character icons (api.py); the browser loads them from here.
+ICON_URL = rx.config.get_config().api_url + "/"
 # Longest text shown for one field value or table cell of a generic model view.
 MAX_VALUE_CHARS = 400
 # Rows shown per list in a generic model view.
@@ -63,12 +79,51 @@ class Section:
 
 
 @dataclasses.dataclass
+class BarRow:
+    """One row of a ranked-bar list: what, a bar of its share, the figure."""
+
+    label: str
+    icon: str = ""
+    """Image url (a character's stock icon); "" = none."""
+    width: str = "0%"
+    """The bar's length: the share of the whole, eg '62%'."""
+    value: str = ""
+    """The figure beside the bar, eg '62%'."""
+    tip: str = ""
+    """Hover text: full name, count and share."""
+
+
+@dataclasses.dataclass
+class BarGroup:
+    """A titled ranked-bar list, eg a player's characters or starter stages."""
+
+    title: str = ""
+    note: str = ""
+    """What the shares are of, eg '120 games'."""
+    rows: list[BarRow] = dataclasses.field(default_factory=list)
+    icons: bool = False
+    """The rows have icons (characters), so the list keeps a column for them."""
+
+
+@dataclasses.dataclass
+class EventRow:
+    """One recent event: when, what, and the characters played there (as icons)."""
+
+    date: str
+    title: str
+    tip: str = ""
+    icons: list[dict[str, str]] = dataclasses.field(default_factory=list)
+    """Each: name, url ("" = no icon for that name)."""
+
+
+@dataclasses.dataclass
 class ViewData:
     """A view as the browser gets it: kind picks the component, the rest is that component's data.
     The same shape serves a tab and a cell output."""
 
     kind: str = ""
-    """"" (nothing to show) | table | videos | fields"""
+    """"" (nothing to show) | table | videos | usage | fields | tool (a tool form not run yet).
+    Each kind's attributes (tool form, "+" menu, unfolded in chat) are in widgets.py."""
     slot: str = ""
     """Where this view is shown, eg 'tab:r1' or 'cell:c3'; sent back with every event."""
     error: str = ""
@@ -85,6 +140,15 @@ class ViewData:
     sort_col: str = ""
     sort_desc: bool = False
     query: str = ""
+    sql: str = DEFAULT_SQL
+    """The SQL box's text: the last query run here, else DEFAULT_SQL."""
+    sql_open: bool = False
+    sql_active: bool = False
+    """A query other than DEFAULT_SQL is applied (the SQL toggle shows it)."""
+    sql_columns: list[str] = dataclasses.field(default_factory=list)
+    """The table's own columns, for completion in the SQL box."""
+    sql_key: str = ""
+    """Remounts the SQL box (a new slot, or reset to DEFAULT_SQL)."""
     # videos: each has id, title, date, players, url, thumb, embed
     videos: list[dict[str, str]] = dataclasses.field(default_factory=list)
     page: int = 1
@@ -96,6 +160,21 @@ class ViewData:
     # fields: name, value; plus one section per list of models
     fields: list[dict[str, str]] = dataclasses.field(default_factory=list)
     sections: list[Section] = dataclasses.field(default_factory=list)
+    # usage: a player's characters (for the picked window), stages and recent events
+    windows: list[dict[str, str]] = dataclasses.field(default_factory=list)
+    """The character windows to pick from: key, label, on ('1' for the one shown)."""
+    chars: BarGroup = dataclasses.field(default_factory=BarGroup)
+    stage_groups: list[BarGroup] = dataclasses.field(default_factory=list)
+    events: list[EventRow] = dataclasses.field(default_factory=list)
+    events_note: str = ""
+    # tool form (tool_forms.py): the inputs of the tool that made this result, to change and re-run
+    form: list[FormField] = dataclasses.field(default_factory=list)
+    form_open: bool = False
+    form_key: str = ""
+    """Remounts the form's inputs (a new slot, or a new result) so they show its values."""
+    running: bool = False
+    form_changed: bool = False
+    """The form was re-run on an agent's result: the original call can be put back."""
 
     def __setstate__(self, state: dict[str, Any]) -> None:
         fill_defaults(self, state)
@@ -121,6 +200,10 @@ class Ui:
     query: str = ""
     sort_col: str = ""
     descending: bool = False
+    sql: str = ""
+    """The query run on the table before the filter and sort ("" = none), as polars SQL on `self`."""
+    sql_open: bool = False
+    sql_resets: int = 0
     # videos
     playing: dict[str, str] = dataclasses.field(default_factory=dict)
     """The picked video (id, title, url, embed); {} = none."""
@@ -131,6 +214,13 @@ class Ui:
     paging: bool = False
     """True while another page of the search is being fetched."""
     error: str = ""
+    # usage
+    window: str = ""
+    """The character window picked ("" = the result's own default)."""
+    # tool form
+    form_open: bool = False
+    running: bool = False
+    runs: int = 0
 
 
 def apply_event(view: View, ui: Ui, action: str, arg: Any) -> None:
@@ -140,8 +230,10 @@ def apply_event(view: View, ui: Ui, action: str, arg: Any) -> None:
         case "sort" if view.frame is not None:
             # Glide sends the bare column index, despite the (col, row) tuple in Reflex's event spec.
             col = arg if isinstance(arg, int) else arg[0]
-            if 0 <= col < len(view.frame.columns):
-                name = view.frame.columns[col]
+            # the columns shown, ie after the SQL query
+            columns = view.table(ui)[0].columns
+            if 0 <= col < len(columns):
+                name = columns[col]
                 # a header click cycles that column: ascending -> descending -> unsorted
                 if name != ui.sort_col:
                     ui.sort_col, ui.descending = name, False
@@ -157,6 +249,17 @@ def apply_event(view: View, ui: Ui, action: str, arg: Any) -> None:
             ui.playing, ui.list_hidden = {}, False
         case "toggle_list":
             ui.list_hidden = not ui.list_hidden
+        case "window":
+            ui.window = str(arg)
+        case "form_toggle":
+            ui.form_open = not ui.form_open
+        case "sql_toggle":
+            ui.sql_open = not ui.sql_open
+        case "sql":
+            text = str(arg).strip().rstrip(";").strip()
+            ui.sql = "" if " ".join(text.lower().split()) in ("", DEFAULT_SQL) else text
+        case "sql_reset":
+            ui.sql, ui.sql_resets = "", ui.sql_resets + 1
 
 
 @dataclasses.dataclass
@@ -177,9 +280,30 @@ class View:
     page: int = 1
     pages: int = 1
 
-    def data(self, slot: str = "", ui: Ui | None = None, compact: bool = False) -> ViewData:
+    def table(self, ui: Ui) -> tuple[pl.DataFrame, str]:
+        """The frame as shown before filter and sort: the Ui's SQL query run on it (as `self`), and
+        the query's error ("" if none; on an error the table is shown as it is)."""
+        if self.frame is None or not ui.sql:
+            return self.frame, ""
+        try:
+            return self.frame.sql(ui.sql), ""
+        except Exception as error:  # noqa: BLE001  # any bad query is shown in the view
+            # polars appends the query plan it got to; its first line says what is wrong
+            first = next(iter(str(error).strip().splitlines()), repr(error))
+            return self.frame, f"SQL: {first.strip(chr(39) + chr(34))}"
+
+    def data(
+        self,
+        slot: str = "",
+        ui: Ui | None = None,
+        compact: bool = False,
+        inputs: dict[str, Any] | None = None,
+        can_restore: bool = False,
+    ) -> ViewData:
         """The browser's copy, for the place it is shown (slot) with what the user did there (ui).
-        Tables are filtered and sorted here; compact sizes the grid to its content."""
+        Tables are filtered and sorted here; compact sizes the grid to its content. inputs: the
+        tool inputs that made the value, when known (Session.call_at), for its tool form;
+        can_restore: they were changed from the agent's own call, which can be put back."""
         ui = ui or Ui()
         query, sort_col, descending = ui.query, ui.sort_col, ui.descending
         data = ViewData(
@@ -199,9 +323,19 @@ class View:
             fields=self.fields,
             sections=self.sections,
         )
+        if form := form_for(self.value):
+            if isinstance(self.value, ToolRequest):
+                inputs, data.label, data.note = self.value.inputs, form.title, "not run yet"
+            data.form, data.form_open, data.running = form.fields(inputs or {}), ui.form_open, ui.running
+            data.form_key, data.form_changed = f"{slot}#{ui.runs}", can_restore
+        if isinstance(self.value, PlayerUsage):
+            _usage_data(self.value, ui, data)
         if self.frame is None:
             return data
-        df = self.frame
+        df, sql_error = self.table(ui)
+        data.error = data.error or sql_error
+        data.sql, data.sql_open, data.sql_active = ui.sql or DEFAULT_SQL, ui.sql_open, bool(ui.sql) and not sql_error
+        data.sql_columns, data.sql_key = list(self.frame.columns), f"{slot}#{ui.sql_resets}"
         data.columns, data.rows = grid_data(df, query, sort_col, descending)
         data.sort_col, data.sort_desc = sort_col, descending
         shown = len(data.rows)
@@ -229,6 +363,10 @@ def to_view(value: Any) -> View | None:
         match value:
             case MatchVideos():
                 return _videos_view(value)
+            case PlayerUsage():
+                return _usage_view(value)
+            case ToolRequest():
+                return View(kind="tool", value=value, summary="not run yet")
             case TableResult():
                 return _table_view(value, value.to_df())
             case pl.DataFrame() | pl.Series():
@@ -289,6 +427,95 @@ def _videos_view(value: MatchVideos) -> View:
         page=value.page,
         pages=value.pages,
     )
+
+
+def _player(value: PlayerUsage) -> str:
+    lookup = value.lookup
+    if lookup is None:
+        return ""
+    return lookup.player.tag if lookup.player else lookup.query
+
+
+def _usage_view(value: PlayerUsage) -> View:
+    lookup = value.lookup
+    events = f"{lookup.player.num_events} events" if lookup and lookup.player else ""
+    mains = ", ".join(usage.character for usage in value.characters.characters[:2])
+    note = " · ".join(part for part in [_player(value), events] if part)
+    return View(kind="usage", value=value, summary=_player(value) or "player usage", note=note or mains)
+
+
+_WINDOW_LABELS = {"last_6_months": "6 mo", "all_time": "All time", "last_10_events": "Last 10"}
+_WINDOW_TIPS = {
+    "last_6_months": "Games in the last 6 months",
+    "all_time": "Every game with character data",
+    "last_10_events": "Events (not games) among the last 10",
+}
+
+
+def _icon_url(name: str) -> str:
+    icon = char_icon_by_name(name)
+    return ICON_URL + icon if icon else ""
+
+
+def _bar_rows(items: list[tuple[str, str, float, int]], unit: str) -> list[BarRow]:
+    """Ranked rows from (label, full name, share 0-100, count), largest first as given; past
+    MAX_BAR_ROWS the tail folds into one "N others" row."""
+
+    def row(label: str, name: str, pct: float, count: int, icon: str = "") -> BarRow:
+        return BarRow(
+            label=label,
+            icon=icon,
+            width=f"{max(0.0, min(100.0, pct)):.1f}%",
+            value=f"{pct:.0f}%" if pct >= 1 or pct == 0 else "<1%",
+            tip=f"{name}: {count} {unit} ({pct:.1f}%)",
+        )
+
+    shown = items if len(items) <= MAX_BAR_ROWS else items[: MAX_BAR_ROWS - 1]
+    rows = [row(label, name, pct, count, _icon_url(name)) for label, name, pct, count in shown]
+    if rest := items[len(shown) :]:
+        names = ", ".join(name for _, name, _, _ in rest)
+        label = f"{len(rest)} others"
+        rows.append(row(label, f"{label} ({names})", sum(i[2] for i in rest), sum(i[3] for i in rest)))
+    return rows
+
+
+def _char_group(stats: CharacterStats) -> BarGroup:
+    items = [(usage.character, usage.character, usage.usage_pct, usage.count) for usage in stats.characters]
+    rows = _bar_rows(items, stats.unit)
+    return BarGroup(title="Characters", note=f"{stats.total} {stats.unit}", rows=rows, icons=True)
+
+
+def _stage_group(title: str, stats: StageStats) -> BarGroup:
+    items = [(stage.short_name or stage.stage, stage.stage, stage.usage_pct, stage.games) for stage in stats.stages]
+    return BarGroup(title=title, note=f"{stats.games} games", rows=_bar_rows(items, "games"))
+
+
+def _usage_data(value: PlayerUsage, ui: Ui, data: ViewData) -> None:
+    """Fill a usage view: the characters of the picked window, starter / counterpick stages, recent events."""
+    windows = {
+        "last_6_months": value.last_6_months,
+        "all_time": value.all_time,
+        "last_10_events": value.last_10_events.characters,
+    }
+    picked = ui.window if ui.window in windows else value.characters.window
+    data.windows = [
+        {"key": key, "label": _WINDOW_LABELS[key], "tip": _WINDOW_TIPS[key], "on": "1" if key == picked else ""}
+        for key in windows
+    ]
+    data.chars = _char_group(windows[picked])
+    data.stage_groups = [_stage_group("Starters", value.starters), _stage_group("Counterpicks", value.counters)]
+    recent = value.last_10_events
+    data.events = [
+        EventRow(
+            date=event.date.isoformat(),
+            title=event.tournament,
+            tip=f"{event.tournament} · {event.event}" + (" · online" if event.online else ""),
+            icons=[{"name": name, "url": _icon_url(name)} for name in event.characters],
+        )
+        for event in recent.events
+    ]
+    if recent.first_date and recent.last_date:
+        data.events_note = f"{recent.first_date.isoformat()} to {recent.last_date.isoformat()}"
 
 
 def _text(value: Any) -> str:
@@ -442,7 +669,18 @@ def render_component(
         rx.match(
             view.kind,
             ("videos", video_widget(view, send, actions)),
-            ("fields", rx.fragment(_bar(view, actions), model_fields(view.fields, view.sections))),
+            ("usage", usage_widget(view, send, actions)),
+            # a tool form added by hand, before its first run: just the form
+            (
+                "tool",
+                rx.fragment(
+                    _bar(view, actions),
+                    form_section(view, send),
+                    _error(view),
+                    rx.el.div("Fill in the inputs and press Enter to run it.", class_name="empty sans"),
+                ),
+            ),
+            ("fields", rx.fragment(_bar(view, actions, send=send), model_fields(view.fields, view.sections))),
             ("table", table_widget(view, send, grid, actions)),
             rx.fragment(),
         ),
@@ -452,16 +690,39 @@ def render_component(
     )
 
 
+def float_button() -> rx.Component:
+    """Top right of every view: float it over the page, nearly full screen (or put it back).
+
+    Purely in the browser (assets/panes.js toggles .is-floating on the view's .widget), so the
+    view stays the same component: its sort, filter and playing video carry on. The
+    Shortcut.FULL_SCREEN keys do the same for the view you are in."""
+    return rx.el.button(
+        rx.el.span(ICON_EXPAND, class_name="when-docked"),
+        rx.el.span(ICON_COLLAPSE, class_name="when-floating"),
+        title=Shortcut.FULL_SCREEN.hint("Float full screen / put back"),
+        aria_label="Float full screen",
+        class_name="float-btn mono",
+    )
+
+
 def _bar(
-    view: rx.Var[ViewData], actions: tuple[rx.Component, ...], *controls: rx.Component, hidden: Any = False
+    view: rx.Var[ViewData],
+    actions: tuple[rx.Component, ...],
+    *controls: rx.Component,
+    hidden: Any = False,
+    send: Any = None,
 ) -> rx.Component:
-    """The component's top bar: what the value is, the kind's own controls, the host's actions."""
+    """The component's top bar: what the value is, the kind's own controls, the host's actions.
+    With send (the view's event sender), a view that has a tool form gets its Inputs button."""
     return rx.el.div(
         rx.el.span(view.label, class_name="out-kind"),
         rx.cond(view.note != view.label, rx.el.span(view.note, class_name="dim")),
         rx.el.span(class_name="spacer"),
         *controls,
+        # every view with a tool form (widgets.py) gets its Inputs button
+        rx.cond(view.form.length() > 0, form_toggle(view, send)) if send else rx.fragment(),
         *actions,
+        float_button(),
         class_name=rx.cond(hidden, "viewer-bar sans is-hidden", "viewer-bar sans"),
     )
 
@@ -473,20 +734,231 @@ def _error(view: rx.Var[ViewData]) -> rx.Component:
 def table_widget(
     view: rx.Var[ViewData], send: Any, grid: rx.Component, actions: tuple[rx.Component, ...]
 ) -> rx.Component:
-    """A table: row filter, then the grid."""
+    """A table: row filter and SQL toggle, the SQL box (folded by default), then the grid."""
     return rx.fragment(
         _bar(
             view,
             actions,
+            rx.el.button(
+                rx.cond(view.sql_open, "SQL ▾", "SQL ▸"),
+                title=rx.cond(view.sql_active, "A SQL query is applied: show or hide it", "Query this table with SQL"),
+                on_click=send("sql_toggle"),
+                class_name=rx.cond(view.sql_active, "act sql-toggle is-active", "act sql-toggle"),
+            ),
             rx.el.input(
                 placeholder="Filter rows…",
                 value=view.query,
                 on_change=lambda value: send("query", value),
                 class_name="viewer-filter",
             ),
+            send=send,
         ),
+        rx.cond(view.sql_open, table_sql(view, send)),
         _error(view),
         grid,
+    )
+
+
+def table_sql(view: rx.Var[ViewData], send: Any) -> rx.Component:
+    """The mini SQL runner (as in DBeaver): a polars SQL query on the table, named self, run with
+    Shortcut.RUN_SQL; the grid then shows its result, still filtered and sorted by the bar."""
+    return rx.el.div(
+        rx.el.div(
+            sql_editor(
+                key=view.sql_key,
+                initial_sql=view.sql,
+                columns=view.sql_columns,
+                keys=sql_keys(),
+                on_run=lambda query: send("sql", query),
+            ),
+            class_name="sql-editor",
+        ),
+        rx.el.span(Shortcut.RUN_SQL.keys, class_name="sql-hint dim mono"),
+        rx.cond(
+            view.sql_active,
+            rx.el.button("×", title="Back to the whole table", on_click=send("sql_reset"), class_name="act"),
+        ),
+        class_name="sql-row",
+    )
+
+
+def form_toggle(view: rx.Var[ViewData], send: Any) -> rx.Component:
+    """The bar's button that folds the tool form open (tool_forms.py); highlighted while it runs."""
+    return rx.el.button(
+        rx.cond(view.form_open, "Inputs ▾", "Inputs ▸"),
+        title="The inputs of the tool that made this: change them and run it again",
+        on_click=send("form_toggle"),
+        class_name=rx.cond(view.running | view.form_changed, "act form-toggle is-active", "act form-toggle"),
+    )
+
+
+def form_section(view: rx.Var[ViewData], send: Any) -> rx.Component:
+    """The tool form, folded under the bar: one compact row of the tool's inputs; Enter or Run runs it."""
+    return tool_form(
+        fields=view.form,
+        running=view.running,
+        changed=view.form_changed,
+        on_run=lambda form: send("form_run", form),
+        on_reset=send("form_reset"),
+        remount=view.form_key,
+    )
+
+
+def _form_field(item: rx.Var[FormField]) -> rx.Component:
+    control = rx.match(
+        item.kind,
+        (
+            "select",
+            rx.el.select(
+                rx.foreach(
+                    item.options, lambda option: rx.el.option(rx.cond(option == "", "any", option), value=option)
+                ),
+                name=item.name,
+                default_value=item.value,
+                class_name="form-input",
+            ),
+        ),
+        ("check", rx.el.input(type="checkbox", name=item.name, default_checked=item.value != "")),
+        rx.el.input(
+            name=item.name,
+            default_value=item.value,
+            type=rx.cond(item.kind == "number", "number", "text"),
+            class_name="form-input",
+        ),
+    )
+    return rx.el.label(
+        rx.el.span(item.label, class_name="form-label"), control, title=item.help, class_name="form-field"
+    )
+
+
+@rx.memo
+def tool_form(
+    fields: rx.Var[list[FormField]],
+    running: rx.Var[bool],
+    changed: rx.Var[bool],
+    remount: rx.Var[str],
+    on_run: rx.EventHandler[passthrough_event_spec(dict[str, Any])],
+    on_reset: rx.EventHandler[no_args_event_spec],
+) -> rx.Component:
+    """The form itself. A memo component, as compact_grid is: a form's submit handler is generated
+    outside any loop the view sits in (chat items, cells) and couldn't see the loop item otherwise."""
+    return rx.el.form(
+        rx.foreach(fields, _form_field),
+        rx.el.button(
+            rx.cond(running, "Running…", "Run"),
+            type="submit",
+            disabled=running,
+            title="Run the tool with these inputs (Enter)",
+            class_name="act",
+        ),
+        rx.cond(
+            changed,
+            rx.el.button(
+                "×",
+                type="button",
+                title="Back to the agent's original call (its inputs and result)",
+                on_click=on_reset,
+                class_name="act",
+            ),
+        ),
+        # a new key remounts the inputs, so they show a new result's values
+        key=remount,
+        on_submit=on_run,
+        class_name="tool-form sans",
+    )
+
+
+def _bar_row(row: rx.Var[BarRow]) -> rx.Component:
+    return rx.el.div(
+        rx.cond(
+            row.icon != "", rx.el.img(src=row.icon, alt="", class_name="char-icon"), rx.el.span(class_name="char-icon")
+        ),
+        rx.el.span(row.label, class_name="bar-label"),
+        rx.el.span(rx.el.span(style={"width": row.width}, class_name="bar-fill"), class_name="bar-track"),
+        rx.el.span(row.value, class_name="bar-value"),
+        title=row.tip,
+        class_name="bar-row",
+    )
+
+
+def bar_group(group: rx.Var[BarGroup], *head: rx.Component) -> rx.Component:
+    """A ranked-bar list: title, what the shares are of, then one row per part, largest first.
+    One hue: the rows are compared by length, and told apart by their label (and icon)."""
+    return rx.el.div(
+        rx.el.div(
+            rx.el.span(group.title, class_name="usage-title"),
+            *head,
+            rx.el.span(group.note, class_name="dim"),
+            class_name="usage-head",
+        ),
+        rx.cond(
+            group.rows.length() > 0,
+            rx.el.div(
+                rx.foreach(group.rows, _bar_row), class_name=rx.cond(group.icons, "bar-rows", "bar-rows no-icons")
+            ),
+            rx.el.div("no data", class_name="dim"),
+        ),
+        class_name="usage-group",
+    )
+
+
+def usage_widget(view: rx.Var[ViewData], send: Any, actions: tuple[rx.Component, ...]) -> rx.Component:
+    """A player's usage at a glance (supermajor.gg): characters for a picked window, starter and
+    counterpick stages, and the characters at each of the last events."""
+    windows = rx.el.span(
+        rx.foreach(
+            view.windows,
+            lambda window: rx.el.button(
+                window["label"],
+                title=window["tip"],
+                on_click=send("window", window["key"]),
+                class_name=rx.cond(window["on"] != "", "seg is-on", "seg"),
+            ),
+        ),
+        class_name="segs",
+    )
+
+    def event_row(event: rx.Var[EventRow]) -> rx.Component:
+        return rx.el.div(
+            rx.el.span(event.date, class_name="event-date mono"),
+            rx.el.span(
+                rx.foreach(
+                    event.icons,
+                    lambda icon: rx.cond(
+                        icon["url"] != "",
+                        rx.el.img(src=icon["url"], alt=icon["name"], title=icon["name"], class_name="char-icon"),
+                        rx.el.span(icon["name"], class_name="dim"),
+                    ),
+                ),
+                class_name="event-icons",
+            ),
+            rx.el.span(event.title, class_name="event-title"),
+            title=event.tip,
+            class_name="event-row",
+        )
+
+    return rx.fragment(
+        _bar(view, actions, send=send),
+        rx.cond(view.form_open, form_section(view, send)),
+        _error(view),
+        rx.el.div(
+            bar_group(view.chars, windows),
+            rx.foreach(view.stage_groups, lambda group: bar_group(group)),
+            rx.el.div(
+                rx.el.div(
+                    rx.el.span("Last events", class_name="usage-title"),
+                    rx.el.span(view.events_note, class_name="dim"),
+                    class_name="usage-head",
+                ),
+                rx.cond(
+                    view.events.length() > 0,
+                    rx.el.div(rx.foreach(view.events, event_row), class_name="event-rows"),
+                    rx.el.div("no data", class_name="dim"),
+                ),
+                class_name="usage-group is-events",
+            ),
+            class_name="usage sans",
+        ),
     )
 
 
@@ -511,6 +983,8 @@ def video_widget(view: rx.Var[ViewData], send: Any, actions: tuple[rx.Component,
                 ),
                 rx.el.a("YouTube ↗", href=playing["url"], target="_blank", rel="noreferrer", class_name="act"),
                 rx.el.button("×", title="Close the player", on_click=send("stop"), class_name="act"),
+                # the list's bar (with its float button) is hidden while the video fills the view
+                rx.cond(hidden, float_button()),
                 class_name="player-bar sans",
             ),
             rx.el.iframe(
@@ -542,7 +1016,9 @@ def video_widget(view: rx.Var[ViewData], send: Any, actions: tuple[rx.Component,
                 class_name="act",
             ),
             hidden=hidden,
+            send=send,
         ),
+        rx.cond(view.form_open & ~hidden, form_section(view, send)),
         _error(view),
         player,
         rx.el.div(

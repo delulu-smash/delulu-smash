@@ -4,8 +4,10 @@ from pathlib import Path
 
 import polars as pl
 import typer
+from ds.data.char_icons import CHAR_ICON_DIR
 from ds.data.raw.framedata import scrape_framedata
-from ds.data.raw.roster import scrape_character_roster
+from ds.data.raw.roster import scrape_character_roster, with_char_icon
+from ds.data.raw.smashmate import SITE_CHAR_ICON, scrape_char_icons
 
 # TODO: consider consolidating to one command for syncing raw
 # (ie temp and converting), so can do by file type or entire data
@@ -16,7 +18,7 @@ data_app = typer.Typer(help="SubCommands for raw & transformed data (eg frame da
 
 # the folder holding our "database" parquet files (each direct child *.parquet is a table)
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
-# the "database" of characters (id, name, framedata_url) synced from ultimateframedata.com
+# the "database" of characters (id, name, char_icon) synced from ultimateframedata.com
 CHAR_PARQUET_PATH = DATA_DIR / "char.parquet"
 # the "database" of move frame data synced from ultimateframedata.com
 FRAMEDATA_PARQUET_PATH = DATA_DIR / "framedata.parquet"
@@ -89,3 +91,23 @@ def roster() -> None:
         print(f"Wrote {df.height} characters to {CHAR_PARQUET_PATH}")
     else:
         print("Skipped write.")
+
+
+@data_app.command("char_icon")
+def char_icon() -> None:
+    """Download the character icons from nasmashmate.com; set char.parquet's char_icon."""
+    char_df = with_char_icon(pl.read_parquet(CHAR_PARQUET_PATH))
+    missing = char_df.filter(pl.col("char_icon").is_null())["id"].to_list()
+    if missing:
+        print(f"No icon mapped for: {missing} (add them to SITE_CHAR_ICON in ds.data.raw.smashmate)")
+    files = char_df["char_icon"].drop_nulls().n_unique()
+    print(char_df)
+    if not typer.confirm(
+        f"Download {files} icons for {len(SITE_CHAR_ICON)} characters into {CHAR_ICON_DIR} (overwrites)?"
+    ):
+        print("Skipped.")
+        return
+    with pl.Config(tbl_rows=-1):
+        print(scrape_char_icons(CHAR_ICON_DIR))
+    char_df.write_parquet(CHAR_PARQUET_PATH)
+    print(f"Wrote the icons to {CHAR_ICON_DIR} and the char_icon column to {CHAR_PARQUET_PATH}")

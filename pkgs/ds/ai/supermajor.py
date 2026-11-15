@@ -7,12 +7,13 @@
 from __future__ import annotations
 
 import httpx2
-from pydantic_ai import ModelRetry, Tool
+from pydantic_ai import ModelRetry, Tool, ToolFailed
 from pydantic_ai.capabilities import Capability
 
 from ds.data.raw.supermajor import (
     PlayerMatch,
     PlayerUsage,
+    SiteBlockedError,
     player_usage,
     search_players,
 )
@@ -53,6 +54,9 @@ supermajor.gg (tournament sets from start.gg), not from docs/.
   unless the user asks for them directly."""
 
 
+_UNREACHABLE = "Tell the user supermajor.gg can't be reached right now, so these stats aren't available; try later."
+
+
 def find_players(tag: str) -> list[PlayerMatch]:
     """Search supermajor.gg Smash Ultimate players by tag, most events first.
 
@@ -85,8 +89,12 @@ def get_player_usage(player: str) -> PlayerUsage:
     except ValueError as e:  # no player with that tag / missing search key / page format changed
         hint = "Try find_players to look up the tag, or ask the user for an id or url."
         raise ModelRetry(f"{e}. {hint}") from e
+    # the site failing is final: ToolFailed tells the model so, where ModelRetry would have it
+    # call again, and a second failure ends the whole run with an error
+    except SiteBlockedError as e:
+        raise ToolFailed(f"{e}. {_UNREACHABLE}") from e
     except httpx2.HTTPStatusError as e:
-        raise ModelRetry(f"supermajor.gg returned {e.response.status_code} for {player!r}.") from e
+        raise ToolFailed(f"supermajor.gg returned {e.response.status_code} for {player!r}. {_UNREACHABLE}") from e
 
 
 supermajor_capability = Capability(

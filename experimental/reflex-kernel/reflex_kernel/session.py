@@ -28,7 +28,7 @@ from pydantic_ai.messages import ToolCallPart, ToolReturnPart
 from .render import Ui, View, ViewData, to_view
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable, Callable
+    from collections.abc import Awaitable, Callable, Iterable
 
 MAX_COMPLETIONS = 60
 # A recursion error repeats one frame ~1000 times; show this many, then "repeated N more times".
@@ -58,12 +58,31 @@ class ToolStep:
     """Name the result was bound to (eg 'r1'), '' when the tool's result has no view (eg plain text)."""
     result_label: str = ""
     """The result's short summary, eg '12 × 8' or '10 videos'."""
+    result_kind: str = ""
+    """The result's view kind (render.py), eg 'table', 'videos'; its attributes are in widgets.py."""
+
+
+@dataclass
+class Call:
+    """The tool inputs that made a shown value (for its tool form, tool_forms.py)."""
+
+    inputs: dict[str, Any]
+    value: Any
+    """The value they made; the record only counts while this is still what is shown."""
+    original: tuple[dict[str, Any], Any] | None = None
+    """The agent's own call (inputs, result), kept while the form is re-run so it can be put back.
+    None for a form added by hand."""
+    changed: bool = False
+    """The form was run since the agent's call (the view offers to put the original back)."""
 
 
 @dataclass
 class AiResult:
     text: str = ""
     error: str = ""
+    """The failure's full standard traceback as plain text ("" if the turn worked)."""
+    trace: list[dict[str, str]] = field(default_factory=list)
+    """The same traceback as styled parts (see trace_parts), as a cell's error has."""
     steps: list[ToolStep] = field(default_factory=list)
 
 
@@ -191,8 +210,15 @@ class Session:
         # Views of notebook cell results, by cell id, so grids can be re-sorted and results opened as tabs.
         self.outputs: dict[str, View] = {}
         # What the user did to each shown view (filter, sort, picked video), by slot: "tab:<name>"
-        # for a named value's tab, "cell:<id>" for a cell's result.
+        # for a named value's tab, "chat:<name>" for the same value shown inline in the chat,
+        # "cell:<id>" for a cell's result.
         self.ui: dict[str, Ui] = {}
+        # Tabs the user closed: name -> the value it held (compared by identity). Only the tab goes; the name stays
+        # in Python. It comes back when the name is bound to something new, or is opened again.
+        self.closed: dict[str, Any] = {}
+        # The tool call behind a value, by the name it is bound to (r1, ...) or a cell's slot
+        # ("cell:<id>"): recorded when the agent's tool returns and when a tool form is run.
+        self.calls: dict[str, Call] = {}
         self._table_count = 0
 
     # -- python ---------------------------------------------------------------
@@ -248,32 +274,94 @@ class Session:
                 views[name] = view
         return views
 
+    def tabs(self) -> dict[str, View]:
+        """The views that have a tab: views() minus the closed ones still holding the value they were closed with."""
+        views = self.views()
+        self.closed = {
+            name: value for name, value in self.closed.items() if name in views and self.namespace[name] is value
+        }
+        return {name: view for name, view in views.items() if name not in self.closed}
+
+    def close_tabs(self, names: Iterable[str]) -> None:
+        """Close tabs; their names stay bound in Python."""
+        for name in names:
+            if name in self.namespace:
+                self.closed[name] = self.namespace[name]
+                self.ui.pop(f"tab:{name}", None)
+
     def view_at(self, slot: str) -> View | None:
-        """The View shown at a slot ('tab:<name>' or 'cell:<id>'), if it still exists."""
+        """The View shown at a slot ('tab:<name>', 'chat:<name>' or 'cell:<id>'), if it still exists.
+
+        A chat slot shows the same named value as its tab (with its own Ui)."""
         kind, _, key = slot.partition(":")
-        if kind == "tab":
+        if kind in ("tab", "chat"):
             return to_view(self.namespace.get(key)) if key in self.views() else None
         return self.outputs.get(key)
 
-    def put(self, slot: str, value: Any) -> None:
-        """Replace the value shown at a slot (eg another page of a video search)."""
+    def put(self, slot: str, value: Any, inputs: dict[str, Any] | None = None) -> None:
+        """Replace the value shown at a slot (eg another page of a video search).
+
+        inputs: the tool inputs that made it (a tool form was run). Without them the value is taken
+        as the same call's (another page), so the inputs recorded for the old value carry over.
+        """
         kind, _, key = slot.partition(":")
-        if kind == "tab":
+        call_key = key if kind in ("tab", "chat") else slot
+        old_view = self.view_at(slot)
+        old = self.call_at(slot, old_view.value) if old_view else None
+        if inputs is not None:
+            self.calls[call_key] = Call(inputs, value, old.original if old else None, changed=True)
+        elif old is not None:
+            self.calls[call_key] = Call(old.inputs, value, old.original, old.changed)
+        else:
+            self.calls.pop(call_key, None)
+        if kind in ("tab", "chat"):
             self.namespace[key] = value
         elif (view := to_view(value)) is not None:
             self.outputs[key] = view
 
+    def call_at(self, slot: str, value: Any) -> Call | None:
+        """The tool call that made the value shown at a slot; None when none is known (eg it was
+        made in Python). A cell showing a named result (eg `r1`) finds that name's call."""
+        kind, _, key = slot.partition(":")
+        call = self.calls.get(key if kind in ("tab", "chat") else slot)
+        if call is None or call.value is not value:
+            call = next((call for call in self.calls.values() if call.value is value), None)
+        return call
+
+    def restore_original(self, slot: str) -> bool:
+        """Put back the agent's own result and inputs at a slot whose tool form was re-run."""
+        view = self.view_at(slot)
+        call = self.call_at(slot, view.value) if view else None
+        if call is None or call.original is None or not call.changed:
+            return False
+        inputs, value = call.original
+        self.put(slot, value, inputs)
+        kind, _, key = slot.partition(":")
+        self.calls[key if kind in ("tab", "chat") else slot].changed = False
+        return True
+
     def show(self, slot: str, compact: bool = False) -> ViewData:
         """What the browser gets for a slot: its view with the user's Ui (an empty one when gone)."""
         view = self.view_at(slot)
-        return view.data(slot, self.ui.get(slot), compact) if view else ViewData()
+        if view is None:
+            return ViewData()
+        call = self.call_at(slot, view.value)
+        return view.data(
+            slot,
+            self.ui.get(slot),
+            compact,
+            inputs=call.inputs if call else None,
+            can_restore=bool(call and call.changed and call.original),
+        )
 
-    def bind_result(self, value: Any, source: str) -> str:
-        """Bind a tool result to the next r<n> name."""
+    def bind_result(self, value: Any, source: str, inputs: dict[str, Any] | None = None) -> str:
+        """Bind a tool result to the next r<n> name. inputs: the arguments the tool was called with."""
         self._table_count += 1
         name = f"r{self._table_count}"
         self.namespace[name] = value
         self.sources[name] = source
+        if inputs is not None:
+            self.calls[name] = Call(inputs, value, original=(inputs, value))
         return name
 
     # -- agent ------------------------------------------------------------------
@@ -289,14 +377,16 @@ class Session:
                     result.text = str(await stream.get_output())
                     new_messages = stream.new_messages()
                     self.ai_history = stream.all_messages()
-            except Exception:  # noqa: BLE001  # model/tool failures are shown in the chat
-                result.error = traceback.format_exc(limit=4)
+            except Exception as error:  # noqa: BLE001  # model/tool failures are shown in the chat
+                result.error = "".join(traceback.format_exception(error))
+                result.trace = trace_parts(error, error.__traceback__)
                 new_messages = captured[len(self.ai_history) :]
         result.steps = self._steps(new_messages)
         return result
 
     def _steps(self, messages: list[Any]) -> list[ToolStep]:
         steps: dict[str, ToolStep] = {}
+        inputs: dict[str, dict[str, Any]] = {}
         for message in messages:
             for part in message.parts:
                 if isinstance(part, ToolCallPart):
@@ -304,16 +394,19 @@ class Session:
                     if len(args) > MAX_ARGS_CHARS:
                         args = args[:MAX_ARGS_CHARS] + "…"
                     steps[part.tool_call_id] = ToolStep(tool=part.tool_name, args=args)
+                    with contextlib.suppress(Exception):  # arguments the model sent that aren't valid JSON
+                        inputs[part.tool_call_id] = part.args_as_dict()
                 elif isinstance(part, ToolReturnPart):
                     view = to_view(part.content)
                     if view is None:
                         continue
                     # a table is bound as its DataFrame; anything else as the object the tool returned
                     value = view.frame if isinstance(part.content, ds.ai.TableResult) else part.content
-                    name = self.bind_result(value, part.tool_name)
+                    name = self.bind_result(value, part.tool_name, inputs.get(part.tool_call_id))
                     if part.tool_call_id in steps:
                         steps[part.tool_call_id].result_name = name
                         steps[part.tool_call_id].result_label = view.summary
+                        steps[part.tool_call_id].result_kind = view.kind
         return list(steps.values())
 
 

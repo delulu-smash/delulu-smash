@@ -9,12 +9,15 @@ import copy
 import json
 import re
 
+import httpx2
 import pytest
 from ds.data.raw.supermajor import (
     ALL_TIME,
     LAST_6_MONTHS,
     PlayerMatch,
     PlayerUsage,
+    SiteBlockedError,
+    fetch_player_page,
     parse_player_usage,
     pick_player,
     resolve_player,
@@ -197,3 +200,26 @@ def test_no_skill_signals() -> None:
     # whole words of the snake_case name, so eg `window` isn't mistaken for a win stat
     banned = re.compile(r"(^|_)(wins?|winrate|loss(es)?|rank(ing)?s?|seeds?|placements?)(_|$)")
     assert not [n for n in names if banned.search(n)]
+
+
+@pytest.mark.parametrize(
+    ("status", "headers", "body"),
+    [
+        (503, {"retry-after": "300"}, '{"error":"Site is paused","mode":"bots","message":null}'),
+        (429, {"x-vercel-mitigated": "challenge"}, "<title>Vercel Security Checkpoint</title>"),
+    ],
+)
+def test_bot_check_raises_site_blocked(monkeypatch: pytest.MonkeyPatch, status: int, headers: dict, body: str) -> None:
+    request = httpx2.Request("GET", "https://www.supermajor.gg/ultimate/player/player?id=S1")
+    response = httpx2.Response(status, headers=headers, text=body, request=request)
+    monkeypatch.setattr(httpx2, "get", lambda *_args, **_kwargs: response)
+    with pytest.raises(SiteBlockedError, match="turning away automated requests"):
+        fetch_player_page(str(request.url))
+
+
+def test_other_server_errors_stay_http_errors(monkeypatch: pytest.MonkeyPatch) -> None:
+    request = httpx2.Request("GET", "https://www.supermajor.gg/ultimate/player/player?id=S1")
+    response = httpx2.Response(503, text="upstream down", request=request)
+    monkeypatch.setattr(httpx2, "get", lambda *_args, **_kwargs: response)
+    with pytest.raises(httpx2.HTTPStatusError):
+        fetch_player_page(str(request.url))

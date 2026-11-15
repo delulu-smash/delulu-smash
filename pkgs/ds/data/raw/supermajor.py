@@ -78,6 +78,15 @@
 #    calls `functions.invoke("player-search-v2", {body})` in the same chunks and update
 #    `search_players`.
 #
+# Blocked by the site's bot check (seen 15 Nov 2026):
+# - Player pages answered HTTP 503 with the JSON body
+#   {"error": "Site is paused", "mode": "bots"} and `Retry-After: 300` (curl got a 429
+#   "Vercel Security Checkpoint" page instead). That is the site's own firewall turning
+#   automated clients away, while tag search (a different host) kept working.
+#   `fetch_player_page` raises `SiteBlockedError` for it.
+# - Decision: we don't work around it (no solving the checkpoint, no browser automation to
+#   look human). The site is saying no to bots; wait for it to lift, or ask the site's owner.
+#
 # Known gaps / next steps:
 # - Search results look capped at 25 ("Luke" returns exactly 25), so a low-event player with a
 #   very common tag may not be findable by tag; use their id.
@@ -288,9 +297,34 @@ def resolve_player(player: str) -> PlayerLookup:
     return PlayerLookup(query=player, match_type="url", url=player)
 
 
+class SiteBlockedError(RuntimeError):
+    """supermajor.gg's bot check refused the request (see Site notes); a retry won't help"""
+
+
+# Statuses the site's firewall answers with when it is turning bots away
+_BLOCKED_STATUSES = (429, 503)
+
+
+def _blocked_reason(resp: httpx2.Response) -> str:
+    """Why the site's bot check refused this response ('' if it didn't)"""
+    if resp.status_code not in _BLOCKED_STATUSES:
+        return ""
+    if "x-vercel-mitigated" in resp.headers:
+        return "security checkpoint"
+    if '"mode":"bots"' in resp.text.replace(" ", "") or "Security Checkpoint" in resp.text:
+        return "site is paused for bots"
+    return ""
+
+
 def fetch_player_page(url: str) -> str:
-    """Download a supermajor.gg player page's HTML"""
+    """Download a supermajor.gg player page's HTML (SiteBlockedError on its bot check)"""
     resp = httpx2.get(url, headers={"User-Agent": USER_AGENT}, timeout=30, follow_redirects=True)
+    if reason := _blocked_reason(resp):
+        wait = resp.headers.get("retry-after", "")
+        again = f"; it asks to wait {wait}s" if wait.isdigit() else ""
+        raise SiteBlockedError(
+            f"supermajor.gg is turning away automated requests ({reason}, HTTP {resp.status_code}){again}"
+        )
     resp.raise_for_status()
     return resp.text
 

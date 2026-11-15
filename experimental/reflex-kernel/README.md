@@ -36,9 +36,59 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
 `ds.ai` uses.
 
 - **Chat**: Enter sends, Shift+Enter adds a line. Tool calls are listed above each reply.
+  A failed turn (the model or a tool raised) shows its traceback in the same component a Python cell uses
+  (`traceback_view`): the frame that raised and the error, the rest folded, and a copy button (top right,
+  on hover) that copies the full plain-text traceback.
+  Each tool result gets a row (`r1 · tool · 10 videos`): click it to unfold the result inline (grid,
+  gallery, fields; folded by default), or `open →` to open it as a tab in Results.
 - **Tables**: click a tab to switch, type in the filter box to search. Click a column header to sort
   (ascending, descending, unsorted); filter and sort work the same in a tab and in a cell's result.
   The grid shows at most 2000 rows; the DataFrame itself is never truncated.
+- **Widgets are data-driven** (`reflex_kernel/widgets.py`): every kind of view is a row in `WIDGETS`, and the
+  app reads a widget's behaviour from that row instead of hard-coding it per widget:
+
+  | attribute | meaning |
+  | --- | --- |
+  | `kind`, `title` | the view kind `render.py` draws, and its name for people |
+  | `tool`, `hide` | the agent tool it mimics: gives it a tool form (below); `hide` = parameters not on the form |
+  | `addable` | offered in the Results tab bar's `+` menu, to add by hand |
+  | `chat_open` | starts unfolded in the chat when the agent returns it (others start as a folded row) |
+
+  Today: `table`, `videos` (`find_match_videos`, addable), `usage` (`get_player_usage`, addable, unfolded in
+  chat), `fields`, `tool`. A new attribute is a field on `Widget` plus the one place that reads it. A new widget
+  is a row, a `case` in `render.to_view`, and its component in `render.render_component`.
+- **Player usage** (kind `usage`, supermajor.gg's `PlayerUsage`): a player at a glance. Characters as ranked bars
+  with their stock icons (switch between last 6 months, all time and last 10 events), starter and counterpick
+  stages the same way, and the characters played at each recent event as icons. Past 6 rows the tail folds
+  into one "N others" row; hover a row for the count. Bars rather than a pie: lengths on one baseline compare
+  close shares exactly, and the icons, not colours, say which character. The icons are
+  `pkgs/ds/data/char_icons/` (`ds.data.char_icon_by_name`), served by the backend (`api.py`).
+- **Tool forms** (`reflex_kernel/tool_forms.py`): some results show the inputs of the agent tool that made
+  them. `Inputs ▸` in their bar folds them open, filled with what the tool was called with; change them and
+  press Enter (or Run) to run the tool again in place. The `+` at the end of the Results tab bar adds one
+  by hand: a placeholder (`ToolRequest`) that is just the form, replaced by the result on its first run.
+  How the form stays aligned with the tool:
+  - **Fields** are built from the tool's parameter schema, the one pydantic-ai gives the model
+    (`schema_fields`: names, types, defaults, descriptions; a `Literal` becomes a dropdown). Nothing about a
+    tool's parameters is written a second time.
+  - **Values** go through the validator pydantic-ai uses for the model's calls, then the same tool function.
+  - **Which inputs made a result** is recorded by the session (`Session.calls`): the agent's tool-call
+    arguments, or the form as run. Paging keeps them; a value made in Python has none (an empty form).
+    The form shows what the tool was called with (eg `player_1=Joker`), the bar what was really searched.
+  - **Back to the original**: for a result the agent made, the session also keeps the agent's own call
+    (`Call.original`: its inputs and result). Once the form is re-run, `Inputs` turns green and an × in
+    the form puts both back, without fetching again (`Session.restore_original`). A form added by hand
+    has no original.
+  - `tests/experimental/reflex_kernel/test_tool_forms.py` checks every tool form; `test_widgets.py` the registry.
+
+  Which widgets have one is `Widget.tool` in `widgets.py`; `_bar` adds the `Inputs` button to any view with
+  a form, and the widget's component places `form_section` under its bar.
+- **Table SQL** (as in DBeaver): `SQL ▸` in a table's bar unfolds a one-line SQL box under it, starting
+  as `select * from self`. Ctrl+Enter (`Shortcut.RUN_SQL`) runs it on the table with polars' `df.sql`
+  (PostgreSQL syntax, the table is `self`), and the grid shows the result, still filtered and sorted by
+  the bar; `SQL` turns green while a query is applied, and × goes back to the whole table. A bad query
+  shows its error and leaves the table as it was. The query is kept per view slot, like the filter
+  (`Ui.sql`, `View.table`); the value bound to the name is never changed.
 - **Rendering** (`reflex_kernel/render.py`): everything about showing a value lives in this one file, used
   for agent tool results, cell outputs and tabs alike. Today: DataFrame / Series / list of pydantic models
   -> grid; `MatchVideos` (the agent's `find_match_videos`, smash-tube.com) -> thumbnail gallery; any other
@@ -51,16 +101,31 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   a cell output, later a popup or anything else). Everything that belongs to the view is inside what
   `render_component` returns: a table's filter and sort, a video list's player and paging. Its state
   (filter text, sort, picked video, folded list) travels in its `ViewData`, and the session keeps it
-  per *slot*, the place a view is shown (`tab:<name>`, `cell:<id>`), so a view is back as it was left.
+  per *slot*, the place a view is shown (`tab:<name>`, `chat:<name>` for a result unfolded in the chat, `cell:<id>`), so a view is back as it was left.
   Every interaction comes back through one handler, `State.view_event(slot, action, arg)`. A host only
   does `render_component(view, State.view_event)`: it adds nothing of the view's own around it, and
   `compact=True` changes sizing only. To show a view somewhere new, give that place a slot prefix
   (`Session.view_at` / `put`, `State._show`) and call `render_component`; no component logic is repeated.
-- **Panes**: the bottom bar toggles Chat, Results and Python (as in Zed). Python starts hidden; a pane
+- **Result tabs**: the x on a tab (or right-click: Close, Close Others, Close to the Right, Close All, as
+  in VS Code) closes it. Only the tab goes: the name stays in Python, and the tab comes back when the name is
+  bound to something new or the result is opened again from the chat (`Session.closed` / `tabs()`).
+  A result the agent returned has `↖ chat` in its bar (and Show in Chat in the right-click menu): it
+  scrolls the chat to that tool call's row and flashes it.
+- **Help**: the ? at the top right (Alt+H) lists the keyboard shortcuts.
+- **Floating a view**: every view (a tab, a cell's result, a result unfolded in the chat) has a button at
+  its top right that floats it over the page, nearly full screen; click it again, press Esc or click
+  outside to put it back. It is the same component, only restyled in the browser (`.is-floating`,
+  `assets/panes.js`), so its sort, filter and playing video carry on.
+- **Keyboard shortcuts** are all defined once, in `reflex_kernel/shortcuts.py`, as the `Shortcut` enum named
+  by what they do (`Shortcut.FULL_SCREEN`, `Shortcut.RUN`, …). The help panel, tooltips, the cell editor's
+  keymap (`codemirror_keys`) and `assets/panes.js` (`window.SHORTCUTS`) all read it: change a key there only.
+- **Panes**: the bottom bar toggles Chat, Results (Alt+R) and Python (Alt+P), as in Zed. Only the chat
+  shows at first (results also unfold inline in it, and `open →` brings up Results); a pane
   whose neighbour is hidden takes the freed space. Hidden cells keep their text.
 - **Full screen**: each pane has a button with two diagonal arrows (top right) that fills the window
-  with that pane; click it again to restore. Ctrl+Shift+F does the same for the pane you are in: the
-  one with keyboard focus, else the one you last clicked (`assets/panes.js`). The bottom-bar toggles
+  with that pane; click it again to restore. Alt+F (`Shortcut.FULL_SCREEN`) floats the view you are in
+  (see Floating a view), or, outside a view, fills the window with your pane: "you are in" is where
+  keyboard focus is, else what you last clicked (`assets/panes.js`). The bottom-bar toggles
   keep their state while a pane is full screen; clicking one leaves full screen and shows that pane.
 - **Match videos**: one component, the list plus the video picked from it. Click a card to play it:
   the list folds away so the video fills the component, and "Show list" in the player's bar brings it

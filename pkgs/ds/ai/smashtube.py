@@ -7,12 +7,14 @@
 # ---------------------------------------------------------------------------
 from __future__ import annotations
 
+from typing import Literal
+
 import httpx2
-from pydantic_ai import ModelRetry, Tool
+from pydantic_ai import ModelRetry, Tool, ToolFailed
 from pydantic_ai.capabilities import Capability
 
 from ds.ai.smashdb import _char_df, resolve_char_id
-from ds.data.raw.smashtube import MAX_SEARCH_TERM_CHARS, REGIONS, MatchVideos, search_videos
+from ds.data.raw.smashtube import MAX_SEARCH_TERM_CHARS, REGIONS, MatchVideos, Region, search_videos
 
 __all__ = ["find_match_videos", "smashtube_capability"]
 
@@ -78,7 +80,8 @@ def find_match_videos(
     char_1: str = "",
     char_2: str = "",
     search_term: str = "",
-    region: str = "",
+    # choices in the type, so the tool's schema lists them (for the model and for forms)
+    region: Region | Literal[""] = "",
     page: int = 1,
     players_are_tags: bool = False,
 ) -> MatchVideos:
@@ -123,7 +126,8 @@ def find_match_videos(
     except ValueError as e:  # no filter given, bad page, page layout changed
         raise ModelRetry(f"{e}.") from e
     except httpx2.HTTPStatusError as e:
-        raise ModelRetry(f"smash-tube.com returned {e.response.status_code}; tell the user the search failed.") from e
+        # final, not a retry: a second failed call would end the whole run with an error
+        raise ToolFailed(f"smash-tube.com returned {e.response.status_code}; tell the user the search failed.") from e
 
 
 smashtube_capability = Capability(

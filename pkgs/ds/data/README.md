@@ -36,6 +36,22 @@ Character roster. Synced via `ds data roster` (see [raw/roster.py](raw/roster.py
 | `id`            | Character URL slug (eg `little_mac`), matches the ultimateframedata.com path |
 | `name`          | Character display name (eg `Little Mac`)                                     |
 | `framedata_url` | Full ultimateframedata.com URL for this character's move frame data          |
+| `char_icon`     | Stock icon file, relative to this folder (eg `char_icons/little_mac.png`); see below |
+
+### `char_icons/`
+
+One 64x64 PNG stock icon per character, downloaded from [nasmashmate.com](https://nasmashmate.com/leaderboard)'s
+character picker with `ds data char_icon` (see [raw/smashmate.py](raw/smashmate.py), which also sets the `char_icon`
+column). Files are named by `char.parquet.id`, with two shared ones because the site has a single icon for
+each: `pokemon_trainer.png` (`pt_squirtle`, `pt_ivysaur`, `pt_charizard`) and `pyra_mythra.png` (`pyra`, `mythra`).
+
+```python
+import ds.data
+
+ds.data.char_icon_path("little_mac")  # Path(".../pkgs/ds/data/char_icons/little_mac.png")
+ds.data.char_icon("little_mac")       # "char_icons/little_mac.png", the `char_icon` column's value
+ds.data.char_icon_by_name("Pac-Man")  # "char_icons/pac_man.png": by a display name as other sites write it
+```
 
 ## `framedata.parquet`
 

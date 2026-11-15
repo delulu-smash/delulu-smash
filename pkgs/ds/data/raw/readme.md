@@ -6,3 +6,4 @@ _NOTE: this data is untransformed and normalized, just straight copy paste from 
 
 1. `raw_ko_kill_pct.csv` -> Mac Discord: copy paste from [link](https://docs.google.com/spreadsheets/d/1Fht5zTeF1p6C-79gOIPfZCorS_AIDgmgTezSbnThcAg/edit?gid=0#gid=0)
 2. `framedata.py` -> scrapes [ultimateframedata.com](https://ultimateframedata.com) move frame data (`scrape_framedata(character)`, also exposed via `ds ssbu framedata <character>`)
+3. `smashmate.py` -> downloads the character stock icons from [nasmashmate.com](https://nasmashmate.com/leaderboard) into `../char_icons/` (`scrape_char_icons(dest)`, exposed via `ds data char_icon`)

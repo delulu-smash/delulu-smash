@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import dataclasses
 from typing import Any
 
@@ -15,6 +16,8 @@ import reflex as rx
 from ds.data.raw.smashtube import MatchVideos, search_videos
 
 from .render import Ui, ViewData, apply_event, fill_defaults
+from .tool_forms import ToolRequest
+from .widgets import form_by_key, form_for, widget_of
 from .session import Session, get_session, split_trace
 
 
@@ -44,6 +47,27 @@ class Cell:
         fill_defaults(self, state)
 
 
+@dataclasses.dataclass
+class ChatItem:
+    """One chat entry. kind: user | agent | step | ref | error."""
+
+    kind: str
+    name: str = ""
+    """step: the tool; ref: the result's name (r1, r2, ...)."""
+    text: str = ""
+    open: bool = False
+    """ref only: whether the result is shown inline, under the row (collapsed by default)."""
+    view: ViewData = dataclasses.field(default_factory=ViewData)
+    """ref only: the result's view at slot chat:<name> while open; empty when collapsed."""
+    # error only: the traceback as styled parts, as on a cell (see Cell); text keeps the plain text
+    trace: list[dict[str, str]] = dataclasses.field(default_factory=list)
+    trace_hidden: list[dict[str, str]] = dataclasses.field(default_factory=list)
+    trace_more: str = ""
+
+    def __setstate__(self, state: dict[str, Any]) -> None:
+        fill_defaults(self, state)
+
+
 def _trace_fields(parts: list[dict[str, str]]) -> dict[str, Any]:
     hidden, shown = split_trace(parts)
     frames = sum(part["kind"] == "frame" for part in hidden)
@@ -60,8 +84,8 @@ def _trace_fields(parts: list[dict[str, str]]) -> dict[str, Any]:
 
 
 class State(rx.State):
-    # Chat is a flat list so it renders with one foreach. kind: user | agent | step | ref | error.
-    chat: list[dict[str, str]] = []
+    # Chat is a flat list so it renders with one foreach.
+    chat: list[ChatItem] = []
     streaming: str = ""
     busy: bool = False
 
@@ -77,10 +101,19 @@ class State(rx.State):
     view: ViewData = ViewData()
     # Panes toggled from the bottom bar.
     show_chat: bool = True
-    show_results: bool = True
+    # Only the chat at first; results also unfold inline in the chat.
+    show_results: bool = False
     show_python: bool = False
     # The pane filling the window ("" = none): chat | results | python. Leaves the toggles as they were.
     zoomed: str = ""
+    # A tab's right-click menu: the tab it is for ("" = closed) and where it opens.
+    menu_tab: str = ""
+    menu_x: int = 0
+    menu_y: int = 0
+    # The help panel (? in the title bar).
+    show_help: bool = False
+    # The Results tab bar's "+" menu (at menu_x / menu_y).
+    add_menu: bool = False
 
     def _session(self) -> Session:
         return get_session(self.router.session.client_token)
@@ -88,13 +121,29 @@ class State(rx.State):
     def _sync(self, prefer: str = "") -> None:
         """Re-read the session's viewable values into the tab list and redraw the selected one."""
         session = self._session()
-        views = session.views()
+        everything, views = session.views(), session.tabs()
         self.objects = [
             {"name": name, "shape": view.summary, "source": session.sources.get(name, "python"), "kind": view.kind}
             for name, view in views.items()
         ]
         # forget what was done to tabs that are gone
-        session.ui = {slot: ui for slot, ui in session.ui.items() if not slot.startswith("tab:") or slot[4:] in views}
+        session.ui = {
+            slot: ui
+            for slot, ui in session.ui.items()
+            if not (
+                (slot.startswith("tab:") and slot[4:] not in views)
+                or (slot.startswith("chat:") and slot[5:] not in everything)
+            )
+        }
+        # ... and the tool calls behind names that are gone or bound to something else
+        session.calls = {
+            key: call
+            for key, call in session.calls.items()
+            if key.startswith("cell:") or session.namespace.get(key) is call.value
+        }
+        # results open inline in the chat follow their value (a cell may have changed or deleted it)
+        for name in {item.name for item in self.chat if item.open}:
+            self._show(f"chat:{name}")
         if prefer in views:
             self._select(prefer)
         elif self.selected not in views:
@@ -115,6 +164,11 @@ class State(rx.State):
         if kind == "tab":
             if key == self.selected:
                 self.view = self._session().show(slot)
+        elif kind == "chat":
+            view = self._session().show(slot, compact=True)
+            for index, item in enumerate(self.chat):
+                if item.kind == "ref" and item.name == key and item.open:
+                    self.chat[index] = dataclasses.replace(item, view=view)
         elif (index := self._cell_index(key)) >= 0:
             self._update(index, view=self._session().show(slot, compact=True))
 
@@ -151,32 +205,121 @@ class State(rx.State):
         return "split" if self.results_on or self.python_on else "alone"
 
     @rx.var
+    def chat_refs(self) -> list[str]:
+        """Names of the results that have a tool-call row in the chat."""
+        return [item.name for item in self.chat if item.kind == "ref"]
+
+    @rx.var
     def has_objects(self) -> bool:
         return len(self.objects) > 0
 
     @rx.event
     def on_load(self):
+        # chat saved before ChatItem existed was plain dicts
+        if any(isinstance(item, dict) for item in self.chat):
+            self.chat = [ChatItem(**item) if isinstance(item, dict) else item for item in self.chat]
         self._sync()
 
     @rx.event
     def select_object(self, name: str):
         self._reveal_results()
+        if self._session().closed.pop(name, None) is not None:
+            self._sync(prefer=name)  # a closed tab opens again
+            return
         self._select(name)
         self._show(f"tab:{name}")
+
+    # -- closing tabs (x, right-click menu) ---------------------------
+
+    def _close(self, names: list[str]) -> None:
+        """Close tabs. If the selected one goes, the tab to its right is selected (else the one to its left)."""
+        order = [obj["name"] for obj in self.objects]
+        prefer = ""
+        if self.selected in names and self.selected in order:
+            at = order.index(self.selected)
+            rest = [name for name in order[at + 1 :] + order[:at][::-1] if name not in names]
+            prefer = rest[0] if rest else ""
+        self._session().close_tabs(names)
+        self.menu_tab = ""
+        self._sync(prefer=prefer)
+
+    @rx.event
+    def close_tab(self, name: str):
+        self._close([name])
+
+    @rx.event
+    def close_other_tabs(self, name: str):
+        self._close([obj["name"] for obj in self.objects if obj["name"] != name])
+
+    @rx.event
+    def close_tabs_right(self, name: str):
+        order = [obj["name"] for obj in self.objects]
+        if name in order:
+            self._close(order[order.index(name) + 1 :])
+
+    @rx.event
+    def close_all_tabs(self):
+        self._close([obj["name"] for obj in self.objects])
+
+    @rx.event
+    def open_tab_menu(self, name: str, info: dict[str, Any]):
+        self.menu_tab = name
+        self.menu_x, self.menu_y = int(info.get("client_x", 0)), int(info.get("client_y", 0))
+
+    @rx.event
+    def close_menus(self):
+        """Close the tab menu, the "+" menu and the help panel (click outside, Escape)."""
+        self.menu_tab = ""
+        self.add_menu = False
+        self.show_help = False
+
+    @rx.event
+    def show_in_chat(self, name: str):
+        """Scroll the chat to the row of the tool call that returned a result, and flash it."""
+        self.menu_tab = ""
+        self.show_chat = True
+        if self.zoomed not in ("", "chat"):
+            self.zoomed = ""
+        yield  # let the chat pane show before scrolling
+        yield rx.call_script(f"window.showInChat && window.showInChat({json.dumps('ref-' + name)})")
+
+    @rx.event
+    def toggle_help(self):
+        self.show_help = not self.show_help
+
+    @rx.event
+    def toggle_inline(self, name: str):
+        """A tool result's row in the chat: show its view inline under the row, or fold it away."""
+        for index, item in enumerate(self.chat):
+            if item.kind == "ref" and item.name == name:
+                opening = not item.open
+                # folding unmounts the view (a playing video stops); opening reads it fresh
+                self.chat[index] = dataclasses.replace(item, open=opening, view=ViewData())
+                if opening:
+                    self._show(f"chat:{name}")
 
     @rx.event
     async def view_event(self, slot: str, action: str, arg: Any):
         """Every event of a rendered view (render.render_component), wherever it is placed.
 
         slot says which view ('tab:<name>', 'cell:<id>'). The change goes into that slot's Ui
-        (render.apply_event) and the view is redrawn; 'page' fetches another page of a video
-        search and puts it in the slot.
+        (render.apply_event) and the view is redrawn. Two fetch, so they are here: 'page' gets
+        another page of a video search, 'form_run' runs the view's tool form (tool_forms.py);
+        either puts the new result in the slot.
         """
         session = self._session()
         view = session.view_at(slot)
         if view is None:
             return
         ui = session.ui.setdefault(slot, Ui())
+        if action == "form_run":
+            async for update in self._run_form(slot, view, ui, dict(arg or {})):
+                yield update
+            return
+        if action == "form_reset":
+            if session.restore_original(slot):
+                self._new_result(slot, ui)
+            return
         if action != "page":
             apply_event(view, ui, action, arg)
             self._show(slot)
@@ -194,10 +337,60 @@ class State(rx.State):
         else:
             session.put(slot, page)
         ui.paging = False
-        if slot.startswith("tab:"):
-            self._sync()  # the tab's label changes with the page
+        if slot.startswith(("tab:", "chat:")):
+            self._sync()  # the tab's label changes with the page (and it redraws chat slots)
         else:
             self._show(slot)
+
+    async def _run_form(self, slot: str, view: Any, ui: Ui, inputs: dict[str, Any]):
+        """Run a view's tool with the form's inputs; the result replaces the value at the slot."""
+        form = form_for(view.value)
+        if form is None or ui.running:
+            return
+        ui.running, ui.error = True, ""
+        self._show(slot)
+        yield
+        session = self._session()
+        try:
+            result, used = await asyncio.to_thread(form.run, inputs)
+        except Exception as error:  # noqa: BLE001  # bad input / site errors are shown in the view
+            ui.error = f"{form.title}: {error}"
+        else:
+            session.put(slot, result, inputs=used)
+        ui.running = False
+        self._new_result(slot, ui, replaced=not ui.error)
+
+    def _new_result(self, slot: str, ui: Ui, replaced: bool = True) -> None:
+        """Redraw a slot after its tool form ran (or was reset); replaced = it holds another result."""
+        if replaced:
+            # its own inputs in the form, no video picked
+            ui.runs += 1
+            ui.error = ""
+            ui.playing, ui.list_hidden, ui.autoplay = {}, False, False
+        if slot.startswith(("tab:", "chat:")):
+            self._sync()  # the tab's label changes (and it redraws chat slots)
+        else:
+            self._show(slot)
+
+    @rx.event
+    def open_add_menu(self, info: dict[str, Any]):
+        """The Results tab bar's "+": a menu of the tool forms that can be added by hand."""
+        self.menu_tab = ""
+        self.add_menu = True
+        self.menu_x, self.menu_y = int(info.get("client_x", 0)), int(info.get("client_y", 0))
+
+    @rx.event
+    def add_tool_form(self, key: str):
+        """Add a tool form to fill in and run, as a new tab (a ToolRequest until its first run)."""
+        self.add_menu = False
+        form = form_by_key(key)
+        if form is None:
+            return
+        session = self._session()
+        name = session.bind_result(ToolRequest(form.key), source=form.key)
+        session.ui[f"tab:{name}"] = Ui(form_open=True)
+        self._reveal_results()
+        self._sync(prefer=name)
 
     def _reveal_results(self) -> None:
         """Make sure the results pane is on screen (eg a video was opened from a zoomed cell)."""
@@ -207,7 +400,7 @@ class State(rx.State):
 
     @rx.event
     def toggle_zoom(self, pane: str):
-        """Fill the window with one pane, or go back to the normal layout (button, Ctrl+Shift+F)."""
+        """Fill the window with one pane, or go back to the normal layout (button, Shortcut.FULL_SCREEN)."""
         self.zoomed = "" if self.zoomed == pane else pane
 
     @rx.event
@@ -238,7 +431,7 @@ class State(rx.State):
         """Run one cell's code in the session and store its output on the cell."""
         session = self._session()
         cell_id = self.cells[index].id
-        before = set(session.views())
+        before = set(session.tabs())
         # exec blocks, so keep it off the event loop
         result = await asyncio.to_thread(session.run_python, code, f"In [{self.exec_count + 1}]")
         self.exec_count += 1
@@ -257,7 +450,8 @@ class State(rx.State):
             **_trace_fields(result.trace),
             view=session.show(f"cell:{cell_id}", compact=True),
         )
-        new = [name for name in session.views() if name not in before]
+        # a new name, or a closed tab's name bound to something new
+        new = [name for name in session.tabs() if name not in before]
         self._sync(prefer=new[-1] if new else "")
 
     async def _start(self, index: int, code: str):
@@ -269,7 +463,7 @@ class State(rx.State):
 
     @rx.event
     async def run_cell(self, cell_id: str, code: str, advance: bool):
-        """Run a cell with the editor's current text. advance (Shift+Enter) on the last cell appends a new one."""
+        """Run a cell with the editor's current text. advance (Shortcut.RUN_AND_ADVANCE) on the last cell appends a new one."""
         index = self._cell_index(cell_id)
         if index < 0 or self.running:
             return
@@ -315,6 +509,7 @@ class State(rx.State):
             return
         name = f"out{self.cells[index].count}"
         session.namespace[name] = view.value
+        session.closed.pop(name, None)
         session.sources[name] = f"cell [{self.cells[index].count}]"
         self._sync(prefer=name)
 
@@ -353,7 +548,7 @@ class State(rx.State):
                 return
             self.busy = True
             self.streaming = ""
-            self.chat.append({"kind": "user", "name": "", "text": prompt})
+            self.chat.append(ChatItem(kind="user", text=prompt))
             session = self._session()
 
         async def on_delta(delta: str) -> None:
@@ -365,15 +560,18 @@ class State(rx.State):
         async with self:
             last_table = ""
             for step in result.steps:
-                self.chat.append({"kind": "step", "name": step.tool, "text": step.args})
+                self.chat.append(ChatItem(kind="step", name=step.tool, text=step.args))
                 if step.result_name:
                     last_table = step.result_name
                     text = f"{step.tool} · {step.result_label}"
-                    self.chat.append({"kind": "ref", "name": step.result_name, "text": text})
+                    # some widgets start unfolded in the chat (widgets.py); _sync below fills their view
+                    widget = widget_of(step.result_kind)
+                    opened = bool(widget and widget.chat_open)
+                    self.chat.append(ChatItem(kind="ref", name=step.result_name, text=text, open=opened))
             if result.text or self.streaming:
-                self.chat.append({"kind": "agent", "name": "", "text": result.text or self.streaming})
+                self.chat.append(ChatItem(kind="agent", text=result.text or self.streaming))
             if result.error:
-                self.chat.append({"kind": "error", "name": "", "text": result.error})
+                self.chat.append(ChatItem(kind="error", text=result.error, **_trace_fields(result.trace)))
             self.streaming = ""
             self.busy = False
             self._sync(prefer=last_table)

@@ -87,6 +87,11 @@ Applies to pydantic-ai tools, capabilities and agents (eg `pkgs/ds/ai/`). Refere
   becomes the parameter descriptions), with an example value.
 - **Validation errors:** raise `ModelRetry` with an actionable message (valid ids, available headings) rather
   than returning an error value.
+- **Failures a retry can't fix:** raise `ToolFailed`, not `ModelRetry`, when the call is done and has failed
+  (the site is down or blocking us, an HTTP error, a missing resource). `ModelRetry` makes the model call
+  again, and a second failure exceeds the tool's retry budget, which ends the whole run with
+  `UnexpectedModelBehavior` instead of an answer. `ToolFailed` shows the model the failure so it can tell the
+  user. Example: `get_player_usage` in `pkgs/ds/ai/supermajor.py`.
 - **Keep results small:** cap row and character counts (eg `MAX_ROWS`, `MAX_SEARCH_HITS`) so a broad call
   doesn't flood the context window.
 - **Package domain tools as a `Capability`** with `defer_loading=True`, so its instructions and tool

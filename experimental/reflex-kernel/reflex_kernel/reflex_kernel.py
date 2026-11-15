@@ -8,18 +8,35 @@
 # ---------------------------------------------------------------------------
 from __future__ import annotations
 
+from typing import Any
+
 import reflex as rx
 
 from .api import api
 from .editor import cell_editor
-from .render import render_component
+from .render import ICON_COLLAPSE, ICON_EXPAND, render_component
+from .widgets import ADDABLE
+from .shortcuts import Shortcut, codemirror_keys, shortcuts_script
 from .state import State
 
 # Nerd Font glyphs (JetBrainsMono Nerd Font): python logo, robot, table.
 ICON_PY = ""
+# Copy (two sheets) and a tick, for copy_button.
+ICON_COPY, ICON_COPIED = "\U000f018f", "\U000f012c"
 ICON_CHAT, ICON_RESULTS = "\U000f06a9", "\U000f04eb"
-# Two diagonal arrows pointing apart / together, as on Zed's zoom button.
-ICON_EXPAND, ICON_COLLAPSE = "\U000f0616", "\U000f0615"
+# The help panel's notes on results.
+RESULT_NOTES = [
+    "Each tool call the agent makes that returns data (frame data, match videos, …) becomes a tab: r1, r2, …",
+    "The same result has a row in the chat under its tool call: click it to unfold it there, or open → for its tab.",
+    "↖ chat on a tab (or Show in Chat when you right-click it) jumps back to that row.",
+    "Closing a tab keeps the name in Python; open → in the chat brings it back.",
+    "Inputs ▸ on a match video search: what the tool was called with; change it and run again (Enter).",
+    "After re-running an agent's result, × in its inputs puts the agent's original call and result back.",
+    "+ in the Results tab bar: add a result by hand, eg a match video search or a player's usage.",
+    "Player usage: a player's characters and stages as bars; pick 6 mo / All time / Last 10, hover for counts.",
+    "SQL ▸ on a table: query it as self with polars SQL (PostgreSQL syntax), eg select name from self limit 5.",
+    'Values you make in the Python cells get a tab too, eg chars = db.sql("select * from char").',
+]
 # The editor fetches completions straight from the backend (see api.py).
 COMPLETE_URL = rx.config.get_config().api_url + "/complete"
 
@@ -30,10 +47,12 @@ def handle(name: rx.Var | str) -> rx.Component:
 
 
 def zoom_button(pane: str) -> rx.Component:
-    """Fill the window with this pane, or restore the layout. assets/panes.js clicks it on Ctrl+Shift+F."""
+    """Fill the window with this pane, or restore the layout. assets/panes.js clicks it on Shortcut.FULL_SCREEN."""
     return rx.el.button(
         rx.cond(State.zoomed == pane, ICON_COLLAPSE, ICON_EXPAND),
-        title=rx.cond(State.zoomed == pane, "Restore panes (Ctrl+Shift+F)", "Full screen (Ctrl+Shift+F)"),
+        title=rx.cond(
+            State.zoomed == pane, Shortcut.FULL_SCREEN.hint("Restore panes"), Shortcut.FULL_SCREEN.hint("Full screen")
+        ),
         on_click=State.toggle_zoom(pane),
         class_name=rx.cond(State.zoomed == pane, "zoom-btn mono is-on", "zoom-btn mono"),
     )
@@ -41,29 +60,57 @@ def zoom_button(pane: str) -> rx.Component:
 
 def chat_item(item: rx.Var) -> rx.Component:
     return rx.match(
-        item["kind"],
-        ("user", rx.el.div(item["text"], class_name="bubble is-user")),
+        item.kind,
+        ("user", rx.el.div(item.text, class_name="bubble is-user")),
         (
             "step",
             rx.el.div(
                 rx.el.span("▸", class_name="dim"),
-                rx.el.span(item["name"], class_name="tool-name"),
-                rx.el.span(item["text"], class_name="tool-args"),
+                rx.el.span(item.name, class_name="tool-name"),
+                rx.el.span(item.text, class_name="tool-args"),
                 class_name="tool-step mono",
             ),
         ),
-        (
-            "ref",
-            rx.el.button(
-                handle(item["name"]),
-                rx.el.span(item["text"], class_name="dim"),
-                rx.el.span("open →", class_name="ref-open"),
-                on_click=State.select_object(item["name"]),
-                class_name="ref",
+        ("ref", ref_item(item)),
+        # the same traceback component as under a Python cell
+        ("error", traceback_view(item.trace, item.trace_hidden, item.trace_more, item.text, "chat-trace")),
+        markdown_bubble(text=item.text),
+    )
+
+
+@rx.memo
+def markdown_bubble(text: rx.Var[str]) -> rx.Component:
+    """An agent message. A memo component, so each bubble is its own React component: rx.markdown
+    calls a hook (the color mode, for its component map), and inside the chat loop that hook ran
+    once per message, so the number of hooks changed with every answer (React's hook-order warning)."""
+    return rx.el.div(rx.markdown(text), class_name="bubble md")
+
+
+def ref_item(item: rx.Var) -> rx.Component:
+    """A tool result: a row that folds its view open inline (collapsed by default), and opens it as a tab."""
+    open_tab = State.select_object(item.name).stop_propagation
+    return rx.el.div(
+        rx.el.div(
+            rx.el.span(rx.cond(item.open, "▾", "▸"), class_name="ref-caret dim"),
+            handle(item.name),
+            rx.el.span(item.text, class_name="dim"),
+            rx.el.button("open →", title="Open as a tab in Results", on_click=open_tab, class_name="ref-open"),
+            on_click=State.toggle_inline(item.name),
+            title=rx.cond(item.open, "Hide the result", "Show the result here"),
+            class_name=rx.cond(item.open, "ref is-open", "ref"),
+        ),
+        # the same component as a tab shows, sized to its content (slot chat:<name>)
+        rx.cond(
+            item.open,
+            rx.cond(
+                item.view.kind != "",
+                render_component(item.view, State.view_event, compact=True),
+                rx.el.div("No longer available (the name was deleted or rebound).", class_name="ref-gone dim"),
             ),
         ),
-        ("error", rx.el.pre(item["text"], class_name="bubble is-error mono")),
-        rx.el.div(rx.markdown(item["text"]), class_name="bubble md"),
+        # the target of "Show in Chat" (State.show_in_chat, assets/panes.js)
+        id="ref-" + item.name.to(str),
+        class_name="chat-ref",
     )
 
 
@@ -93,7 +140,7 @@ def chat_pane() -> rx.Component:
                 rx.foreach(State.chat, chat_item),
                 rx.cond(
                     State.busy & (State.streaming != ""),
-                    rx.el.div(rx.markdown(State.streaming), class_name="bubble md"),
+                    markdown_bubble(text=State.streaming),
                 ),
                 rx.cond(State.busy, agent_progress()),
                 class_name="chat-items",
@@ -103,7 +150,7 @@ def chat_pane() -> rx.Component:
         rx.el.form(
             rx.el.textarea(
                 name="prompt",
-                placeholder="Ask the agent…  (Enter to send, Shift+Enter for a new line)",
+                placeholder=f"Ask the agent…  ({Shortcut.SEND.keys} to send, {Shortcut.NEW_LINE.keys} for a new line)",
                 enter_key_submit=True,
                 # the cursor starts here when the app opens
                 auto_focus=True,
@@ -125,18 +172,114 @@ def chat_pane() -> rx.Component:
 
 
 def object_tab(obj: rx.Var) -> rx.Component:
-    return rx.el.button(
-        handle(obj["name"]),
+    """A result tab: click selects, x closes, right-click opens the close menu (as in VS Code).
+    Closing only hides the tab; the name stays in Python."""
+    name = obj["name"]
+    return rx.el.div(
+        handle(name),
         rx.el.span(obj["shape"]),
         rx.el.span(obj["source"], class_name="dim"),
-        on_click=State.select_object(obj["name"]),
-        class_name=rx.cond(State.selected == obj["name"], "tab is-active", "tab"),
+        rx.el.button(
+            "×",
+            title="Close (the name stays in Python)",
+            on_click=State.close_tab(name).stop_propagation,
+            class_name="tab-close",
+        ),
+        on_click=State.select_object(name),
+        on_context_menu=lambda event: State.open_tab_menu(name, event).prevent_default,
+        role="tab",
+        class_name=rx.cond(State.selected == name, "tab is-active", "tab"),
+    )
+
+
+def menu_item(label: str, event: Any) -> rx.Component:
+    return rx.el.button(label, on_click=event, class_name="menu-item")
+
+
+def overlays() -> rx.Component:
+    """What floats over the page: a tab's right-click menu and the help panel. Clicking outside
+    (or Esc, assets/panes.js) closes them."""
+    return rx.cond(
+        (State.menu_tab != "") | State.show_help | State.add_menu,
+        rx.fragment(
+            rx.el.div(
+                on_click=State.close_menus,
+                on_context_menu=State.close_menus.prevent_default,
+                class_name="overlay-backdrop",
+            ),
+            rx.cond(
+                State.menu_tab != "",
+                rx.el.div(
+                    rx.cond(
+                        State.chat_refs.contains(State.menu_tab),
+                        rx.fragment(
+                            menu_item("Show in Chat", State.show_in_chat(State.menu_tab)),
+                            rx.el.div(class_name="menu-sep"),
+                        ),
+                    ),
+                    menu_item("Close", State.close_tab(State.menu_tab)),
+                    menu_item("Close Others", State.close_other_tabs(State.menu_tab)),
+                    menu_item("Close to the Right", State.close_tabs_right(State.menu_tab)),
+                    rx.el.div(class_name="menu-sep"),
+                    menu_item("Close All", State.close_all_tabs),
+                    style={"left": State.menu_x.to(str) + "px", "top": State.menu_y.to(str) + "px"},
+                    class_name="menu sans",
+                ),
+            ),
+            rx.cond(
+                State.add_menu,
+                rx.el.div(
+                    rx.el.div("Add", class_name="menu-head"),
+                    *[menu_item(widget.title, State.add_tool_form(widget.form.key)) for widget in ADDABLE],
+                    style={"left": State.menu_x.to(str) + "px", "top": State.menu_y.to(str) + "px"},
+                    class_name="menu sans",
+                ),
+            ),
+            rx.cond(State.show_help, help_panel()),
+        ),
+    )
+
+
+def help_panel() -> rx.Component:
+    return rx.el.div(
+        rx.el.div("Keyboard shortcuts", class_name="help-title"),
+        rx.el.table(
+            rx.el.tbody(
+                *[
+                    rx.el.tr(
+                        rx.el.td(rx.el.kbd(shortcut.keys), class_name="help-keys"),
+                        rx.el.td(shortcut.value.what),
+                        rx.el.td(shortcut.value.where, class_name="help-where dim"),
+                    )
+                    for shortcut in Shortcut
+                ]
+            ),
+            class_name="help-table",
+        ),
+        rx.el.div("Results", class_name="help-title"),
+        rx.el.ul(*[rx.el.li(note) for note in RESULT_NOTES], class_name="help-notes"),
+        class_name="help-panel sans",
     )
 
 
 def viewer() -> rx.Component:
-    """The selected tab: just the value's own component (render.py)."""
-    return render_component(State.view, State.view_event)
+    """The selected tab: the value's own component (render.py), plus a jump to the chat row of the
+    tool call that returned it."""
+    return render_component(
+        State.view,
+        State.view_event,
+        actions=(
+            rx.cond(
+                State.chat_refs.contains(State.selected),
+                rx.el.button(
+                    "↖ chat",
+                    title="Show the tool call that returned this in the chat",
+                    on_click=State.show_in_chat(State.selected),
+                    class_name="act",
+                ),
+            ),
+        ),
+    )
 
 
 def trace_part(part: rx.Var) -> rx.Component:
@@ -183,6 +326,44 @@ def trace_part(part: rx.Var) -> rx.Component:
     )
 
 
+def copy_button(text: rx.Var[str] | str, what: str = "") -> rx.Component:
+    """The small copy button of a code block: copies text; assets/panes.js does it (data-copy)
+    and shows a tick for a moment."""
+    return rx.el.button(
+        rx.el.span(ICON_COPY, class_name="when-idle"),
+        rx.el.span(ICON_COPIED, class_name="when-copied"),
+        title=f"Copy {what}".strip(),
+        aria_label=f"Copy {what}".strip(),
+        type="button",
+        custom_attrs={"data-copy": text},
+        class_name="copy-btn mono",
+    )
+
+
+def traceback_view(trace: rx.Var, hidden: rx.Var, more: rx.Var, text: rx.Var, class_name: str = "") -> rx.Component:
+    """An error's traceback, the same under a Python cell and in the chat: the frame that raised
+    and the error always shown, everything above it folded in a <details>, and a copy button for
+    the full plain-text traceback (text). Without styled parts it shows the plain text."""
+    return rx.el.div(
+        copy_button(text, "the full traceback"),
+        rx.cond(
+            trace.length() > 0,
+            rx.fragment(
+                rx.cond(
+                    hidden.length() > 0,
+                    rx.el.details(
+                        rx.el.summary(more, class_name="tb-toggle sans"),
+                        rx.foreach(hidden, trace_part),
+                    ),
+                ),
+                rx.foreach(trace, trace_part),
+            ),
+            rx.el.pre(text, class_name="tb-plain"),
+        ),
+        class_name=f"cell-trace mono {class_name}".strip(),
+    )
+
+
 def cell_view(cell: rx.Var) -> rx.Component:
     """One notebook cell: In[n] gutter, CodeMirror editor, output underneath."""
     return rx.el.div(
@@ -192,13 +373,14 @@ def cell_view(cell: rx.Var) -> rx.Component:
                 cell_editor(
                     initial_code=cell.code,
                     complete_url=COMPLETE_URL,
+                    keys=codemirror_keys(),
                     token=State.token,
                     on_run=lambda code, advance: State.run_cell(cell.id, code, advance),
                     on_save=lambda code: State.save_code(cell.id, code),
                 ),
                 class_name="cell-editor",
             ),
-            rx.el.button("▶", title="Run (Ctrl+Enter)", on_click=State.run_saved(cell.id), class_name="cell-btn"),
+            rx.el.button("▶", title=Shortcut.RUN.hint("Run"), on_click=State.run_saved(cell.id), class_name="cell-btn"),
             rx.el.button("×", title="Delete cell", on_click=State.delete_cell(cell.id), class_name="cell-btn"),
             class_name="cell-in",
         ),
@@ -223,20 +405,8 @@ def cell_view(cell: rx.Var) -> rx.Component:
         ),
         rx.cond(cell.text != "", rx.el.pre(cell.text, class_name="cell-out mono")),
         rx.cond(
-            cell.trace.length() > 0,
-            # bottom of the traceback always shown; everything above it collapsed in a <details>
-            rx.el.div(
-                rx.cond(
-                    cell.trace_hidden.length() > 0,
-                    rx.el.details(
-                        rx.el.summary(cell.trace_more, class_name="tb-toggle sans"),
-                        rx.foreach(cell.trace_hidden, trace_part),
-                    ),
-                ),
-                rx.foreach(cell.trace, trace_part),
-                class_name="cell-trace mono",
-            ),
-            rx.cond(cell.error != "", rx.el.pre(cell.error, class_name="cell-out is-error mono")),
+            (cell.trace.length() > 0) | (cell.error != ""),
+            traceback_view(cell.trace, cell.trace_hidden, cell.trace_more, cell.error),
         ),
         key=cell.id,
         class_name="cell",
@@ -248,7 +418,7 @@ def notebook() -> rx.Component:
         rx.el.div(
             rx.el.span(rx.el.span(ICON_PY, class_name="mono accent-green icon"), "Python"),
             rx.el.span(
-                "Shift+Enter run and advance · Ctrl+Enter run · Tab complete",
+                f"{Shortcut.RUN_AND_ADVANCE.keys} run and advance · {Shortcut.RUN.keys} run · {Shortcut.COMPLETE.keys} complete",
                 class_name="dim",
             ),
             rx.el.span(class_name="spacer"),
@@ -271,7 +441,13 @@ def tables_pane() -> rx.Component:
         rx.el.div(
             rx.el.div(
                 rx.foreach(State.objects, object_tab),
-                rx.cond(~State.has_objects, rx.el.span("no results yet", class_name="tab dim")),
+                rx.cond(~State.has_objects, rx.el.span("no open results", class_name="tab dim")),
+                rx.el.button(
+                    "+",
+                    title="Add a result by hand (eg a match video search)",
+                    on_click=State.open_add_menu,
+                    class_name="tab-add",
+                ),
                 class_name="tabs",
             ),
             zoom_button("results"),
@@ -282,9 +458,8 @@ def tables_pane() -> rx.Component:
                 State.has_objects,
                 viewer(),
                 rx.el.div(
-                    "Results appear here when the agent pulls data (tables, match videos, …), ",
-                    "or when you make a DataFrame in the Python cells, eg ",
-                    rx.el.code('chars = db.sql("select * from char")'),
+                    "What the agent's tools return opens here as tabs. ",
+                    rx.el.button("More in help", on_click=State.toggle_help, class_name="link-btn"),
                     class_name="empty sans",
                 ),
             ),
@@ -300,10 +475,15 @@ def tables_pane() -> rx.Component:
     )
 
 
-def pane_toggle(pane: str, icon: str, label: str, shown: rx.Var[bool]) -> rx.Component:
+def pane_toggle(
+    pane: str, icon: str, label: str, shown: rx.Var[bool], shortcut: Shortcut | None = None
+) -> rx.Component:
+    """A bottom-bar toggle; assets/panes.js clicks it (data-toggle) on its shortcut."""
+    title = f"Show or hide {label}"
     return rx.el.button(
         icon,
-        title=f"Show or hide {label}",
+        title=shortcut.hint(title) if shortcut else title,
+        custom_attrs={"data-toggle": pane},
         aria_label=f"Show or hide {label}",
         on_click=State.toggle_pane(pane),
         class_name=rx.cond(shown, "pane-toggle mono is-on", "pane-toggle mono"),
@@ -314,8 +494,8 @@ def statusbar() -> rx.Component:
     """Bottom bar, as in Zed: one toggle per pane."""
     return rx.el.div(
         pane_toggle("chat", ICON_CHAT, "chat", State.show_chat),
-        pane_toggle("results", ICON_RESULTS, "results", State.show_results),
-        pane_toggle("python", ICON_PY, "Python", State.show_python),
+        pane_toggle("results", ICON_RESULTS, "results", State.show_results, Shortcut.TOGGLE_RESULTS),
+        pane_toggle("python", ICON_PY, "Python", State.show_python, Shortcut.TOGGLE_PYTHON),
         rx.el.span(class_name="spacer"),
         rx.cond(State.busy, rx.el.span("agent working…", class_name="dim")),
         rx.cond(State.running, rx.el.span("python running…", class_name="dim")),
@@ -328,6 +508,15 @@ def index() -> rx.Component:
         rx.el.div(
             rx.el.span("SmashGPT", class_name="title"),
             rx.el.span(class_name="spacer"),
+            rx.el.button(
+                "?",
+                title=Shortcut.HELP.hint("Help: keyboard shortcuts"),
+                aria_label="Help",
+                # assets/panes.js clicks it on Shortcut.HELP
+                custom_attrs={"data-toggle": "help"},
+                on_click=State.toggle_help,
+                class_name=rx.cond(State.show_help, "help-btn is-on", "help-btn"),
+            ),
             class_name="titlebar sans",
         ),
         rx.el.div(
@@ -340,6 +529,7 @@ def index() -> rx.Component:
             class_name="split-main",
         ),
         statusbar(),
+        overlays(),
         class_name="page",
     )
 
@@ -352,7 +542,8 @@ app = rx.App(
     head_components=[
         rx.el.link(rel="icon", href="/favicon.png", type="image/png"),
         rx.el.link(rel="apple-touch-icon", href="/apple-touch-icon.png"),
-        # Ctrl+Shift+F: full screen for the pane you are in
+        # window.SHORTCUTS (shortcuts.py), then panes.js: full screen, float a view, close menus
+        rx.el.script(shortcuts_script()),
         rx.el.script(src="/panes.js", defer=True),
     ],
 )

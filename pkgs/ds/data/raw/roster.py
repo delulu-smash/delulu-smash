@@ -12,6 +12,7 @@ import polars as pl
 from bs4 import BeautifulSoup
 
 from ds.data.raw.framedata import BASE_URL
+from ds.data.raw.smashmate import SITE_CHAR_ICON
 
 ROSTER_URL = "https://ultimateframedata.com/smash"
 USER_AGENT = "Mozilla/5.0 (compatible; delulu-smash-framedata-scraper)"
@@ -35,4 +36,16 @@ def scrape_character_roster() -> pl.DataFrame:
         # TODO: see if framedata_url should store given its just derived by id
         rows.append({"id": slug, "name": link.get("title", ""), "framedata_url": BASE_URL.format(character=slug)})
 
-    return pl.DataFrame(rows)
+    return with_char_icon(pl.DataFrame(rows))
+
+
+def with_char_icon(char_df: pl.DataFrame) -> pl.DataFrame:
+    """Add (or refresh) the `char_icon` column: each character's icon path relative to
+    pkgs/ds/data/, eg 'char_icons/little_mac.png' (null for an id with no icon yet,
+    see ds.data.raw.smashmate).
+    """
+    # imported here: ds.data.char_icons imports ds.data.raw, so a top-level import is circular
+    from ds.data.char_icons import char_icon
+
+    icons = {char_id: char_icon(char_id) for char_id in SITE_CHAR_ICON}
+    return char_df.with_columns(char_icon=pl.col("id").replace_strict(icons, default=None, return_dtype=pl.String))

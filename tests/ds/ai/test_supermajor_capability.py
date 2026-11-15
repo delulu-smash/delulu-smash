@@ -7,8 +7,8 @@ from __future__ import annotations
 
 import pytest
 from ds.ai import supermajor
-from ds.data.raw.supermajor import PlayerMatch
-from pydantic_ai import ModelRetry
+from ds.data.raw.supermajor import PlayerMatch, SiteBlockedError
+from pydantic_ai import ModelRetry, ToolFailed
 
 
 def test_find_players_caps_results(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -24,3 +24,13 @@ def test_unknown_tag_asks_model_to_retry(monkeypatch: pytest.MonkeyPatch) -> Non
     monkeypatch.setattr(supermajor, "player_usage", no_player)
     with pytest.raises(ModelRetry, match="find_players"):
         supermajor.get_player_usage("NoSuchTag")
+
+
+def test_blocked_site_is_a_final_failure_not_a_retry(monkeypatch: pytest.MonkeyPatch) -> None:
+    def blocked(_player: str) -> None:
+        raise SiteBlockedError("supermajor.gg is turning away automated requests (site is paused for bots, HTTP 503)")
+
+    monkeypatch.setattr(supermajor, "player_usage", blocked)
+    with pytest.raises(ToolFailed, match="turning away automated requests") as failed:
+        supermajor.get_player_usage("Delulu")
+    assert "can't be reached" in failed.value.message
