@@ -68,6 +68,19 @@
     }
   }, true);
 
+  // The chat's "jump to the newest message" button (.chat-bottom): shown once the chat is scrolled
+  // up. The chat scrolls in reverse (column-reverse), so the newest message is scrollTop 0 and
+  // scrolling up goes negative. `scroll` doesn't bubble: listen in the capture phase.
+  const SCROLLED_UP = 80;
+  document.addEventListener("scroll", (event) => {
+    const chat = event.target instanceof Element && event.target.matches(".chat-scroll") ? event.target : null;
+    if (chat) chat.parentElement.classList.toggle("is-scrolled", Math.abs(chat.scrollTop) > SCROLLED_UP);
+  }, true);
+  document.addEventListener("click", (event) => {
+    const button = event.target instanceof Element && event.target.closest("[data-chat-bottom]");
+    if (button) button.parentElement.querySelector(".chat-scroll").scrollTo({ top: 0, behavior: "smooth" });
+  });
+
   // copy buttons (copy_button in reflex_kernel.py): copy data-copy, show a tick for a moment
   document.addEventListener("click", async (event) => {
     const button = event.target instanceof Element && event.target.closest(".copy-btn");

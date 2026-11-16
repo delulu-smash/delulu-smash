@@ -51,6 +51,14 @@ button { font: inherit; color: inherit; }
 .pane-title { display: flex; align-items: center; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--grey1);
   padding: 6px 0 4px 2px; }
 .chat-scroll { flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column-reverse; }
+/* the scroll area plus the "jump to the newest message" button over its bottom edge, shown once
+   you have scrolled up (assets/panes.js sets .is-scrolled) */
+.chat-body { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.chat-bottom { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); width: 30px; height: 30px; border-radius: 50%;
+  border: 1px solid var(--bg4); background: var(--bg1); color: var(--fg); cursor: pointer; font-size: 15px; line-height: 1; padding: 0;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4); opacity: 0; pointer-events: none; transition: opacity 0.15s; }
+.chat-bottom:hover { border-color: var(--blue); color: var(--blue); }
+.chat-body.is-scrolled .chat-bottom { opacity: 1; pointer-events: auto; }
 .chat-items { display: flex; flex-direction: column; gap: 8px; padding-bottom: 10px; }
 .bubble { background: var(--bg0); border: 1px solid var(--bg2); border-radius: 8px; padding: 8px 10px; font-size: 13.5px; }
 .bubble.is-user { align-self: flex-end; max-width: 88%; background: var(--bg2); border-color: var(--bg3); white-space: pre-wrap; }
@@ -581,3 +589,11 @@ select.form-input { width: auto; }
   .cm-inline-edit.is-thinking .cm-inline-edit-icon, .cm-inline-edit.is-thinking .cm-inline-edit-status,
   .cm-editor .cm-inline-thinking-line, .composer.is-thinking { animation: none; }
 }
+
+/* "you are typing here": a thicker caret in the focus color in every text box and editor (the
+   default 1px text-colored line was easy to lose), and a bar down the left of the SQL box you are in
+   (a cell has its left border, the chat box its border) */
+input, textarea { caret-color: var(--blue); }
+.cm-editor .cm-cursorLayer .cm-cursor { border-left: 2px solid var(--blue); margin-left: -1px; }
+.sql-editor { padding-left: 6px; box-shadow: inset 2px 0 0 transparent; transition: box-shadow 0.1s; }
+.sql-editor:focus-within { box-shadow: inset 2px 0 0 var(--blue); }

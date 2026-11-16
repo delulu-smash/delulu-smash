@@ -40,6 +40,7 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
 
 - **Chat**: Enter sends, Shift+Enter adds a line. Tool calls are listed above each reply. While the agent works,
   light sweeps across the chat box (as over the code in an inline chat).
+  Scroll up and a round ↓ button appears over the bottom of the chat: it jumps back to the newest message.
   Hover a message for its copy button on the top-right corner (a reply copies as its markdown source).
   A failed turn (the model or a tool raised) shows its traceback in the same component a Python cell uses
   (`render.traceback_view`): the frame that raised and the error, the rest folded, and a copy button (top right,

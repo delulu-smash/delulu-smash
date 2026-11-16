@@ -168,26 +168,38 @@ def agent_progress() -> rx.Component:
 def chat_pane() -> rx.Component:
     return rx.el.div(
         rx.el.div(rx.el.span("Chat"), rx.el.span(class_name="spacer"), zoom_button("chat"), class_name="pane-title"),
-        # column-reverse keeps the scroll pinned to the newest message
         rx.el.div(
+            # column-reverse keeps the scroll pinned to the newest message
             rx.el.div(
-                rx.cond(
-                    State.chat.length() == 0,
-                    rx.el.div(
-                        "Ask about Smash Ultimate. What the agent pulls (tables, match videos, …) shows up below as r1, r2, … ",
-                        "and is a plain Python object in the cells (tables are polars DataFrames).",
-                        class_name="empty",
+                rx.el.div(
+                    rx.cond(
+                        State.chat.length() == 0,
+                        rx.el.div(
+                            "Ask about Smash Ultimate. What the agent pulls (tables, match videos, …) shows up below as r1, r2, … ",
+                            "and is a plain Python object in the cells (tables are polars DataFrames).",
+                            class_name="empty",
+                        ),
                     ),
+                    rx.foreach(State.chat, chat_item),
+                    rx.cond(
+                        State.busy & (State.streaming != ""),
+                        markdown_bubble(text=State.streaming),
+                    ),
+                    rx.cond(State.busy, agent_progress()),
+                    class_name="chat-items",
                 ),
-                rx.foreach(State.chat, chat_item),
-                rx.cond(
-                    State.busy & (State.streaming != ""),
-                    markdown_bubble(text=State.streaming),
-                ),
-                rx.cond(State.busy, agent_progress()),
-                class_name="chat-items",
+                class_name="chat-scroll",
             ),
-            class_name="chat-scroll",
+            # shown once you scroll up (assets/panes.js adds .is-scrolled): back to the newest message
+            rx.el.button(
+                "↓",
+                title="Jump to the newest message",
+                aria_label="Jump to the newest message",
+                type="button",
+                custom_attrs={"data-chat-bottom": ""},
+                class_name="chat-bottom",
+            ),
+            class_name="chat-body",
         ),
         rx.el.form(
             rx.el.textarea(
