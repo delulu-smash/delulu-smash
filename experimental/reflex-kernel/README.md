@@ -5,7 +5,7 @@
 A browser workbench built with [Reflex](https://reflex.dev), in the spirit of
 `experimental/textual-kernel`: chat with the Smash agent (`ds.ai.agent`) across the top; below
 it, everything its tools return shows up as a tab named `r1`, `r2`, … (tables as sortable, filterable
-grids, match videos as a playable gallery, other results as a field list), side by side with
+grids, VODs (match videos) as a playable gallery, other results as a field list), side by side with
 Jupyter-style Python cells where those names are plain Python objects (tables are polars DataFrames).
 Drag the chat strip's or the tables pane's bottom-right corner to resize them. The bottom bar shows or hides each pane.
 
@@ -45,7 +45,7 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   A failed turn (the model or a tool raised) shows its traceback in the same component a Python cell uses
   (`render.traceback_view`): the frame that raised and the error, the rest folded, and a copy button (top right,
   on hover) that copies the full plain-text traceback.
-  Each tool result gets a row (`r1 · tool · 10 videos`): click it to unfold the result inline (grid,
+  Each tool result gets a row (`r1 · tool · 10 VODs`): click it to unfold the result inline (grid,
   gallery, fields; folded by default), or `open →` to open it as a tab in Results.
   Under each answer, a dim line says what the turn used (`$0.0011 · 21.3k in (71% cached) · 812 out · 3 requests`),
   summed from each model request's usage (`session.TurnUsage`); its `3 requests` is a link that opens the debug log on its
@@ -150,7 +150,7 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   | `addable` | offered in the Results tab bar's `+` menu, to add by hand (needs `tool` or `new`) |
   | `chat_open` | starts unfolded in the chat when the agent returns it (others start as a folded row) |
 
-  Today: `table`, `videos` (`find_match_videos`, addable), `usage` (`get_player_usage`, addable, unfolded in
+  Today: `table`, `vods` (match videos, called VODs as the Smash community does; the agent's tool and its type keep their names, `find_match_videos` / `MatchVideos`; addable), `usage` (`get_player_usage`, addable, unfolded in
   chat), `fields`, `smashdb` (the SmashDb console, addable), `tool`. A new attribute is a field on `Widget` plus the one place that reads it. A new widget
   is a row, a `case` in `render.to_view`, and its component in `render.render_component`. Whether it gets the
   inline chat is asked each time one is added (with a `tool` it does by default; see
@@ -302,14 +302,14 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   - `/clear-variables` (`Variables: Clear all`): as the pane's `Clear all`, with its 3 s Undo.
   - `/results`, `/python`, `/variables` (show or hide the pane), `/new-cell`, `/close-tabs`, `/help`,
     `/keys`, `/debug`.
-  - **A widget is its kind**: `/videos`, `/usage`, `/smashdb` add it and show it in the chat, under the
+  - **A widget is its kind**: `/vods`, `/usage`, `/smashdb` add it and show it in the chat, under the
     command, where it works as it does in a tab (`open →` on its row brings up the tab; the `+` menu and
     the palette still add it as a tab only).
   - **Text after a command** (`Command.takes`, `Command.slash_event`): a widget with a tool takes text, eg
-    `/videos mkleo vs sparg0 grand finals` or `/usage tweek last 50 sets`. The widget is added and the text
+    `/vods mkleo vs sparg0 grand finals` or `/usage tweek last 50 sets`. The widget is added and the text
     goes to the inline AI that fills its inputs (`State.add_widget_ask`, the same call as the form's
     `Ask AI` row), so the form in the chat opens with a proposal that you run: the AI never runs the tool
-    (`spec/experimental/reflex-kernel/inline_ai.md`). In the list such a command shows as `/videos <text>`
+    (`spec/experimental/reflex-kernel/inline_ai.md`). In the list such a command shows as `/vods <text>`
     and Tab completes it with a space, ready for the text. A command that takes no text is not run when
     text follows it, so `/clear-chat please don't` clears nothing.
 - **Keybindings**: Alt+K opens a searchable list of every shortcut, like Omarchy's SUPER+K: type to filter,
@@ -350,7 +350,7 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
     dropped, not a cache (nothing is read from it but Undo). The bar is drawn by the browser from the
     moment the line appears; the server's own 3 s timer is what frees.
   - What clearing can't free: an object still bound to another name (`a = r1`; the details say so), and an
-    agent result that is a model (match videos, player usage), which is also part of the chat history the
+    agent result that is a model (VODs, player usage), which is also part of the chat history the
     agent needs. Tables aren't affected: the DataFrame is its own object, apart from the chat's CSV text.
   - `r` numbers are never given out again after a clear, so "r2" in the chat can't come to mean another
     table. `q` names are (a console suggests the first free one).
@@ -361,7 +361,7 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   (see Floating a view), or, outside a view, fills the window with your pane: "you are in" is where
   keyboard focus is, else what you last clicked (`assets/panes.js`). The bottom-bar toggles
   keep their state while a pane is full screen; clicking one leaves full screen and shows that pane.
-- **Match videos**: one component, the list plus the video picked from it. Click a card to play it:
+- **VODs** (match videos): one component, the list plus the video picked from it. Click a card to play it:
   the list folds away so the video fills the component, and "Show list" in the player's bar brings it
   back under the player. It works the same in a tab and in a cell's result, each with its own picked
   video. Leaving a tab stops its video; it is back, paused, when you return. Prev / Next fetch the search's other
@@ -412,7 +412,7 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   - It reads the chat so far and has no tools, so it can't look anything up (eg which of two players sharing a
     tag you mean); what the tool itself refuses (an unknown player) only shows when you run.
   - Generic: nothing is written per widget. A widget gets it by having a `tool` in `widgets.py`. Today that is
-    Match videos and Player usage; a not-yet-run form (`+`) works too.
+    VODs and Player usage; a not-yet-run form (`+`) works too.
   - Logged and counted like the editor's inline chat: one `inline-fill` record in the debug log (its `↖` goes
     to the result), its cost on the chat title's meter, its own row in the debug panel's Agents and Spend tabs.
   - Inside the SmashDb console's SQL box, `Alt+A` is still the code inline chat.

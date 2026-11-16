@@ -268,7 +268,7 @@ def chat_pane() -> rx.Component:
                     rx.cond(
                         State.chat.length() == 0,
                         rx.el.div(
-                            "Ask about Smash Ultimate. What the agent pulls (tables, match videos, …) shows up below as r1, r2, … ",
+                            "Ask about Smash Ultimate. What the agent pulls (tables, VODs, …) shows up below as r1, r2, … ",
                             "and is a plain Python object in the cells (tables are polars DataFrames).",
                             class_name="empty",
                         ),

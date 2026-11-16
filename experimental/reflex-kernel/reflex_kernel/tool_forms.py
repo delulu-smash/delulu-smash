@@ -176,7 +176,7 @@ class ToolRequest:
 @dataclasses.dataclass
 class ToolForm:
     title: str
-    """What the "+" menu calls it, eg 'Match videos'."""
+    """What the "+" menu calls it, eg 'VODs'."""
     function: Callable[..., Any]
     """The agent's tool function. Its return annotation is the result type that gets the form."""
     hide: tuple[str, ...] = ()

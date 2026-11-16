@@ -67,8 +67,8 @@ class Widget:
 
 WIDGETS: list[Widget] = [
     Widget("table", "Table"),
-    # page: the videos view's own Prev / Next
-    Widget("videos", "Match videos", tool=find_match_videos, hide=("page",), addable=True),
+    # match videos, called VODs as the Smash community does. page: the view's own Prev / Next
+    Widget("vods", "VODs", tool=find_match_videos, hide=("page",), addable=True),
     # small and visual: worth seeing without a click
     Widget("usage", "Player usage", tool=get_player_usage, addable=True, chat_open=True),
     Widget("fields", "Fields"),

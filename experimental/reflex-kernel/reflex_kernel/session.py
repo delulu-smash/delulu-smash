@@ -66,9 +66,9 @@ class ToolStep:
     result_name: str = ""
     """Name the result was bound to (eg 'r1'), '' when the tool's result has no view (eg plain text)."""
     result_label: str = ""
-    """The result's short summary, eg '12 × 8' or '10 videos'."""
+    """The result's short summary, eg '12 × 8' or '10 VODs'."""
     result_kind: str = ""
-    """The result's view kind (render.py), eg 'table', 'videos'; its attributes are in widgets.py."""
+    """The result's view kind (render.py), eg 'table', 'vods'; its attributes are in widgets.py."""
 
 
 @dataclass

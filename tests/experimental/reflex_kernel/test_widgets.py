@@ -113,7 +113,7 @@ def test_addable_needs_a_tool_or_a_new_value():
 def test_usage_widget_attributes():
     usage = widget_of("usage")
     assert (usage.addable, usage.chat_open) == (True, True)
-    assert not widget_of("videos").chat_open
+    assert not widget_of("vods").chat_open
     assert form_for(_usage()) is usage.form
     assert [field.name for field in usage.form.fields({})] == ["player", "vs_characters", "setting", "sets"]
     setting, sets = usage.form.fields({})[-2:]
@@ -141,7 +141,7 @@ def test_usage_widget_attributes():
     with pytest.raises(ValueError, match="vs_characters"):
         usage.form.arguments({"player": "Mac", "vs_characters": "steve,Goku"})
     # match videos: one character per side, so the same input with one pick each
-    videos = widget_of("videos").form.pickers
+    videos = widget_of("vods").form.pickers
     assert {name: picker.multiple for name, picker in videos.items()} == {"char_1": False, "char_2": False}
     assert videos["char_1"].options == usage.form.pickers["vs_characters"].options
     # a select left out of the inputs keeps the tool's default (it has no empty choice)

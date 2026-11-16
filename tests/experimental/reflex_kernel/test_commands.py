@@ -163,8 +163,8 @@ def test_the_palettes_plain_commands_have_slash_names():
     # a widget is its kind: one with a tool takes text (for the inline AI), one without
     # takes none
     assert {f"/{widget.kind}" for widget in ADDABLE} <= {f"/{name}" for name in SLASH}
-    assert SLASH["videos"].takes
-    assert SLASH["videos"].slash_event == ("add_widget_ask", "videos")
+    assert SLASH["vods"].takes
+    assert SLASH["vods"].slash_event == ("add_widget_ask", "vods")
     assert not SLASH["smashdb"].takes
     with pytest.raises(ValueError, match="needs a `slash_event`"):
         Command("x", "App", "X", "i", event=("toggle_help",), slash="x", takes="text")
@@ -172,13 +172,13 @@ def test_the_palettes_plain_commands_have_slash_names():
 
 def test_a_widgets_command_goes_to_its_slash_event_with_the_text_after_it():
     made = state()
-    assert ran(submit(made, "/videos")) == [
-        ("slash_ran", ["/videos", "Add: Match videos"]),
-        ("add_widget_ask", ["videos", ""]),
+    assert ran(submit(made, "/vods")) == [
+        ("slash_ran", ["/vods", "Add: VODs"]),
+        ("add_widget_ask", ["vods", ""]),
     ]
-    assert ran(submit(made, "/videos mkleo vs sparg0 grand finals")) == [
-        ("slash_ran", ["/videos", "mkleo vs sparg0 grand finals · Add: Match videos"]),
-        ("add_widget_ask", ["videos", "mkleo vs sparg0 grand finals"]),
+    assert ran(submit(made, "/vods mkleo vs sparg0 grand finals")) == [
+        ("slash_ran", ["/vods", "mkleo vs sparg0 grand finals · Add: VODs"]),
+        ("add_widget_ask", ["vods", "mkleo vs sparg0 grand finals"]),
     ]
     # a widget with no tool has nothing for the AI to fill
     assert submit(made, "/smashdb select 1") is None
@@ -195,14 +195,14 @@ def add_by_slash(made: State, kind: str, ask: str) -> None:
 
 def test_a_widget_command_shows_the_widget_in_the_chat():
     made = state()
-    add_by_slash(made, "videos", "")
+    add_by_slash(made, "vods", "")
     held = made._session()
     assert isinstance(held.namespace["r1"], ToolRequest)
     # unfolded under the command, as a tool's result is; the panes stay as they were
     assert [(item.kind, item.name, item.open, item.view.kind) for item in made.chat] == [("ref", "r1", True, "tool")]
     assert not made.show_results
     # the + menu and the palette still add it as a tab only
-    State.add_widget.fn(made, "videos")
+    State.add_widget.fn(made, "vods")
     assert len(made.chat) == 1
     assert made.show_results
 
@@ -215,7 +215,7 @@ def test_a_widget_command_with_text_has_the_ais_inputs_proposed_in_the_chat(monk
     asked: list[tuple[str, str]] = []
     monkeypatch.setattr(state_module, "fill_inputs", fake_fill)
     made = state()
-    add_by_slash(made, "videos", "mkleo vs sparg0")
+    add_by_slash(made, "vods", "mkleo vs sparg0")
     held = made._session()
     assert [instruction for _, instruction in asked] == ["mkleo vs sparg0"]
     # the form, not run: the AI's inputs are a proposal, on the widget shown in the chat

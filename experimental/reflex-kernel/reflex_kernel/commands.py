@@ -5,7 +5,7 @@
 #          has a group ("View: ..."), an icon, its shortcut when it has one, and what running it does.
 #          A command with `slash` is also a slash command: typed as "/<slash>" in the chat box, it
 #          runs exactly what its palette row runs (SLASH, parse_slash; State.submit_chat). One with
-#          `takes` can be followed by text, eg "/videos mkleo vs sparg0": its `slash_event` gets it.
+#          `takes` can be followed by text, eg "/vods mkleo vs sparg0": its `slash_event` gets it.
 # Usage: COMMANDS is drawn by reflex_kernel.palette(); a new command is one row here. RUNNABLE is the
 #        shortcuts Enter runs in the keybindings list (Alt+K, assets/keys.js).
 # ---------------------------------------------------------------------------
@@ -33,7 +33,9 @@ ICON_VIDEO, ICON_PLAYER, ICON_DATABASE = "\U000f0567", "\U000f0004", "\U000f01bc
 # the memory chip (md-memory): the Variables pane is "what is in memory"
 ICON_VARIABLE, ICON_UNDO = "\U000f035b", "\U000f054c"
 # A widget added by hand, by its kind (widgets.WIDGETS); any other gets the table.
-WIDGET_ICONS = {"videos": ICON_VIDEO, "usage": ICON_PLAYER, "smashdb": ICON_DATABASE}
+WIDGET_ICONS = {"vods": ICON_VIDEO, "usage": ICON_PLAYER, "smashdb": ICON_DATABASE}
+# Other words that find a widget in the palette and the slash list, by its kind.
+WIDGET_WORDS = {"vods": "videos match video youtube"}
 
 
 # What the text after a widget's slash command is (Command.takes).
@@ -94,8 +96,8 @@ COMMANDS: list[Command] = [
             w.title,
             WIDGET_ICONS.get(w.kind, ICON_TABLE),
             event=("add_widget", w.kind),
-            words="new widget result tab",
-            # /videos, /usage, /smashdb: the widget shows in the chat, under the command. A widget
+            words=" ".join(filter(None, ["new widget result tab", WIDGET_WORDS.get(w.kind, "")])),
+            # /vods, /usage, /smashdb: the widget shows in the chat, under the command. A widget
             # with a tool is a function (widgets.py): text after the command goes to the inline AI,
             # which fills its inputs; the user runs them (spec/experimental/reflex-kernel/inline_ai.md)
             slash=w.kind,
@@ -232,7 +234,7 @@ SLASH: dict[str, Command] = {name: _BY_SLASH[name] for name in SLASH_FIRST} | _B
 
 def slash_about(command: Command) -> str:
     """What a slash command does, in a line: beside it in the list, and its hover text where it
-    is typed or was run (eg "Add: Match videos (what to look for: ...)")."""
+    is typed or was run (eg "Add: VODs (what to look for: ...)")."""
     return f"{command.group}: {command.title}" + (f" ({command.takes})" if command.takes else "")
 
 

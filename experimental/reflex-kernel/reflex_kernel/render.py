@@ -137,7 +137,7 @@ class ViewData:
     The same shape serves a tab and a cell output."""
 
     kind: str = ""
-    """"" (nothing to show) | table | videos | usage | fields | smashdb (a SmashDb console) | tool
+    """"" (nothing to show) | table | vods (match videos) | usage | fields | smashdb (a SmashDb console) | tool
     (a tool form not run yet).
     Each kind's attributes (tool form, "+" menu, unfolded in chat) are in widgets.py."""
     slot: str = ""
@@ -379,7 +379,7 @@ class View:
     value: Any
     """The original Python object (what a tab's name is bound to)."""
     summary: str = ""
-    """Short text for tabs and chat, eg '120 × 8', '10 videos', 'PlayerUsage'."""
+    """Short text for tabs and chat, eg '120 × 8', '10 VODs', 'PlayerUsage'."""
     note: str = ""
     frame: pl.DataFrame | None = None
     videos: list[dict[str, str]] = dataclasses.field(default_factory=list)
@@ -540,9 +540,9 @@ def _videos_view(value: MatchVideos) -> View:
     what = " · ".join(part for part in [versus, query.search_term, query.region] if part)
     found = [what, f"{value.total} found", f"page {value.page} of {value.pages}"]
     return View(
-        kind="videos",
+        kind="vods",
         value=value,
-        summary=f"{len(value.videos)} video{'' if len(value.videos) == 1 else 's'}",
+        summary=f"{len(value.videos)} VOD{'' if len(value.videos) == 1 else 's'}",
         note=" · ".join(part for part in found if part),
         videos=[
             {
@@ -861,7 +861,7 @@ def render_component(
     return rx.el.div(
         rx.match(
             view.kind,
-            ("videos", video_widget(view, send, actions)),
+            ("vods", video_widget(view, send, actions)),
             ("usage", usage_widget(view, send, actions)),
             # a tool form added by hand, before its first run: just the form
             (
@@ -1592,7 +1592,7 @@ def usage_widget(view: rx.Var[ViewData], send: Any, actions: tuple[rx.Component,
 
 
 def video_widget(view: rx.Var[ViewData], send: Any, actions: tuple[rx.Component, ...]) -> rx.Component:
-    """Match videos: the list, and the video picked from it playing above the list.
+    """VODs (match videos): the list, and the video picked from it playing above the list.
 
     Picking a video folds the list away (view.list_hidden) so the video fills the component;
     the player's bar brings the list back.
@@ -1775,7 +1775,7 @@ def compact_grid(
 
 
 def video_gallery(videos: rx.Var, on_play: Any, playing_id: rx.Var[str] | str = "") -> rx.Component:
-    """Match videos as thumbnail cards: title, date and players. A click calls on_play(video)."""
+    """VODs (match videos) as thumbnail cards: title, date and players. A click calls on_play(video)."""
 
     def card(video: rx.Var) -> rx.Component:
         return rx.el.button(
@@ -1796,7 +1796,7 @@ def video_gallery(videos: rx.Var, on_play: Any, playing_id: rx.Var[str] | str = 
     return rx.cond(
         videos.length() > 0,
         rx.el.div(rx.foreach(videos, card), class_name="video-gallery sans"),
-        rx.el.div("No videos matched this search.", class_name="empty sans"),
+        rx.el.div("No VODs matched this search.", class_name="empty sans"),
     )
 
 

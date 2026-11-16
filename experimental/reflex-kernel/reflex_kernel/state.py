@@ -1064,7 +1064,7 @@ class State(rx.State):
 
     @event
     async def add_widget_ask(self, kind: str, ask: str):
-        """A widget's slash command, eg "/videos" or "/videos mkleo vs sparg0": add the widget and
+        """A widget's slash command, eg "/vods" or "/vods mkleo vs sparg0": add the widget and
         show it in the chat, under the command's row. With text (ask), the inline AI then fills
         its inputs from it there (as its "Ask AI" row does). Nothing runs: the inputs are a
         proposal, the user runs them."""
