@@ -24,7 +24,8 @@ import ds.data
 import jedi
 import polars as pl
 from pydantic_ai import capture_run_messages
-from pydantic_ai.messages import ToolCallPart, ToolReturnPart
+from pydantic_ai.messages import ModelResponse, ToolCallPart, ToolReturnPart
+from pydantic_ai.models import infer_model
 
 from ds.util.logging import log_call
 
@@ -89,6 +90,93 @@ class AiResult:
     trace: list[dict[str, str]] = field(default_factory=list)
     """The same traceback as styled parts (see trace_parts), as a cell's error has."""
     steps: list[ToolStep] = field(default_factory=list)
+    usage: TurnUsage = field(default_factory=lambda: TurnUsage())
+
+
+def tokens_text(count: int) -> str:
+    """A token count, short: 812, 21.3k, 1M."""
+    if count >= 1_000_000:
+        return f"{count / 1_000_000:.3g}M"
+    return f"{count / 1000:.3g}k" if count >= 1000 else str(count)
+
+
+def cost_text(cost: float | None) -> str:
+    """US dollars, enough digits for a fraction of a cent ($0.0011); '$?' when unknown."""
+    return "$?" if cost is None else f"${cost:.2g}" if cost < 0.1 else f"${cost:.2f}"
+
+
+@dataclass
+class TurnUsage:
+    """What one agent turn used, summed from each model request's usage (pydantic-ai's
+    ModelResponse.usage; cost is what the Gateway reported, or genai-prices' estimate)."""
+
+    requests: int = 0
+    input_tokens: int = 0
+    """Every request's whole input, cache reads included, so a 3-request turn counts the history 3 times."""
+    cache_read_tokens: int = 0
+    output_tokens: int = 0
+    cost: float | None = None
+    """US dollars; None when no request could be priced."""
+    unpriced: int = 0
+    """Requests with no cost (cost then leaves them out)."""
+    context_tokens: int = 0
+    """The last request's input + output: how big the conversation is now (what the next turn sends)."""
+    lines: list[str] = field(default_factory=list)
+    """One line per request for the debug log: tokens, cost, why it stopped, the tools it called."""
+
+    @classmethod
+    def of(cls, messages: Iterable[Any]) -> TurnUsage:
+        total = cls()
+        for response in messages:
+            if not isinstance(response, ModelResponse):
+                continue
+            usage = response.usage
+            total.requests += 1
+            total.input_tokens += usage.input_tokens
+            total.cache_read_tokens += usage.cache_read_tokens
+            total.output_tokens += usage.output_tokens
+            if usage.cost is None:
+                total.unpriced += 1
+            else:
+                total.cost = (total.cost or 0) + float(usage.cost)
+            total.context_tokens = usage.input_tokens + usage.output_tokens
+            tools = [part.tool_name for part in response.parts if isinstance(part, ToolCallPart)]
+            total.lines.append(
+                " · ".join(
+                    [
+                        f"{total.requests}. {usage.input_tokens:,} in ({usage.cache_read_tokens:,} cached)",
+                        f"{usage.output_tokens:,} out",
+                        cost_text(None if usage.cost is None else float(usage.cost)),
+                        str(response.finish_reason or "?") + (f" → {', '.join(tools)}" if tools else ""),
+                    ]
+                )
+            )
+        return total
+
+    def log_to(self, call: dict[str, Any]) -> None:
+        """Put the usage on an "agent" debug-log record (logs._agent shows it)."""
+        call["input_tokens"], call["output_tokens"] = self.input_tokens, self.output_tokens
+        call["cache_read_tokens"], call["cost"] = self.cache_read_tokens, self.cost
+        call["model_requests"] = self.lines
+
+    def summary(self) -> str:
+        """The line under an answer, eg '$0.0011 · 21.3k in (71% cached) · 812 out · 3 requests'."""
+        if not self.requests:
+            return ""
+        cost = cost_text(self.cost) + ("+?" if self.unpriced and self.cost is not None else "")
+        cached = f" ({self.cache_read_tokens / self.input_tokens:.0%} cached)" if self.cache_read_tokens else ""
+        parts = [cost, f"{tokens_text(self.input_tokens)} in{cached}", f"{tokens_text(self.output_tokens)} out"]
+        parts.append(f"{self.requests} request{'s' if self.requests != 1 else ''}")
+        return " · ".join(parts)
+
+
+def context_window() -> int | None:
+    """The agent's model's context window in tokens (pydantic-ai's model profile, from genai-prices'
+    bundled data; offline), None when unknown."""
+    try:
+        return infer_model(ds.ai.agent.model).context_window
+    except Exception:  # noqa: BLE001  # a meter without its maximum is fine; never fail the turn
+        return None
 
 
 def _short_path(filename: str) -> tuple[str, str]:
@@ -213,6 +301,12 @@ class Session:
         self.db = ds.data.init_db()
         self.namespace: dict[str, Any] = {"__name__": "__main__", "pl": pl, "db": self.db}
         self.ai_history: list[Any] = []
+        # what the AI cost so far, chat turns and inline chats, in US dollars (TurnUsage.cost;
+        # unpriced requests left out)
+        self.ai_cost: float = 0.0
+        # the chat's size: its last model request's input + output (TurnUsage.context_tokens), what
+        # the next turn sends again. An inline chat reads the chat but doesn't add to it.
+        self.chat_tokens: int = 0
         self.sources: dict[str, str] = {}
         # Views of notebook cell results, by cell id, so grids can be re-sorted and results opened as tabs.
         self.outputs: dict[str, View] = {}
@@ -413,9 +507,6 @@ class Session:
                     result.text = str(await stream.get_output())
                     new_messages = stream.new_messages()
                     self.ai_history = stream.all_messages()
-                    usage = stream.usage()
-                    call["input_tokens"] = getattr(usage, "input_tokens", None)
-                    call["output_tokens"] = getattr(usage, "output_tokens", None)
             except Exception as error:  # noqa: BLE001  # model/tool failures are shown in the chat
                 result.error = "".join(traceback.format_exception(error))
                 result.trace = trace_parts(error, error.__traceback__)
@@ -423,6 +514,12 @@ class Session:
                 call["error"] = f"{type(error).__name__}: {error}"
             result.steps = self._steps(new_messages)
             call["steps"] = len(result.steps)
+            # from the messages rather than stream.usage(), so a failed turn still shows what it spent
+            result.usage = usage = TurnUsage.of(new_messages)
+            self.ai_cost += usage.cost or 0
+            if usage.requests:
+                self.chat_tokens = usage.context_tokens
+            usage.log_to(call)
         return result
 
     def _steps(self, messages: list[Any]) -> list[ToolStep]:

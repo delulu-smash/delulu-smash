@@ -117,14 +117,6 @@ COMMANDS: list[Command] = [
         press=Shortcut.INLINE_EDIT,
         words="edit code copilot python sql",
     ),  # fmt: skip
-    Command(
-        "ai.inline_fresh",
-        "AI",
-        "Inline chat, fresh (without the chat)",
-        ICON_AI,
-        press=Shortcut.INLINE_EDIT_FRESH,
-        words="edit code copilot python sql",
-    ),  # fmt: skip
     Command("app.keys", "App", "Keybindings", ICON_KEYBOARD, press=Shortcut.KEYS, words="shortcuts keys"),
     Command("app.help", "App", "Help", ICON_HELP, event=("toggle_help",), shortcut=Shortcut.HELP),
     Command(
@@ -149,5 +141,4 @@ RUNNABLE: tuple[Shortcut, ...] = (
     Shortcut.PALETTE,
     Shortcut.DEBUG,
     Shortcut.INLINE_EDIT,
-    Shortcut.INLINE_EDIT_FRESH,
 )

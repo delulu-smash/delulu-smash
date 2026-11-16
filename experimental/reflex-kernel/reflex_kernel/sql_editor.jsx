@@ -72,7 +72,7 @@ export function SqlEditor({ initialSql, columns, schema, placeholder, keys, edit
   // Alt+A inline chat, where editUrl is given (a SmashDb console). Built once: the extensions below
   // are rebuilt when the tables change, which would drop an open box.
   const chat = useMemo(() => inlineEdit(() => (
-    { url: live.current.editUrl, key: keys?.inlineEdit, freshKey: keys?.inlineEditFresh, language: "sql",
+    { url: live.current.editUrl, key: keys?.inlineEdit, language: "sql",
       token: live.current.token, schema: live.current.tables })), []);
 
   const extensions = useMemo(() => [

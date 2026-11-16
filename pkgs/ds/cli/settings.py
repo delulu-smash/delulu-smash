@@ -64,6 +64,18 @@ _SECRETS = [
         ],
         op_item="Startgg API Key",
     ),
+    _Secret(
+        field="logfire_read_token",
+        prompt="Logfire read token",
+        used_by="ds.data.raw.logfire (AI spend: the SmashGPT debug panel's Spend tab)",
+        url="https://logfire-us.pydantic.dev",
+        steps=[
+            "Open the Logfire project, then Settings (gear, top right) > Read tokens.",
+            "Click 'Create read token' and copy it: it is shown only once.",
+            "Or from a terminal: logfire read-tokens --project <organization>/<project> create",
+        ],
+        op_item="Pydantic Logfire Read Token - DeLulu Smash",
+    ),
 ]
 
 
@@ -149,7 +161,7 @@ def sync(
     ] = False,
     guide: Annotated[bool, typer.Option("--guide", help="Show the steps for getting each secret asked for")] = False,
 ) -> None:
-    """Store secrets (Pydantic AI Gateway key, start.gg API token) in the keyring
+    """Store secrets (Gateway key, start.gg API token, Logfire read token) in the keyring
 
     Each secret is read from 1Password (item named per secret) when it is there. One that isn't
     gets the steps for creating it and the 1Password item to save it as, then a prompt; Enter

@@ -84,7 +84,7 @@ class SqlEditor(rx.NoSSRComponent):
     keys: rx.Var[dict[str, str]]
     # Backend URL for the Alt+A inline chat (api.py /inline_edit); without it the box has none.
     edit_url: rx.Var[str]
-    # The session, so Alt+A can read its chat (Alt+Shift+A asks without it).
+    # The session, so Alt+A can read its chat.
     token: rx.Var[str]
 
     # (sql): fired by Shortcut.RUN_SQL, with the selection when there is one, else the whole text.

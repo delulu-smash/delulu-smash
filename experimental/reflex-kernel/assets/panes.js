@@ -161,7 +161,7 @@
 
   // Run a shortcut by its keys ("Alt+F"), as if pressed where you were. Waits a moment, for the
   // menu that asked to be gone and the focus to be back.
-  const EDITOR_KEYS = new Set([SHORTCUTS.INLINE_EDIT, SHORTCUTS.INLINE_EDIT_FRESH].filter(Boolean));
+  const EDITOR_KEYS = new Set([SHORTCUTS.INLINE_EDIT].filter(Boolean));
   window.smashPress = (keys, from) => setTimeout(() => {
     let target = [from, origin, document.activeElement].find((node) => node instanceof Element && node.isConnected);
     if (EDITOR_KEYS.has(keys) && !(target && target.closest(".cm-editor"))) {

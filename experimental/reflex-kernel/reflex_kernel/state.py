@@ -17,11 +17,20 @@ import reflex as rx
 from ds.data.raw.smashtube import MatchVideos, search_videos
 from ds.util.logging import logger
 
-from . import logs
+from . import logs, spend
 from .render import Ui, ViewData, apply_event, fill_defaults, rerun_inputs
 from .db_console import DbConsole, clean_sql
 from .widgets import form_for, widget_of
-from .session import BUILTIN_NAMES, Session, get_session, split_trace, trace_parts
+from .session import (
+    BUILTIN_NAMES,
+    Session,
+    context_window,
+    cost_text,
+    get_session,
+    split_trace,
+    tokens_text,
+    trace_parts,
+)
 
 logs.install()
 
@@ -54,7 +63,8 @@ class Cell:
 
 @dataclasses.dataclass
 class ChatItem:
-    """One chat entry. kind: user | agent | step | ref | error."""
+    """One chat entry. kind: user | agent | step | ref | error | usage (what the turn cost, under its
+    answer; its name is the 'N requests' part, a link to the debug log)."""
 
     kind: str
     name: str = ""
@@ -124,6 +134,11 @@ class State(rx.State):
     chat: list[ChatItem] = []
     streaming: str = ""
     busy: bool = False
+    # the chat title's meter: the conversation's size (the last model request's input + output)
+    # against the model's context window, and what the agent turns cost so far (session.TurnUsage)
+    context_tokens: int = 0
+    context_max: int = 0
+    chat_cost: str = ""
 
     cells: list[Cell] = [Cell(id="c1")]
     cell_seq: int = 1
@@ -171,6 +186,19 @@ class State(rx.State):
     # a result, a cell; "" = all. Same ids as the rows' ↖ links (State.reveal).
     debug_focus: str = ""
     debug_focus_label: str = ""
+    # the panel's tabs: "requests" (the log above) or "ai" (AI spend from Logfire, every machine,
+    # spend.py, and the agents, agents.py). The panel opens on Requests; Logfire is only queried
+    # when the AI tab is clicked or its Refresh pressed (the agents' info needs no request).
+    debug_tab: str = "requests"
+    spend_loading: bool = False
+    spend_status: str = ""
+    spend_error: str = ""
+    spend_tiles: list[dict[str, str]] = []
+    spend_bars: list[dict[str, str]] = []
+    spend_rows: list[dict[str, str]] = []
+    spend_top: list[dict[str, str]] = []
+    spend_note: str = ""
+    spend_project_url: str = ""
 
     def _session(self) -> Session:
         return get_session(self.router.session.client_token)
@@ -262,6 +290,23 @@ class State(rx.State):
     def token(self) -> str:
         """This tab's session id, passed to the editor so completions use the right namespace."""
         return self.router.session.client_token
+
+    @rx.var
+    def context_pct(self) -> int:
+        """How full the context window is, 0-100 (0 when the window is unknown)."""
+        return min(100, round(100 * self.context_tokens / self.context_max)) if self.context_max else 0
+
+    @rx.var
+    def context_label(self) -> str:
+        """The meter's text, eg '43k / 1M (4%) · $0.012'; '' before the first AI call (chat or inline)."""
+        if not self.context_tokens and not self.chat_cost:
+            return ""
+        size = (
+            f"{tokens_text(self.context_tokens)} / {tokens_text(self.context_max)} ({self.context_pct}%)"
+            if self.context_max
+            else tokens_text(self.context_tokens)
+        )
+        return f"{size} · {self.chat_cost}"
 
     @rx.var
     def chat_on(self) -> bool:
@@ -416,6 +461,9 @@ class State(rx.State):
         self.show_debug = not self.show_debug
         if self.show_debug:
             self.debug_focus = self.debug_focus_label = ""  # the icon / Alt+D opens everything
+            # always on Requests: Logfire (the AI tab's spend) is only asked when that tab is
+            # clicked or its Refresh pressed, never just by opening the panel
+            self.debug_tab = "requests"
             self._load_debug()
         else:
             self.debug_rows = []  # nothing big kept in the tab's state while closed
@@ -429,7 +477,7 @@ class State(rx.State):
         """
         self.menu_tab, self.add_menu, self.show_help = "", False, False
         self.debug_focus, self.debug_focus_label = target, self._focus_label(target)
-        self.show_debug = True
+        self.show_debug, self.debug_tab = True, "requests"
         self._load_debug()
 
     def _focus_label(self, target: str) -> str:
@@ -451,6 +499,51 @@ class State(rx.State):
     def clear_debug_focus(self):
         self.debug_focus = self.debug_focus_label = ""
         self._load_debug()
+
+    def _sync_usage(self) -> None:
+        """The chat title's meter from the session: the chat's size and what the AI cost so far."""
+        session = self._session()
+        self.context_tokens = session.chat_tokens
+        self.context_max = context_window() or 0
+        self.chat_cost = cost_text(session.ai_cost)
+
+    @rx.event
+    def refresh_usage(self):
+        """After an inline chat (inline_edit.jsx clicks the hidden [data-usage-refresh] button): its cost."""
+        self._sync_usage()
+
+    @rx.event
+    def open_requests(self):
+        """Open the debug panel on its Requests tab, everything shown (a chat turn's 'N requests' link)."""
+        self.menu_tab, self.add_menu, self.show_help = "", False, False
+        self.debug_focus = self.debug_focus_label = ""
+        self.show_debug, self.debug_tab = True, "requests"
+        self._load_debug()
+
+    @rx.event
+    def set_debug_tab(self, tab: str):
+        self.debug_tab = tab
+        if tab == "ai":
+            return State.load_spend
+        return None
+
+    @rx.event(background=True)
+    async def load_spend(self):
+        """Query Logfire for the AI tab's spend (two queries, a second or so), off the event loop."""
+        async with self:
+            if self.spend_loading:
+                return
+            self.spend_loading = True
+            log_context = self._log_context("debug panel")
+        # its requests show in the Requests tab, tagged with this session
+        with log_context:
+            view = await asyncio.to_thread(spend.load)
+        async with self:
+            self.spend_loading = False
+            self.spend_status, self.spend_error, self.spend_note = view.status, view.error, view.note
+            self.spend_tiles, self.spend_bars = view.tiles, view.bars
+            self.spend_rows, self.spend_top = view.rows, view.top
+            self.spend_project_url = view.project_url
 
     @rx.event
     def refresh_debug(self):
@@ -853,6 +946,11 @@ class State(rx.State):
                 self.chat.append(ChatItem(kind="agent", text=result.text or self.streaming))
             if result.error:
                 self.chat.append(ChatItem(kind="error", text=result.error, **_trace_fields(result.trace)))
+            if result.usage.requests:
+                # the last part ('3 requests') is a link to the debug panel's Requests tab
+                *used, requests = result.usage.summary().split(" · ")
+                self.chat.append(ChatItem(kind="usage", text=" · ".join(used), name=requests))
+            self._sync_usage()
             self.streaming = ""
             self.busy = False
             self._sync(prefer=last_table)

@@ -27,6 +27,8 @@ from ds.data.raw.startgg.client import MAX_REQUESTS_PER_MINUTE
 from ds.util.http import curl_command
 from ds.util.logging import enable_call_logs, logger
 
+from .session import cost_text
+
 # ~2.5 KB a record (measured Nov 2026; mostly the request headers, a GraphQL query text is
 # shared with queries.py, not copied): 2000 is about 5 MB, bounded however long it runs
 MAX_RECORDS = 2000
@@ -205,8 +207,14 @@ def _agent(record: dict[str, Any]) -> LogView:
         f"{steps} tool call{'s' if steps != 1 else ''}",
     ]
     if record.get("input_tokens") is not None:
-        parts.append(f"{record['input_tokens']} in / {record.get('output_tokens')} out tokens")
-    return LogView(" · ".join(parts), _badges(record), [("prompt", str(record.get("prompt", "")))] + _common(record))
+        parts.append(f"{record['input_tokens']:,} in / {record.get('output_tokens') or 0:,} out tokens")
+    if record.get("cost") is not None:
+        parts.append(cost_text(record["cost"]))
+    details = [("prompt", str(record.get("prompt", "")))]
+    # one line per model request (session.TurnUsage): which one grew the input, and why it stopped
+    if record.get("model_requests"):
+        details.append(("model requests", "\n".join(record["model_requests"])))
+    return LogView(" · ".join(parts), _badges(record), details + _common(record))
 
 
 def _tool(record: dict[str, Any]) -> LogView:

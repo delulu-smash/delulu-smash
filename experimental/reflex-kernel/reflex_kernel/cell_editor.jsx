@@ -133,7 +133,7 @@ export function CellEditor({ initialCode, completeUrl, editUrl, token, keys, onR
 
     return [
       // Alt+A inline chat (first, so its Tab / Esc win while a proposal is shown)
-      inlineEdit(() => ({ url: live.current.editUrl, key: keys?.inlineEdit, freshKey: keys?.inlineEditFresh, language: "python",
+      inlineEdit(() => ({ url: live.current.editUrl, key: keys?.inlineEdit, language: "python",
         token: live.current.token })),
       python(),
       // Wrap long lines instead of scrolling the cell sideways (which hid the start of every line).

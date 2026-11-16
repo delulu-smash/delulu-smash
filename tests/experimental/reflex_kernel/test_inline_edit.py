@@ -13,8 +13,8 @@ from types import SimpleNamespace
 
 import polars as pl
 import pytest
-from pydantic_ai import capture_run_messages
-from pydantic_ai.messages import ModelRequest, ModelResponse, TextPart, UserPromptPart
+from pydantic_ai.messages import ModelMessage, ModelRequest, ModelResponse, TextPart, ToolCallPart, UserPromptPart
+from pydantic_ai.models.function import AgentInfo, FunctionModel
 from pydantic_ai.models.test import TestModel
 
 # the app has no package install: import it from its folder
@@ -26,6 +26,19 @@ from reflex_kernel import inline_edit  # noqa: E402
 from reflex_kernel.shortcuts import Shortcut, codemirror_key, sql_keys  # noqa: E402
 
 DB = ds.data.init_db()
+
+
+def answering(code: str, calls: list[list[ModelMessage]]) -> FunctionModel:
+    """A stand-in model that always proposes `code` and records what each request sent.
+
+    (Not capture_run_messages: edit() has its own, and the innermost capture takes the run.)
+    """
+
+    def respond(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
+        calls.append(list(messages))
+        return ModelResponse(parts=[ToolCallPart(info.output_tools[0].name, {"code": code})])
+
+    return FunctionModel(respond)
 
 
 def test_context_shows_how_the_data_is_written(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -79,35 +92,31 @@ def test_variables_show_dataframes_with_columns() -> None:
 def test_edit_returns_the_models_code() -> None:
     body = {"language": "sql", "before": "select 1", "instruction": "add a column", "schema": {"char": ["id"]}}
     with inline_edit.edit_agent.override(model=TestModel(custom_output_args={"code": "select 1, 2"})):
-        assert asyncio.run(inline_edit.edit(body)) == {"code": "select 1, 2"}
+        answer = asyncio.run(inline_edit.edit(body))
+    assert answer["code"] == "select 1, 2"
+    # what the call used, for the box's status line (session.TurnUsage.summary)
+    assert answer["usage"].endswith("1 request")
 
 
 def test_edit_needs_an_instruction() -> None:
     assert "error" in asyncio.run(inline_edit.edit({"before": "x", "instruction": "  "}))
 
 
-def test_fresh_key_is_alt_shift_a() -> None:
-    assert codemirror_key(Shortcut.INLINE_EDIT_FRESH) == "Alt-Shift-a"
+def test_inline_key_is_alt_a() -> None:
+    assert codemirror_key(Shortcut.INLINE_EDIT) == "Alt-a"
 
 
-def test_chat_history_goes_along_only_when_asked(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_chat_history_goes_along_and_the_cost_is_added(monkeypatch: pytest.MonkeyPatch) -> None:
     history = [ModelRequest(parts=[UserPromptPart("who is ranked first?")]), ModelResponse(parts=[TextPart("Sonix")])]
-    monkeypatch.setattr(
-        inline_edit, "find_session", lambda _token: SimpleNamespace(ai_history=history, db=DB, namespace={})
-    )
+    session = SimpleNamespace(ai_history=history, db=DB, namespace={}, ai_cost=0.0)
+    monkeypatch.setattr(inline_edit, "find_session", lambda _token: session)
     body = {"language": "sql", "before": "select 1", "instruction": "that player", "token": "t"}
-    with (
-        inline_edit.edit_agent.override(model=TestModel(custom_output_args={"code": "x"})),
-        capture_run_messages() as sent,
-    ):
-        asyncio.run(inline_edit.edit({**body, "chat": True}))
-    assert sent[: len(history)] == history
-    with (
-        inline_edit.edit_agent.override(model=TestModel(custom_output_args={"code": "x"})),
-        capture_run_messages() as sent,
-    ):
+    calls: list[list[ModelMessage]] = []
+    with inline_edit.edit_agent.override(model=answering("x", calls)):
         asyncio.run(inline_edit.edit(body))
-    assert not any(isinstance(message, ModelResponse) and message.parts == history[1].parts for message in sent)
+    assert calls[0][: len(history)] == history
+    # the stand-in model has no price: the session's total stays (unpriced requests don't add)
+    assert session.ai_cost == 0.0
 
 
 def test_a_whole_proposal_is_checked_before_it_is_shown() -> None:
@@ -123,14 +132,15 @@ def test_a_whole_proposal_is_checked_before_it_is_shown() -> None:
 
 
 def test_a_failing_proposal_goes_back_to_the_model_then_is_shown_anyway(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(inline_edit, "find_session", lambda _token: SimpleNamespace(ai_history=[], db=DB, namespace={}))
+    monkeypatch.setattr(
+        inline_edit, "find_session", lambda _token: SimpleNamespace(ai_history=[], db=DB, namespace={}, ai_cost=0.0)
+    )
     body = {"language": "sql", "before": "", "instruction": "anything", "token": "t"}
-    with (
-        inline_edit.edit_agent.override(model=TestModel(custom_output_args={"code": "select nope from char"})),
-        capture_run_messages() as sent,
-    ):
-        assert asyncio.run(inline_edit.edit(body)) == {"code": "select nope from char"}
+    calls: list[list[ModelMessage]] = []
+    with inline_edit.edit_agent.override(model=answering("select nope from char", calls)):
+        answer = asyncio.run(inline_edit.edit(body))
+    assert answer["code"] == "select nope from char"
     # asked once, then once more per fix; each time the model is told what failed
-    assert sum(isinstance(message, ModelResponse) for message in sent) == inline_edit.MAX_FIXES + 1
-    told = [str(part.content) for message in sent for part in message.parts if part.part_kind != "tool-call"]
+    assert len(calls) == inline_edit.MAX_FIXES + 1
+    told = [str(part.content) for message in calls[-1] for part in message.parts if part.part_kind != "tool-call"]
     assert sum("fails in polars SQL" in text for text in told) == inline_edit.MAX_FIXES

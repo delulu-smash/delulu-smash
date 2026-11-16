@@ -47,9 +47,17 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   on hover) that copies the full plain-text traceback.
   Each tool result gets a row (`r1 · tool · 10 videos`): click it to unfold the result inline (grid,
   gallery, fields; folded by default), or `open →` to open it as a tab in Results.
+  Under each answer, a dim line says what the turn used (`$0.0011 · 21.3k in (71% cached) · 812 out · 3 requests`),
+  summed from each model request's usage (`session.TurnUsage`); its `3 requests` is a link that opens the debug log on its
+  Requests tab. The cost is what the Pydantic AI Gateway reported
+  (pydantic-ai falls back to its bundled genai-prices data; `$?` when neither knows). Input counts each request's
+  whole prompt, so a turn with tool calls counts the history once per request.
+  The chat title has a context meter: the conversation's size (the last request's input + output, what the next
+  turn sends again) against the model's context window (from pydantic-ai's model profile), as tokens and a whole
+  percent, and what the AI cost so far (chat turns and inline chats). It turns yellow past half full: answers there are slower and dearer, and a new chat starts small.
 - **Debug log** (bug icon in the title bar, `Alt+D`): every outside call the app made, newest first:
   start.gg GraphQL requests (operation, page, status, time, start.gg's object count), other HTTP fetches
-  (supermajor search, smash-tube), agent turns (time, tool calls, tokens) and tool steps (a tool step has a `tool response` section, folded
+  (supermajor search, smash-tube), agent turns (time, tool calls, tokens, cost; a `model requests` section lists each model request's tokens, cost, why it stopped and the tools it called) and tool steps (a tool step has a `tool response` section, folded
   until clicked: what the tool gave back to the AI, cut at 4,000 characters). A row unfolds to its
   details: the request as sent (method, url, headers with secrets filtered, body or GraphQL query and
   variables), the response (status, type, size, `cf-ray`, the start of an error body), page info, timing
@@ -70,6 +78,19 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   `ds.util.http` / `ds.util.graphql` and are kept in memory only (`reflex_kernel/logs.py`, newest 2000, gone on restart);
   the panel loads them when opened, on Refresh and when a turn, form or cell finishes, never while closed.
   A new kind of record is one function in `logs.LOG_FORMATS`.
+  Two tabs: **Requests** (the log above) and **AI** (spend first, then the agents):
+  - **Agents** (`reflex_kernel/agents.py`): each agent the app runs (`smash-agent` for the chat and `ds ai eval`,
+    `inline-edit` for Alt+A) with its model, provider, context window, list price per 1M tokens (genai-prices),
+    model settings, output type, retries, and its capabilities (loaded always or on demand) with their tools.
+    Read once from the Agent objects at start. The chat title shows the chat agent's model.
+  - **Spend** (`reflex_kernel/spend.py`, `ds.data.raw.logfire`): AI spend from Logfire, so every machine and app
+    that traces there (chat, inline chats, evals), not only this session: totals for today / 7 / 30 days, a bar
+    per day (local days), a split by agent and model, the priciest requests (copy a trace id to find it in
+    Logfire). Logfire is only asked when you click the AI tab or its Refresh (the panel always opens on
+    Requests), three small requests, each logged in the Requests tab; nothing stored. The agents' info needs no
+    request (read from the Agent objects; prices from genai-prices' bundled data). Needs a Logfire read
+    token (`ds settings sync`, then restart the app); without one the tab says how to get it. Only traced calls
+    count: the actual bill (everything that used the Gateway key) is in Logfire > Settings > Spending.
 - **Tables**: click a tab to switch, type in the filter box to search. Click a column header to sort
   (ascending, descending, unsorted); filter and sort work the same in a tab and in a cell's result.
   The grid shows at most 2000 rows; the DataFrame itself is never truncated.
@@ -253,10 +274,9 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   against the live variables, so `r1.` lists real DataFrame methods. `jedi` is present in the root
   venv only as a dependency of IPython; add it to the root `pyproject.toml` if that changes.
 - **Inline chat** (as Copilot's Ctrl+I; `reflex_kernel/inline_edit.jsx` + `inline_edit.py`): in a Python
-  cell or a SmashDb console's SQL box, opens a prompt box under the editor. Two keys:
-  - `Alt+A`: the AI also reads the chat so far (its answers and tool results), so "a query for the move we
-    just talked about" works. Slower and costlier the longer the chat is.
-  - `Alt+Shift+A`: fresh, without the chat. The box shows which one it is ("with chat" / "fresh").
+  cell or a SmashDb console's SQL box, `Alt+A` opens a prompt box under the editor. The AI also reads the
+  chat so far (its answers and tool results), so "a query for the move we just talked about" works; slower
+  and costlier the longer the chat is. (A second key that left the chat out was dropped, Nov 2026.)
 
   Type what you want and press Enter: the AI rewrites the selection (or the whole box when nothing is
   selected) and the change is shown as a diff in the editor. Tab accepts (one Ctrl+Z undoes it), Esc
@@ -267,7 +287,10 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   (DataFrames with their columns and first rows). A proposal for the whole box is checked before you see
   it: a query is run, Python is parsed; one that fails (or a query that returns no rows) goes back to the
   model with the error, up to twice. It only reads the chat: an inline call is not added to it, and it has
-  none of the chat agent's tools. Each call is one record in the debug log. Another editor gets it by
+  none of the chat agent's tools. Each call is one record in the debug log, with the same usage as a chat
+  turn (tokens, cost, `model requests`), and the box's status line ends with what the call used
+  (`$0.0004 · 9.2k in · 120 out · 1 request`). Its cost is added to the chat title's meter; the meter's size
+  stays the chat's, since the call isn't added to the chat. Another editor gets it by
   passing `edit_url` (`editor.py`).
 - **No autofill**: every input, textarea and editor is opted out of password managers (1Password, LastPass,
   Bitwarden, Dashlane) and browser autofill by `assets/no_autofill.js`, including inputs added later. To allow

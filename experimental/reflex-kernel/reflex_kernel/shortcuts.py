@@ -46,11 +46,6 @@ class Shortcut(Enum):
         "cell, SmashDb console",
         "Inline chat, knowing the chat so far: ask AI to write or change the code (the selection, else all); Tab accepts, Esc discards",
     )
-    INLINE_EDIT_FRESH = Binding(
-        "Alt+Shift+A",
-        "cell, SmashDb console",
-        "Inline chat, fresh: the same, without the chat (faster; sees only the code, variables and tables)",
-    )
     # Handled by the SQL box (sql_editor.jsx): a table view's, and a SmashDb console's editor.
     RUN_SQL = Binding(
         "Ctrl+Enter",
@@ -81,7 +76,6 @@ BROWSER_SHORTCUTS = (
     Shortcut.DEBUG,
     # an editor's own keys (inline_edit.jsx): panes.js needs them to run one from the palette
     Shortcut.INLINE_EDIT,
-    Shortcut.INLINE_EDIT_FRESH,
 )
 
 
@@ -103,7 +97,6 @@ def sql_keys() -> dict[str, str]:
         "run": codemirror_key(Shortcut.RUN_SQL),
         "complete": codemirror_key(Shortcut.COMPLETE),
         "inlineEdit": codemirror_key(Shortcut.INLINE_EDIT),
-        "inlineEditFresh": codemirror_key(Shortcut.INLINE_EDIT_FRESH),
     }
 
 
@@ -114,5 +107,4 @@ def codemirror_keys() -> dict[str, str]:
         "runAndAdvance": codemirror_key(Shortcut.RUN_AND_ADVANCE),
         "complete": codemirror_key(Shortcut.COMPLETE),
         "inlineEdit": codemirror_key(Shortcut.INLINE_EDIT),
-        "inlineEditFresh": codemirror_key(Shortcut.INLINE_EDIT_FRESH),
     }

@@ -32,6 +32,9 @@ FFA, 3+ players). In 1v1 the game multiplies all damage by 1.2x:
 agent = Agent(
     # via Pydantic AI Gateway (key + URL set in ds.settings; store key: `ds settings sync`)
     DEFAULT_AI_MODEL,
+    # on every Logfire span of its runs (gen_ai.agent.name): splits AI spend by agent
+    # (ds.data.raw.logfire); evals run this agent too, so they count as smash-agent
+    name="smash-agent",
     # resolve the model at run time, so `import ds.ai` (tests, chat app) works without a key
     defer_model_check=True,
     instructions=_INSTRUCTIONS,

@@ -21,6 +21,7 @@ from .editor import cell_editor
 from .render import ICON_COLLAPSE, ICON_EXPAND, INLINE_EDIT_URL, copy_button, render_component, traceback_view
 from .widgets import ADDABLE
 from .shortcuts import Shortcut, codemirror_keys, shortcuts_script
+from .agents import AGENTS, AgentInfo
 from .state import State
 
 # Nerd Font glyphs come from commands.py (the palette draws the same ones). ICON_CHAT (the robot) is
@@ -97,6 +98,24 @@ def chat_item(item: rx.Var) -> rx.Component:
             ),
         ),
         ("ref", ref_item(item)),
+        # what the turn cost, under its answer (session.TurnUsage.summary)
+        (
+            "usage",
+            rx.el.div(
+                rx.el.span(
+                    item.text,
+                    title="This turn: cost · input tokens (share read from the prompt cache) · output tokens",
+                ),
+                " · ",
+                rx.el.button(
+                    item.name,
+                    title="Model requests this turn made: open the debug log (Requests)",
+                    on_click=State.open_requests,
+                    class_name="link-btn",
+                ),
+                class_name="turn-usage mono",
+            ),
+        ),
         # the same traceback component as under a Python cell
         ("error", traceback_view(item.trace, item.trace_hidden, item.trace_more, item.text, "chat-trace")),
         markdown_bubble(text=item.text),
@@ -155,9 +174,35 @@ def agent_progress() -> rx.Component:
     )
 
 
+def context_meter() -> rx.Component:
+    """How full the model's context window is and what the chat cost so far (State.context_label)."""
+    return rx.cond(
+        State.context_label != "",
+        rx.el.div(
+            rx.el.span(rx.el.i(style={"width": State.context_pct.to(str) + "%"}), class_name="ctx-bar"),
+            rx.el.span(State.context_label),
+            title=" ".join(
+                [
+                    "Conversation size (sent again with every request) / the model's context window,",
+                    "and what the AI cost so far (chat and inline chats). Past about half, answers get slower and cost more.",
+                ]
+            ),
+            class_name=rx.cond(State.context_pct >= 50, "ctx-meter mono is-full", "ctx-meter mono"),
+        ),
+    )
+
+
 def chat_pane() -> rx.Component:
     return rx.el.div(
-        rx.el.div(rx.el.span("Chat"), rx.el.span(class_name="spacer"), zoom_button("chat"), class_name="pane-title"),
+        rx.el.div(
+            rx.el.span("Chat"),
+            # the chat agent's model (agents.py; every agent's setup is in the debug panel's AI tab)
+            rx.el.span(AGENTS[0].model_name, title=f"Model: {AGENTS[0].model}", class_name="chat-model mono"),
+            rx.el.span(class_name="spacer"),
+            context_meter(),
+            zoom_button("chat"),
+            class_name="pane-title",
+        ),
         rx.el.div(
             # column-reverse keeps the scroll pinned to the newest message
             rx.el.div(
@@ -410,12 +455,176 @@ def debug_panel() -> rx.Component:
     """The debug log (bug icon, Shortcut.DEBUG): what the app asked of outside services, newest first."""
     return rx.el.div(
         rx.el.div(
-            rx.el.span("Debug log", class_name="help-title"),
+            rx.el.span("Debug", class_name="help-title"),
+            debug_tab("requests", "Requests", "The outside calls this app made (since the backend started)"),
+            debug_tab("ai", "AI", "The agents' setup, and AI spend from Logfire (every machine, 30 days)"),
             rx.el.span(class_name="spacer"),
-            rx.el.button("Refresh", on_click=State.refresh_debug, class_name="act"),
-            rx.el.button("Clear", on_click=State.clear_debug, class_name="act", title="Forget the shown records"),
+            rx.cond(
+                State.debug_tab == "ai",
+                rx.el.button(
+                    "Refresh",
+                    on_click=State.load_spend,
+                    disabled=State.spend_loading,
+                    title="Ask Logfire again",
+                    class_name="act",
+                ),
+                rx.fragment(
+                    rx.el.button("Refresh", on_click=State.refresh_debug, class_name="act"),
+                    rx.el.button(
+                        "Clear", on_click=State.clear_debug, class_name="act", title="Forget the shown records"
+                    ),
+                ),
+            ),
             class_name="dbg-head",
         ),
+        rx.cond(State.debug_tab == "ai", ai_view(), requests_view()),
+        class_name="debug-panel sans",
+    )
+
+
+def debug_tab(tab: str, label: str, title: str) -> rx.Component:
+    return rx.el.button(
+        label,
+        title=title,
+        on_click=State.set_debug_tab(tab),
+        class_name=rx.cond(State.debug_tab == tab, "dbg-tab is-on", "dbg-tab"),
+    )
+
+
+def agent_card(info: AgentInfo) -> rx.Component:
+    """One agent's setup (agents.py; static: built once, from where the agent is defined)."""
+    return rx.el.details(
+        rx.el.summary(
+            rx.el.span(info.name, class_name="mono agent-name"),
+            rx.el.span(info.model_name, class_name="mono"),
+            rx.el.span(info.role, class_name="dim agent-role"),
+        ),
+        rx.el.table(
+            rx.el.tbody(
+                rx.el.tr(rx.el.td("model", class_name="dim"), rx.el.td(info.model, class_name="mono")),
+                *[rx.el.tr(rx.el.td(row["label"], class_name="dim"), rx.el.td(row["value"])) for row in info.details],
+                rx.el.tr(rx.el.td("defined in", class_name="dim"), rx.el.td(info.defined_in, class_name="mono")),
+            ),
+            class_name="agent-details",
+        ),
+        rx.el.table(
+            rx.el.thead(rx.el.tr(*[rx.el.th(name) for name in ("capability", "loads", "tools")])),
+            rx.el.tbody(
+                *[
+                    rx.el.tr(
+                        rx.el.td(cap["name"], title=cap["about"], class_name="mono"),
+                        rx.el.td(cap["loads"], class_name="dim"),
+                        rx.el.td(cap["tools"] or "-", class_name="mono"),
+                    )
+                    for cap in info.capabilities
+                ]
+            ),
+            class_name="spend-table",
+        ),
+        # the chat agent starts unfolded: it is the one most asked about
+        open=info is AGENTS[0],
+        class_name="agent-card",
+    )
+
+
+def ai_view() -> rx.Component:
+    """The AI tab: AI spend from Logfire, then the agents' setup."""
+    return rx.el.div(
+        rx.el.div("Spend (Logfire, every machine)", class_name="spend-h"),
+        rx.cond(
+            State.spend_loading & (State.spend_status == ""),
+            rx.el.div("Asking Logfire…", class_name="empty"),
+        ),
+        rx.match(
+            State.spend_status,
+            (
+                "setup",
+                rx.el.div(
+                    rx.el.p("Spend needs a Logfire read token, which this machine doesn't have yet:"),
+                    rx.el.ol(
+                        rx.el.li(
+                            "Run ",
+                            rx.el.code("ds settings sync"),
+                            ". It asks for the Logfire read token and shows how to create one",
+                            " (project Settings > Read tokens).",
+                        ),
+                        rx.el.li("Restart the app (", rx.el.code("ds ui"), "): it reads tokens when it starts."),
+                    ),
+                    class_name="spend-setup",
+                ),
+            ),
+            ("error", rx.el.div(State.spend_error, class_name="spend-error mono")),
+            ("ok", spend_report()),
+            rx.fragment(),
+        ),
+        rx.el.div("Agents", class_name="spend-h"),
+        *[agent_card(info) for info in AGENTS],
+        class_name="ai-view",
+    )
+
+
+def spend_report() -> rx.Component:
+    """Totals, a bar per day, the split by agent and model, the priciest requests (spend.py)."""
+    columns = ("agent", "model", "requests", "tokens", "cost", "share")
+    return rx.fragment(
+        rx.el.div(
+            rx.foreach(
+                State.spend_tiles,
+                lambda tile: rx.el.div(
+                    rx.el.div(tile["label"], class_name="spend-tile-label"),
+                    rx.el.div(tile["value"], class_name="spend-tile-value mono"),
+                    rx.el.div(tile["sub"], class_name="dim"),
+                    class_name="spend-tile",
+                ),
+            ),
+            class_name="spend-tiles",
+        ),
+        # one series: one theme hue, no legend; each bar's tooltip has its day, cost and requests
+        rx.el.div(
+            rx.foreach(
+                State.spend_bars,
+                lambda bar: rx.el.div(
+                    rx.el.i(style={"height": bar["height"]}),
+                    rx.el.span(bar["label"], class_name="spend-bar-label"),
+                    title=bar["title"],
+                    class_name="spend-bar",
+                ),
+            ),
+            class_name="spend-bars",
+            aria_label="Cost per day",
+        ),
+        rx.el.table(
+            rx.el.thead(rx.el.tr(*[rx.el.th(name) for name in columns])),
+            rx.el.tbody(rx.foreach(State.spend_rows, lambda row: rx.el.tr(*[rx.el.td(row[name]) for name in columns]))),
+            class_name="spend-table mono",
+        ),
+        rx.el.div("Priciest requests", class_name="spend-h"),
+        rx.el.table(
+            rx.el.thead(rx.el.tr(*[rx.el.th(name) for name in ("when", "agent", "tokens", "cost", "trace")])),
+            rx.el.tbody(
+                rx.foreach(
+                    State.spend_top,
+                    lambda row: rx.el.tr(
+                        *[rx.el.td(row[name]) for name in ("when", "agent", "tokens", "cost")],
+                        rx.el.td(copy_button(row["trace_id"], "the trace id"), title=row["trace_id"]),
+                    ),
+                )
+            ),
+            class_name="spend-table mono",
+        ),
+        rx.el.div(
+            State.spend_note,
+            " Search a copied trace id in ",
+            rx.el.a("Logfire", href=State.spend_project_url, target="_blank", rel="noreferrer"),
+            ". The bill itself (every use of the Gateway key, traced or not): Logfire > Settings > Spending.",
+            class_name="spend-note dim",
+        ),
+    )
+
+
+def requests_view() -> rx.Component:
+    """The Requests tab: the outside calls this app made, newest first (logs.py)."""
+    return rx.fragment(
         rx.el.div(State.debug_stats, class_name="dbg-stats mono"),
         rx.el.div(
             rx.foreach(
@@ -456,7 +665,6 @@ def debug_panel() -> rx.Component:
             rx.el.div(rx.foreach(State.debug_rows, debug_row), class_name="dbg-list"),
             rx.el.div("Nothing logged yet: ask the agent, or run a form.", class_name="empty"),
         ),
-        class_name="debug-panel sans",
     )
 
 
@@ -733,6 +941,8 @@ def index() -> rx.Component:
         palette(),
         # assets/panes.js clicks it on Shortcut.PALETTE
         rx.el.button(on_click=State.toggle_palette, hidden=True, custom_attrs={"data-toggle": "palette"}),
+        # inline_edit.jsx clicks it after an inline chat, so the chat title's meter adds its cost
+        rx.el.button(on_click=State.refresh_usage, hidden=True, custom_attrs={"data-usage-refresh": ""}),
         class_name="page",
     )
 
