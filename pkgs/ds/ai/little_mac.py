@@ -18,8 +18,8 @@ from ds.ai.smashdb import resolve_char_id
 from ds.ai.table import TableResult
 from ds.calc.little_mac import SL_ARMOR_FULL_CHARGE, SL_ARMOR_UNCHARGED
 from ds.calc.little_mac import straight_lunge_armor as _straight_lunge_armor
-from ds.data.db import SmashDb, init_db
 from ds.data.hitboxes import hitboxes
+from ds.data.smash_db import SmashDb, init_db
 
 __all__ = ["little_mac_capability", "straight_lunge_armor"]
 

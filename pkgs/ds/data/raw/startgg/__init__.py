@@ -8,5 +8,6 @@
 from __future__ import annotations
 
 from ds.data.raw.startgg.api import *
+from ds.data.raw.startgg.characters import *
 from ds.data.raw.startgg.client import *
 from ds.data.raw.startgg.models import *

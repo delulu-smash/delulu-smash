@@ -93,18 +93,21 @@ def _usage() -> PlayerUsage:
 def test_registry_is_consistent():
     kinds = [widget.kind for widget in WIDGETS]
     assert len(kinds) == len(set(kinds))
-    assert [widget.form for widget in ADDABLE] == [form for form in TOOL_FORMS if form in [w.form for w in ADDABLE]]
+    addable_forms = [widget.form for widget in ADDABLE if widget.form]
+    assert addable_forms == [form for form in TOOL_FORMS if form in addable_forms]
     for widget in WIDGETS:
         assert widget_of(widget.kind) is widget
         assert (widget.form is None) == (widget.tool is None)
         if widget.addable:
-            assert widget.form is not None
+            # "+" has something to bind: its tool's form, or its own blank value
+            assert widget.form is not None or widget.new is not None
     assert widget_of("nope") is None
 
 
-def test_addable_needs_a_tool():
+def test_addable_needs_a_tool_or_a_new_value():
     with pytest.raises(ValueError, match="addable needs a tool"):
         Widget("x", "X", addable=True)
+    assert Widget("x", "X", new=lambda _session: 1, addable=True).blank(None) == 1
 
 
 def test_usage_widget_attributes():

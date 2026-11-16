@@ -3,7 +3,7 @@
 # Purpose: the widget registry: every kind of view render.py can show, with its attributes as
 #          data (WIDGETS). The app reads behaviour from here instead of hard-coding it per
 #          widget: which agent tool a widget mimics (its tool form), whether "+" can add it by
-#          hand, whether it starts unfolded in the chat.
+#          hand (and what it starts as), whether it starts unfolded in the chat.
 # To add a widget: a Widget row here, a `case` in render.to_view that makes its View (kind =
 #          the row's kind), and its component in render.render_component.
 # To change behaviour: edit the row. Nothing else reads these facts from anywhere else.
@@ -17,10 +17,13 @@ from typing import TYPE_CHECKING, Any
 from ds.ai.smashtube import find_match_videos
 from ds.ai.startgg import get_player_usage
 
+from .db_console import DbConsole
 from .tool_forms import ToolForm, ToolRequest
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
+    from .session import Session
 
 
 @dataclasses.dataclass(frozen=True)
@@ -34,20 +37,28 @@ class Widget:
     inputs under `Inputs`, to change and run again. The tool's return type is what it matches."""
     hide: tuple[str, ...] = ()
     """Tool parameters not on the form, eg paging the widget does itself."""
+    new: Callable[[Session], Any] | None = None
+    """For a widget that is no tool's result: the blank value "+" binds, made for a session."""
     addable: bool = False
-    """Offered in the Results tab bar's "+" menu, to add by hand (needs `tool`)."""
+    """Offered in the Results tab bar's "+" menu, to add by hand (needs `tool` or `new`)."""
     chat_open: bool = False
     """Starts unfolded in the chat when the agent returns it (others start as a folded row)."""
 
     def __post_init__(self) -> None:
-        if self.addable and self.tool is None:
-            raise ValueError(f"widget {self.kind!r}: addable needs a tool to run")
+        if self.addable and self.tool is None and self.new is None:
+            raise ValueError(f"widget {self.kind!r}: addable needs a tool to run or a `new` value")
 
     # ds::exception: caching (approved 2026-11-15): built from a function signature, which only
     #   changes with a code edit (a restart)
     @cached_property
     def form(self) -> ToolForm | None:
         return ToolForm(self.title, self.tool, self.hide) if self.tool else None
+
+    def blank(self, session: Session) -> Any:
+        """What "+" binds for this widget: its own `new` value, else its tool form, not run yet."""
+        if self.new is not None:
+            return self.new(session)
+        return ToolRequest(self.form.key) if self.form else None
 
 
 WIDGETS: list[Widget] = [
@@ -57,6 +68,8 @@ WIDGETS: list[Widget] = [
     # small and visual: worth seeing without a click
     Widget("usage", "Player usage", tool=get_player_usage, addable=True, chat_open=True),
     Widget("fields", "Fields"),
+    # a query console on the session's db (db_console.py): schema tree, SQL editor, result grid
+    Widget("smashdb", "SmashDb console", new=lambda session: DbConsole(session.db), addable=True),
     # a tool form added with "+", before its first run
     Widget("tool", "Tool form"),
 ]

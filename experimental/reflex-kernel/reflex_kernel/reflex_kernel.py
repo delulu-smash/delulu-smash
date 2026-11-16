@@ -14,15 +14,13 @@ import reflex as rx
 
 from .api import api
 from .editor import cell_editor
-from .render import ICON_COLLAPSE, ICON_EXPAND, render_component
+from .render import ICON_COLLAPSE, ICON_EXPAND, copy_button, render_component, traceback_view
 from .widgets import ADDABLE
 from .shortcuts import Shortcut, codemirror_keys, shortcuts_script
 from .state import State
 
 # Nerd Font glyphs (JetBrainsMono Nerd Font): python logo, robot, table.
 ICON_PY = ""
-# Copy (two sheets) and a tick, for copy_button.
-ICON_COPY, ICON_COPIED = "\U000f018f", "\U000f012c"
 ICON_CHAT, ICON_RESULTS = "\U000f06a9", "\U000f04eb"
 # A bug, for the debug panel's button.
 ICON_BUG = "\U000f00e4"
@@ -36,7 +34,8 @@ RESULT_NOTES = [
     "Closing a tab keeps the name in Python; open → in the chat brings it back.",
     "Inputs ▸ on a match video search: what the tool was called with; change it and run again (Enter).",
     "After re-running an agent's result, × in its inputs puts the agent's original call and result back.",
-    "+ in the Results tab bar: add a result by hand, eg a match video search or a player's usage.",
+    "+ in the Results tab bar (Alt+P anywhere): add a result by hand: match videos, player usage, a SmashDb console.",
+    "SmashDb console: tables on the left (▶ shows one), write SQL and Ctrl+Enter; a selection runs alone.",
     "Player usage: a player's characters and stages as bars; pick All games / Game 1 / Events, hover for counts.",
     "Player usage: All / Offline / Online at its top re-counts everything for in-person or online events only.",
     "Player usage: sets (30 to 150) is how far back it reads; each 30 is one start.gg request.",
@@ -236,7 +235,22 @@ def object_tab(obj: rx.Var) -> rx.Component:
 
 
 def menu_item(label: str, event: Any) -> rx.Component:
+    """One row of a menu (assets/panes.js: arrows move between a menu's rows)."""
     return rx.el.button(label, on_click=event, class_name="menu-item")
+
+
+def menu_search(placeholder: str) -> rx.Component:
+    """A menu's search box, as in Omarchy's menus: it has the focus when the menu opens; typing
+    filters the rows, arrows move, Enter picks. All in the browser (assets/panes.js,
+    data-menu-search), so it is instant."""
+    return rx.el.input(
+        placeholder=placeholder,
+        auto_focus=True,
+        auto_complete="off",
+        spell_check=False,
+        custom_attrs={"data-menu-search": ""},
+        class_name="menu-search",
+    )
 
 
 def overlays() -> rx.Component:
@@ -274,10 +288,21 @@ def overlays() -> rx.Component:
             rx.cond(
                 State.add_menu,
                 rx.el.div(
-                    rx.el.div("Add", class_name="menu-head"),
-                    *[menu_item(widget.title, State.add_tool_form(widget.form.key)) for widget in ADDABLE],
-                    style={"left": State.menu_x.to(str) + "px", "top": State.menu_y.to(str) + "px"},
-                    class_name="menu sans",
+                    rx.el.div(
+                        "Add",
+                        rx.el.span(Shortcut.ADD_WIDGET.keys, class_name="menu-keys mono"),
+                        class_name="menu-head",
+                    ),
+                    menu_search("Search widgets…"),
+                    *[menu_item(widget.title, State.add_widget(widget.kind)) for widget in ADDABLE],
+                    rx.el.div("No matching widget", class_name="menu-empty dim"),
+                    # at the pointer ("+"), or in the middle of the window (Shortcut.ADD_WIDGET)
+                    style=rx.cond(
+                        State.add_menu_centered,
+                        {},
+                        {"left": State.menu_x.to(str) + "px", "top": State.menu_y.to(str) + "px"},
+                    ),
+                    class_name=rx.cond(State.add_menu_centered, "menu sans is-centered", "menu sans"),
                 ),
             ),
             rx.cond(State.show_help, help_panel()),
@@ -460,88 +485,6 @@ def viewer() -> rx.Component:
     )
 
 
-def trace_part(part: rx.Var) -> rx.Component:
-    """One piece of a traceback (session.trace_parts): the full standard traceback, styled by role."""
-    return rx.match(
-        part["kind"],
-        (
-            "frame",
-            rx.el.div(
-                rx.el.div(
-                    rx.el.span(part["path"], class_name="tb-path"),
-                    rx.el.span(", line ", class_name="dim"),
-                    rx.el.span(part["line"], class_name="tb-line"),
-                    rx.cond(
-                        part["func"] != "",
-                        rx.el.span(
-                            rx.el.span(", in ", class_name="dim"), rx.el.span(part["func"], class_name="tb-func")
-                        ),
-                    ),
-                ),
-                rx.cond(
-                    (part["pre"] != "") | (part["mark"] != ""),
-                    rx.el.div(
-                        part["pre"],
-                        rx.el.span(part["mark"], class_name="tb-mark"),
-                        part["post"],
-                        class_name="tb-code",
-                    ),
-                ),
-                class_name="tb-frame is-" + part["where"].to(str),
-            ),
-        ),
-        (
-            "error",
-            rx.el.div(
-                rx.el.span(part["module"], class_name="tb-module"),
-                rx.el.span(part["name"], class_name="tb-name"),
-                rx.cond(part["text"] != "", rx.el.span(": ", part["text"], class_name="tb-msg")),
-                class_name="tb-error",
-            ),
-        ),
-        ("chain", rx.el.div(part["text"], class_name="tb-chain")),
-        rx.el.div(part["text"], class_name="tb-dim"),
-    )
-
-
-def copy_button(text: rx.Var[str] | str, what: str = "", label: str = "") -> rx.Component:
-    """The small copy button of a code block: copies text; assets/panes.js does it (data-copy)
-    and shows a tick for a moment. label: a word instead of the copy icon, eg "curl"."""
-    return rx.el.button(
-        rx.el.span(f"{ICON_COPY} {label}" if label else ICON_COPY, class_name="when-idle"),
-        rx.el.span(f"{ICON_COPIED} {label}" if label else ICON_COPIED, class_name="when-copied"),
-        title=f"Copy {what}".strip(),
-        aria_label=f"Copy {what}".strip(),
-        type="button",
-        custom_attrs={"data-copy": text},
-        class_name="copy-btn mono",
-    )
-
-
-def traceback_view(trace: rx.Var, hidden: rx.Var, more: rx.Var, text: rx.Var, class_name: str = "") -> rx.Component:
-    """An error's traceback, the same under a Python cell and in the chat: the frame that raised
-    and the error always shown, everything above it folded in a <details>, and a copy button for
-    the full plain-text traceback (text). Without styled parts it shows the plain text."""
-    return rx.el.div(
-        copy_button(text, "the full traceback"),
-        rx.cond(
-            trace.length() > 0,
-            rx.fragment(
-                rx.cond(
-                    hidden.length() > 0,
-                    rx.el.details(
-                        rx.el.summary(more, class_name="tb-toggle sans"),
-                        rx.foreach(hidden, trace_part),
-                    ),
-                ),
-                rx.foreach(trace, trace_part),
-            ),
-            rx.el.pre(text, class_name="tb-plain"),
-        ),
-        class_name=f"cell-trace mono {class_name}".strip(),
-    )
-
-
 def cell_view(cell: rx.Var) -> rx.Component:
     """One notebook cell: In[n] gutter, CodeMirror editor, output underneath."""
     return rx.el.div(
@@ -624,7 +567,7 @@ def tables_pane() -> rx.Component:
                 rx.cond(~State.has_objects, rx.el.span("no open results", class_name="tab dim")),
                 rx.el.button(
                     "+",
-                    title="Add a result by hand (eg a match video search)",
+                    title=Shortcut.ADD_WIDGET.hint("Add a result by hand (eg a match video search, a SmashDb console)"),
                     on_click=State.open_add_menu,
                     class_name="tab-add",
                 ),
@@ -720,6 +663,8 @@ def index() -> rx.Component:
         statusbar(),
         overlays(),
         keys_palette(),
+        # assets/panes.js clicks it on Shortcut.ADD_WIDGET (the "+" itself is hidden with its pane)
+        rx.el.button(on_click=State.toggle_add_menu, hidden=True, custom_attrs={"data-toggle": "add"}),
         class_name="page",
     )
 

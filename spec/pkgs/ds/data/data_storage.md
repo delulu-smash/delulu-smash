@@ -3,7 +3,7 @@
 
 ## Format: Parquet
 
-Persisted data is stored as Parquet files in `pkgs/ds/data/parquet/` (`ds.data.paths.PARQUET_DIR`), one file per
+Persisted data is stored as Parquet files in `pkgs/ds/data/smash_db/parquet/` (`ds.data.paths.PARQUET_DIR`), one file per
 table, named by table (eg `char.parquet` → table `char`, `framedata.parquet` → table `framedata`).
 
 ### Why
@@ -14,15 +14,21 @@ table, named by table (eg `char.parquet` → table `char`, `framedata.parquet` �
   read without loading data (eg `pl.scan_parquet(p).collect_schema()`, as `ds data` listing does).
   `SmashDb.tables()` / `table_schema(table)` / `schema()` expose this per table (used for textual-kernel's
   Smash-mode SQL autocomplete).
-- **SQL on top**: tables are queryable with SQL via `ds.data.db.SmashDb`, which registers every
+- **SQL on top**: tables are queryable with SQL via `ds.data.smash_db.SmashDb`, which registers every
   `*.parquet` file in a Polars `SQLContext` (`init_db().sql("select * from framedata")`). DuckDB can query
   the same files directly.
 - **Compact, columnar, lazy**: small on disk and supports lazy scans / predicate pushdown for analytics.
 
 ## Requirements
 
-- Each direct child `pkgs/ds/data/parquet/*.parquet` is a table; the filename stem is the table name. Don't put
+- Each direct child `pkgs/ds/data/smash_db/parquet/*.parquet` is a table; the filename stem is the table name. Don't put
   non-table Parquet files there (use `pkgs/ds/data/raw/` for intermediate data).
+- **The tables are the master database: cleaned, normalized, one vocabulary** (`external_sources.md`). A
+  source's own concepts (a site's character ids, its names, its slugs) don't go in them, as a table or as a
+  column. Either normalize when storing, or keep the translation inside that source's code under
+  `pkgs/ds/data/raw/<site>/` and hand out normalized values from its `ds.data` functions. Eg start.gg's
+  character ids are a constant in `raw/startgg/characters.py`, not a table (decided Nov 2026: they were a
+  `startgg_char` table in SmashDb before).
 - Code finds the folder through `ds.data.paths.PARQUET_DIR` (or `SmashDb`), never by building the path itself, so
   the tables can move again with one change.
 - Writers should store real column types (numbers as numeric, not strings) so schema lookup is meaningful.

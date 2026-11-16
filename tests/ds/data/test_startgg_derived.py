@@ -331,7 +331,7 @@ def test_player_usage_reads_one_request_of_the_newest_sets(fetched):
     per_page = startgg.USAGE_PER_PAGE
     assert (fetched["max_pages"], fetched["per_page"], fetched["max_sets"]) == (1, per_page, per_page)
     assert fetched["query"] is startgg.queries.USAGE_SETS
-    assert fetched["characters"] is not None  # stored (startgg_char.parquet): no request for them
+    assert fetched["characters"] is not None  # stored in the start.gg code: no request for them
     assert "since" not in fetched or fetched["since"] is None
     assert (got.window.requests, got.vs_characters) == (1, ["steve", "pac_man"])  # once each, in order
     assert asyncio.run(derived.player_usage("Mac", requests=2)).window.requests == 2

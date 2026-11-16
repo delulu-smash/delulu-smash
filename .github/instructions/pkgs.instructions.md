@@ -25,20 +25,20 @@ applyTo: "pkgs/**"
 
 ## `ds/data` Conventions
 
-`pkgs/ds/data/parquet/` is this repo's "database" (`ds.data.paths.PARQUET_DIR`): each parquet file in it (eg
+`pkgs/ds/data/smash_db/parquet/` is this repo's "database" (`ds.data.paths.PARQUET_DIR`): each parquet file in it (eg
 `char.parquet`, `framedata.parquet`) is a table, and rows/columns should be reasoned about the way you would reason
 about a SQL table (primary key, foreign keys, grain), not as an arbitrary data dump.
 
-- `pkgs/ds/data/parquet/*.parquet` are the synced "database" tables; `pkgs/ds/data/raw/` holds the scraping scripts and any
+- `pkgs/ds/data/smash_db/parquet/*.parquet` are the synced "database" tables; `pkgs/ds/data/raw/` holds the scraping scripts and any
   hand-copied source data used to produce them.
-- `pkgs/ds/data/parquet/*.parquet` are tracked via Git LFS (see root `.gitattributes`, `*.parquet filter=lfs diff=lfs
+- `pkgs/ds/data/smash_db/parquet/*.parquet` are tracked via Git LFS (see root `.gitattributes`, `*.parquet filter=lfs diff=lfs
   merge=lfs -text`), not committed as regular git blobs. Requires `git-lfs` installed (`brew install git-lfs` +
   `git lfs install`) on any machine that will commit/pull these files.
 - Parquet is preferred over CSV for these tables: it's typed (no schema re-inference on read) and, for this mostly
   string/repetitive data, compresses far smaller than CSV (verified: `framedata.csv` at 431KB became a 104KB
   `framedata.parquet` — about 4x smaller; feather/Arrow IPC was tried too but came out *larger* than CSV since it's
   uncompressed by default, so parquet is the right choice here, not feather).
-- `pkgs/ds/data/README.md` is the data dictionary for every table in `pkgs/ds/data/parquet/`. Whenever a change adds,
+- `pkgs/ds/data/README.md` is the data dictionary for every table in `pkgs/ds/data/smash_db/parquet/`. Whenever a change adds,
   renames, or removes a column produced by `pkgs/ds/data/raw/*.py` or `pkgs/ds/cli/data.py`, update that README in
   the same change so its column tables stay accurate.
 - Document each table's primary key, foreign keys into other tables, and grain in that README, plus a runnable

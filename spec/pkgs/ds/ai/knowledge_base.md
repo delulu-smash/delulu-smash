@@ -9,7 +9,7 @@ How Smash Ultimate knowledge is captured, curated, stored and used by AI (Claude
 
 | Layer | Where | What | Read by AI when answering? |
 |---|---|---|---|
-| **Structured** | `pkgs/ds/data/parquet/*.parquet` (SmashDb) | Frame data, roster: exact numbers | Yes, through `ds.ai.smashdb` tools |
+| **Structured** | `pkgs/ds/data/smash_db/parquet/*.parquet` (SmashDb) | Frame data, roster: exact numbers | Yes, through `ds.ai.smashdb` tools |
 | **Curated** | `docs/` (MyST site) | Mechanics, matchups, tech, stages, glossary, reviewed by the user | Yes, and it's the **baseline** (`ds.ai.knowledge`) |
 | **Raw** | `local/staging/` (git-ignored, machine-local) | Unedited source captures: wiki text, Discord threads, tweets, transcripts | **No.** Only as input to research/curation |
 

@@ -388,7 +388,7 @@ autocomplete, and `DataTable` output as SQL mode, and the same database
 icon (`nf-dev-database`); its own accent color (`$success`) tells them apart.
 
 Queries run against `Kernel.smash_db`, a `ds.data.SmashDb` — every
-`pkgs/ds/data/parquet/*.parquet` file registered as a table named by its filename
+`pkgs/ds/data/smash_db/parquet/*.parquet` file registered as a table named by its filename
 (`char`, `framedata`, ...) in a Polars `SQLContext`, so the SQL dialect is
 Polars' rather than SQLite's. The connection badge reads `SmashDb`. Autocomplete's table/column candidates come from
 `SmashDb.tables()`/`table_schema()` (parquet footer metadata only, no rows

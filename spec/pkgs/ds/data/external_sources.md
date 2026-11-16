@@ -43,6 +43,11 @@ ids, icon file names). The translation belongs to the site's module and is the m
   `raw/smashmate.py`. A test checks the map covers every `char.parquet` id.
 - **Keep the site's value next to the normalized one** when it is needed to call the site again or to debug
   (eg start.gg's numeric character `id` beside `char_group`). It is extra, never the key callers use.
+- **A site's own ids never become a SmashDb table or column.** A stored translation (site id -> ours) lives
+  in that site's folder, `raw/<site>/`, used only by that site's code. Prefer a constant in code over a data
+  file when it is small and rarely changes (eg `STARTGG_CHARACTER_NAMES` in `raw/startgg/characters.py`,
+  rewritten by `ds data startgg-char`): readable, diffable, no file to read.
+  See `data_storage.md`, "Requirements".
 - **Fighters and picks.** A `char.parquet` row is a *fighter* (its own moves and frame data). A *pick* is a
   character-select entry. They differ for two picks: `pokemon_trainer` (`pt_squirtle`, `pt_ivysaur`,
   `pt_charizard`) and `pyra_mythra` (`pyra`, `mythra`). Frame-data sites list fighters (ultimateframedata.com
@@ -66,7 +71,7 @@ ids, icon file names). The translation belongs to the site's module and is the m
 | ultimateframedata.com | `raw/framedata.py`, `raw/roster.py` | site slug is the origin of `char.parquet` ids | normalized (defines the standard) |
 | nasmashmate.com (icons) | `raw/smashmate.py` | `SITE_CHAR_ICON`: `char_id` -> site icon name | normalized |
 | smash-tube.com | `raw/smashtube.py` | `SITE_CHARACTER`: `char_id` -> Japanese name; inputs are `char_id` | normalized on input |
-| start.gg | `raw/startgg/` | name match + `api.SITE_CHARACTER` (Rosalina, Simon Belmont); `Character.char_group` + `char_icon`, site `id` kept; ids stored in `startgg_char.parquet` | normalized (picks, so `char_group`) |
+| start.gg | `raw/startgg/` | name match + `api.SITE_CHARACTER` (Rosalina, Simon Belmont); `Character.char_group` + `char_icon`, site `id` kept; ids kept in code, `raw/startgg/characters.py` (not a SmashDb table) | normalized (picks, so `char_group`) |
 | supermajor.gg | `raw/supermajor.py` | returns the site's ids (`A1297`) and names | **not normalized** (TODO in file); player pages blocked since Nov 2026, so left as is |
 
 ## Layers inside a large source

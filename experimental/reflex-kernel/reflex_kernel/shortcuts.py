@@ -25,8 +25,11 @@ class Shortcut(Enum):
     FULL_SCREEN = Binding("Alt+F", "result, pane", "Full screen: float the result you are in, else fill with your pane")
     CLOSE = Binding("Escape", "floating result, menu, help, debug log, keybindings", "Close it")
     TOGGLE_RESULTS = Binding("Alt+R", "anywhere", "Show or hide the Results pane")
-    TOGGLE_PYTHON = Binding("Alt+P", "anywhere", "Show or hide the Python (Jupyter) pane")
+    TOGGLE_PYTHON = Binding("Alt+J", "anywhere", "Show or hide the Python (Jupyter) pane")
     HELP = Binding("Alt+H", "anywhere", "Show or hide this help")
+    ADD_WIDGET = Binding(
+        "Alt+P", "anywhere", "Add a widget by hand: show or hide the list (type to filter, arrows, Enter)"
+    )
     # Handled by assets/keys.js.
     KEYS = Binding("Alt+K", "anywhere", "Show or hide the keybindings list (type to filter)")
     DEBUG = Binding("Alt+D", "anywhere", "Show or hide the debug log: every request the app made, memory")
@@ -37,8 +40,12 @@ class Shortcut(Enum):
     RUN_AND_ADVANCE = Binding("Shift+Enter", "cell", "Run and go to the next cell")
     RUN = Binding("Ctrl+Enter", "cell", "Run")
     COMPLETE = Binding("Tab", "cell", "Complete")
-    # Handled by a table view's SQL box (sql_editor.jsx).
-    RUN_SQL = Binding("Ctrl+Enter", "table SQL", "Run the query on the table (polars SQL, the table is self)")
+    # Handled by the SQL box (sql_editor.jsx): a table view's, and a SmashDb console's editor.
+    RUN_SQL = Binding(
+        "Ctrl+Enter",
+        "table SQL, SmashDb console",
+        "Run the query (polars SQL; a table's own box queries it as self; a selection runs alone)",
+    )
     # A mouse action, listed for the help panel.
     TAB_MENU = Binding("Right-click", "result tab", "Show in Chat, Close, Close Others, Close to the Right, Close All")
 
@@ -58,6 +65,7 @@ BROWSER_SHORTCUTS = (
     Shortcut.TOGGLE_RESULTS,
     Shortcut.TOGGLE_PYTHON,
     Shortcut.HELP,
+    Shortcut.ADD_WIDGET,
     Shortcut.KEYS,
     Shortcut.DEBUG,
 )

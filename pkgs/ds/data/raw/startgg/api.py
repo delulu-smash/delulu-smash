@@ -357,7 +357,7 @@ async def player_sets(  # one keyword per way of narrowing the sets
         max_pages: at most this many requests for sets, whatever `max_sets` / `since` say
             (eg 1 for one quick look at the newest sets); None for no limit.
         query: PLAYER_SETS (everything) or USAGE_SETS (just what usage reads).
-        characters: start.gg's characters by id (eg ds.data.startgg.stored_characters()), so
+        characters: start.gg's characters by id (eg `stored_characters()`, characters.py), so
             no request is spent on them; fetched once (videogame_characters) when not given.
     """
 

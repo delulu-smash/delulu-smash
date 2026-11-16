@@ -5,7 +5,7 @@
 
 Per-character player rankings, from a Google Drive folder shared with Patreon supporters (not public). A new
 release comes out about once a month; it is downloaded by hand as a zip and loaded into
-[`../../parquet/char_ranking.parquet`](../../README.md) with this repo's character ids.
+[`../../smash_db/parquet/char_ranking.parquet`](../../README.md) with this repo's character ids.
 
 ```sh
 ds data char_ranking                    # the newest .zip in ~/Downloads
@@ -14,17 +14,21 @@ ds data char_ranking "<name>.zip"       # or name it: a file in ~/Downloads, or 
 
 ## Monthly steps
 
-1. Open the shared Google Drive folder: its link is posted in the Discord's Patreon channels.
-2. Go into **Character Rankings** and download the month's folder (eg `November 2026`; right-click > Download).
-   Drive zips it into `~/Downloads`, eg `November 2026-20261116T044304Z-1-001.zip`.
-3. Run `ds data char_ranking`. It shows the zip and the month it found (`'November 2026'` -> `2026-11-30`) and asks
+`ds data char_ranking --help` shows these too, and the command prints them each time it runs.
+
+1. Open the SchuStats Discord and find the Google Drive link posted there (Patreon channels).
+2. In the Drive folder, open **Character Rankings** and find the month's folder (eg `November 2026`).
+3. Download that month's folder (right-click > Download), not the whole Character Rankings folder: the load dates
+   the release by the one month folder in the zip. Drive zips it into `~/Downloads`, eg
+   `November 2026-20261116T044304Z-1-001.zip`.
+4. Run `ds data char_ranking`. It shows the zip and the month it found (`'November 2026'` -> `2026-11-30`) and asks
    to confirm, then shows the rows and asks before writing the table.
 
 - **Nothing is unpacked**: the CSVs are read straight from the zip. The zip can be deleted after (or kept: see the
   TODO in [`__init__.py`](__init__.py) about archiving zips in a bucket).
 - **Dates are calendar month ends**, taken from the zip's one folder (`<Month> <YYYY>`); a zip with no such folder
   is refused.
-- **Only the table is committed** (`pkgs/ds/data/parquet/char_ranking.parquet`). Loading a month again (from its zip)
+- **Only the table is committed** (`pkgs/ds/data/smash_db/parquet/char_ranking.parquet`). Loading a month again (from its zip)
   replaces that month's rows and keeps every other month.
 
 ## The source's format
@@ -37,10 +41,10 @@ ds data char_ranking "<name>.zip"       # or name it: a file in ~/Downloads, or 
   It is the player's overall rating, the same in every ranking they're in: a ranking orders its players by it.
 - Names are matched to picks (`char_group_id`) by name; `SITE_RANKING` has the rest:
   - echo fighters ranked together (`Peach-Daisy`, `Pit-Dark Pit`, `Samus-Dark Samus`, `Belmont` = Simon + Richter):
-    each row is stored once per member, with `ranking` saying it was combined
+    each row is stored once per member (the table doesn't keep the source's ranking name)
   - `Kazuya Mishima` -> `kazuya`
   - `Random`: kept, with a null `char_group_id`
-  - a new name the load can't match is listed (its `char_group_id` is null): add it to `SITE_RANKING`.
+  - a new name the load can't match stops the load: add it to `SITE_RANKING`.
 
 ## Reminder
 

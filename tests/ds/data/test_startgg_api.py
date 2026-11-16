@@ -12,6 +12,7 @@ import datetime as dt
 import json
 import re
 from collections import Counter
+from pathlib import Path
 
 import httpx2
 import pytest
@@ -518,7 +519,7 @@ def test_recorded_lookup_request_count(call_logs):
 @pytest.mark.usefixtures("recorded_token")
 def test_recorded_usage_is_one_request_for_sets(call_logs):
     """A usage lookup by id: the player, then one request of sets (usage-only fields, singles
-    only), and none for the character list (stored in startgg_char.parquet).
+    only), and none for the character list (stored in the start.gg code).
     """
     from ds.data import startgg as derived  # the derived layer, only here
 
@@ -536,13 +537,14 @@ def test_recorded_usage_is_one_request_for_sets(call_logs):
 
 
 def test_stored_characters_cover_every_startgg_character():
-    """startgg_char.parquet (ds data startgg-char): every pick maps to a char_group and icon,
-    but 'Random Character'; names that don't match by name are in api.SITE_CHARACTER.
+    """The stored start.gg characters (ds data startgg-char): every pick maps to a char_group
+    and icon, but 'Random Character'; names that don't match by name are in api.SITE_CHARACTER.
     """
-    from ds.data.startgg import stored_characters  # the derived layer, only here
+    from ds.data import init_db
 
-    stored = stored_characters()
-    assert stored is not None, "run `ds data startgg-char`"
+    stored = startgg.stored_characters()
+    # start.gg's ids are that site's own: kept in its code, not in a SmashDb table
+    assert not [table for table in init_db().tables() if "startgg" in table]
     unmapped = sorted(c.name for c in stored.values() if c.char_group is None or c.char_icon is None)
     assert unmapped == ["Random Character"]
     assert stored[1297].char_group == "little_mac"
@@ -551,22 +553,28 @@ def test_stored_characters_cover_every_startgg_character():
 
 
 def test_stored_characters_are_the_char_group_enum():
-    """startgg_char.parquet's char_group is CharGroup itself, kept in step with char.parquet:
-    CharGroup is generated from char.parquet (ds data roster / char_enum), and this table's
-    column type is exactly its members, so a roster change shows up here first.
+    """Kept in step with char.parquet: CharGroup is generated from it (ds data roster /
+    char_enum), and every pick on our side is exactly one start.gg character (but Random),
+    so a roster change shows up here first.
     """
-    import polars as pl  # only this test reads the table directly
     from ds.data.chars import CharGroup
-    from ds.data.startgg import CHAR_GROUP_DTYPE, STARTGG_CHAR_PARQUET, stored_characters
 
-    table = pl.read_parquet(STARTGG_CHAR_PARQUET)
-    hint = "CharGroup changed: re-run `ds data startgg-char`"
-    assert table.schema["char_group"] == CHAR_GROUP_DTYPE, hint
-    assert CHAR_GROUP_DTYPE.categories.to_list() == [group.value for group in CharGroup], hint
-    # every pick on our side is one start.gg character, and the other way round (but Random)
-    groups = table["char_group"].drop_nulls().cast(pl.String).to_list()
-    assert sorted(groups) == sorted(group.value for group in CharGroup)
-    # what is stored is what the code works out from the names today
-    stored = stored_characters()
-    assert {c.id: c.char_group for c in stored.values()} == dict(table.select("startgg_id", "char_group").iter_rows())
-    assert all(isinstance(c.char_group, CharGroup) for c in stored.values() if c.char_group)
+    stored = startgg.stored_characters()
+    groups = [c.char_group for c in stored.values() if c.char_group]
+    assert all(isinstance(group, CharGroup) for group in groups)
+    assert sorted(groups) == sorted(CharGroup), "roster changed: check api.SITE_CHARACTER / `ds data startgg-char`"
+
+
+def test_write_startgg_characters_rewrites_only_the_generated_dict(tmp_path):
+    from ds.data.raw.startgg import characters
+
+    module = tmp_path / "characters.py"
+    module.write_text(Path(characters.__file__).read_text())
+    stored = startgg.stored_characters()
+    assert characters.write_startgg_characters(stored, module) is False  # what is stored is what it writes
+    fewer = {key: value for key, value in stored.items() if key != 1297}
+    assert characters.write_startgg_characters(fewer, module) is True
+    text = module.read_text()
+    assert "1297:" not in text
+    assert "def stored_characters" in text
+    assert text.count(characters._BEGIN) == 2  # its definition and the block

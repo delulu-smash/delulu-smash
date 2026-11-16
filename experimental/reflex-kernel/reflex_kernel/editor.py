@@ -3,7 +3,8 @@
 # Purpose: Reflex wrappers around the CodeMirror 6 editors: cell_editor.jsx (each notebook
 #          cell) and sql_editor.jsx (a table view's mini SQL runner, render.table_sql).
 # Usage: cell_editor(initial_code=..., complete_url=..., token=..., on_run=..., on_save=...)
-#        sql_editor(initial_sql=..., columns=..., keys=..., on_run=...)
+#        sql_editor(initial_sql=..., columns=..., keys=..., on_run=...)   a table's SQL box
+#        sql_editor(initial_sql=..., schema=..., keys=..., on_run=..., on_save=...)   a SmashDb console
 # ---------------------------------------------------------------------------
 from __future__ import annotations
 
@@ -68,11 +69,17 @@ class SqlEditor(rx.NoSSRComponent):
     initial_sql: rx.Var[str]
     # The table's columns, completed after "self." and in the query.
     columns: rx.Var[list[str]]
+    # Instead of columns, for a whole database (a SmashDb console): {table: its columns}.
+    schema: rx.Var[dict[str, list[str]]]
+    # Shown while the box is empty (default: "select * from self").
+    placeholder: rx.Var[str]
     # {"run": ...} in CodeMirror's spelling (shortcuts.codemirror_keys).
     keys: rx.Var[dict[str, str]]
 
-    # (sql): fired by Shortcut.RUN_SQL.
+    # (sql): fired by Shortcut.RUN_SQL, with the selection when there is one, else the whole text.
     on_run: rx.EventHandler[passthrough_event_spec(str)]
+    # (text): the whole text, fired when the box loses focus and just before on_run. Optional.
+    on_save: rx.EventHandler[passthrough_event_spec(str)]
 
 
 sql_editor = SqlEditor.create

@@ -4,6 +4,9 @@
 //          for polars SQL (PostgreSQL syntax, own short keyword list so column names like id or name
 //          aren't keywords), Everforest colors, column completion for the table "self", and the run
 //          key from shortcuts.py (Shortcut.RUN_SQL). Usually one line; grows if you add more.
+//          Also a SmashDb console's query editor (render.db_console_widget): given `schema`
+//          ({table: columns}) instead of `columns`, it completes every table. Run sends the
+//          selection when there is one, else the whole text.
 // Usage: wrapped for Reflex by reflex_kernel/editor.py (SqlEditor).
 // ---------------------------------------------------------------------------
 import React, { useMemo, useRef } from "react";
@@ -55,27 +58,41 @@ const sqlTheme = createTheme({
   ],
 });
 
-export function SqlEditor({ initialSql, columns, keys, onRun }) {
+export function SqlEditor({ initialSql, columns, schema, placeholder, keys, onRun, onSave }) {
   // the latest props, for the keymap built once
   const live = useRef({});
-  live.current = { onRun };
+  live.current = { onRun, onSave };
   const text = useRef(initialSql || "");
-  const columnList = (columns || []).join("\u0000");
+  // a table view gives its columns (the table is "self"); a console gives the whole schema
+  const tables = schema || { self: columns || [] };
+  const tablesKey = JSON.stringify(tables);
+  const save = () => { if (live.current.onSave) live.current.onSave(text.current); };
 
   const extensions = useMemo(() => [
-    sql({ dialect: PolarsSQL, schema: { self: columns || [] }, defaultTable: "self", upperCaseKeywords: false }),
+    sql({ dialect: PolarsSQL, schema: tables, defaultTable: schema ? undefined : "self", upperCaseKeywords: false }),
     EditorView.lineWrapping,
-    Prec.highest(keymap.of([{ key: keys?.run || "Mod-Enter", run: (view) => { closeCompletion(view); live.current.onRun(text.current); return true; } }])),
-  ], [columnList]);
+    Prec.highest(keymap.of([{
+      key: keys?.run || "Mod-Enter",
+      run: (view) => {
+        closeCompletion(view);
+        const { from, to } = view.state.selection.main;
+        const picked = view.state.sliceDoc(from, to);
+        save();
+        live.current.onRun(picked.trim() ? picked : text.current);
+        return true;
+      },
+    }])),
+  ], [tablesKey]);
 
   return (
     <CodeMirror
       value={initialSql || ""}
       theme={sqlTheme}
       extensions={extensions}
-      placeholder="select * from self"
+      placeholder={placeholder || "select * from self"}
       basicSetup={{ lineNumbers: false, foldGutter: false, highlightActiveLine: false, highlightActiveLineGutter: false }}
       onChange={(value) => { text.current = value; }}
+      onBlur={save}
     />
   );
 }

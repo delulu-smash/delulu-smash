@@ -16,7 +16,7 @@ an input or return type.
   `df.to_pandas()` / `pl.from_pandas(pdf)`.
 - **No pandas dependency in library code.** Don't import pandas in `pkgs/`. If a third-party API only speaks
   pandas, convert right at that call site and hand polars back to the rest of the library.
-- **Polars-native operations:** expressions, `DataFrame.sql` / `pl.SQLContext` (eg `ds.data.db.SmashDb`), and
+- **Polars-native operations:** expressions, `DataFrame.sql` / `pl.SQLContext` (eg `ds.data.smash_db.SmashDb`), and
   parquet for storage (see `.agents/instructions/pkgs.md`, "`ds/data` Conventions").
 
 ## Why

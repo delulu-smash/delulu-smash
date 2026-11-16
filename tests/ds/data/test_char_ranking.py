@@ -78,7 +78,6 @@ def test_a_release_reads_typed_with_our_ids(release):
     assert df.columns == [
         "date",
         "char_group_id",
-        "ranking",
         "rank",
         "tag",
         "player_id",
@@ -99,16 +98,17 @@ def test_a_release_reads_typed_with_our_ids(release):
 
 def test_echo_pairs_go_to_each_member_and_random_has_no_character(release):
     df = char_ranking.read_release(release)
-    pair = df.filter(pl.col("ranking") == "Peach-Daisy")
+    pair = df.filter(pl.col("tag") == "MuteAce")  # the Peach-Daisy ranking
     assert sorted(pair["char_group_id"].cast(pl.String).to_list()) == ["daisy", "peach"]
-    assert pair["tag"].to_list() == ["MuteAce", "MuteAce"]
-    assert df.filter(pl.col("ranking") == "Random")["char_group_id"].to_list() == [None]
-    assert char_ranking.unmatched_rankings(df) == []  # Random is known: not reported
+    assert df.filter(pl.col("tag") == "rm8")["char_group_id"].to_list() == [None]  # Random
+    # the pick is the key: no two rows of a release share (char_group_id, rank)
+    assert df.select("date", "char_group_id", "rank").is_unique().all()
 
 
-def test_an_unknown_name_or_a_new_column_is_reported(tmp_path):
+def test_an_unknown_name_or_a_new_column_stops_the_load(tmp_path):
     new_name = _zip(tmp_path / "a.zip", {"November 2026/Goku ranking.csv": HEADER + "1,x,1,us,1,True\n"})
-    assert char_ranking.unmatched_rankings(char_ranking.read_release(new_name)) == ["Goku"]
+    with pytest.raises(ValueError, match="No character matches the ranking 'Goku'"):
+        char_ranking.read_release(new_name)
     new_column = _zip(tmp_path / "b.zip", {"November 2026/Cloud ranking.csv": "rank,tag,score\n1,x,2\n"})
     with pytest.raises(ValueError, match="did the format change"):
         char_ranking.read_release(new_column)
@@ -127,3 +127,17 @@ def test_reloading_a_month_replaces_only_that_month(release, tmp_path):
     path = tmp_path / "char_ranking.parquet"
     char_ranking.merge_release(None, char_ranking.read_release(release)).write_parquet(path)
     assert pl.read_parquet(path).schema["date"] == pl.Date
+
+
+def test_the_command_says_how_to_get_the_file(tmp_path):
+    """--help and a run that finds no zip both show the steps (from _char_ranking_steps)"""
+    from ds.cli.data import _char_ranking_steps, data_app
+    from typer.testing import CliRunner
+
+    runner = CliRunner()
+    shown = " ".join(runner.invoke(data_app, ["char_ranking", "--help"]).output.split())
+    assert "SchuStats Discord" in shown
+    assert "Character Rankings" in shown
+    missing = runner.invoke(data_app, ["char_ranking", str(tmp_path / "none.zip")])
+    assert missing.exit_code == 1
+    assert _char_ranking_steps()[0] in missing.output

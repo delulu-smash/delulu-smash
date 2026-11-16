@@ -208,7 +208,9 @@ def split_trace(parts: list[dict[str, str]]) -> tuple[list[dict[str, str]], list
 
 class Session:
     def __init__(self) -> None:
-        self.namespace: dict[str, Any] = {"__name__": "__main__", "pl": pl, "db": ds.data.init_db()}
+        # The session's SmashDb: `db` in the cells, and what a SmashDb console queries.
+        self.db = ds.data.init_db()
+        self.namespace: dict[str, Any] = {"__name__": "__main__", "pl": pl, "db": self.db}
         self.ai_history: list[Any] = []
         self.sources: dict[str, str] = {}
         # Views of notebook cell results, by cell id, so grids can be re-sorted and results opened as tabs.

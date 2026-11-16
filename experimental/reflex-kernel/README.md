@@ -41,7 +41,7 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
 - **Chat**: Enter sends, Shift+Enter adds a line. Tool calls are listed above each reply.
   Hover a message for its copy button on the top-right corner (a reply copies as its markdown source).
   A failed turn (the model or a tool raised) shows its traceback in the same component a Python cell uses
-  (`traceback_view`): the frame that raised and the error, the rest folded, and a copy button (top right,
+  (`render.traceback_view`): the frame that raised and the error, the rest folded, and a copy button (top right,
   on hover) that copies the full plain-text traceback.
   Each tool result gets a row (`r1 · tool · 10 videos`): click it to unfold the result inline (grid,
   gallery, fields; folded by default), or `open →` to open it as a tab in Results.
@@ -74,11 +74,12 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   | --- | --- |
   | `kind`, `title` | the view kind `render.py` draws, and its name for people |
   | `tool`, `hide` | the agent tool it mimics: gives it a tool form (below); `hide` = parameters not on the form |
-  | `addable` | offered in the Results tab bar's `+` menu, to add by hand |
+  | `new` | for a widget that is no tool's result: the blank value `+` binds (eg a SmashDb console) |
+  | `addable` | offered in the Results tab bar's `+` menu, to add by hand (needs `tool` or `new`) |
   | `chat_open` | starts unfolded in the chat when the agent returns it (others start as a folded row) |
 
   Today: `table`, `videos` (`find_match_videos`, addable), `usage` (`get_player_usage`, addable, unfolded in
-  chat), `fields`, `tool`. A new attribute is a field on `Widget` plus the one place that reads it. A new widget
+  chat), `fields`, `smashdb` (the SmashDb console, addable), `tool`. A new attribute is a field on `Widget` plus the one place that reads it. A new widget
   is a row, a `case` in `render.to_view`, and its component in `render.render_component`.
 - **Links look like links, in every widget**: text that opens a url is drawn with `render.link(text, href)`:
   blue and underlined, exactly as a link in the agent's markdown reply (`.md a, a.link` in `assets/app.css`),
@@ -100,7 +101,9 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   `pkgs/ds/data/char_icons/` (`ds.data.char_icon_by_name`), served by the backend (`api.py`).
 - **Tool forms** (`reflex_kernel/tool_forms.py`): some results show the inputs of the agent tool that made
   them. `Inputs ▸` in their bar folds them open, filled with what the tool was called with; change them and
-  press Enter (or Run) to run the tool again in place. The `+` at the end of the Results tab bar adds one
+  press Enter (or Run) to run the tool again in place. The `+` at the end of the Results tab bar, or `Alt+P` anywhere
+  (`Shortcut.ADD_WIDGET`: the same menu in the middle of the window; it has a search box, so type to filter, arrows and Enter pick, `Alt+P` or Esc
+  closes), adds one
   by hand: a placeholder (`ToolRequest`) that is just the form, replaced by the result on its first run.
   How the form stays aligned with the tool:
   - **Fields** are built from the tool's parameter schema, the one pydantic-ai gives the model
@@ -149,10 +152,25 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   the bar; `SQL` turns green while a query is applied, and × goes back to the whole table. A bad query
   shows its error and leaves the table as it was. The query is kept per view slot, like the filter
   (`Ui.sql`, `View.table`); the value bound to the name is never changed.
+- **SmashDb console** (kind `smashdb`, `reflex_kernel/db_console.py`; `+` → SmashDb console): a small
+  DataGrip. Left, the schema tree: every table with its row count; click one to unfold its columns and
+  dtypes, `▶` (on hover) selects everything from it. Right, the query editor (the table SQL box's CodeMirror,
+  completing every table and column): Ctrl+Enter (`Shortcut.RUN_SQL`) or Run runs it; with text selected only
+  the selection runs, so several queries can sit in the box. Under it the result, which is the table widget
+  itself (`render._table_bar` / `_table_body`): the same grid, header sort, row filter and `SQL ▸` on `self`
+  as any DataFrame; the bar's note adds the time the query took. A failed query keeps the last result and
+  shows its traceback in the component a Python cell and the chat use (`render.traceback_view`). `History ▸`
+  lists this console's queries that ran (newest first, 20, each once); click one to put it back in the editor.
+  - It queries the session's `db`, the one the Python cells have, so `create table x as select ...` in the
+    console is there in a cell and the other way round (in memory only; the parquet files are never written).
+  - The tab's name is bound to the console: `r3.df` is the result DataFrame, `r3.sql` its query.
+  - Running a query makes a new `DbConsole` that replaces the old one at its slot, as a tool form's run does.
+  - No cache: the tree is read from the db on every redraw (about 2 ms), so a new table shows at once.
 - **Rendering** (`reflex_kernel/render.py`): everything about showing a value lives in this one file, used
   for agent tool results, cell outputs and tabs alike. Today: DataFrame / Series / list of pydantic models
   -> grid; `MatchVideos` (the agent's `find_match_videos`, smash-tube.com) -> thumbnail gallery; any other
-  pydantic model -> its fields, with lists of models as small tables; everything else -> its repr.
+  pydantic model -> its fields, with lists of models as small tables; `DbConsole` -> the SmashDb console;
+  everything else -> its repr.
   It is two matches, because Reflex compiles components ahead of time and the browser never sees the
   Python object: `to_view(value)` is a Python `match` on the value's type (run when a cell or tool
   returns), and `render_component(view)` picks the component for the view's kind. To add a type, add a
@@ -181,7 +199,8 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
 - **Keyboard shortcuts** are all defined once, in `reflex_kernel/shortcuts.py`, as the `Shortcut` enum named
   by what they do (`Shortcut.FULL_SCREEN`, `Shortcut.RUN`, …). The help panel, tooltips, the cell editor's
   keymap (`codemirror_keys`) and `assets/panes.js` (`window.SHORTCUTS`) all read it: change a key there only.
-- **Panes**: the bottom bar toggles Chat, Results (Alt+R) and Python (Alt+P), as in Zed. Only the chat
+- **Panes**: the bottom bar toggles Chat, Results (Alt+R) and Python (Alt+J, J for Jupyter; Alt+P is the add-widget menu), as in Zed. (Neither letter follows
+  Omarchy, where `SUPER+P` / `SUPER+J` are window layout actions with nothing comparable here.) Only the chat
   shows at first (results also unfold inline in it, and `open →` brings up Results); a pane
   whose neighbour is hidden takes the freed space. Hidden cells keep their text.
 - **Full screen**: each pane has a button with two diagonal arrows (top right) that fills the window

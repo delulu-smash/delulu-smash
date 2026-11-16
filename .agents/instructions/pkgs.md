@@ -24,25 +24,25 @@
 
 ## `ds/data` Conventions
 
-`pkgs/ds/data/parquet/` is this repo's "database" (`ds.data.paths.PARQUET_DIR`): each parquet file in it (eg
+`pkgs/ds/data/smash_db/parquet/` is this repo's "database" (`ds.data.paths.PARQUET_DIR`): each parquet file in it (eg
 `char.parquet`, `framedata.parquet`) is a table, and rows/columns should be reasoned about the way you would reason
 about a SQL table (primary key, foreign keys, grain), not as an arbitrary data dump.
 
-- `pkgs/ds/data/parquet/*.parquet` are the synced "database" tables; `pkgs/ds/data/raw/` holds the scraping scripts and any
+- `pkgs/ds/data/smash_db/parquet/*.parquet` are the synced "database" tables; `pkgs/ds/data/raw/` holds the scraping scripts and any
   hand-copied source data used to produce them.
 - **External sources: one place, one vocabulary.** All code that calls another site or API lives under
   `pkgs/ds/data/`, and its public functions take and return this repo's standards (`char_id` for a fighter
   and `char_group` for a character-select pick, both from `char.parquet`, `char_icon`, UTC datetimes, shared field names), never a site's own ids. Read
   `spec/pkgs/ds/data/external_sources.md` before adding or changing a source; it has the rules for mapping a
   site's character names to `char_id` and a table of where each source stands.
-- `pkgs/ds/data/parquet/*.parquet` are tracked via Git LFS (see root `.gitattributes`, `*.parquet filter=lfs diff=lfs
+- `pkgs/ds/data/smash_db/parquet/*.parquet` are tracked via Git LFS (see root `.gitattributes`, `*.parquet filter=lfs diff=lfs
   merge=lfs -text`), not committed as regular git blobs. Requires `git-lfs` installed (`brew install git-lfs` +
   `git lfs install`) on any machine that will commit/pull these files.
 - Parquet is preferred over CSV for these tables: it's typed (no schema re-inference on read) and, for this mostly
   string/repetitive data, compresses far smaller than CSV (verified: `framedata.csv` at 431KB became a 104KB
   `framedata.parquet` — about 4x smaller; feather/Arrow IPC was tried too but came out *larger* than CSV since it's
   uncompressed by default, so parquet is the right choice here, not feather).
-- `pkgs/ds/data/README.md` is the data dictionary for every table in `pkgs/ds/data/parquet/`. Whenever a change adds,
+- `pkgs/ds/data/README.md` is the data dictionary for every table in `pkgs/ds/data/smash_db/parquet/`. Whenever a change adds,
   renames, or removes a column produced by `pkgs/ds/data/raw/*.py` or `pkgs/ds/cli/data.py`, update that README in
   the same change so its column tables stay accurate.
 - Document each table's primary key, foreign keys into other tables, and grain in that README, plus a runnable
@@ -51,8 +51,11 @@ about a SQL table (primary key, foreign keys, grain), not as an arbitrary data d
   (eg `framedata.parquet` references `char.parquet` via a `char_id` column, not `character`).
 - **Column naming (user's convention, Nov 2026):** id-like columns end in `_id` (`char_id`, `char_group_id`,
   `player_id`), booleans start with `is_` (`is_solo_main`, not `solo_main`). Applies to new and changed columns;
-  `char_ranking.parquet` follows it. Older tables predate it (`char.parquet` / `startgg_char.parquet` still have
-  `char_group`): rename those only when asked, since start.gg code reads them by name.
+  `char_ranking.parquet` follows it. Older tables predate it (`char.parquet` still has
+  `char_group`): rename those only when asked, since start.gg code reads it by name.
+- **SmashDb holds our vocabulary only.** No table or column for a source's own ids or names (eg a start.gg
+  character id): normalize when storing, or keep the translation in `raw/<site>/` behind that site's `ds.data`
+  functions. Details: `spec/pkgs/ds/data/data_storage.md` ("Requirements").
 - ultimateframedata.com is static HTML (semantic classes like `.movecontainer`, `.movename`, `.startup`) — no JS
   rendering/headless browser needed, plain `httpx2.get()` + BeautifulSoup works. Its roster page
   (`https://ultimateframedata.com/smash`) lists characters as `.charactericon` divs with `<a href="/{slug}">`;

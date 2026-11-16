@@ -35,6 +35,7 @@ from ds.data.raw.startgg import USAGE_PER_PAGE
 from ds.data.startgg import CharacterStats, PlayerUsage, StageStats
 from pydantic import BaseModel
 
+from .db_console import DbConsole, DbTable
 from .editor import sql_editor
 from .shortcuts import Shortcut, sql_keys
 from .tool_forms import FormField, ToolRequest
@@ -46,6 +47,8 @@ if TYPE_CHECKING:
 MAX_GRID_ROWS = 2000
 # Two diagonal arrows pointing apart / together, as on Zed's zoom button (JetBrainsMono Nerd Font).
 ICON_EXPAND, ICON_COLLAPSE = "\U000f0616", "\U000f0615"
+# Copy (two sheets) and a tick, for copy_button.
+ICON_COPY, ICON_COPIED = "\U000f018f", "\U000f012c"
 # A table view's SQL box starts with this; running it unchanged shows the table as it is.
 DEFAULT_SQL = "select * from self"
 # Most rows of one ranked-bar list (characters, stages) in a usage view; the rest fold into one row.
@@ -127,7 +130,8 @@ class ViewData:
     The same shape serves a tab and a cell output."""
 
     kind: str = ""
-    """"" (nothing to show) | table | videos | usage | fields | tool (a tool form not run yet).
+    """"" (nothing to show) | table | videos | usage | fields | smashdb (a SmashDb console) | tool
+    (a tool form not run yet).
     Each kind's attributes (tool form, "+" menu, unfolded in chat) are in widgets.py."""
     slot: str = ""
     """Where this view is shown, eg 'tab:r1' or 'cell:c3'; sent back with every event."""
@@ -184,6 +188,24 @@ class ViewData:
     running: bool = False
     form_changed: bool = False
     """The form was re-run on an agent's result: the original call can be put back."""
+    # smashdb (db_console.py): the schema tree and the query editor; its result is the table above
+    db_tables: list[DbTable] = dataclasses.field(default_factory=list)
+    db_schema: dict[str, list[str]] = dataclasses.field(default_factory=dict)
+    """{table: its columns}, for completion in the editor."""
+    db_sql: str = ""
+    """The editor's text: what was typed there last, else the query that made the result."""
+    db_key: str = ""
+    """Remounts the editor (a new slot, a table opened from the tree, a query picked from history)."""
+    db_ran: bool = False
+    """A query has run: there is a result table to show."""
+    db_history: list[str] = dataclasses.field(default_factory=list)
+    db_history_open: bool = False
+    # a failed query's traceback, as under a Python cell (state._trace_fields): the styled parts
+    # shown, the ones folded away, the fold's label, and the full plain text
+    trace: list[dict[str, str]] = dataclasses.field(default_factory=list)
+    trace_hidden: list[dict[str, str]] = dataclasses.field(default_factory=list)
+    trace_more: str = ""
+    trace_text: str = ""
 
     def __setstate__(self, state: dict[str, Any]) -> None:
         fill_defaults(self, state)
@@ -230,6 +252,15 @@ class Ui:
     form_open: bool = False
     running: bool = False
     runs: int = 0
+    # smashdb console
+    draft: str = ""
+    """The editor's text as last sent by the browser (on blur and on run); "" = the result's query."""
+    db_resets: int = 0
+    db_open: list[str] = dataclasses.field(default_factory=list)
+    """The tables unfolded in the schema tree."""
+    history_open: bool = False
+    trace: dict[str, Any] = dataclasses.field(default_factory=dict)
+    """The last query's error, as ViewData's trace fields plus `text` ({} = it ran)."""
 
 
 def apply_event(view: View, ui: Ui, action: str, arg: Any) -> None:
@@ -269,6 +300,15 @@ def apply_event(view: View, ui: Ui, action: str, arg: Any) -> None:
             ui.sql = "" if " ".join(text.lower().split()) in ("", DEFAULT_SQL) else text
         case "sql_reset":
             ui.sql, ui.sql_resets = "", ui.sql_resets + 1
+        case "db_toggle":
+            name = str(arg)
+            ui.db_open = [t for t in ui.db_open if t != name] if name in ui.db_open else [*ui.db_open, name]
+        case "db_draft":
+            ui.draft = str(arg)
+        case "db_history":
+            ui.history_open = not ui.history_open
+        case "db_pick":
+            ui.draft, ui.db_resets, ui.history_open = str(arg), ui.db_resets + 1, False
 
 
 @dataclasses.dataclass
@@ -339,6 +379,8 @@ class View:
             data.form_key, data.form_changed = f"{slot}#{ui.runs}", can_restore
         if isinstance(self.value, PlayerUsage):
             _usage_data(self.value, ui, data)
+        if isinstance(self.value, DbConsole):
+            _console_data(self.value, ui, data)
         if self.frame is None:
             return data
         df, sql_error = self.table(ui)
@@ -356,6 +398,8 @@ class View:
             data.note = f"{shown} of {df.height} rows" if shown != df.height else f"{df.height} rows"
             if shown == MAX_GRID_ROWS and df.height > MAX_GRID_ROWS:
                 data.note += f" (grid shows the first {MAX_GRID_ROWS})"
+        if isinstance(self.value, DbConsole):
+            data.note += f" · {self.value.timing}"
         return data
 
 
@@ -376,6 +420,10 @@ def to_view(value: Any) -> View | None:
                 return _usage_view(value)
             case ToolRequest():
                 return View(kind="tool", value=value, summary="not run yet")
+            case DbConsole():
+                frame = value.df
+                summary = f"{frame.height} × {frame.width}" if frame is not None else "not run yet"
+                return View(kind="smashdb", value=value, frame=frame, summary=summary)
             case TableResult():
                 return _table_view(value, value.to_df())
             case pl.DataFrame() | pl.Series():
@@ -571,6 +619,21 @@ def _usage_data(value: PlayerUsage, ui: Ui, data: ViewData) -> None:
         data.events_note = f"{recent.first_date.isoformat()} to {recent.last_date.isoformat()}"
 
 
+def _console_data(value: DbConsole, ui: Ui, data: ViewData) -> None:
+    """A SmashDb console's own part of its ViewData: the schema tree, the editor and the history.
+    The schema is read from the db each time (about 1 ms), so a table a query made shows at once."""
+    data.label = "SmashDb"
+    data.db_tables = value.tables(ui.db_open)
+    data.db_schema = {table.name: [column["name"] for column in table.columns] for table in data.db_tables}
+    data.db_sql, data.db_key = ui.draft or value.sql, f"{data.slot}#{ui.db_resets}"
+    data.db_ran, data.running = value.df is not None, ui.running
+    data.db_history, data.db_history_open = list(value.history), ui.history_open
+    data.trace = ui.trace.get("trace", [])
+    data.trace_hidden = ui.trace.get("trace_hidden", [])
+    data.trace_more = ui.trace.get("trace_more", "")
+    data.trace_text = ui.trace.get("text", "")
+
+
 def _text(value: Any) -> str:
     if value is None:
         return ""
@@ -735,6 +798,7 @@ def render_component(
             ),
             ("fields", rx.fragment(_bar(view, actions, send=send), model_fields(view.fields, view.sections))),
             ("table", table_widget(view, send, grid, actions)),
+            ("smashdb", db_console_widget(view, send, grid, actions)),
             rx.fragment(),
         ),
         # a compact table is only as wide as its columns
@@ -784,31 +848,162 @@ def _error(view: rx.Var[ViewData]) -> rx.Component:
     return rx.cond(view.error != "", rx.el.div(view.error, class_name="view-error sans"))
 
 
+def _table_bar(
+    view: rx.Var[ViewData], send: Any, actions: tuple[rx.Component, ...], *controls: rx.Component
+) -> rx.Component:
+    """A table's bar: the SQL toggle and the row filter (after the host widget's own controls)."""
+    return _bar(
+        view,
+        actions,
+        *controls,
+        rx.el.button(
+            rx.cond(view.sql_open, "SQL ▾", "SQL ▸"),
+            title=rx.cond(view.sql_active, "A SQL query is applied: show or hide it", "Query this table with SQL"),
+            on_click=send("sql_toggle"),
+            class_name=rx.cond(view.sql_active, "act sql-toggle is-active", "act sql-toggle"),
+        ),
+        rx.el.input(
+            placeholder="Filter rows…",
+            value=view.query,
+            on_change=lambda value: send("query", value),
+            class_name="viewer-filter",
+        ),
+        send=send,
+    )
+
+
+def _table_body(view: rx.Var[ViewData], send: Any, grid: rx.Component) -> rx.Component:
+    """Under a table's bar: the SQL box (folded by default), an error, then the grid."""
+    return rx.fragment(rx.cond(view.sql_open, table_sql(view, send)), _error(view), grid)
+
+
 def table_widget(
     view: rx.Var[ViewData], send: Any, grid: rx.Component, actions: tuple[rx.Component, ...]
 ) -> rx.Component:
-    """A table: row filter and SQL toggle, the SQL box (folded by default), then the grid."""
+    """A table: row filter and SQL toggle, the SQL box (folded by default), then the grid.
+    The two halves are also a SmashDb console's result (db_console_widget)."""
+    return rx.fragment(_table_bar(view, send, actions), _table_body(view, send, grid))
+
+
+def _db_table(table: rx.Var[DbTable], send: Any) -> rx.Component:
+    """One table of the schema tree: click to unfold its columns; ▶ shows the whole table."""
+    return rx.el.div(
+        rx.el.div(
+            rx.el.button(
+                rx.el.span(rx.cond(table.open, "▾", "▸"), class_name="db-arrow"),
+                rx.el.span(table.name, class_name="db-name"),
+                rx.el.span(table.rows, class_name="dim"),
+                title="Show or hide its columns",
+                on_click=send("db_toggle", table.name),
+                class_name="db-table-row",
+            ),
+            rx.el.button(
+                "▶",
+                title="Select everything from this table",
+                on_click=send("db_open", table.name),
+                class_name="db-open",
+            ),
+            class_name="db-table-head",
+        ),
+        rx.cond(
+            table.open,
+            rx.el.div(
+                rx.foreach(
+                    table.columns,
+                    lambda column: rx.el.div(
+                        rx.el.span(column["name"], class_name="db-name"),
+                        rx.el.span(column["dtype"], class_name="db-dtype"),
+                        class_name="db-column",
+                    ),
+                ),
+            ),
+        ),
+        class_name="db-table mono",
+    )
+
+
+def db_console_widget(
+    view: rx.Var[ViewData], send: Any, grid: rx.Component, actions: tuple[rx.Component, ...]
+) -> rx.Component:
+    """A SmashDb console (db_console.py), as in DataGrip: the schema tree on the left; on the
+    right the query editor (Shortcut.RUN_SQL or Run; a selection runs alone), then the result,
+    which is the table widget itself (its bar on top, its SQL box and grid below). A failed
+    query shows its traceback with traceback_view, as a Python cell does, over the last result."""
     return rx.fragment(
-        _bar(
+        _table_bar(
             view,
+            send,
             actions,
             rx.el.button(
-                rx.cond(view.sql_open, "SQL ▾", "SQL ▸"),
-                title=rx.cond(view.sql_active, "A SQL query is applied: show or hide it", "Query this table with SQL"),
-                on_click=send("sql_toggle"),
-                class_name=rx.cond(view.sql_active, "act sql-toggle is-active", "act sql-toggle"),
+                rx.cond(view.db_history_open, "History ▾", "History ▸"),
+                title="The queries run in this console",
+                on_click=send("db_history"),
+                disabled=view.db_history.length() == 0,
+                class_name="act",
             ),
-            rx.el.input(
-                placeholder="Filter rows…",
-                value=view.query,
-                on_change=lambda value: send("query", value),
-                class_name="viewer-filter",
-            ),
-            send=send,
         ),
-        rx.cond(view.sql_open, table_sql(view, send)),
-        _error(view),
-        grid,
+        rx.el.div(
+            rx.el.div(
+                rx.el.div("Tables", class_name="db-tree-head sans"),
+                rx.foreach(view.db_tables, lambda table: _db_table(table, send)),
+                class_name="db-tree",
+            ),
+            rx.el.div(
+                rx.el.div(
+                    rx.el.div(
+                        sql_editor(
+                            key=view.db_key,
+                            initial_sql=view.db_sql,
+                            schema=view.db_schema,
+                            placeholder="select * from framedata",
+                            keys=sql_keys(),
+                            on_run=lambda query: send("db_run", query),
+                            on_save=lambda text: send("db_draft", text),
+                        ),
+                        class_name="sql-editor db-editor",
+                    ),
+                    rx.el.div(
+                        rx.el.button(
+                            rx.cond(view.running, "Running…", "Run"),
+                            title=Shortcut.RUN_SQL.hint("Run the query (a selection runs alone)"),
+                            on_click=send("db_run", ""),
+                            disabled=view.running,
+                            class_name="act",
+                        ),
+                        rx.el.span(Shortcut.RUN_SQL.keys, class_name="sql-hint dim mono"),
+                        class_name="db-run",
+                    ),
+                    class_name="db-editor-row",
+                ),
+                rx.cond(
+                    view.db_history_open,
+                    rx.el.div(
+                        rx.foreach(
+                            view.db_history,
+                            lambda query: rx.el.button(
+                                query, title=query, on_click=send("db_pick", query), class_name="db-history-row mono"
+                            ),
+                        ),
+                        class_name="db-history",
+                    ),
+                ),
+                rx.cond(
+                    view.trace_text != "",
+                    traceback_view(view.trace, view.trace_hidden, view.trace_more, view.trace_text, "db-trace"),
+                ),
+                rx.cond(
+                    view.db_ran,
+                    _table_body(view, send, grid),
+                    rx.el.div(
+                        "Write a query and run it, or press ▶ on a table. ",
+                        "Results can be filtered, sorted and queried again (SQL ▸) like any table.",
+                        class_name="empty sans",
+                    ),
+                ),
+                class_name="db-main",
+            ),
+            class_name="db-console",
+        ),
     )
 
 
@@ -977,6 +1172,88 @@ def tool_form(
         key=remount,
         on_submit=on_run,
         class_name="tool-form sans",
+    )
+
+
+def trace_part(part: rx.Var) -> rx.Component:
+    """One piece of a traceback (session.trace_parts): the full standard traceback, styled by role."""
+    return rx.match(
+        part["kind"],
+        (
+            "frame",
+            rx.el.div(
+                rx.el.div(
+                    rx.el.span(part["path"], class_name="tb-path"),
+                    rx.el.span(", line ", class_name="dim"),
+                    rx.el.span(part["line"], class_name="tb-line"),
+                    rx.cond(
+                        part["func"] != "",
+                        rx.el.span(
+                            rx.el.span(", in ", class_name="dim"), rx.el.span(part["func"], class_name="tb-func")
+                        ),
+                    ),
+                ),
+                rx.cond(
+                    (part["pre"] != "") | (part["mark"] != ""),
+                    rx.el.div(
+                        part["pre"],
+                        rx.el.span(part["mark"], class_name="tb-mark"),
+                        part["post"],
+                        class_name="tb-code",
+                    ),
+                ),
+                class_name="tb-frame is-" + part["where"].to(str),
+            ),
+        ),
+        (
+            "error",
+            rx.el.div(
+                rx.el.span(part["module"], class_name="tb-module"),
+                rx.el.span(part["name"], class_name="tb-name"),
+                rx.cond(part["text"] != "", rx.el.span(": ", part["text"], class_name="tb-msg")),
+                class_name="tb-error",
+            ),
+        ),
+        ("chain", rx.el.div(part["text"], class_name="tb-chain")),
+        rx.el.div(part["text"], class_name="tb-dim"),
+    )
+
+
+def copy_button(text: rx.Var[str] | str, what: str = "", label: str = "") -> rx.Component:
+    """The small copy button of a code block: copies text; assets/panes.js does it (data-copy)
+    and shows a tick for a moment. label: a word instead of the copy icon, eg "curl"."""
+    return rx.el.button(
+        rx.el.span(f"{ICON_COPY} {label}" if label else ICON_COPY, class_name="when-idle"),
+        rx.el.span(f"{ICON_COPIED} {label}" if label else ICON_COPIED, class_name="when-copied"),
+        title=f"Copy {what}".strip(),
+        aria_label=f"Copy {what}".strip(),
+        type="button",
+        custom_attrs={"data-copy": text},
+        class_name="copy-btn mono",
+    )
+
+
+def traceback_view(trace: rx.Var, hidden: rx.Var, more: rx.Var, text: rx.Var, class_name: str = "") -> rx.Component:
+    """An error's traceback, the same under a Python cell, in the chat and in a SmashDb console: the frame that raised
+    and the error always shown, everything above it folded in a <details>, and a copy button for
+    the full plain-text traceback (text). Without styled parts it shows the plain text."""
+    return rx.el.div(
+        copy_button(text, "the full traceback"),
+        rx.cond(
+            trace.length() > 0,
+            rx.fragment(
+                rx.cond(
+                    hidden.length() > 0,
+                    rx.el.details(
+                        rx.el.summary(more, class_name="tb-toggle sans"),
+                        rx.foreach(hidden, trace_part),
+                    ),
+                ),
+                rx.foreach(trace, trace_part),
+            ),
+            rx.el.pre(text, class_name="tb-plain"),
+        ),
+        class_name=f"cell-trace mono {class_name}".strip(),
     )
 
 

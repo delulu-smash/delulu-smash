@@ -44,8 +44,8 @@
 #   cover 4 months. Say the real span, not "last 6 months".
 # - Speed: 150 sets took 3-4 s at 15 per page (13-17 requests, 4 in parallel).
 # - Cost per lookup (15 Nov 2026, from the call log): a usage lookup is ONE start.gg request
-#   (queries.USAGE_SETS, 30 sets, singles only; the character list is stored data, see
-#   ds.data.startgg.characters), plus supermajor's tag search for a tag. It used to be the
+#   (queries.USAGE_SETS, 30 sets, singles only; the character list is stored in code, see
+#   ds.data.raw.startgg.characters), plus supermajor's tag search for a tag. It used to be the
 #   newest 150 sets: 14 requests for Sparg0, 18 for rm8. player_sets fetches the character
 #   list once per call when not given it; it used to fetch it per page, which the old disk
 #   cache hid.

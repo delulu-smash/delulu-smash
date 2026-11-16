@@ -18,7 +18,7 @@ from pydantic import BaseModel, Field
 from ds.data.chars import CharGroup
 from ds.data.raw import startgg
 from ds.data.raw.startgg import queries
-from ds.data.startgg.characters import stored_characters
+from ds.data.raw.startgg.characters import stored_characters
 from ds.data.startgg.lookup import PlayerLookup, resolve_player
 
 if TYPE_CHECKING:

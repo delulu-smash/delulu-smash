@@ -9,6 +9,7 @@ from __future__ import annotations
 import asyncio
 import json
 import dataclasses
+import traceback
 from typing import Any
 
 import reflex as rx
@@ -18,9 +19,9 @@ from ds.util.logging import logger
 
 from . import logs
 from .render import Ui, ViewData, apply_event, fill_defaults, rerun_inputs
-from .tool_forms import ToolRequest
-from .widgets import form_by_key, form_for, widget_of
-from .session import BUILTIN_NAMES, Session, get_session, split_trace
+from .db_console import DbConsole, clean_sql
+from .widgets import form_for, widget_of
+from .session import BUILTIN_NAMES, Session, get_session, split_trace, trace_parts
 
 logs.install()
 
@@ -150,6 +151,8 @@ class State(rx.State):
     show_help: bool = False
     # The Results tab bar's "+" menu (at menu_x / menu_y).
     add_menu: bool = False
+    # Opened from the keyboard (Shortcut.ADD_WIDGET): shown in the middle of the window instead.
+    add_menu_centered: bool = False
     # The debug panel (bug icon in the title bar, Shortcut.DEBUG): the app's outside calls (logs.py).
     # Loaded when opened, on Refresh and after a turn / form / cell finishes while it is open;
     # never pushed as calls happen, so it costs nothing while closed.
@@ -501,6 +504,10 @@ class State(rx.State):
             async for update in self._run_form(slot, view, ui, inputs):
                 yield update
             return
+        if action in ("db_run", "db_open"):
+            async for update in self._run_query(slot, view, ui, action, str(arg)):
+                yield update
+            return
         if action == "form_reset":
             if session.restore_original(slot):
                 self._new_result(slot, ui)
@@ -549,6 +556,40 @@ class State(rx.State):
         self._new_result(slot, ui, replaced=not ui.error)
         self._refresh_debug()
 
+    async def _run_query(self, slot: str, view: Any, ui: Ui, action: str, arg: str):
+        """Run a SmashDb console's query; the console with the result replaces the one at the slot.
+        db_run: arg is the SQL ("" = the editor's text, for the Run button). db_open: arg is a
+        table, shown whole (and written in the editor). A failed query leaves the last result and
+        shows its traceback, as a Python cell would."""
+        console = view.value
+        if not isinstance(console, DbConsole) or ui.running:
+            return
+        if action == "db_open":
+            sql = f'select * from "{arg}"'
+            ui.draft, ui.db_resets = sql, ui.db_resets + 1
+        else:
+            sql = arg or ui.draft or console.sql
+        if not clean_sql(sql):
+            return
+        ui.running = True
+        self._show(slot)
+        yield
+        try:
+            result = await asyncio.to_thread(console.run, sql)
+        except Exception as error:  # noqa: BLE001  # any bad query is shown in the view
+            parts = trace_parts(error, error.__traceback__)
+            ui.trace = {**_trace_fields(parts), "text": "".join(traceback.format_exception(error))}
+        else:
+            # a new table: what was done to the old one (its SQL on self, sort, filter) is gone
+            ui.trace, ui.sql, ui.sort_col, ui.descending, ui.query = {}, "", "", False, ""
+            ui.sql_resets += 1
+            self._session().put(slot, result)
+        ui.running = False
+        if slot.startswith(("tab:", "chat:")):
+            self._sync()  # the tab's label changes with the result
+        else:
+            self._show(slot)
+
     def _new_result(self, slot: str, ui: Ui, replaced: bool = True) -> None:
         """Redraw a slot after its tool form ran (or was reset); replaced = it holds another result."""
         if replaced:
@@ -563,20 +604,29 @@ class State(rx.State):
 
     @rx.event
     def open_add_menu(self, info: dict[str, Any]):
-        """The Results tab bar's "+": a menu of the tool forms that can be added by hand."""
+        """The Results tab bar's "+": a menu of the widgets that can be added by hand, at the pointer."""
         self.menu_tab = ""
-        self.add_menu = True
+        self.add_menu, self.add_menu_centered = True, False
         self.menu_x, self.menu_y = int(info.get("client_x", 0)), int(info.get("client_y", 0))
 
     @rx.event
-    def add_tool_form(self, key: str):
-        """Add a tool form to fill in and run, as a new tab (a ToolRequest until its first run)."""
+    def toggle_add_menu(self):
+        """Shortcut.ADD_WIDGET: the same menu from the keyboard, in the middle of the window
+        (there is no pointer, and the Results pane with its "+" may be hidden)."""
+        self.menu_tab = ""
+        self.add_menu, self.add_menu_centered = not self.add_menu, True
+
+    @rx.event
+    def add_widget(self, kind: str):
+        """Add a widget by hand, as a new tab: a tool form to fill in and run (a ToolRequest until
+        its first run), or the widget's own blank value (eg a SmashDb console)."""
         self.add_menu = False
-        form = form_by_key(key)
-        if form is None:
-            return
+        widget = widget_of(kind)
         session = self._session()
-        name = session.bind_result(ToolRequest(form.key), source=form.key)
+        value = widget.blank(session) if widget and widget.addable else None
+        if value is None:
+            return
+        name = session.bind_result(value, source=widget.form.key if widget.form else widget.kind)
         session.ui[f"tab:{name}"] = Ui(form_open=True)
         self._reveal_results()
         self._sync(prefer=name)

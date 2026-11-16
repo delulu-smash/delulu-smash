@@ -30,7 +30,7 @@ How to get the full text from each common source. Add to this file whenever a ne
 
 ## Frame data
 
-- **SmashDb** (`pkgs/ds/data/parquet/*.parquet`, queried with `ds.ai.smashdb`) is the in-repo source of truth. Check it
+- **SmashDb** (`pkgs/ds/data/smash_db/parquet/*.parquet`, queried with `ds.ai.smashdb`) is the in-repo source of truth. Check it
   before going to the web.
 - **ultimateframedata.com** is a good second source for cross-checking.
 

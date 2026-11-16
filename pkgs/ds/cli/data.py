@@ -17,8 +17,7 @@ from ds.data.raw import char_ranking
 from ds.data.raw.framedata import scrape_framedata
 from ds.data.raw.roster import CHARS_MODULE, scrape_character_roster, with_char_icon, write_char_enums
 from ds.data.raw.smashmate import SITE_CHAR_ICON, scrape_char_icons
-from ds.data.raw.startgg import videogame_characters
-from ds.data.startgg.characters import STARTGG_CHAR_PARQUET, characters_table
+from ds.data.raw.startgg import videogame_characters, write_startgg_characters
 
 # TODO: consider consolidating to one command for syncing raw
 # (ie temp and converting), so can do by file type or entire data
@@ -27,7 +26,7 @@ __all__ = ["data_app"]
 
 data_app = typer.Typer(help="SubCommands for raw & transformed data (eg frame data)")
 
-# pkgs/ds/data/ (icons, raw/) and its parquet/ folder: the "database", one *.parquet per table
+# pkgs/ds/data/ (icons, raw/) and its smash_db/parquet/ folder: SmashDb, one file per table
 DATA_DIR = ds.data.paths.DATA_DIR
 PARQUET_DIR = ds.data.paths.PARQUET_DIR
 # the "database" of characters (id, name, char_icon) synced from ultimateframedata.com
@@ -50,7 +49,7 @@ def _human_size(num_bytes: int) -> str:
 
 @data_app.command("summary")
 def summary() -> None:
-    """List every parquet table in data/parquet/ with its row count, file size, and schema"""
+    """List every SmashDb table (data/smash_db/parquet/): row count, file size, and schema"""
     rows = []
     schemas = {}
     for parquet_path in sorted(PARQUET_DIR.glob("*.parquet")):
@@ -95,15 +94,17 @@ def framedata(
 
 @data_app.command("startgg-char")
 def startgg_char() -> None:
-    """Fetch start.gg's Ultimate characters (one request) into the startgg_char table."""
+    """Fetch start.gg's Ultimate characters (one request) into raw/startgg/characters.py."""
     characters = asyncio.run(videogame_characters())
-    df = characters_table(characters)
+    df = pl.DataFrame(
+        [{"startgg_id": c.id, "name": c.name, "char_group": c.char_group} for c in characters.values()]
+    ).sort("startgg_id")
     print(df)
     unmapped = df.filter(pl.col("char_group").is_null())["name"].to_list()
     print(f"No char_group (expected: only 'Random Character'): {unmapped}")
-    if typer.confirm(f"Overwrite {STARTGG_CHAR_PARQUET} with these {df.height} characters?"):
-        df.write_parquet(STARTGG_CHAR_PARQUET)
-        print(f"Wrote {df.height} characters to {STARTGG_CHAR_PARQUET}")
+    if typer.confirm(f"Write these {df.height} characters into the start.gg code?"):
+        changed = write_startgg_characters(characters)
+        print("Updated STARTGG_CHARACTER_NAMES" if changed else "Already up to date")
     else:
         print("Skipped write.")
 
@@ -124,9 +125,6 @@ def roster() -> None:
 def _sync_char_enums(char_df: pl.DataFrame) -> None:
     changed = write_char_enums(char_df)
     print(f"{'Updated' if changed else 'Already up to date:'} CharId / CharGroup in {CHARS_MODULE}")
-    if changed:
-        # startgg_char.parquet's char_group column is typed by CharGroup (CHAR_GROUP_DTYPE)
-        print("CharGroup may have changed: re-run `ds data startgg-char` too")
 
 
 @data_app.command("char_enum")
@@ -160,19 +158,39 @@ CHAR_RANKING_PARQUET_PATH = PARQUET_DIR / "char_ranking.parquet"
 
 
 def _char_ranking_steps() -> list[str]:
-    """What to do by hand to get a release's zip into the downloads folder"""
+    """What to do by hand to get a release's zip into the downloads folder. The one list of
+    steps: the command's --help, its start and its "no zip" error all print it.
+    """
     return [
-        "Open the shared Google Drive folder (its link is in the SchuStats Discord, Patreon channels).",
-        "Go into 'Character Rankings' and find the month's folder (eg 'November 2026').",
-        f"Download it (right-click > Download): Drive zips it into {char_ranking.DOWNLOADS_DIR}.",
+        "Open the SchuStats Discord and find the Google Drive link posted there (Patreon channels).",
+        "In the Drive folder, open 'Character Rankings' and find the month's folder (eg 'November 2026').",
+        f"Download that month's folder (right-click > Download): Drive zips it into {char_ranking.DOWNLOADS_DIR}.",
+        "Run `ds data char_ranking` (it picks the newest zip there).",
     ]
+
+
+def _print_char_ranking_steps() -> None:
+    print("How to get the file:")
+    for step, line in enumerate(_char_ranking_steps(), 1):
+        print(f"  {step}. {line}")
+
+
+# blank lines between the parts: Typer joins the lines of one paragraph
+_CHAR_RANKING_HELP = "\n\n".join(
+    [
+        "Load a month's per-character rankings (a zip of CSVs downloaded by hand) into the table.",
+        "How to get the file:",
+        *[f"{step}. {line}" for step, line in enumerate(_char_ranking_steps(), 1)],
+        "The zip is read in place and you are asked before anything is written.",
+    ]
+)
 
 
 # rows of a loaded release to show before writing it
 _SAMPLE_ROWS = 10
 
 
-@data_app.command("char_ranking")
+@data_app.command("char_ranking", help=_CHAR_RANKING_HELP)
 def char_ranking_cmd(
     zip_name: Annotated[
         str | None,
@@ -182,31 +200,33 @@ def char_ranking_cmd(
     ] = None,
 ) -> None:
     """Load a month's per-character rankings (a zip of CSVs downloaded by hand) into the table.
+    (--help shows _CHAR_RANKING_HELP instead: this text plus how to get the file.)
 
     Reads the zip in place (nothing is unpacked), works out its month from the folder inside
     (eg 'November 2026' -> 2026-11-30) and asks before loading it into
-    data/parquet/char_ranking.parquet. Loading a month again replaces only that month's rows.
+    data/smash_db/parquet/char_ranking.parquet. Loading a month again replaces only that
+    month's rows.
     """
+    _print_char_ranking_steps()
     try:
         zip_path = char_ranking.find_zip(zip_name)
         folder, release = char_ranking.release_month(zip_path)
     except (FileNotFoundError, ValueError, zipfile.BadZipFile) as error:
-        print(error)
-        print("To get a release:")
-        for step, line in enumerate(_char_ranking_steps(), 1):
-            print(f"  {step}. {line}")
+        print(f"Can't load a release: {error} (see the steps above)")
         raise typer.Exit(1) from None
     downloaded = dt.datetime.fromtimestamp(zip_path.stat().st_mtime, tz=dt.UTC).astimezone()
     print(f"Zip: {zip_path} (downloaded {downloaded:%Y-%m-%d %H:%M})")
     typer.confirm(f"Load {folder!r} as the release of {release} (month end)?", default=True, abort=True)
 
-    df = char_ranking.read_release(zip_path)
-    print(f"{df['ranking'].n_unique()} rankings -> {df.height} rows; {_SAMPLE_ROWS} of them, by tag:")
+    try:
+        df = char_ranking.read_release(zip_path)
+    except ValueError as error:  # the format changed, or a ranking's name matches no character
+        print(error)
+        raise typer.Exit(1) from None
+    print(f"{df['char_group_id'].n_unique()} characters -> {df.height} rows; {_SAMPLE_ROWS} of them, by tag:")
     # sorted by tag, so the sample mixes characters and ranks; every column, none cut off
     with pl.Config(tbl_cols=-1, tbl_rows=_SAMPLE_ROWS, tbl_width_chars=200, fmt_str_lengths=40):
         print(df.sort("tag", maintain_order=True).head(_SAMPLE_ROWS))
-    if missing := char_ranking.unmatched_rankings(df):
-        print(f"No character matched for: {missing} (add them to SITE_RANKING; char_group_id is null for now)")
     table = pl.read_parquet(CHAR_RANKING_PARQUET_PATH) if CHAR_RANKING_PARQUET_PATH.exists() else None
     replaced = 0 if table is None else table.filter(pl.col("date") == release).height
     question = f"Write {df.height} rows for {release} to {CHAR_RANKING_PARQUET_PATH}"

@@ -4,7 +4,8 @@
 //          (set from reflex_kernel/shortcuts.py, the one place they are defined):
 //          FULL_SCREEN floats the view (.widget) you are in nearly full screen, or, outside a view,
 //          fills the window with your pane (clicks its zoom button). CLOSE (Esc) closes a menu or
-//          the help or debug panel, then a floating view. TOGGLE_RESULTS / TOGGLE_PYTHON / HELP / DEBUG click the
+//          the help or debug panel, then a floating view. ADD_WIDGET clicks the hidden button that shows or hides the
+//          "+" menu (a search box over the list: type to filter, arrows, Enter); in a menu, arrows move between its rows. TOGGLE_RESULTS / TOGGLE_PYTHON / HELP / DEBUG click the
 //          bottom bar's pane toggles and the title bar's ? and bug icon (data-toggle). A view's float button (render.float_button) and
 //          a click outside a floating view work too. reveal(id) scrolls to a chat row, result tab or
 //          cell and flashes it (State.reveal).
@@ -85,6 +86,24 @@
     if (widget) toggleFloat(widget);
   });
 
+  // a menu with a search box (reflex_kernel.menu_search): typing keeps the rows that have every
+  // word and highlights the first; it starts with all rows, when the box takes focus on opening
+  const menuRows = (search) => [...search.closest(".menu").querySelectorAll(".menu-item")];
+  const filterMenu = (search) => {
+    const words = search.value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    const rows = menuRows(search);
+    rows.forEach((row) => { row.hidden = !words.every((word) => row.textContent.toLowerCase().includes(word)); });
+    const shown = rows.filter((row) => !row.hidden);
+    rows.forEach((row) => row.classList.toggle("is-active", row === shown[0]));
+    search.closest(".menu").classList.toggle("is-empty", shown.length === 0);
+  };
+  document.addEventListener("input", (event) => {
+    if (event.target.matches?.("[data-menu-search]")) filterMenu(event.target);
+  });
+  document.addEventListener("focusin", (event) => {
+    if (event.target.matches?.("[data-menu-search]")) filterMenu(event.target);
+  });
+
   // capture phase, so it also works while typing in a code cell or the chat box
   document.addEventListener("keydown", (event) => {
     if (matches(event, SHORTCUTS.CLOSE)) {
@@ -97,7 +116,35 @@
       else setFloating(current, false);
       return;
     }
-    const toggle = [["TOGGLE_RESULTS", "results"], ["TOGGLE_PYTHON", "python"], ["HELP", "help"], ["DEBUG", "debug"]]
+    // in a menu's search box: arrows move the highlighted row, Enter picks it
+    if (event.target instanceof Element && event.target.matches("[data-menu-search]")) {
+      const shown = menuRows(event.target).filter((row) => !row.hidden);
+      const at = shown.findIndex((row) => row.classList.contains("is-active"));
+      if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+        event.preventDefault();
+        event.stopPropagation();
+        const next = shown[(at + (event.key === "ArrowDown" ? 1 : -1) + shown.length) % shown.length];
+        shown.forEach((row) => row.classList.toggle("is-active", row === next));
+        return;
+      }
+      if (event.key === "Enter") {
+        event.preventDefault();
+        event.stopPropagation();
+        if (shown[at]) shown[at].click();
+        return;
+      }
+    }
+    // in a menu: arrows move between its rows (Enter runs the focused one, as any button)
+    const item = document.activeElement instanceof Element && document.activeElement.closest(".menu .menu-item");
+    if (item && (event.key === "ArrowDown" || event.key === "ArrowUp")) {
+      event.preventDefault();
+      event.stopPropagation();
+      const items = [...item.closest(".menu").querySelectorAll(".menu-item")];
+      const next = items.indexOf(item) + (event.key === "ArrowDown" ? 1 : -1);
+      items[(next + items.length) % items.length].focus();
+      return;
+    }
+    const toggle = [["TOGGLE_RESULTS", "results"], ["TOGGLE_PYTHON", "python"], ["HELP", "help"], ["DEBUG", "debug"], ["ADD_WIDGET", "add"]]
       .find(([name]) => SHORTCUTS[name] && matches(event, SHORTCUTS[name]));
     if (toggle) {
       const button = document.querySelector(`[data-toggle="${toggle[1]}"]`);
