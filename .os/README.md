@@ -34,7 +34,8 @@ After that, open a new terminal and use `os sync`.
 Manual per-machine steps (not synced):
 
 - Sign in to 1Password. (The master password for `os pwd-copy` lives in the per-machine keyring; `os sync`
-  offers `os pwd-store` while none is stored, or run it yourself.)
+  offers `os pwd-store` while none is stored, or run it yourself.) Also turn on Settings > Developer >
+  Integrate with 1Password CLI, so `ds settings sync` can read the API keys from 1Password.
 - Monitors / scaling (`~/.config/hypr/monitors.lua`) and input tweaks (`input.lua`).
 
 ## Everyday use: `os sync`

@@ -4,6 +4,8 @@
 # list of time stamps and ability to create gif snippets, with option to load to R2
 from __future__ import annotations
 
+import signal
+
 import typer
 from ds.cli.ai import ai_app
 from ds.cli.data import data_app
@@ -12,6 +14,11 @@ from ds.cli.lint import lint_app
 from ds.cli.publish import publish_cmd
 from ds.cli.settings import settings_app
 from ds.cli.ui import ui_app
+
+# polars (imported by ds.cli.data) installs a native SIGINT handler that restarts blocking
+# reads, so Ctrl+C at any prompt (eg `ds settings sync`) did nothing. Interrupting the read
+# lets Python raise KeyboardInterrupt; polars' handler stays, so queries still stop on Ctrl+C.
+signal.siginterrupt(signal.SIGINT, True)  # noqa: FBT003 -- stdlib signature takes no keyword
 
 app = typer.Typer(
     # some locals contains user passwrods so want ensure dont
