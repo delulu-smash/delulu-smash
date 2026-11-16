@@ -8,6 +8,8 @@
 #          re-runs and what the inline chat fills (inline_fill.py), with no code per widget.
 # To add a widget: a Widget row here, a `case` in render.to_view that makes its View (kind =
 #          the row's kind), and its component in render.render_component.
+#          AI: first ask the user whether it should have the inline chat (a widget with a tool
+#          gets it by default; confirm anyway). See spec/experimental/reflex-kernel/inline_ai.md.
 # To change behaviour: edit the row. Nothing else reads these facts from anywhere else.
 # ---------------------------------------------------------------------------
 from __future__ import annotations

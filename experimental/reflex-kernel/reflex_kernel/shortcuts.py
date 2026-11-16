@@ -22,10 +22,24 @@ class Binding:
 
 class Shortcut(Enum):
     # Handled by assets/panes.js (window.SHORTCUTS).
-    FULL_SCREEN = Binding("Alt+F", "result, pane", "Full screen: float the result you are in, else fill with your pane")
+    FULL_SCREEN = Binding(
+        "Alt+F",
+        "result, pane",
+        "Full screen: float the result you are in, else fill with your pane; the debug panel while it is open",
+    )
     CLOSE = Binding("Escape", "floating result, menu, help, debug log, keybindings", "Close it")
     TOGGLE_RESULTS = Binding("Alt+R", "anywhere", "Show or hide the Results pane")
     TOGGLE_PYTHON = Binding("Alt+J", "anywhere", "Show or hide the Python (Jupyter) pane")
+    TOGGLE_VARIABLES = Binding(
+        "Alt+V",
+        "anywhere",
+        "Show or hide the Variables pane: the Python names you have (r1, q1, your own), to see and clear",
+    )
+    TOGGLE_PYTHON_VARIABLES = Binding(
+        "Alt+Shift+J",
+        "anywhere",
+        "Show the Python and Variables panes together (opens whichever is hidden); hide both when both are open",
+    )
     HELP = Binding("Alt+H", "anywhere", "Show or hide this help")
     PALETTE = Binding(
         "Alt+P", "anywhere", "Command palette: run anything by name, eg add a widget (type to filter, arrows, Enter)"
@@ -71,6 +85,8 @@ BROWSER_SHORTCUTS = (
     Shortcut.CLOSE,
     Shortcut.TOGGLE_RESULTS,
     Shortcut.TOGGLE_PYTHON,
+    Shortcut.TOGGLE_VARIABLES,
+    Shortcut.TOGGLE_PYTHON_VARIABLES,
     Shortcut.HELP,
     Shortcut.PALETTE,
     Shortcut.KEYS,

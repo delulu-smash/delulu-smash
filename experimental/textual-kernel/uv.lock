@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.13"
 resolution-markers = [
     "python_full_version >= '3.15'",
@@ -696,6 +696,7 @@ requires-dist = [
 dev = [
     { name = "pre-commit", specifier = ">=4.5.1" },
     { name = "pytest", specifier = ">=9.1.1" },
+    { name = "pytest-recording", specifier = ">=0.14.1" },
 ]
 
 [[package]]
@@ -2447,10 +2448,10 @@ resolution-markers = [
     "python_full_version < '3.14'",
 ]
 dependencies = [
-    { name = "annotated-types", marker = "python_full_version < '3.15'" },
-    { name = "pydantic-core", version = "2.46.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.15'" },
-    { name = "typing-extensions", marker = "python_full_version < '3.15'" },
-    { name = "typing-inspection", marker = "python_full_version < '3.15'" },
+    { name = "annotated-types" },
+    { name = "pydantic-core", version = "2.46.5", source = { registry = "https://pypi.org/simple" } },
+    { name = "typing-extensions" },
+    { name = "typing-inspection" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/53/ef/fc4f868f4e2cee79f863883abffceff107875f569b848507319842d2a681/pydantic-2.13.5.tar.gz", hash = "sha256:51a9c5f7b2f8e636f04c6cada605d9b6a3bf1348fdf945a3d8869b19bba0ee08", size = 845750, upload-time = "2026-08-28T14:04:00.916Z" }
 wheels = [
@@ -2459,7 +2460,7 @@ wheels = [
 
 [package.optional-dependencies]
 email = [
-    { name = "email-validator", marker = "python_full_version < '3.15'" },
+    { name = "email-validator" },
 ]
 
 [[package]]
@@ -2470,10 +2471,10 @@ resolution-markers = [
     "python_full_version >= '3.15'",
 ]
 dependencies = [
-    { name = "annotated-types", marker = "python_full_version >= '3.15'" },
-    { name = "pydantic-core", version = "2.50.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.15'" },
-    { name = "typing-extensions", marker = "python_full_version >= '3.15'" },
-    { name = "typing-inspection", marker = "python_full_version >= '3.15'" },
+    { name = "annotated-types" },
+    { name = "pydantic-core", version = "2.50.4", source = { registry = "https://pypi.org/simple" } },
+    { name = "typing-extensions" },
+    { name = "typing-inspection" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/b4/fc/1203d011145c98ddce3cd2f505bb54375ef8d43223053df6bfcf3c746f46/pydantic-2.14.3.tar.gz", hash = "sha256:1054f237f4d4733e5a30e1e2333bd33a2004ab9ab1510bd053a9a31bb48e232d", size = 925636, upload-time = "2026-11-05T09:17:04.686Z" }
 wheels = [
@@ -2482,7 +2483,7 @@ wheels = [
 
 [package.optional-dependencies]
 email = [
-    { name = "email-validator", marker = "python_full_version >= '3.15'" },
+    { name = "email-validator" },
 ]
 
 [[package]]
@@ -2639,7 +2640,7 @@ resolution-markers = [
     "python_full_version < '3.14'",
 ]
 dependencies = [
-    { name = "typing-extensions", marker = "python_full_version < '3.15'" },
+    { name = "typing-extensions" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/af/f9/8a06bea35ef8daf588f707784c973a7046e0034c8d8cfb08828eeffb8b75/pydantic_core-2.46.5.tar.gz", hash = "sha256:10416c15b8839ecc4ef4d0885da76da6fd0f67333a0eb8aff6d93c4b8f2910fc", size = 472262, upload-time = "2026-08-28T10:01:31.677Z" }
 wheels = [
@@ -2698,7 +2699,7 @@ resolution-markers = [
     "python_full_version >= '3.15'",
 ]
 dependencies = [
-    { name = "typing-extensions", marker = "python_full_version >= '3.15'" },
+    { name = "typing-extensions" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/9c/0f/34f9ce4ba701dd0b815033ef94d99b56f66200e578ee6052aa3ac26f064e/pydantic_core-2.50.4.tar.gz", hash = "sha256:aead3b74b68396bf0feab5d57e050b730ded7df55853c1e048a87e00aaf033c6", size = 522249, upload-time = "2026-11-05T09:15:26.774Z" }
 wheels = [
@@ -2839,6 +2840,7 @@ dependencies = [
     { name = "pydantic", version = "2.14.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.15'" },
     { name = "typing-inspection" },
 ]
+sdist = { url = "https://files.pythonhosted.org/packages/23/f4/67f8d1f42806f90c46bb902b32f537fe7fa125575b5bb7707523508eeb4b/pydantic_graph-2.68.0.tar.gz", hash = "sha256:1314df1961b0decaa39176531a7a9b63b37c437e69a6463b042e0a1924fadea8", size = 46908, upload-time = "2026-11-12T02:30:24.187Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/8e/57/203b8563d18e715e4d8d22812459d2b87f955ffa9f6c5bf813a5f67fb3b0/pydantic_graph-2.68.0-py3-none-any.whl", hash = "sha256:3428c563bb6346aeeda28a79322cfcbe4e0087d7a23881ec2f1b06a95e983f00", size = 54117, upload-time = "2026-11-12T02:30:13.278Z" },
 ]

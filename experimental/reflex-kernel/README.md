@@ -78,19 +78,64 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   `ds.util.http` / `ds.util.graphql` and are kept in memory only (`reflex_kernel/logs.py`, newest 2000, gone on restart);
   the panel loads them when opened, on Refresh and when a turn, form or cell finishes, never while closed.
   A new kind of record is one function in `logs.LOG_FORMATS`.
-  Two tabs: **Requests** (the log above) and **AI** (spend first, then the agents):
+  The panel goes full screen with the arrows at its top right, or `Alt+F` while it is open (Esc goes back to
+  the side panel first, then closes it); it reopens the way you left it.
+  Four tabs: **Requests** (the log above), **Agents**, **Spend** and **System**:
   - **Agents** (`reflex_kernel/agents.py`): each agent the app runs (`smash-agent` for the chat and `ds ai eval`,
     `inline-edit` for Alt+A in an editor, `inline-fill` for Alt+A in a widget's form) with its model, provider, context window, list price per 1M tokens (genai-prices),
-    model settings, output type, retries, and its capabilities (loaded always or on demand) with their tools.
-    Read once from the Agent objects at start. The chat title shows the chat agent's model.
+    model settings, output type and retries, then what the model is actually given, named as pydantic-ai
+    names it: the agent's `instructions` (its prompt), and each capability with whether it is deferred
+    (`defer_loading=True`) or always-on, its `description`, its own `instructions` and its `tools` (each
+    tool's description and parameters). A dashed `How it loads` box at the top of a card is the app's own
+    explanation of that setup, marked as not being text the model gets. `Copy setup` copies one
+    agent's whole setup as text. Read once from the Agent objects at start, so no request is made; the chat
+    title shows the chat agent's model.
+    - **Why a tool wasn't used**: the chat agent's capabilities are all deferred (`defer_loading=True`). A request starts with
+      only the agent's instructions, the tool `load_capability` and a list of capability ids with their
+      descriptions; a capability's tools and instructions don't exist for the model until it loads that
+      capability, which it decides from the description alone. The card says so at its top, and each
+      capability shows `loaded in this chat` or `not loaded in this chat`.
+    - **This chat** (top of the tab): the capabilities this chat's model loaded and how often it called each
+      tool, read from the chat's message history (`agents.activity`) when the tab opens and after a turn.
   - **Spend** (`reflex_kernel/spend.py`, `ds.data.raw.logfire`): AI spend from Logfire, so every machine and app
     that traces there (chat, inline chats, evals), not only this session: totals for today / 7 / 30 days, a bar
     per day (local days), a split by agent and model, the priciest requests (copy a trace id to find it in
-    Logfire). Logfire is only asked when you click the AI tab or its Refresh (the panel always opens on
+    Logfire). Logfire is only asked when you click the Spend tab or its Refresh (the panel always opens on
     Requests), three small requests, each logged in the Requests tab; nothing stored. The agents' info needs no
     request (read from the Agent objects; prices from genai-prices' bundled data). Needs a Logfire read
     token (`ds settings sync`, then restart the app); without one the tab says how to get it. Only traced calls
     count: the actual bill (everything that used the Gateway key) is in Logfire > Settings > Spending.
+  - **System** (`reflex_kernel/perf.py`): where the memory is and what was slow, to understand the app while
+    using it. Read when you click the tab and on its Refresh, never in the background; nothing is stored
+    beyond the timings below.
+    - **Tiles**: the backend's memory now and at its peak, the sessions it holds, handlers that took over
+      300 ms, CPU used, time since the backend started (a code edit in dev mode restarts it).
+    - **Memory**: the parts that can be measured, as bars on one scale (the backend's total): this session's
+      variables, its SmashDb (loaded once per session), its chat, the other sessions, the debug log, the
+      timings. "Everything else" is the rest: Python, polars, Reflex and the libraries. Sizes are rough (a
+      DataFrame's buffers, a model's JSON): for spotting what is big, not accounting.
+    - **Biggest variables**: this session's Python names by size, with type and shape.
+    - **Sessions**: every browser tab that ever opened the app, with when it opened, when it was last used,
+      what it holds and what its AI cost. A session is never dropped: a closed window keeps its variables
+      until the backend restarts, and this table is where that shows.
+    - **Handlers and steps**: every event handler of the app is timed, from the event arriving to its last
+      update (`state.event`, which is `rx.event` plus `perf.timed`): runs, median, p95, max, total, sorted by
+      total. `view_event` is split by action (`view_event: sort`); rows named `step:` are parts of a handler
+      (`build view`: a value made into what the browser gets; `sync tabs`: every variable re-read into the
+      tab list). A handler that waits on a fetch counts the wait. Orange = p95 over 300 ms.
+    - **Slowest runs**: the single slowest runs, with when and whose session.
+    - **Outside calls**: the Requests tab's records summed by what was called (start.gg operation, site,
+      agent, tool): runs, median, max, total, errors.
+    - **State held for this tab**: the Reflex state's vars by size as JSON, ie what the server keeps and
+      sends for this window (a 2000-row grid in `view` shows here).
+    - **Browser**: measured by the page itself (`window.perfSnapshot`, `assets/panes.js`): JS heap, DOM nodes,
+      long tasks (the page frozen for over 50 ms) since load, page load time, mounted editors.
+    - **Process**: pid, threads, open files, polars' thread pool, tracked Python objects, versions.
+    - **Copy report** gives all of it as plain text, eg to paste into a chat with an AI. **Clear timings**
+      forgets the kept timings, to measure from now.
+    - Timings are kept in memory only (the newest 5000, every session, about 100 bytes each; gone on restart),
+      like the log's records. A new timed step is `with perf.span("name"):`; a new handler is timed by using
+      `@event` (background handlers use plain `rx.event(background=True)` and are not timed).
 - **Tables**: click a tab to switch, type in the filter box to search. Click a column header to sort
   (ascending, descending, unsorted); filter and sort work the same in a tab and in a cell's result.
   The grid shows at most 2000 rows; the DataFrame itself is never truncated.
@@ -107,7 +152,9 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
 
   Today: `table`, `videos` (`find_match_videos`, addable), `usage` (`get_player_usage`, addable, unfolded in
   chat), `fields`, `smashdb` (the SmashDb console, addable), `tool`. A new attribute is a field on `Widget` plus the one place that reads it. A new widget
-  is a row, a `case` in `render.to_view`, and its component in `render.render_component`.
+  is a row, a `case` in `render.to_view`, and its component in `render.render_component`. Whether it gets the
+  inline chat is asked each time one is added (with a `tool` it does by default; see
+  `spec/experimental/reflex-kernel/inline_ai.md`).
 - **Links look like links, in every widget**: text that opens a url is drawn with `render.link(text, href)`:
   blue and underlined, exactly as a link in the agent's markdown reply (`.md a, a.link` in `assets/app.css`),
   opening in a new tab. Don't style a hyperlink as plain text, and don't give a widget its own link style.
@@ -237,6 +284,34 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
     localStorage by `assets/panes.js`).
   - A command that acts where you are (full screen, inline chat) uses where you were before the palette
     opened: the result or pane, or the editor you were last in.
+- **Slash commands** (`Command.slash` in `reflex_kernel/commands.py`, `assets/slash.js`): a palette command
+  with a `slash` name can also be typed in the chat box, eg `/clear-chat`, and runs exactly what its palette
+  row runs. Typing `/` lists them over the box: type to filter, Up / Down, Tab completes the name, Enter
+  runs, Esc closes the list. A message starting with `/` is never sent to the agent (`State.submit_chat`):
+  an unknown name gets a line saying which commands exist. A command that ran shows in the chat as a tool
+  call does: a row with the command, the text after it and what it did (`▸ /clear-variables  cleared 3
+  variables`, `▸ /python  Python console: shown`), and a widget it added unfolded under that row, as a
+  tool's result is (`State.slash_ran`, chat kind `slash`). These rows are the app's: the agent never gets them.
+  A new slash command is the `slash=` field on its row. The list starts with the most used ones
+  (`commands.SLASH_FIRST`: the two clears), then the rest as written. A slash command is coloured where
+  you type it (blue if it exists, orange if not; hovering the box says what it does, the same line the list
+  shows beside it) and in the chat line of what ran. A textarea can't colour part of its text, so
+  `assets/slash.js` draws the box's text again in a layer under it while it starts with `/`. Today:
+  - `/clear-chat` (`Chat: Clear`): a new conversation. The chat's rows and what the agent remembers go; the
+    variables it made (`r1`, ...) and the spend so far stay. Not undoable, and not while a turn is running.
+  - `/clear-variables` (`Variables: Clear all`): as the pane's `Clear all`, with its 3 s Undo.
+  - `/results`, `/python`, `/variables` (show or hide the pane), `/new-cell`, `/close-tabs`, `/help`,
+    `/keys`, `/debug`.
+  - **A widget is its kind**: `/videos`, `/usage`, `/smashdb` add it and show it in the chat, under the
+    command, where it works as it does in a tab (`open →` on its row brings up the tab; the `+` menu and
+    the palette still add it as a tab only).
+  - **Text after a command** (`Command.takes`, `Command.slash_event`): a widget with a tool takes text, eg
+    `/videos mkleo vs sparg0 grand finals` or `/usage tweek last 50 sets`. The widget is added and the text
+    goes to the inline AI that fills its inputs (`State.add_widget_ask`, the same call as the form's
+    `Ask AI` row), so the form in the chat opens with a proposal that you run: the AI never runs the tool
+    (`spec/experimental/reflex-kernel/inline_ai.md`). In the list such a command shows as `/videos <text>`
+    and Tab completes it with a space, ready for the text. A command that takes no text is not run when
+    text follows it, so `/clear-chat please don't` clears nothing.
 - **Keybindings**: Alt+K opens a searchable list of every shortcut, like Omarchy's SUPER+K: type to filter,
   Esc (or Alt+K) closes (`keys_palette`, `assets/keys.js`). Enter runs the picked shortcut, as in Omarchy,
   when a key press alone can run it (`commands.RUNNABLE`: the `Alt` keys; a ↵ marks those rows). Enter does
@@ -248,10 +323,39 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
 - **Keyboard shortcuts** are all defined once, in `reflex_kernel/shortcuts.py`, as the `Shortcut` enum named
   by what they do (`Shortcut.FULL_SCREEN`, `Shortcut.RUN`, …). The help panel, tooltips, the cell editor's
   keymap (`codemirror_keys`) and `assets/panes.js` (`window.SHORTCUTS`) all read it: change a key there only.
-- **Panes**: the bottom bar toggles Chat, Results (Alt+R) and Python (Alt+J, J for Jupyter; Alt+P is the command palette), as in Zed. (Neither letter follows
+- **Panes**: the bottom bar toggles Chat, Results (Alt+R), Python (Alt+J, J for Jupyter; Alt+P is the command palette) and Variables (Alt+V), as in Zed. `Alt+Shift+J` works the Python and Variables panes as a pair: it shows both (so with one open it opens the other), and hides both only when both are open. (Neither letter follows
   Omarchy, where `SUPER+P` / `SUPER+J` are window layout actions with nothing comparable here.) Only the chat
   shows at first (results also unfold inline in it, and `open →` brings up Results); a pane
   whose neighbour is hidden takes the freed space. Hidden cells keep their text.
+- **Variables** (`Alt+V`, the bottom bar's fourth toggle; `reflex_kernel/variables.py`; what must hold is in
+  `spec/experimental/reflex-kernel/variables.md`): a pane at the right of Results / Python listing the
+  session's Python names that are data: the agent's results (`r1`, …), a SmashDb console's saves (`q1`, …),
+  cell results opened as tabs (`out3`) and whatever your cells assign. Each row has its type, shape, rough
+  size and where it came from (the tool, `SmashDb console`, `cell [3]`, `python`). Modules, functions and
+  classes are left out unless `show all` is on; `pl`, `db` and `_names` never show.
+  - Click a name to open its Results tab (again, if you closed it); a value with no view unfolds its details
+    instead. `▸` unfolds the details of any row: the tool inputs that made it, other names bound to the same
+    object, a table's columns and types, or the value's repr.
+  - **Clearing**: the `×` on a row, `Clear selected` (row checkboxes; the header's checkbox selects all or
+    none; the title line then says what the ticked rows hold together, eg `selected 2 · 81 KB`) or `Clear all` removes the names from Python, as `del` would: `r1` is a `NameError`, its tab closes.
+    The palette has `Variables: Clear all` and `Variables: Undo the last clear`.
+  - **Undo, then really gone**: after a clear the pane's bottom line says what was cleared, with an `Undo`
+    button whose bottom edge is a bar that runs down over 3 seconds (`variables.UNDO_SECONDS`). `Undo`
+    puts the batch back; a name you bound again in that time is left as it is and named. When the bar is
+    empty (or on the `×` beside it, "free now", or at the next clear) the batch is dropped for good with
+    everything else in the app that held those objects (`_`, a cell result showing one, a tool form's
+    record of it), the garbage collector runs, and the line says what was freed. A clear run from the
+    palette while the pane is hidden shows the pane, so its Undo is on screen.
+    `Session.clear` / `restore` / `purge` do this; the held batch is the original objects waiting to be
+    dropped, not a cache (nothing is read from it but Undo). The bar is drawn by the browser from the
+    moment the line appears; the server's own 3 s timer is what frees.
+  - What clearing can't free: an object still bound to another name (`a = r1`; the details say so), and an
+    agent result that is a model (match videos, player usage), which is also part of the chat history the
+    agent needs. Tables aren't affected: the DataFrame is its own object, apart from the chat's CSV text.
+  - `r` numbers are never given out again after a clear, so "r2" in the chat can't come to mean another
+    table. `q` names are (a console suggests the first free one).
+  - The pane is only kept current while it is on screen. `Alt+V` isn't Omarchy's `SUPER+V` (universal
+    paste): Omarchy has no matching action, so it is `Alt` + a free letter, V for variables.
 - **Full screen**: each pane has a button with two diagonal arrows (top right) that fills the window
   with that pane; click it again to restore. Alt+F (`Shortcut.FULL_SCREEN`) floats the view you are in
   (see Floating a view), or, outside a view, fills the window with your pane: "you are in" is where
@@ -310,7 +414,7 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   - Generic: nothing is written per widget. A widget gets it by having a `tool` in `widgets.py`. Today that is
     Match videos and Player usage; a not-yet-run form (`+`) works too.
   - Logged and counted like the editor's inline chat: one `inline-fill` record in the debug log (its `↖` goes
-    to the result), its cost on the chat title's meter, its own row in the AI tab's Agents and Spend.
+    to the result), its cost on the chat title's meter, its own row in the debug panel's Agents and Spend tabs.
   - Inside the SmashDb console's SQL box, `Alt+A` is still the code inline chat.
   - Not covered: the things a view changes without its tool (a table's filter, sort and `SQL ▸`, the usage
     view's window, the videos page), and table results (head to head, tournaments, frame data), which have no
@@ -322,5 +426,5 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
 
 Layout: `reflex_kernel/session.py` (namespace, agent, completion; no UI), `render.py` (Python value -> view -> component), `state.py` (Reflex
 state), `reflex_kernel.py` (components), `editor.py` + `cell_editor.jsx` (CodeMirror wrapper),
-`api.py` (`POST /complete`), `assets/app.css` (Everforest). Design mockups this came from:
+`api.py` (`POST /complete`), `logs.py` / `spend.py` / `agents.py` / `perf.py` (the debug panel's tabs), `assets/app.css` (Everforest). Design mockups this came from:
 `experimental/design_poc` (`/split`).

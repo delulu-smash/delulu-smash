@@ -37,3 +37,5 @@ tell the chat agent about the app's python console (`db`, `pl`, live variables l
 explore: let the widget inline chat (Alt+A, `reflex_kernel/inline_fill.py`) also drive view controls, not only tool inputs: a table's row filter / sort / `SQL ▸` on self, the usage view's window (all games / game 1 / events), the videos page. these live in the view's own state (`render.Ui`), not in a tool's parameters, so it needs a per-widget "view parameters" contract (a schema + how to apply it) next to the tool-inputs one. open questions: one prompt box that decides between inputs and view controls, or two? does a view change need the review step, since it fetches nothing and is instant to undo? see `spec/experimental/reflex-kernel/inline_ai.md` ("Not done yet")
 
 youtube install capabitliyt (so can do "download DeLulu vod, or this link)
+
+ability to easily create clips from vods (this will be assortment of tools to accomplish, as some will be re-useable for different situations

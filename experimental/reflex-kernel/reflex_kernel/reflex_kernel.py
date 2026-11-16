@@ -14,15 +14,16 @@ from typing import Any
 import reflex as rx
 
 from .api import api
-from .commands import COMMANDS, ICON_BUG, ICON_PY, RUNNABLE, Command
+from .commands import COMMANDS, ICON_BUG, ICON_PY, ICON_VARIABLE, RUNNABLE, SLASH, Command, slash_about
 from .commands import ICON_AI as ICON_CHAT
 from .commands import ICON_TABLE as ICON_RESULTS
 from .editor import cell_editor
 from .render import ICON_COLLAPSE, ICON_EXPAND, INLINE_EDIT_URL, copy_button, render_component, traceback_view
 from .widgets import ADDABLE
 from .shortcuts import Shortcut, codemirror_keys, shortcuts_script
-from .agents import AGENTS, AgentInfo
+from .agents import AGENTS, DEFERRED, LOAD_TOOL, AgentInfo, CapabilityInfo, ToolInfo
 from .state import State
+from .variables import UNDO_SECONDS
 
 # Nerd Font glyphs come from commands.py (the palette draws the same ones). ICON_CHAT (the robot) is
 # also the inline chat's icon: inline_edit.jsx ICON_AI.
@@ -116,6 +117,28 @@ def chat_item(item: rx.Var) -> rx.Component:
                 class_name="turn-usage mono",
             ),
         ),
+        # the app's own line, eg a slash command that was run (State.submit_chat)
+        # a slash command that ran (State.submit_chat): a row as a tool call's, the command coloured
+        # as in the chat box; a widget it added is the ref row after it
+        (
+            "slash",
+            rx.el.div(
+                rx.el.span("▸", class_name="dim"),
+                rx.el.span(item.name, class_name="slash-token"),
+                rx.el.span(item.text, class_name="tool-args"),
+                title=item.text,
+                class_name="tool-step mono",
+            ),
+        ),
+        # the app's own line, eg a slash command that isn't one
+        (
+            "note",
+            rx.el.div(
+                rx.cond(item.name != "", rx.el.span(item.name, class_name="slash-token")),
+                rx.el.span(item.text),
+                class_name="chat-note mono",
+            ),
+        ),
         # the same traceback component as under a Python cell
         ("error", traceback_view(item.trace, item.trace_hidden, item.trace_more, item.text, "chat-trace")),
         markdown_bubble(text=item.text),
@@ -192,11 +215,46 @@ def context_meter() -> rx.Component:
     )
 
 
+def slash_menu() -> rx.Component:
+    """The slash commands (commands.SLASH), listed over the chat box while it holds "/" and the
+    start of a name: type to filter, arrows move, Tab completes (with a space after, for one that
+    takes text), Enter runs. All in the browser
+    (assets/slash.js): picking one sends "/<name>" as the message, which State.submit_chat runs."""
+    return rx.el.div(
+        *[
+            rx.el.button(
+                rx.el.span(command.icon, class_name="palette-icon mono"),
+                rx.el.span(
+                    f"/{name}",
+                    rx.el.span(" <text>", class_name="dim") if command.takes else "",
+                    class_name="mono slash-name",
+                ),
+                rx.el.span(slash_about(command), class_name="dim palette-title"),
+                rx.el.span(command.keys, class_name="palette-keys mono dim"),
+                type="button",
+                # data-takes: Tab completes with a space after, ready for the text (assets/slash.js)
+                # data-about: the hover text of the command where it is typed
+                custom_attrs={
+                    "data-slash": name,
+                    "data-words": command.words,
+                    "data-takes": command.takes,
+                    "data-about": slash_about(command),
+                },
+                class_name="menu-item palette-item",
+            )
+            for name, command in SLASH.items()
+        ],
+        rx.el.div("No such command", class_name="menu-empty dim"),
+        custom_attrs={"data-slash-menu": ""},
+        class_name="slash-menu sans",
+    )
+
+
 def chat_pane() -> rx.Component:
     return rx.el.div(
         rx.el.div(
             rx.el.span("Chat"),
-            # the chat agent's model (agents.py; every agent's setup is in the debug panel's AI tab)
+            # the chat agent's model (agents.py; every agent's setup is in the debug panel's Agents tab)
             rx.el.span(AGENTS[0].model_name, title=f"Model: {AGENTS[0].model}", class_name="chat-model mono"),
             rx.el.span(class_name="spacer"),
             context_meter(),
@@ -237,16 +295,19 @@ def chat_pane() -> rx.Component:
             class_name="chat-body",
         ),
         rx.el.form(
+            slash_menu(),
+            # the box's text drawn again under it, to colour a slash command (assets/slash.js)
+            rx.el.div(aria_hidden="true", custom_attrs={"data-slash-mirror": ""}, class_name="slash-mirror"),
             rx.el.textarea(
                 name="prompt",
-                placeholder=f"Ask the agent…  ({Shortcut.SEND.keys} to send, {Shortcut.NEW_LINE.keys} for a new line)",
+                placeholder=f"Ask the agent…  ({Shortcut.SEND.keys} to send, {Shortcut.NEW_LINE.keys} for a new line, / for commands)",
                 enter_key_submit=True,
                 # the cursor starts here when the app opens
                 auto_focus=True,
                 rows=2,
                 class_name="input sans",
             ),
-            on_submit=State.send_chat,
+            on_submit=State.submit_chat,
             reset_on_submit=True,
             # while the agent works: the same sweep of light as the inline chat's (app.css)
             class_name=rx.cond(State.busy, "composer is-thinking", "composer"),
@@ -457,16 +518,40 @@ def debug_panel() -> rx.Component:
         rx.el.div(
             rx.el.span("Debug", class_name="help-title"),
             debug_tab("requests", "Requests", "The outside calls this app made (since the backend started)"),
-            debug_tab("ai", "AI", "The agents' setup, and AI spend from Logfire (every machine, 30 days)"),
+            debug_tab(
+                "agents",
+                "Agents",
+                "How each AI agent is set up: its prompt, capabilities and tools, and what this chat used",
+            ),
+            debug_tab("spend", "Spend", "AI spend from Logfire (every machine, 30 days)"),
+            debug_tab("system", "System", "Memory, what was slow, sessions and what the app holds (read now)"),
             rx.el.span(class_name="spacer"),
-            rx.cond(
-                State.debug_tab == "ai",
-                rx.el.button(
-                    "Refresh",
-                    on_click=State.load_spend,
-                    disabled=State.spend_loading,
-                    title="Ask Logfire again",
-                    class_name="act",
+            rx.match(
+                State.debug_tab,
+                ("agents", rx.fragment()),
+                (
+                    "spend",
+                    rx.el.button(
+                        "Refresh",
+                        on_click=State.load_spend,
+                        disabled=State.spend_loading,
+                        title="Ask Logfire again",
+                        class_name="act",
+                    ),
+                ),
+                (
+                    "system",
+                    rx.el.span(
+                        copy_button(State.perf_text, "the whole report as text, eg to paste to an AI", "Copy report"),
+                        rx.el.button("Refresh", on_click=State.load_perf, title="Read it all again", class_name="act"),
+                        rx.el.button(
+                            "Clear timings",
+                            on_click=State.clear_perf,
+                            title="Forget the kept timings, to measure from now",
+                            class_name="act",
+                        ),
+                        class_name="dbg-actions",
+                    ),
                 ),
                 rx.fragment(
                     rx.el.button("Refresh", on_click=State.refresh_debug, class_name="act"),
@@ -475,10 +560,26 @@ def debug_panel() -> rx.Component:
                     ),
                 ),
             ),
+            # assets/panes.js clicks it on Shortcut.FULL_SCREEN while the panel is open, and on
+            # Shortcut.CLOSE while it is full screen (the next one closes the panel)
+            rx.el.button(
+                rx.cond(State.debug_full, ICON_COLLAPSE, ICON_EXPAND),
+                title=Shortcut.FULL_SCREEN.hint("Full screen / back to the side panel"),
+                aria_label="Full screen",
+                custom_attrs={"data-toggle": "debug-full"},
+                on_click=State.toggle_debug_full,
+                class_name=rx.cond(State.debug_full, "float-btn mono is-on", "float-btn mono"),
+            ),
             class_name="dbg-head",
         ),
-        rx.cond(State.debug_tab == "ai", ai_view(), requests_view()),
-        class_name="debug-panel sans",
+        rx.match(
+            State.debug_tab,
+            ("agents", agents_view()),
+            ("spend", spend_view()),
+            ("system", system_view()),
+            requests_view(),
+        ),
+        class_name=rx.cond(State.debug_full, "debug-panel sans is-full", "debug-panel sans"),
     )
 
 
@@ -491,13 +592,110 @@ def debug_tab(tab: str, label: str, title: str) -> rx.Component:
     )
 
 
+def tool_table(tools: list[ToolInfo]) -> rx.Component:
+    """An agent's or capability's tools: what each does and takes, as the model is told."""
+
+    def param(row: dict[str, str]) -> rx.Component:
+        return rx.el.div(
+            rx.el.span(row["name"], class_name="mono tool-param"),
+            rx.el.span(f"{row['type']}, {row['need']}", class_name="dim mono"),
+            rx.el.span(row["about"]),
+            class_name="tool-param-row",
+        )
+
+    return rx.el.table(
+        rx.el.thead(rx.el.tr(*[rx.el.th(name) for name in ("tool", "description", "parameters")])),
+        rx.el.tbody(
+            *[
+                rx.el.tr(
+                    rx.el.td(tool.name, class_name="mono tool-name"),
+                    rx.el.td(tool.about, class_name="tool-about"),
+                    rx.el.td(*[param(row) for row in tool.params] or ["-"]),
+                )
+                for tool in tools
+            ]
+        ),
+        class_name="spend-table tool-table",
+    )
+
+
+def prompt_block(label: str, text: str) -> rx.Component:
+    """Instructions (a prompt), as written: its label, a copy button, the text."""
+    return rx.el.div(
+        rx.el.div(label, copy_button(text, label), class_name="dim prompt-label"),
+        rx.el.pre(text, class_name="prompt-text mono"),
+        class_name="prompt-block",
+    )
+
+
+def capability_card(cap: CapabilityInfo, chat: bool) -> rx.Component:
+    """One capability of an agent: when it loads, what the model sees of it, its own prompt and
+    tools. chat: the chat agent's, so it is marked once this chat's model has loaded it."""
+    on_demand = cap.loads == DEFERRED
+    count = f"{len(cap.tools)} tool{'s' if len(cap.tools) != 1 else ''}" if cap.tools else "no tools"
+    status: Any = ""
+    if chat and on_demand:
+        status = rx.cond(
+            State.agent_loaded.contains(cap.name),
+            rx.el.span("loaded in this chat", class_name="cap-badge is-loaded"),
+            rx.el.span("not loaded in this chat", class_name="cap-badge"),
+        )
+    return rx.el.details(
+        rx.el.summary(
+            rx.el.span(cap.name, class_name="mono cap-name"),
+            rx.el.span(
+                cap.loads,
+                title="defer_loading=True" if on_demand else "defer_loading not set: active on every request",
+                class_name="cap-badge is-deferred" if on_demand else "cap-badge",
+            ),
+            status,
+            rx.el.span(count, class_name="dim"),
+            rx.el.span("pydantic-ai built-in" if cap.builtin else cap.about, class_name="dim cap-about"),
+        ),
+        rx.el.div(
+            f"defer_loading=True: before the model calls {LOAD_TOOL}, it gets only this capability's id and description."
+            if on_demand
+            else "Always-on (defer_loading not set): active on every request.",
+            class_name="dim cap-note",
+        ),
+        rx.el.div(rx.el.span("description ", class_name="dim"), cap.about, class_name="cap-note")
+        if cap.about
+        else rx.fragment(),
+        prompt_block("instructions (the model gets them once the capability is active)", cap.instructions)
+        if cap.instructions
+        else rx.fragment(),
+        tool_table(cap.tools) if cap.tools else rx.fragment(),
+        class_name="cap-card",
+    )
+
+
 def agent_card(info: AgentInfo) -> rx.Component:
     """One agent's setup (agents.py; static: built once, from where the agent is defined)."""
+    chat = info is AGENTS[0]
     return rx.el.details(
         rx.el.summary(
             rx.el.span(info.name, class_name="mono agent-name"),
             rx.el.span(info.model_name, class_name="mono"),
             rx.el.span(info.role, class_name="dim agent-role"),
+        ),
+        rx.el.div(
+            rx.el.div(
+                rx.el.span("How it loads", class_name="agent-loading-title"),
+                rx.el.span("this app's explanation of the setup below; not text the model gets", class_name="dim"),
+                rx.el.span(class_name="spacer"),
+                copy_button(info.text, "this agent's whole setup as text, eg to paste to an AI", "Copy setup"),
+                class_name="agent-loading-head",
+            ),
+            rx.el.table(
+                rx.el.tbody(
+                    *[
+                        rx.el.tr(rx.el.td(row["label"], class_name="mono"), rx.el.td(row["value"]))
+                        for row in info.loading
+                    ]
+                ),
+                class_name="agent-details",
+            ),
+            class_name="agent-first",
         ),
         rx.el.table(
             rx.el.tbody(
@@ -507,28 +705,65 @@ def agent_card(info: AgentInfo) -> rx.Component:
             ),
             class_name="agent-details",
         ),
-        rx.el.table(
-            rx.el.thead(rx.el.tr(*[rx.el.th(name) for name in ("capability", "loads", "tools")])),
-            rx.el.tbody(
-                *[
-                    rx.el.tr(
-                        rx.el.td(cap["name"], title=cap["about"], class_name="mono"),
-                        rx.el.td(cap["loads"], class_name="dim"),
-                        rx.el.td(cap["tools"] or "-", class_name="mono"),
-                    )
-                    for cap in info.capabilities
-                ]
-            ),
-            class_name="spend-table",
-        ),
+        prompt_block("instructions (Agent(instructions=...): sent on every request)", info.instructions)
+        if info.instructions
+        else rx.fragment(),
+        rx.fragment(
+            rx.el.div("tools (on the agent itself: always available)", class_name="dim cap-note"),
+            tool_table(info.tools),
+        )
+        if info.tools
+        else rx.fragment(),
+        rx.el.div("capabilities (Agent(capabilities=[...]), in order)", class_name="dim cap-note"),
+        *[capability_card(cap, chat) for cap in info.capabilities],
         # the chat agent starts unfolded: it is the one most asked about
-        open=info is AGENTS[0],
+        open=chat,
         class_name="agent-card",
     )
 
 
-def ai_view() -> rx.Component:
-    """The AI tab: AI spend from Logfire, then the agents' setup."""
+def agents_view() -> rx.Component:
+    """The Agents tab (agents.py): how each agent is set up, and what this chat did with the chat
+    agent's setup so far. No request is made: it is read from the Agent objects."""
+    return rx.el.div(
+        rx.el.div(
+            "This chat",
+            rx.el.span("what the chat agent's model did so far", class_name="perf-hint"),
+            class_name="spend-h",
+        ),
+        rx.el.div(
+            rx.el.span("capabilities loaded: ", class_name="dim"),
+            rx.cond(
+                State.agent_loaded.length() > 0,
+                rx.foreach(State.agent_loaded, lambda name: rx.el.span(name, class_name="cap-badge is-loaded mono")),
+                rx.el.span(f"none yet, so the model has only the {LOAD_TOOL} tool", class_name="dim"),
+            ),
+            class_name="agent-activity",
+        ),
+        rx.el.div(
+            rx.el.span("tool calls: ", class_name="dim"),
+            rx.cond(
+                State.agent_calls.length() > 0,
+                rx.foreach(
+                    State.agent_calls,
+                    lambda row: rx.el.span(row["tool"], " × ", row["calls"], class_name="cap-badge mono"),
+                ),
+                rx.el.span("none yet", class_name="dim"),
+            ),
+            class_name="agent-activity",
+        ),
+        rx.el.div(
+            "Agents",
+            rx.el.span("as defined in the code; fixed until a restart", class_name="perf-hint"),
+            class_name="spend-h",
+        ),
+        *[agent_card(info) for info in AGENTS],
+        class_name="ai-view",
+    )
+
+
+def spend_view() -> rx.Component:
+    """The Spend tab: AI spend from Logfire."""
     return rx.el.div(
         rx.el.div("Spend (Logfire, every machine)", class_name="spend-h"),
         rx.cond(
@@ -557,8 +792,6 @@ def ai_view() -> rx.Component:
             ("ok", spend_report()),
             rx.fragment(),
         ),
-        rx.el.div("Agents", class_name="spend-h"),
-        *[agent_card(info) for info in AGENTS],
         class_name="ai-view",
     )
 
@@ -619,6 +852,134 @@ def spend_report() -> rx.Component:
             ". The bill itself (every use of the Gateway key, traced or not): Logfire > Settings > Spending.",
             class_name="spend-note dim",
         ),
+    )
+
+
+def _perf_table(
+    rows: rx.Var, columns: tuple[str, ...], titles: tuple[str, ...] = (), slow: bool = False
+) -> rx.Component:
+    """One of the System tab's tables (perf.py makes the rows as text). The first column is the
+    name (left), the rest are numbers; slow: a row whose `slow` is set is marked."""
+
+    def cell(row: rx.Var, name: str) -> rx.Component:
+        return rx.el.td(row[name], class_name="perf-name" if name == columns[0] else "")
+
+    def line(row: rx.Var) -> rx.Component:
+        marked = rx.cond(row["slow"] != "", "is-slow", "") if slow else ""
+        return rx.el.tr(*[cell(row, name) for name in columns], class_name=marked)
+
+    return rx.el.table(
+        rx.el.thead(rx.el.tr(*[rx.el.th(title) for title in (titles or columns)])),
+        rx.el.tbody(rx.foreach(rows, line)),
+        class_name="spend-table perf-table mono",
+    )
+
+
+def system_view() -> rx.Component:
+    """The System tab (perf.py): where the memory is, what was slow, what the app holds. Read when
+    the tab opens and on Refresh; the browser adds its own numbers (assets/panes.js perfSnapshot)."""
+
+    def section(title: str, hint: str, body: rx.Component, rows: rx.Var, empty: str = "") -> rx.Component:
+        return rx.fragment(
+            rx.el.div(title, rx.el.span(hint, class_name="perf-hint"), class_name="spend-h"),
+            rx.cond(rows.length() > 0, body, rx.el.div(empty or "Nothing yet.", class_name="dim perf-empty")),
+        )
+
+    memory = rx.el.div(
+        rx.foreach(
+            State.perf_memory,
+            lambda row: rx.el.div(
+                rx.el.span(row["what"], class_name="perf-mem-what"),
+                rx.el.span(rx.el.i(style={"width": row["width"]}), class_name="perf-mem-bar"),
+                rx.el.span(row["size"], class_name="perf-mem-size mono"),
+                rx.el.span(row["share"], class_name="perf-mem-share mono dim"),
+                rx.el.span(row["detail"], class_name="perf-mem-detail dim"),
+                class_name="perf-mem-row",
+            ),
+        ),
+        class_name="perf-mem",
+    )
+    sessions = rx.el.table(
+        rx.el.thead(
+            rx.el.tr(
+                *[rx.el.th(t) for t in ("session", "opened", "last used", "variables", "holds", "chat", "AI cost")]
+            )
+        ),
+        rx.el.tbody(
+            rx.foreach(
+                State.perf_sessions,
+                lambda row: rx.el.tr(
+                    rx.el.td(row["id"], rx.cond(row["mine"] != "", " (this tab)", ""), class_name="perf-name"),
+                    *[rx.el.td(row[name]) for name in ("age", "idle", "variables", "size", "chat", "cost")],
+                    class_name=rx.cond(row["mine"] != "", "is-mine", ""),
+                ),
+            )
+        ),
+        class_name="spend-table perf-table mono",
+    )
+    pairs = ("label", "value")
+    return rx.el.div(
+        rx.el.div(
+            rx.foreach(
+                State.perf_tiles,
+                lambda tile: rx.el.div(
+                    rx.el.div(tile["label"], class_name="spend-tile-label"),
+                    rx.el.div(tile["value"], class_name="spend-tile-value mono"),
+                    rx.el.div(tile["sub"], class_name="dim"),
+                    class_name="spend-tile",
+                ),
+            ),
+            class_name="spend-tiles",
+        ),
+        section("Memory", "of the backend's total; bars share one scale", memory, State.perf_memory),
+        section(
+            "Biggest variables",
+            "this session's Python names",
+            _perf_table(State.perf_variables, ("name", "type", "shape", "size")),
+            State.perf_variables,
+            "No variables yet: ask the agent, or run a cell.",
+        ),
+        section("Sessions", "one per browser tab that ever opened the app", sessions, State.perf_sessions),
+        section(
+            "Handlers and steps",
+            "what the app did for your clicks and keys, by total time; 'step:' is a part of a handler",
+            _perf_table(
+                State.perf_handlers,
+                ("name", "runs", "median", "p95", "max", "total", "last"),
+                ("handler", "runs", "median", "p95", "max", "total", "last ran"),
+                slow=True,
+            ),
+            State.perf_handlers,
+        ),
+        section(
+            "Slowest runs",
+            "single runs, slowest first",
+            _perf_table(State.perf_slowest, ("name", "took", "when", "session"), slow=True),
+            State.perf_slowest,
+        ),
+        section(
+            "Outside calls",
+            "start.gg, sites, the model and tools, from the Requests tab's records",
+            _perf_table(State.perf_calls, ("what", "runs", "median", "max", "total", "errors")),
+            State.perf_calls,
+            "No outside call yet.",
+        ),
+        section(
+            "State held for this tab",
+            "what the server keeps and sends to this window, as JSON",
+            _perf_table(State.perf_state, ("name", "size", "share")),
+            State.perf_state,
+        ),
+        section(
+            "Browser",
+            "this window, measured by the page itself",
+            _perf_table(State.perf_browser, pairs, ("what", "now")),
+            State.perf_browser,
+            "The browser hasn't answered yet.",
+        ),
+        section("Process", "the backend", _perf_table(State.perf_process, pairs, ("what", "now")), State.perf_process),
+        rx.el.div(State.perf_note, class_name="spend-note dim"),
+        class_name="ai-view perf-view",
     )
 
 
@@ -838,6 +1199,190 @@ def notebook() -> rx.Component:
     )
 
 
+def variable_row(row: rx.Var) -> rx.Component:
+    """One variable: checkbox, name (click: its Results tab, else its details), type, shape, size,
+    where it came from, and its own clear. Its details unfold in a row below."""
+    name = row["name"]
+    is_open = State.var_open == name
+    return rx.fragment(
+        rx.el.tr(
+            rx.el.td(
+                rx.el.input(
+                    type="checkbox",
+                    checked=State.var_selected.contains(name),
+                    on_change=lambda _checked: State.toggle_var(name),
+                    aria_label="Select",
+                )
+            ),
+            rx.el.td(
+                rx.el.button(
+                    rx.cond(is_open, "▾", "▸"),
+                    title="Details: how it was made, its columns or value",
+                    on_click=State.open_var(name),
+                    class_name="vars-fold",
+                ),
+                rx.el.button(
+                    handle(name),
+                    title=rx.cond(row["tab"] != "", "Open its tab in Results", "Details"),
+                    on_click=State.show_var(name),
+                    class_name="vars-name",
+                ),
+                rx.cond(row["closed"] != "", rx.el.span("tab closed", class_name="dim vars-closed")),
+                class_name="vars-id",
+            ),
+            rx.el.td(row["type"]),
+            rx.el.td(row["shape"], class_name="vars-num"),
+            rx.el.td(row["size"], class_name="vars-num"),
+            rx.el.td(row["source"], class_name="dim"),
+            rx.el.td(
+                rx.el.button(
+                    "×",
+                    title="Clear: remove it from Python (can be undone for a few seconds)",
+                    on_click=State.clear_var(name),
+                    class_name="tab-close",
+                )
+            ),
+            class_name=rx.cond(is_open, "is-open", ""),
+        ),
+        rx.cond(
+            is_open,
+            rx.el.tr(
+                rx.el.td(),
+                rx.el.td(
+                    rx.foreach(
+                        State.var_detail,
+                        lambda line: rx.el.div(
+                            rx.el.span(line["label"], class_name="dim vars-detail-label"),
+                            rx.el.pre(line["value"]),
+                            class_name="vars-detail-line",
+                        ),
+                    ),
+                    col_span=6,
+                ),
+                class_name="vars-detail",
+            ),
+        ),
+    )
+
+
+def variables_pane() -> rx.Component:
+    """The Variables pane (variables.py): every Python name of the session that is data (r1, q1,
+    your own), to see and to clear. A clear can be undone for UNDO_SECONDS; then it is freed."""
+    count = State.var_selected.length()
+    table = rx.el.table(
+        rx.el.thead(
+            rx.el.tr(
+                rx.el.th(
+                    rx.el.input(
+                        type="checkbox",
+                        checked=State.var_all_selected,
+                        on_change=lambda _checked: State.toggle_all_vars,
+                        title="Select all, or none",
+                        aria_label="Select all",
+                    )
+                ),
+                rx.el.th("name"),
+                rx.el.th("type"),
+                rx.el.th("shape", class_name="vars-num"),
+                rx.el.th("size", class_name="vars-num"),
+                rx.el.th("from"),
+                rx.el.th(),
+            )
+        ),
+        rx.el.tbody(rx.foreach(State.var_rows, variable_row)),
+        class_name="vars-table mono",
+    )
+    return rx.el.div(
+        rx.el.div(
+            rx.el.span(rx.el.span(ICON_VARIABLE, class_name="mono accent-green icon"), "Variables"),
+            rx.el.span(State.var_summary, class_name="dim"),
+            rx.cond(
+                State.var_selected_summary != "",
+                rx.el.span(State.var_selected_summary, class_name="vars-selected"),
+            ),
+            rx.el.span(class_name="spacer"),
+            rx.el.button(
+                "show all",
+                title="Also list modules, functions and classes (pl, db and _names never are)",
+                on_click=State.toggle_var_show_all,
+                class_name=rx.cond(State.var_show_all, "act is-on", "act"),
+            ),
+            rx.el.button(
+                "Clear selected",
+                rx.cond(count > 0, rx.fragment(" (", count, ")"), ""),
+                on_click=State.clear_selected_vars,
+                disabled=count == 0,
+                class_name="act",
+            ),
+            rx.el.button(
+                "Clear all",
+                title="Remove every listed variable from Python",
+                on_click=State.clear_all_vars,
+                disabled=State.var_rows.length() == 0,
+                class_name="act",
+            ),
+            zoom_button("variables"),
+            class_name="console-head sans",
+        ),
+        rx.el.div(
+            rx.cond(
+                State.var_rows.length() > 0,
+                table,
+                rx.el.div(
+                    "No variables yet. What the agent returns (r1, …), what a SmashDb console saves (q1, …) "
+                    "and what your cells assign is listed here.",
+                    class_name="empty sans",
+                ),
+            ),
+            class_name="vars-body",
+        ),
+        # the last clear, at the pane's bottom: while it can be undone, what was cleared with Undo
+        # (a bar along the button's bottom runs down over UNDO_SECONDS, then it is freed for good,
+        # State.expire_trash); after that, what was freed, or the names an undo didn't put back
+        rx.cond(
+            (State.var_trash != "") | (State.var_note != ""),
+            rx.el.div(
+                rx.el.span(State.var_trash, class_name="undo-text"),
+                rx.cond(State.var_note != "", rx.el.span(State.var_note, class_name="vars-note")),
+                rx.cond(
+                    State.var_can_undo,
+                    rx.fragment(
+                        rx.el.button(
+                            "Undo",
+                            # the time left to undo, running down along the button's bottom edge
+                            rx.el.i(class_name="undo-left"),
+                            title=f"Put them back (for {UNDO_SECONDS} s after the clear)",
+                            on_click=State.undo_clear_vars,
+                            class_name="act undo-act",
+                        ),
+                        rx.el.button(
+                            "×",
+                            title="Free now: drop them for good and free their memory",
+                            aria_label="Free now",
+                            on_click=State.free_vars_now,
+                            class_name="tab-close",
+                        ),
+                    ),
+                ),
+                # a new clear is a new strip: its bar starts full again
+                key=State.var_trash_seq,
+                role="status",
+                # read by app.css (.undo-left). A custom property, since a duration set here directly
+                # loses to the stylesheet's `animation` shorthand and the bar would be empty at once.
+                style={"--undo-seconds": f"{UNDO_SECONDS}s"},
+                class_name="vars-strip sans",
+            ),
+        ),
+        class_name=rx.match(
+            State.variables_layout,
+            ("hidden", "console vars is-hidden"),
+            ("alone", "console vars is-alone"),
+            "console vars",
+        ),
+        custom_attrs={"data-pane": "variables"},
+    )
+
+
 def tables_pane() -> rx.Component:
     return rx.el.div(
         rx.el.div(
@@ -894,6 +1439,7 @@ def statusbar() -> rx.Component:
         pane_toggle("chat", ICON_CHAT, "chat", State.show_chat),
         pane_toggle("results", ICON_RESULTS, "results", State.show_results, Shortcut.TOGGLE_RESULTS),
         pane_toggle("python", ICON_PY, "Python", State.show_python, Shortcut.TOGGLE_PYTHON),
+        pane_toggle("variables", ICON_VARIABLE, "Variables", State.show_variables, Shortcut.TOGGLE_VARIABLES),
         rx.el.span(class_name="spacer"),
         rx.cond(State.busy, rx.el.span("agent working…", class_name="dim")),
         rx.cond(State.running, rx.el.span("python running…", class_name="dim")),
@@ -931,7 +1477,8 @@ def index() -> rx.Component:
             rx.el.div(
                 tables_pane(),
                 notebook(),
-                class_name=rx.cond(State.results_on | State.python_on, "bottom-split", "bottom-split is-hidden"),
+                variables_pane(),
+                class_name=rx.cond(State.bottom_on, "bottom-split", "bottom-split is-hidden"),
             ),
             class_name="split-main",
         ),
@@ -941,6 +1488,10 @@ def index() -> rx.Component:
         palette(),
         # assets/panes.js clicks it on Shortcut.PALETTE
         rx.el.button(on_click=State.toggle_palette, hidden=True, custom_attrs={"data-toggle": "palette"}),
+        # ... and on Shortcut.TOGGLE_PYTHON_VARIABLES
+        rx.el.button(
+            on_click=State.toggle_python_variables, hidden=True, custom_attrs={"data-toggle": "python-variables"}
+        ),
         # inline_edit.jsx clicks it after an inline chat, so the chat title's meter adds its cost
         rx.el.button(on_click=State.refresh_usage, hidden=True, custom_attrs={"data-usage-refresh": ""}),
         class_name="page",
@@ -960,6 +1511,8 @@ app = rx.App(
         rx.el.script(src="/panes.js", defer=True),
         # the keybindings list, Alt+K (keys_palette)
         rx.el.script(src="/keys.js", defer=True),
+        # slash commands in the chat box (slash_menu)
+        rx.el.script(src="/slash.js", defer=True),
         # pick-from-a-list inputs in tool forms: characters, list[<choices>] (render._choice_input)
         rx.el.script(src="/choice.js", defer=True),
         # no password-manager or browser autofill on any input (data-allow-autofill opts one back in)

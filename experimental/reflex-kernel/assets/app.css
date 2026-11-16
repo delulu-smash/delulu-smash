@@ -93,6 +93,26 @@ button { font: inherit; color: inherit; }
 
 .composer { border: 1px solid var(--bg4); border-radius: 8px; background: var(--bg0); padding: 8px 10px 4px; flex: none; }
 .composer:focus-within, .console-input:focus-within { border-color: var(--blue); }
+/* slash commands, listed over the chat box while it holds "/name" (reflex_kernel.slash_menu, assets/slash.js) */
+.composer { position: relative; }
+.slash-menu { display: none; position: absolute; left: 0; right: 0; bottom: calc(100% + 4px); z-index: 30; max-height: 240px;
+  overflow: auto; flex-direction: column; padding: 4px; background: var(--bg1); border: 1px solid var(--bg3); border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4); font-size: 12.5px; }
+.slash-menu.is-open { display: flex; }
+.slash-menu.is-empty .menu-empty { display: block; }
+.slash-name { color: var(--blue); flex: none; }
+/* a slash command, coloured where it is typed (the chat box) and where it ran (a chat note) */
+.slash-token { color: var(--blue); }
+.slash-token.is-unknown { color: var(--orange); }
+.chat-note .slash-token { margin-right: 6px; }
+/* the chat box's text drawn again under it while it starts with a slash command (assets/slash.js sizes
+   it and copies the box's font); the box's own text is then transparent, its caret and selection stay */
+.slash-mirror { display: none; position: absolute; pointer-events: none; overflow: hidden; white-space: pre-wrap;
+  overflow-wrap: break-word; border-style: solid; border-color: transparent; color: var(--fg); }
+.composer[data-slashing] .slash-mirror { display: block; }
+.composer[data-slashing] .input { color: transparent; caret-color: var(--blue); }
+/* the app's own line in the chat, eg a slash command that was run (state.ChatItem kind note) */
+.chat-note { align-self: center; font-size: 11.5px; color: var(--grey1); }
 
 /* markdown in agent replies */
 .md > div > :first-child { margin-top: 0; }
@@ -197,6 +217,42 @@ button { font: inherit; color: inherit; }
 .viewer-filter::placeholder { color: var(--grey1); }
 .viewer-grid { flex: 1; min-height: 0; }
 .viewer-grid > div { height: 100%; }
+
+/* the Variables pane (reflex_kernel.variables_pane): a column at the right of Results / Python */
+.console.vars { flex: none; width: 400px; max-width: 60%; margin-left: 0; }
+.console.vars.is-alone { flex: 1; width: auto; max-width: none; margin-left: 12px; }
+.vars-body { flex: 1; min-height: 0; overflow: auto; padding: 4px 10px; background: var(--bg0); }
+.vars-table { width: 100%; font-size: 11.5px; border-collapse: collapse; }
+.vars-table th { text-align: left; font-weight: normal; color: var(--grey1); border-bottom: 1px solid var(--bg3);
+  padding: 2px 8px 2px 0; position: sticky; top: 0; background: var(--bg0); }
+.vars-table td { border-bottom: 1px solid var(--bg2); padding: 2px 8px 2px 0; vertical-align: top; white-space: nowrap; }
+.vars-table td:last-child, .vars-table th:last-child { padding-right: 0; width: 18px; }
+.vars-table .vars-num { text-align: right; }
+.vars-table tr:hover .tab-close { visibility: visible; }
+.vars-table input[type="checkbox"] { accent-color: var(--green); margin: 0; vertical-align: middle; cursor: pointer; }
+.vars-table tr.is-open td { border-bottom-color: transparent; }
+.vars-fold, .vars-name { border: 0; background: transparent; padding: 0; cursor: pointer; }
+.vars-fold { color: var(--grey1); width: 16px; text-align: left; }
+.vars-fold:hover { color: var(--fg); }
+.vars-name:hover .handle { background: rgba(127, 187, 179, 0.3); }
+.vars-closed { margin-left: 6px; font-family: var(--sans); font-size: 11px; }
+.vars-detail td { white-space: normal; padding-bottom: 6px; }
+.vars-detail-line { display: flex; gap: 8px; }
+.vars-detail-label { flex: none; width: 96px; }
+.vars-detail-line pre { flex: 1; min-width: 0; max-height: 180px; overflow: auto; }
+.vars-strip { display: flex; gap: 10px; align-items: center; flex: none; padding: 4px 10px; border-top: 1px solid var(--bg2);
+  font-size: 12px; color: var(--grey2); }
+.vars-note { color: var(--orange); }
+/* Undo in the pane's bottom strip after a clear: a bar along the button's bottom runs down over
+   variables.UNDO_SECONDS (--undo-seconds, set on the strip), then the clear is final */
+.undo-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.undo-act { position: relative; overflow: hidden; border-color: var(--green); color: var(--green); padding: 2px 14px 5px; }
+.undo-left { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--green); transform-origin: left;
+  animation: undo-run-down var(--undo-seconds, 3s) linear forwards; }
+.vars-strip .tab-close { visibility: visible; }
+@keyframes undo-run-down { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+.vars-selected { color: var(--green); }
+.act.is-on { border-color: var(--green); color: var(--green); }
 
 /* console */
 .console { flex: 1; min-width: 0; min-height: 0; margin: 12px; border: 1px solid var(--bg3); border-radius: 6px; overflow: hidden;
@@ -438,6 +494,11 @@ select.form-input { width: auto; }
 .debug-panel { position: fixed; z-index: 51; top: 38px; right: 10px; bottom: 34px; width: min(720px, calc(100vw - 20px));
   display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; background: var(--bg1); border: 1px solid var(--bg3);
   border-radius: 8px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4); font-size: 12.5px; }
+/* full screen (its button, Alt+F while it is open), as a floated view */
+.debug-panel.is-full { top: 24px; right: 24px; bottom: 24px; left: 24px; width: auto; border-color: var(--bg4);
+  box-shadow: 0 0 0 100vmax rgba(20, 24, 26, 0.6), 0 12px 40px rgba(0, 0, 0, 0.5); }
+.debug-panel .float-btn.is-on { color: var(--green); }
+.debug-panel.is-full .tool-about { max-width: none; }
 .dbg-head { display: flex; align-items: center; gap: 6px; }
 .dbg-head .help-title { margin: 0; }
 .dbg-stats { font-size: 11.5px; color: var(--grey2); background: var(--bg0); border-radius: 4px; padding: 4px 8px; }
@@ -644,6 +705,32 @@ input, textarea { caret-color: var(--blue); }
 .agent-role { margin-left: auto; font-size: 11.5px; }
 .agent-details { font-size: 12px; margin: 6px 0; border-collapse: collapse; }
 .agent-details td { padding: 1px 12px 1px 0; vertical-align: top; }
+/* the debug panel's Agents tab (reflex_kernel.agents_view): an agent's prompt, capabilities and tools */
+.agent-first { font-size: 12px; margin: 6px 0; padding: 5px 8px; border: 1px dashed var(--bg4); border-radius: 4px; }
+.agent-loading-head { display: flex; gap: 10px; align-items: baseline; }
+.agent-loading-title { color: var(--yellow); }
+.agent-first .agent-details { margin: 3px 0 0; }
+.agent-first .copy-btn, .prompt-label .copy-btn { position: static; flex: none; opacity: 1; }
+.agent-activity { font-size: 12px; display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: baseline; }
+.prompt-block { margin: 6px 0; }
+.prompt-label { font-size: 11.5px; display: flex; gap: 8px; align-items: center; }
+.prompt-text { font-size: 11.5px; background: var(--bg0); border-radius: 4px; padding: 5px 8px; max-height: 220px; overflow: auto; }
+.cap-note { font-size: 11.5px; margin: 6px 0 3px; }
+.cap-card { border-top: 1px solid var(--bg2); padding: 3px 0; }
+.cap-card > summary { display: flex; align-items: baseline; gap: 8px; cursor: pointer; font-size: 12px; }
+.cap-card > :not(summary) { margin-left: 14px; }
+.cap-name { color: var(--blue); }
+.cap-about { flex: 1; min-width: 0; font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cap-card[open] .cap-about { white-space: normal; }
+.cap-badge { font-size: 10.5px; padding: 0 6px; border-radius: 8px; border: 1px solid var(--bg3); color: var(--grey2);
+  white-space: nowrap; }
+.cap-badge.is-deferred { border-color: var(--yellow); color: var(--yellow); }
+.cap-badge.is-loaded { border-color: var(--green); color: var(--green); }
+.tool-table td { white-space: normal; }
+.tool-table .tool-name { white-space: nowrap; color: var(--fg); }
+.tool-about { max-width: 420px; white-space: pre-wrap; }
+.tool-param-row { display: flex; flex-wrap: wrap; gap: 0 8px; }
+.tool-param { color: var(--aqua); }
 .spend-table { width: 100%; font-size: 11.5px; border-collapse: collapse; }
 .spend-table th { text-align: left; font-weight: normal; color: var(--grey1); border-bottom: 1px solid var(--bg3); padding: 2px 8px 2px 0; }
 .spend-table td { border-bottom: 1px solid var(--bg2); padding: 2px 8px 2px 0; vertical-align: top; }
@@ -659,6 +746,21 @@ input, textarea { caret-color: var(--blue); }
 .spend-bar i { display: block; min-height: 1px; background: var(--green); border-radius: 4px 4px 0 0; }
 .spend-bar-label { position: absolute; bottom: -14px; font-size: 10px; color: var(--grey1); white-space: nowrap; }
 .spend-bar:last-child .spend-bar-label { right: 0; }
+/* the debug panel's System tab (perf.py, reflex_kernel.system_view): the Spend tab's tiles and tables, plus a
+   bar per part of the memory (one scale: the backend's total) */
+.perf-hint { margin-left: 8px; letter-spacing: 0; text-transform: none; color: var(--grey1); opacity: 0.8; }
+.perf-empty { font-size: 11.5px; }
+.perf-table td, .perf-table th { text-align: right; white-space: nowrap; }
+.perf-table td.perf-name, .perf-table th:first-child { text-align: left; white-space: normal; word-break: break-word; }
+.perf-table tr.is-slow td { color: var(--orange); }
+.perf-table tr.is-mine td { color: var(--green); }
+.perf-mem { display: flex; flex-direction: column; gap: 3px; font-size: 11.5px; }
+.perf-mem-row { display: grid; grid-template-columns: 170px minmax(60px, 1fr) 70px 36px minmax(0, 2fr); align-items: center; gap: 8px; }
+.perf-mem-bar { height: 8px; background: var(--bg0); border-radius: 4px; overflow: hidden; }
+.perf-mem-bar i { display: block; height: 100%; min-width: 1px; background: var(--green); border-radius: 4px; }
+.perf-mem-size, .perf-mem-share { text-align: right; }
+.perf-mem-detail { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dbg-head .dbg-actions { padding: 0; }
 .spend-note { font-size: 11.5px; }
 .spend-note a { color: var(--blue); }
 .spend-setup { font-size: 12.5px; }

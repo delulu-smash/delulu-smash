@@ -34,6 +34,18 @@ three by its row in `WIDGETS`.
 - **It reads the chat and adds nothing to it.** Each call is logged and costed like a chat turn.
 - **No tools.** The inline AI answers in one request from what it is given. Looking things up is the chat's job.
 
+## Adding a widget: ask about inline chat
+
+When creating a widget, or giving an existing one a tool, **ask the user whether it should have the inline
+chat** before building it. Don't decide silently either way.
+
+- A widget with parameters (a `tool`) gets the inline chat by default, so say so and confirm: "this widget
+  has inputs, so `Alt+A` will fill them. Is that what you want?"
+- A widget without parameters gets none. Still ask: the user may want it to become function-like (give it
+  a tool), or want the inline AI to do something else there (see "Not done yet").
+- If the answer is no for a widget that has a tool, that is a new attribute on `Widget` (eg `inline_chat`)
+  read where the AI button is drawn (`render.ai_toggle`), not a special case in the component.
+
 ## Not done yet
 
 - **Table results have no function behind them.** A result finds its tool by its type

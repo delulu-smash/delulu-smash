@@ -4,15 +4,16 @@
 //          (set from reflex_kernel/shortcuts.py, the one place they are defined):
 //          FULL_SCREEN floats the view (.widget) you are in nearly full screen, or, outside a view,
 //          fills the window with your pane (clicks its zoom button). CLOSE (Esc) closes a menu or
-//          the help or debug panel, then a floating view. PALETTE clicks the hidden button that shows or hides the
+//          the help or debug panel (a full-screen debug panel first goes back to the side), then a floating view. PALETTE clicks the hidden button that shows or hides the
 //          command palette (a search box over every command: type to filter, arrows, Enter; the ones run last come
 //          first); in a menu, arrows move between its rows. window.smashPress(keys) runs a shortcut as if its key
-//          were pressed where you were (the palette's and the keybindings list's way to run one). TOGGLE_RESULTS / TOGGLE_PYTHON / HELP / DEBUG click the
+//          were pressed where you were (the palette's and the keybindings list's way to run one). TOGGLE_RESULTS / TOGGLE_PYTHON / TOGGLE_VARIABLES / HELP / DEBUG click the
 //          bottom bar's pane toggles and the title bar's ? and bug icon (data-toggle). A view's float button (render.float_button) and
 //          a click outside a floating view work too. reveal(id) scrolls to a chat row, result tab or
 //          cell and flashes it (State.reveal). INLINE_EDIT outside a code editor, in a view with a tool
 //          form, clicks that view's AI button (render.ai_toggle): the form's "Ask AI" row; CLOSE in
-//          that form closes the row.
+//          that form closes the row. window.perfSnapshot() gives this window's own numbers (JS heap,
+//          DOM size, long tasks) to the debug panel's System tab.
 // ---------------------------------------------------------------------------
 (() => {
   const SHORTCUTS = window.SHORTCUTS || { FULL_SCREEN: "Alt+F", CLOSE: "Escape" };
@@ -61,6 +62,38 @@
     void row.offsetWidth; // restart the animation when flashed twice
     row.classList.add("is-flash");
     setTimeout(() => row.classList.remove("is-flash"), 1600);
+  };
+
+  // The debug panel's System tab (State.load_perf): this window's own numbers, as rows of
+  // {label, value}. Long tasks (the page frozen for over 50 ms) are counted from page load.
+  const longTasks = { count: 0, total: 0, worst: 0 };
+  try {
+    new PerformanceObserver((list) => {
+      for (const entry of list.getEntries()) {
+        longTasks.count += 1;
+        longTasks.total += entry.duration;
+        longTasks.worst = Math.max(longTasks.worst, entry.duration);
+      }
+    }).observe({ type: "longtask", buffered: true });
+  } catch { /* not supported: the row says so */ }
+  const mb = (bytes) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  const span = (ms) => (ms >= 60000 ? `${(ms / 60000).toFixed(0)} min` : ms >= 1000 ? `${(ms / 1000).toFixed(1)} s` : `${Math.round(ms)} ms`);
+  window.perfSnapshot = () => {
+    const rows = [];
+    const add = (label, value) => rows.push({ label, value: String(value) });
+    const heap = performance.memory;
+    add("JS heap", heap ? `${mb(heap.usedJSHeapSize)} used of ${mb(heap.totalJSHeapSize)} (limit ${mb(heap.jsHeapSizeLimit)})` : "not reported by this browser");
+    add("page elements", `${document.getElementsByTagName("*").length.toLocaleString()} DOM nodes`);
+    add("long tasks", window.PerformanceObserver
+      ? `${longTasks.count} (page frozen over 50 ms), ${span(longTasks.total)} in all, worst ${span(longTasks.worst)}`
+      : "not reported by this browser");
+    const nav = performance.getEntriesByType("navigation")[0];
+    if (nav) add("page load", `${span(nav.domContentLoadedEventEnd)} to ready, ${span(nav.loadEventEnd)} to loaded`);
+    add("page open for", span(performance.now()));
+    add("files loaded", `${performance.getEntriesByType("resource").length} requests since load`);
+    add("code editors", `${document.querySelectorAll(".cm-editor").length} mounted`);
+    add("window", `${window.innerWidth} × ${window.innerHeight}, ${navigator.hardwareConcurrency || "?"} cores`);
+    return rows;
   };
 
   document.addEventListener("pointerdown", (event) => {
@@ -200,7 +233,16 @@
   document.addEventListener("keydown", (event) => {
     if (matches(event, SHORTCUTS.CLOSE)) {
       // the top layer only: the palette (above everything), then a menu or panel
-      const backdrop = document.querySelector(".palette-backdrop") || document.querySelector(".overlay-backdrop");
+      const palette = document.querySelector(".palette-backdrop");
+      // the debug panel in full screen goes back to the side first; the next Escape closes it
+      const debugFull = !palette && document.querySelector('.debug-panel.is-full [data-toggle="debug-full"]');
+      if (debugFull) {
+        event.preventDefault();
+        event.stopPropagation();
+        debugFull.click();
+        return;
+      }
+      const backdrop = palette || document.querySelector(".overlay-backdrop");
       const current = floating();
       // in a tool form with its "Ask AI" row open: close the row first (an open choice list
       // closes itself, assets/choice.js)
@@ -248,7 +290,7 @@
       items[(next + items.length) % items.length].focus();
       return;
     }
-    const toggle = [["TOGGLE_RESULTS", "results"], ["TOGGLE_PYTHON", "python"], ["HELP", "help"], ["DEBUG", "debug"], ["PALETTE", "palette"]]
+    const toggle = [["TOGGLE_RESULTS", "results"], ["TOGGLE_PYTHON", "python"], ["TOGGLE_VARIABLES", "variables"], ["TOGGLE_PYTHON_VARIABLES", "python-variables"], ["HELP", "help"], ["DEBUG", "debug"], ["PALETTE", "palette"]]
       .find(([name]) => SHORTCUTS[name] && matches(event, SHORTCUTS[name]));
     if (toggle) {
       const button = document.querySelector(`[data-toggle="${toggle[1]}"]`);
@@ -274,6 +316,9 @@
     if (!matches(event, SHORTCUTS.FULL_SCREEN)) return;
     event.preventDefault();
     event.stopPropagation();
+    // the debug panel is over the page while open: it is what goes full screen
+    const debugFull = document.querySelector('.debug-panel [data-toggle="debug-full"]');
+    if (debugFull) return debugFull.click();
     const current = floating();
     if (current) return setFloating(current, false);
     // where you are: the focused element, else the last thing clicked

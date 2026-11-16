@@ -4,6 +4,7 @@
 #          (start.gg GraphQL, HTTP fetches, agent turns, tool steps; ds.util.logging.log_call),
 #          kept in memory only, the newest MAX_RECORDS, gone when the backend restarts.
 # Usage: install() once at import (state.py); rows(...) / stats(...) when the panel opens.
+#        records() is every kept record, for the System tab's call timings (perf.py).
 #        A new kind of record is one function in LOG_FORMATS.
 # ---------------------------------------------------------------------------
 from __future__ import annotations
@@ -311,6 +312,12 @@ def _row(record: dict[str, Any]) -> dict[str, Any]:
         "target": target,
         "target_label": target_label,
     }
+
+
+def records() -> list[dict[str, Any]]:
+    """Every kept record, oldest first (the System tab sums the calls' times, perf.py)."""
+    with _lock:
+        return list(_records)
 
 
 def kinds() -> list[str]:

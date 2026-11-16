@@ -3,11 +3,15 @@
 # Purpose: the command palette's commands (Shortcut.PALETTE, Alt+P), as data with no UI code: every
 #          action of the app you can run by name, as in VS Code's palette and Omarchy's menu. Each
 #          has a group ("View: ..."), an icon, its shortcut when it has one, and what running it does.
+#          A command with `slash` is also a slash command: typed as "/<slash>" in the chat box, it
+#          runs exactly what its palette row runs (SLASH, parse_slash; State.submit_chat). One with
+#          `takes` can be followed by text, eg "/videos mkleo vs sparg0": its `slash_event` gets it.
 # Usage: COMMANDS is drawn by reflex_kernel.palette(); a new command is one row here. RUNNABLE is the
 #        shortcuts Enter runs in the keybindings list (Alt+K, assets/keys.js).
 # ---------------------------------------------------------------------------
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 
 from .shortcuts import Shortcut
@@ -26,8 +30,14 @@ ICON_FULL_SCREEN, ICON_PLUS, ICON_PLAY, ICON_ERASER, ICON_CLOSE = (
     "\U000f0156",
 )
 ICON_VIDEO, ICON_PLAYER, ICON_DATABASE = "\U000f0567", "\U000f0004", "\U000f01bc"
+# the memory chip (md-memory): the Variables pane is "what is in memory"
+ICON_VARIABLE, ICON_UNDO = "\U000f035b", "\U000f054c"
 # A widget added by hand, by its kind (widgets.WIDGETS); any other gets the table.
 WIDGET_ICONS = {"videos": ICON_VIDEO, "usage": ICON_PLAYER, "smashdb": ICON_DATABASE}
+
+
+# What the text after a widget's slash command is (Command.takes).
+ASK_HINT = "what to look for: the AI fills the inputs, you run them"
 
 
 @dataclass(frozen=True)
@@ -50,10 +60,24 @@ class Command:
     """A State bool: the title gets "Hide" / "Show" before it, by whether that is on."""
     words: str = ""
     """Other words that find it when typed."""
+    slash: str = ""
+    """Its slash command, without the slash (eg "clear-chat": typed as /clear-chat in the chat box).
+    Lower-case words joined by "-". "" = palette only."""
+    takes: str = ""
+    """What the text after the slash command is, shown in the list as "/<slash> <takes>". "" = it
+    takes none (text after it is refused, so a sentence that only starts with it runs nothing)."""
+    slash_event: tuple[str, ...] = ()
+    """The State event the slash command runs instead of the palette row's, with its arguments;
+    the text after the command is added as the last one ("" when none). For a command whose
+    output belongs in the chat, eg a widget shown under the command. () = the palette's event."""
 
     def __post_init__(self) -> None:
         if bool(self.event) == bool(self.press):
             raise ValueError(f"command {self.id!r}: give exactly one of `event` and `press`")
+        if self.slash and not re.fullmatch(r"[a-z0-9]+(-[a-z0-9]+)*", self.slash):
+            raise ValueError(f"command {self.id!r}: slash {self.slash!r} must be lower-case words joined by '-'")
+        if (self.takes and not self.slash_event) or (self.slash_event and not self.slash):
+            raise ValueError(f"command {self.id!r}: `takes` needs a `slash_event`, on a slash command")
 
     @property
     def keys(self) -> str:
@@ -71,6 +95,12 @@ COMMANDS: list[Command] = [
             WIDGET_ICONS.get(w.kind, ICON_TABLE),
             event=("add_widget", w.kind),
             words="new widget result tab",
+            # /videos, /usage, /smashdb: the widget shows in the chat, under the command. A widget
+            # with a tool is a function (widgets.py): text after the command goes to the inline AI,
+            # which fills its inputs; the user runs them (spec/experimental/reflex-kernel/inline_ai.md)
+            slash=w.kind,
+            takes=ASK_HINT if w.tool else "",
+            slash_event=("add_widget_ask", w.kind),
         )  # fmt: skip
         for w in ADDABLE
     ],
@@ -86,6 +116,7 @@ COMMANDS: list[Command] = [
         shown="show_results",
         shortcut=Shortcut.TOGGLE_RESULTS,
         words="toggle tables tabs",
+        slash="results",
     ),  # fmt: skip
     Command(
         "view.python",
@@ -96,6 +127,27 @@ COMMANDS: list[Command] = [
         shown="show_python",
         shortcut=Shortcut.TOGGLE_PYTHON,
         words="toggle jupyter notebook cells",
+        slash="python",
+    ),  # fmt: skip
+    Command(
+        "view.variables",
+        "View",
+        "Variables",
+        ICON_VARIABLE,
+        event=("toggle_pane", "variables"),
+        shown="show_variables",
+        shortcut=Shortcut.TOGGLE_VARIABLES,
+        words="toggle names namespace store memory",
+        slash="variables",
+    ),  # fmt: skip
+    Command(
+        "view.python_variables",
+        "View",
+        "Python and Variables together (hides both when both are open)",
+        ICON_PY,
+        event=("toggle_python_variables",),
+        shortcut=Shortcut.TOGGLE_PYTHON_VARIABLES,
+        words="toggle both jupyter notebook cells names memory",
     ),  # fmt: skip
     Command(
         "view.full_screen",
@@ -105,10 +157,33 @@ COMMANDS: list[Command] = [
         press=Shortcut.FULL_SCREEN,
         words="float zoom maximize",
     ),  # fmt: skip
-    Command("python.new_cell", "Python", "New cell", ICON_PY, event=("add_cell",), words="add"),
+    Command("python.new_cell", "Python", "New cell", ICON_PY, event=("add_cell",), words="add", slash="new-cell"),
     Command("python.run_all", "Python", "Run all cells", ICON_PLAY, event=("run_all",)),
     Command("python.clear", "Python", "Clear outputs", ICON_ERASER, event=("clear_outputs",)),
-    Command("results.close_all", "Results", "Close all tabs", ICON_CLOSE, event=("close_all_tabs",)),
+    Command(
+        "chat.clear",
+        "Chat",
+        "Clear (a new conversation; your variables stay)",
+        ICON_ERASER,
+        event=("clear_chat",),
+        words="new reset forget history context conversation",
+        slash="clear-chat",
+    ),  # fmt: skip
+    Command(
+        "variables.clear_all",
+        "Variables",
+        "Clear all (can be undone for a few seconds)",
+        ICON_ERASER,
+        event=("clear_all_vars",),
+        words="delete del reset free memory names",
+        slash="clear-variables",
+    ),  # fmt: skip
+    Command(
+        "variables.undo", "Variables", "Undo the last clear", ICON_UNDO, event=("undo_clear_vars",), words="restore"
+    ),
+    Command(
+        "results.close_all", "Results", "Close all tabs", ICON_CLOSE, event=("close_all_tabs",), slash="close-tabs"
+    ),
     Command(
         "ai.inline",
         "AI",
@@ -117,8 +192,8 @@ COMMANDS: list[Command] = [
         press=Shortcut.INLINE_EDIT,
         words="edit code copilot python sql fill inputs form widget",
     ),  # fmt: skip
-    Command("app.keys", "App", "Keybindings", ICON_KEYBOARD, press=Shortcut.KEYS, words="shortcuts keys"),
-    Command("app.help", "App", "Help", ICON_HELP, event=("toggle_help",), shortcut=Shortcut.HELP),
+    Command("app.keys", "App", "Keybindings", ICON_KEYBOARD, press=Shortcut.KEYS, words="shortcuts keys", slash="keys"),
+    Command("app.help", "App", "Help", ICON_HELP, event=("toggle_help",), shortcut=Shortcut.HELP, slash="help"),
     Command(
         "app.debug",
         "App",
@@ -127,6 +202,7 @@ COMMANDS: list[Command] = [
         event=("toggle_debug",),
         shortcut=Shortcut.DEBUG,
         words="requests logs",
+        slash="debug",
     ),  # fmt: skip
 ]
 
@@ -137,8 +213,33 @@ RUNNABLE: tuple[Shortcut, ...] = (
     Shortcut.FULL_SCREEN,
     Shortcut.TOGGLE_RESULTS,
     Shortcut.TOGGLE_PYTHON,
+    Shortcut.TOGGLE_VARIABLES,
+    Shortcut.TOGGLE_PYTHON_VARIABLES,
     Shortcut.HELP,
     Shortcut.PALETTE,
     Shortcut.DEBUG,
     Shortcut.INLINE_EDIT,
 )
+
+# The slash commands listed first when "/" is typed: the most used ones (the user's pick).
+SLASH_FIRST: tuple[str, ...] = ("clear-chat", "clear-variables")
+# Slash commands, by name (no slash): the commands that have one, SLASH_FIRST then as written.
+_BY_SLASH = {command.slash: command for command in COMMANDS if command.slash}
+if len(_BY_SLASH) != sum(bool(command.slash) for command in COMMANDS):
+    raise ValueError("two commands share a slash name")
+SLASH: dict[str, Command] = {name: _BY_SLASH[name] for name in SLASH_FIRST} | _BY_SLASH
+
+
+def slash_about(command: Command) -> str:
+    """What a slash command does, in a line: beside it in the list, and its hover text where it
+    is typed or was run (eg "Add: Match videos (what to look for: ...)")."""
+    return f"{command.group}: {command.title}" + (f" ({command.takes})" if command.takes else "")
+
+
+def parse_slash(text: str) -> tuple[str, str] | None:
+    """A chat message as a slash command: (name without the slash, the text after it), or None
+    when it isn't one (it doesn't start with "/"). The name may be unknown: look it up in SLASH."""
+    if not text.startswith("/"):
+        return None
+    name, _, rest = text[1:].partition(" ")
+    return name.strip().lower(), rest.strip()

@@ -17,7 +17,8 @@ import reflex as rx
 from ds.data.raw.smashtube import MatchVideos, search_videos
 from ds.util.logging import logger
 
-from . import logs, spend
+from . import agents, logs, perf, spend, variables
+from .commands import SLASH, parse_slash
 from .inline_fill import fill as fill_inputs
 from .render import ASK_FIELD, Ui, ViewData, apply_event, drop_proposal, fill_defaults, rerun_inputs
 from .tool_forms import ToolRequest
@@ -28,6 +29,7 @@ from .session import (
     Session,
     context_window,
     cost_text,
+    all_sessions,
     get_session,
     split_trace,
     tokens_text,
@@ -66,11 +68,14 @@ class Cell:
 @dataclasses.dataclass
 class ChatItem:
     """One chat entry. kind: user | agent | step | ref | error | usage (what the turn cost, under its
-    answer; its name is the 'N requests' part, a link to the debug log)."""
+    answer; its name is the 'N requests' part, a link to the debug log) | note (the app's own line,
+    eg a slash command that isn't known) | slash (a slash command that ran: its name and what it
+    did, drawn as a tool call's row; a widget it added follows as a ref). Neither is sent to the agent."""
 
     kind: str
     name: str = ""
-    """step: the tool; ref: the result's name (r1, r2, ...)."""
+    """step: the tool; ref: the result's name (r1, r2, ...); slash and note: the slash command
+    it is about (eg '/videos'; drawn as one), '' for a plain note."""
     key: str = ""
     """The row's DOM id, what State.reveal and the debug log link to: user 'turn-<n>' (the
     records of that agent turn carry it as `turn`), step 'call-<tool_call_id>'. A ref's is
@@ -131,6 +136,24 @@ def _trace_fields(parts: list[dict[str, str]]) -> dict[str, Any]:
     return {"trace": shown, "trace_hidden": hidden, "trace_more": label or "full traceback"}
 
 
+def event(fn: Any) -> Any:
+    """`rx.event` for this app's handlers: each run is also timed (perf.timed), for the debug
+    panel's System tab. Background events keep plain `rx.event(background=True)`."""
+    return rx.event(perf.timed(fn))
+
+
+def _json_size(value: Any) -> int:
+    """About how many bytes a state var is as JSON: what the server keeps and sends for it."""
+
+    def plain(item: Any) -> Any:
+        return dataclasses.asdict(item) if dataclasses.is_dataclass(item) and not isinstance(item, type) else str(item)
+
+    try:
+        return len(json.dumps(value, default=plain, ensure_ascii=False))
+    except (TypeError, ValueError):
+        return 0
+
+
 class State(rx.State):
     # Chat is a flat list so it renders with one foreach.
     chat: list[ChatItem] = []
@@ -159,6 +182,7 @@ class State(rx.State):
     # Only the chat at first; results also unfold inline in the chat.
     show_results: bool = False
     show_python: bool = False
+    show_variables: bool = False
     # The pane filling the window ("" = none): chat | results | python. Leaves the toggles as they were.
     zoomed: str = ""
     # A tab's right-click menu: the tab it is for ("" = closed) and where it opens.
@@ -188,10 +212,17 @@ class State(rx.State):
     # a result, a cell; "" = all. Same ids as the rows' ↖ links (State.reveal).
     debug_focus: str = ""
     debug_focus_label: str = ""
-    # the panel's tabs: "requests" (the log above) or "ai" (AI spend from Logfire, every machine,
-    # spend.py, and the agents, agents.py). The panel opens on Requests; Logfire is only queried
-    # when the AI tab is clicked or its Refresh pressed (the agents' info needs no request).
+    # the panel's tabs: "requests" (the log above), "agents" (how each agent is set up),
+    # agents.py), "spend" (AI spend from Logfire, every machine, spend.py) or "system". The panel
+    # opens on Requests; Logfire is only queried when the Spend tab is clicked or its Refresh
+    # pressed (the agents' info needs no request).
     debug_tab: str = "requests"
+    # the panel fills the window (its button, Shortcut.FULL_SCREEN while it is open); kept when it closes
+    debug_full: bool = False
+    # the Agents tab (agents.py): what this chat did with the chat agent's setup so far, read when
+    # the tab opens and after a turn: the deferred capabilities the model loaded, and its tool calls
+    agent_loaded: list[str] = []
+    agent_calls: list[dict[str, str]] = []
     spend_loading: bool = False
     spend_status: str = ""
     spend_error: str = ""
@@ -201,6 +232,37 @@ class State(rx.State):
     spend_top: list[dict[str, str]] = []
     spend_note: str = ""
     spend_project_url: str = ""
+    # the System tab (perf.py): read when the tab opens or on Refresh; tables are rows of text
+    perf_tiles: list[dict[str, str]] = []
+    perf_memory: list[dict[str, str]] = []
+    perf_variables: list[dict[str, str]] = []
+    perf_sessions: list[dict[str, str]] = []
+    perf_handlers: list[dict[str, str]] = []
+    perf_slowest: list[dict[str, str]] = []
+    perf_calls: list[dict[str, str]] = []
+    perf_state: list[dict[str, str]] = []
+    perf_process: list[dict[str, str]] = []
+    # from the browser itself (assets/panes.js perfSnapshot): JS heap, DOM size, long tasks
+    perf_browser: list[dict[str, str]] = []
+    perf_note: str = ""
+    perf_text: str = ""
+
+    # The Variables pane (variables.py): the session's Python names as rows of text.
+    var_rows: list[dict[str, str]] = []
+    var_summary: str = ""
+    var_selected: list[str] = []
+    # the expanded row and its details (label, value)
+    var_open: str = ""
+    var_detail: list[dict[str, str]] = []
+    # also list modules, functions and classes
+    var_show_all: bool = False
+    # the line about the last clear at the pane's bottom, and whether it can still be undone.
+    # var_trash_seq: which clear it is, so a new one restarts the Undo button's countdown bar
+    var_trash: str = ""
+    var_can_undo: bool = False
+    var_trash_seq: int = 0
+    # what an undo couldn't put back
+    var_note: str = ""
 
     def _session(self) -> Session:
         return get_session(self.router.session.client_token)
@@ -233,9 +295,19 @@ class State(rx.State):
         """After something finished: reload the debug panel if it is open."""
         if self.show_debug:
             self._load_debug()
+            if self.debug_tab == "agents":
+                self._load_agents()
+
+    def _load_agents(self) -> None:
+        """The Agents tab's live part: what this chat's model loaded and called (agents.activity)."""
+        self.agent_loaded, self.agent_calls = agents.activity(self._session().ai_history)
 
     def _sync(self, prefer: str = "") -> None:
         """Re-read the session's viewable values into the tab list and redraw the selected one."""
+        with perf.span("sync tabs"):  # timed (the System tab): it makes a view of every variable
+            self._sync_now(prefer)
+
+    def _sync_now(self, prefer: str) -> None:
         session = self._session()
         everything, views = session.views(), session.tabs()
         self.objects = [
@@ -265,6 +337,21 @@ class State(rx.State):
         elif self.selected not in views:
             self._select(next(reversed(views), ""))
         self._show(f"tab:{self.selected}")
+        # the last clear (a timer can end it while the pane is hidden)
+        self.var_trash, self.var_can_undo = variables.trash_text(session), bool(session.trash)
+        self.var_trash_seq = session.trash_seq
+        if self._vars_on():
+            self._sync_vars()
+
+    def _sync_vars(self) -> None:
+        """Re-read the Variables pane from the session (only while it is on screen)."""
+        session = self._session()
+        self.var_rows = variables.rows(session, self.var_show_all)
+        names = [row["name"] for row in self.var_rows]
+        self.var_summary = variables.summary(session, self.var_show_all)
+        self.var_selected = [name for name in self.var_selected if name in names]
+        self.var_open = self.var_open if self.var_open in names else ""
+        self.var_detail = variables.detail(session, self.var_open) if self.var_open else []
 
     def _select(self, name: str) -> None:
         if name != self.selected:
@@ -323,19 +410,50 @@ class State(rx.State):
     def python_on(self) -> bool:
         return self.zoomed == "python" or (self.zoomed == "" and self.show_python)
 
+    def _vars_on(self) -> bool:
+        """Whether the Variables pane is on screen (for handlers: read after they change the layout)."""
+        return self.zoomed == "variables" or (self.zoomed == "" and self.show_variables)
+
+    @rx.var
+    def variables_on(self) -> bool:
+        return self._vars_on()
+
     @rx.var
     def pane_layout(self) -> str:
-        """The results pane: hidden, alone (Python hidden, so it takes the full width) or split."""
+        """The results pane: hidden, alone (Python hidden, so it takes the width left) or split."""
         if not self.results_on:
             return "hidden"
         return "split" if self.python_on else "alone"
+
+    @rx.var
+    def variables_layout(self) -> str:
+        """The Variables pane: hidden, alone (nothing beside it, so it takes the full width) or
+        side (a column at the right of Results / Python)."""
+        if not self.variables_on:
+            return "hidden"
+        return "side" if self.results_on or self.python_on else "alone"
+
+    @rx.var
+    def bottom_on(self) -> bool:
+        """Whether anything is shown below the chat."""
+        return self.results_on or self.python_on or self.variables_on
+
+    @rx.var
+    def var_selected_summary(self) -> str:
+        """What the ticked rows hold together, eg 'selected 2 · 81 KB' ("" when none is ticked)."""
+        sizes = [int(row["bytes"]) for row in self.var_rows if row["name"] in self.var_selected]
+        return f"selected {len(sizes)} · {perf.size_text(sum(sizes))}" if sizes else ""
+
+    @rx.var
+    def var_all_selected(self) -> bool:
+        return len(self.var_rows) > 0 and len(self.var_selected) == len(self.var_rows)
 
     @rx.var
     def chat_layout(self) -> str:
         """The chat pane: hidden, alone (nothing below it, so it takes the full height) or split."""
         if not self.chat_on:
             return "hidden"
-        return "split" if self.results_on or self.python_on else "alone"
+        return "split" if self.bottom_on else "alone"
 
     @rx.var
     def chat_refs(self) -> list[str]:
@@ -346,21 +464,119 @@ class State(rx.State):
     def has_objects(self) -> bool:
         return len(self.objects) > 0
 
-    @rx.event
+    @event
     def on_load(self):
         # chat saved before ChatItem existed was plain dicts
         if any(isinstance(item, dict) for item in self.chat):
             self.chat = [ChatItem(**item) if isinstance(item, dict) else item for item in self.chat]
         self._sync()
 
-    @rx.event
+    @event
     def select_object(self, name: str):
+        self._open_tab(name)
+
+    def _open_tab(self, name: str) -> None:
         self._reveal_results()
         if self._session().closed.pop(name, None) is not None:
             self._sync(prefer=name)  # a closed tab opens again
             return
         self._select(name)
         self._show(f"tab:{name}")
+
+    # -- the Variables pane (variables.py) ----------------------------
+
+    @event
+    def show_var(self, name: str):
+        """Click on a variable's name: open its Results tab (again, if closed) when it has a view,
+        else unfold its details."""
+        if name in self._session().views():
+            self._open_tab(name)
+            self._sync_vars()  # its tab is no longer closed
+        else:
+            self._open_var(name)
+
+    @event
+    def open_var(self, name: str):
+        self._open_var(name)
+
+    def _open_var(self, name: str) -> None:
+        """Unfold a variable's details, or fold them if they are the ones open."""
+        self.var_open = "" if self.var_open == name else name
+        self.var_detail = variables.detail(self._session(), self.var_open) if self.var_open else []
+
+    @event
+    def toggle_var(self, name: str):
+        """A row's checkbox."""
+        if name in self.var_selected:
+            self.var_selected = [other for other in self.var_selected if other != name]
+        else:
+            self.var_selected = [*self.var_selected, name]
+
+    @event
+    def toggle_all_vars(self):
+        """The header's checkbox: select every listed variable, or none if all are."""
+        names = [row["name"] for row in self.var_rows]
+        self.var_selected = [] if len(self.var_selected) == len(names) else names
+
+    @event
+    def toggle_var_show_all(self):
+        self.var_show_all = not self.var_show_all
+        self._sync_vars()
+
+    def _clear_vars(self, names: list[str]):
+        """Clear variables (Session.clear) and start the timer that frees them for good."""
+        session = self._session()
+        if not session.clear(names):
+            return None
+        self.var_note = ""
+        self.var_selected = []
+        # a clear run from the palette shows the pane: its Undo is there
+        if not self._vars_on():
+            self.zoomed, self.show_variables = "", True
+        self._sync()
+        self._refresh_debug()
+        return State.expire_trash(session.trash_seq)
+
+    @event
+    def clear_var(self, name: str):
+        return self._clear_vars([name])
+
+    @event
+    def clear_selected_vars(self):
+        return self._clear_vars(list(self.var_selected))
+
+    @event
+    def clear_all_vars(self):
+        """Clear every listed variable (so not modules, functions and classes unless they are shown)."""
+        return self._clear_vars(variables.names(self._session(), self.var_show_all))
+
+    @event
+    def undo_clear_vars(self):
+        skipped = self._session().restore()
+        self.var_note = f"not put back, bound again since: {', '.join(skipped)}" if skipped else ""
+        self._sync()
+
+    def _purge_vars(self) -> None:
+        """Drop the cleared batch for good (Session.purge) and blank the cell results that showed it."""
+        for cell_id in self._session().purge():
+            if (index := self._cell_index(cell_id)) >= 0:
+                self._update(index, text="", view=ViewData())
+        self._sync()
+        self._refresh_debug()
+
+    @event
+    def free_vars_now(self):
+        self._purge_vars()
+
+    @rx.event(background=True)  # plain: its wait is not a slow handler (see `event`)
+    async def expire_trash(self, seq: int):
+        """UNDO_SECONDS after a clear: free that batch, unless it was undone or another clear
+        (which freed it) came since."""
+        await asyncio.sleep(variables.UNDO_SECONDS)
+        async with self:
+            session = self._session()
+            if session.trash and session.trash_seq == seq:
+                self._purge_vars()
 
     # -- closing tabs (x, right-click menu) ---------------------------
 
@@ -376,30 +592,30 @@ class State(rx.State):
         self.menu_tab = ""
         self._sync(prefer=prefer)
 
-    @rx.event
+    @event
     def close_tab(self, name: str):
         self._close([name])
 
-    @rx.event
+    @event
     def close_other_tabs(self, name: str):
         self._close([obj["name"] for obj in self.objects if obj["name"] != name])
 
-    @rx.event
+    @event
     def close_tabs_right(self, name: str):
         order = [obj["name"] for obj in self.objects]
         if name in order:
             self._close(order[order.index(name) + 1 :])
 
-    @rx.event
+    @event
     def close_all_tabs(self):
         self._close([obj["name"] for obj in self.objects])
 
-    @rx.event
+    @event
     def open_tab_menu(self, name: str, info: dict[str, Any]):
         self.menu_tab = name
         self.menu_x, self.menu_y = int(info.get("client_x", 0)), int(info.get("client_y", 0))
 
-    @rx.event
+    @event
     def close_menus(self):
         """Close the tab menu, the "+" menu and the help panel (click outside, Escape)."""
         self.menu_tab = ""
@@ -408,12 +624,12 @@ class State(rx.State):
         self.show_help = False
         self.show_debug = False
 
-    @rx.event
+    @event
     def show_in_chat(self, name: str):
         """Scroll the chat to the row of the tool call that returned a result, and flash it."""
         yield from self._reveal(f"ref-{name}")
 
-    @rx.event
+    @event
     def reveal(self, target: str):
         """Go to a part of the page and flash it (see _reveal)."""
         yield from self._reveal(target)
@@ -450,27 +666,35 @@ class State(rx.State):
         yield  # let the pane show before scrolling
         yield rx.call_script(f"window.reveal && window.reveal({json.dumps(element)})")
 
-    @rx.event
+    @event
     def toggle_help(self):
         self.show_debug = False
         self.show_help = not self.show_help
 
     # -- debug panel (logs.py) ---------------------------------------------------
 
-    @rx.event
+    @event
     def toggle_debug(self):
         self.show_help = False
         self.show_debug = not self.show_debug
         if self.show_debug:
             self.debug_focus = self.debug_focus_label = ""  # the icon / Alt+D opens everything
-            # always on Requests: Logfire (the AI tab's spend) is only asked when that tab is
+            # always on Requests: Logfire (the Spend tab) is only asked when that tab is
             # clicked or its Refresh pressed, never just by opening the panel
             self.debug_tab = "requests"
             self._load_debug()
         else:
             self.debug_rows = []  # nothing big kept in the tab's state while closed
+            self.perf_memory = self.perf_variables = self.perf_sessions = self.perf_handlers = []
+            self.perf_slowest = self.perf_calls = self.perf_state = self.perf_browser = []
+            self.perf_text = ""
 
-    @rx.event
+    @event
+    def toggle_debug_full(self):
+        """The debug panel: fill the window, or go back to the right-hand panel."""
+        self.debug_full = not self.debug_full
+
+    @event
     def show_logs(self, target: str):
         """Open the debug log on just the records of one thing: the reverse of a row's ↖ link.
 
@@ -497,7 +721,7 @@ class State(rx.State):
         text = item.text if item else ""
         return f"chat turn: {text[:60]}{'…' if len(text) > 60 else ''}"  # noqa: PLR2004  # label length
 
-    @rx.event
+    @event
     def clear_debug_focus(self):
         self.debug_focus = self.debug_focus_label = ""
         self._load_debug()
@@ -509,12 +733,12 @@ class State(rx.State):
         self.context_max = context_window() or 0
         self.chat_cost = cost_text(session.ai_cost)
 
-    @rx.event
+    @event
     def refresh_usage(self):
         """After an inline chat (inline_edit.jsx clicks the hidden [data-usage-refresh] button): its cost."""
         self._sync_usage()
 
-    @rx.event
+    @event
     def open_requests(self):
         """Open the debug panel on its Requests tab, everything shown (a chat turn's 'N requests' link)."""
         self.menu_tab, self.add_menu, self.show_help = "", False, False
@@ -522,16 +746,44 @@ class State(rx.State):
         self.show_debug, self.debug_tab = True, "requests"
         self._load_debug()
 
-    @rx.event
+    @event
     def set_debug_tab(self, tab: str):
         self.debug_tab = tab
-        if tab == "ai":
+        if tab == "agents":
+            self._load_agents()
+        if tab == "spend":
             return State.load_spend
+        if tab == "system":
+            return State.load_perf
         return None
+
+    @event
+    def load_perf(self):
+        """Read the System tab (perf.report), then ask the browser for its own numbers."""
+        token = self.router.session.client_token
+        sizes = {name: _json_size(getattr(self, name)) for name in type(self).base_vars if not name.startswith("perf_")}
+        view = perf.report(self._session(), token, all_sessions(), logs.records(), sizes, BUILTIN_NAMES)
+        self.perf_tiles, self.perf_memory, self.perf_variables = view.tiles, view.memory, view.variables
+        self.perf_sessions, self.perf_handlers, self.perf_slowest = view.sessions, view.handlers, view.slowest
+        self.perf_calls, self.perf_state, self.perf_process = view.calls, view.state, view.process
+        self.perf_note, self.perf_text, self.perf_browser = view.note, view.text, []
+        return rx.call_script("window.perfSnapshot ? window.perfSnapshot() : []", callback=State.set_browser_perf)
+
+    @event
+    def set_browser_perf(self, rows: list[dict[str, str]]):
+        """The browser's side of the System tab, added to the report to copy."""
+        self.perf_browser = [{"label": str(row.get("label", "")), "value": str(row.get("value", ""))} for row in rows]
+        self.perf_text += "\n".join(perf.table_text("Browser", self.perf_browser, ("label", "value")))
+
+    @event
+    def clear_perf(self):
+        """Forget the kept timings (every session's) and read the tab again."""
+        perf.clear()
+        return State.load_perf
 
     @rx.event(background=True)
     async def load_spend(self):
-        """Query Logfire for the AI tab's spend (two queries, a second or so), off the event loop."""
+        """Query Logfire for the Spend tab (two queries, a second or so), off the event loop."""
         async with self:
             if self.spend_loading:
                 return
@@ -547,29 +799,29 @@ class State(rx.State):
             self.spend_rows, self.spend_top = view.rows, view.top
             self.spend_project_url = view.project_url
 
-    @rx.event
+    @event
     def refresh_debug(self):
         self._load_debug()
 
-    @rx.event
+    @event
     def clear_debug(self):
         """Forget the log: this session's records when "this session only" is on, else all."""
         logs.clear(logs.session_id(self.router.session.client_token) if self.debug_mine else "")
         self._load_debug()
 
-    @rx.event
+    @event
     def toggle_debug_kind(self, kind: str):
         """A kind chip: show only the picked kinds; none picked shows all."""
         shown = self.debug_shown
         self.debug_shown = [k for k in shown if k != kind] if kind in shown else [*shown, kind]
         self._load_debug()
 
-    @rx.event
+    @event
     def toggle_debug_mine(self):
         self.debug_mine = not self.debug_mine
         self._load_debug()
 
-    @rx.event
+    @event
     def toggle_inline(self, name: str):
         """A tool result's row in the chat: show its view inline under the row, or fold it away."""
         for index, item in enumerate(self.chat):
@@ -580,7 +832,7 @@ class State(rx.State):
                 if opening:
                     self._show(f"chat:{name}")
 
-    @rx.event
+    @event
     async def view_event(self, slot: str, action: str, arg: Any):
         """Every event of a rendered view (render.render_component), wherever it is placed.
 
@@ -765,39 +1017,68 @@ class State(rx.State):
         else:
             self._show(slot)
 
-    @rx.event
+    @event
     def open_add_menu(self, info: dict[str, Any]):
         """The Results tab bar's "+": a menu of the widgets that can be added by hand, at the pointer."""
         self.menu_tab = ""
         self.add_menu, self.palette = True, False
         self.menu_x, self.menu_y = int(info.get("client_x", 0)), int(info.get("client_y", 0))
 
-    @rx.event
+    @event
     def close_palette(self):
         """Close the palette only: it sits on top of everything, so what is under it (the debug
         log, help) stays (running a command, a click outside it, Escape)."""
         self.palette = False
 
-    @rx.event
+    @event
     def toggle_palette(self):
         """Shortcut.PALETTE: the command palette, in the middle of the window."""
         self.menu_tab = ""
         self.add_menu, self.palette = False, not self.palette
 
-    @rx.event
+    @event
     def add_widget(self, kind: str):
         """Add a widget by hand, as a new tab: a tool form to fill in and run (a ToolRequest until
         its first run), or the widget's own blank value (eg a SmashDb console)."""
+        self._add_widget(kind)
+
+    def _add_widget(self, kind: str, in_chat: bool = False) -> str:
+        """Add the widget as a new tab; returns the name it is bound to ("" if it can't be added).
+        in_chat: also show it unfolded in the chat, under the slash command that added it (as a
+        tool's result is), and leave the panes as they are instead of bringing up Results."""
         self.add_menu = self.palette = False
         widget = widget_of(kind)
         session = self._session()
         value = widget.blank(session) if widget and widget.addable else None
         if value is None:
-            return
+            return ""
         name = session.bind_result(value, source=widget.form.key if widget.form else widget.kind)
         session.ui[f"tab:{name}"] = Ui(form_open=True)
-        self._reveal_results()
+        if in_chat:
+            session.ui[f"chat:{name}"] = Ui(form_open=True)
+            self.chat.append(ChatItem(kind="ref", name=name, text=widget.title, open=True))
+        else:
+            self._reveal_results()
         self._sync(prefer=name)
+        return name
+
+    @event
+    async def add_widget_ask(self, kind: str, ask: str):
+        """A widget's slash command, eg "/videos" or "/videos mkleo vs sparg0": add the widget and
+        show it in the chat, under the command's row. With text (ask), the inline AI then fills
+        its inputs from it there (as its "Ask AI" row does). Nothing runs: the inputs are a
+        proposal, the user runs them."""
+        name = self._add_widget(kind, in_chat=True)
+        if not name or not ask:
+            return
+        yield
+        slot = f"chat:{name}"
+        session = self._session()
+        view = session.view_at(slot)
+        if view is None:
+            return
+        async for update in self._ask_ai(slot, view, session.ui.setdefault(slot, Ui()), {}, ask):
+            yield update
 
     def _reveal_results(self) -> None:
         """Make sure the results pane is on screen (eg a video was opened from a zoomed cell)."""
@@ -805,16 +1086,18 @@ class State(rx.State):
         if self.zoomed != "results":
             self.zoomed = ""
 
-    @rx.event
+    @event
     def toggle_zoom(self, pane: str):
         """Fill the window with one pane, or go back to the normal layout (button, Shortcut.FULL_SCREEN)."""
         self.zoomed = "" if self.zoomed == pane else pane
+        if self._vars_on():
+            self._sync_vars()
 
-    @rx.event
+    @event
     def toggle_pane(self, pane: str):
-        """Bottom bar: show or hide the chat, results or Python pane."""
+        """Bottom bar: show or hide the chat, results, Python or Variables pane."""
         name = f"show_{pane}"
-        if pane not in ("chat", "results", "python"):
+        if pane not in ("chat", "results", "python", "variables"):
             return
         if self.zoomed:
             # leaving full screen: the clicked pane is the one wanted back, so make sure it shows
@@ -822,6 +1105,18 @@ class State(rx.State):
             setattr(self, name, True)
         else:
             setattr(self, name, not getattr(self, name))
+        if self._vars_on():
+            self._sync_vars()  # not kept current while hidden
+
+    @event
+    def toggle_python_variables(self):
+        """Shortcut.TOGGLE_PYTHON_VARIABLES: the Python and Variables panes as a pair. Both on
+        screen: hide both. Otherwise show both (so with one open, the other opens)."""
+        both = self.zoomed == "" and self.show_python and self.show_variables
+        self.zoomed = ""  # as the bottom bar's toggles: leaving full screen for the panes asked for
+        self.show_python = self.show_variables = not both
+        if self._vars_on():
+            self._sync_vars()  # not kept current while hidden
 
     def _new_cell(self) -> Cell:
         self.cell_seq += 1
@@ -870,7 +1165,7 @@ class State(rx.State):
         await self._run(index, code)
         self.running = False
 
-    @rx.event
+    @event
     async def run_cell(self, cell_id: str, code: str, advance: bool):
         """Run a cell with the editor's current text. advance (Shortcut.RUN_AND_ADVANCE) on the last cell appends a new one."""
         index = self._cell_index(cell_id)
@@ -884,7 +1179,7 @@ class State(rx.State):
         async for update in self._start(index, code):
             yield update
 
-    @rx.event
+    @event
     async def run_saved(self, cell_id: str):
         """Run button: the click blurs the editor first, so the cell's saved text is current."""
         index = self._cell_index(cell_id)
@@ -893,7 +1188,7 @@ class State(rx.State):
         async for update in self._start(index, self.cells[index].code):
             yield update
 
-    @rx.event
+    @event
     async def run_all(self):
         if self.running:
             return
@@ -908,7 +1203,7 @@ class State(rx.State):
             yield
         self.running = False
 
-    @rx.event
+    @event
     def open_output(self, cell_id: str):
         """Bind a cell's result to a name (out<n>) so it also gets a tab."""
         index = self._cell_index(cell_id)
@@ -922,18 +1217,18 @@ class State(rx.State):
         session.sources[name] = f"cell [{self.cells[index].count}]"
         self._sync(prefer=name)
 
-    @rx.event
+    @event
     def save_code(self, cell_id: str, code: str):
         """Keep an edited-but-not-run cell's text (sent when the cell loses focus)."""
         index = self._cell_index(cell_id)
         if index >= 0:
             self._update(index, code=code)
 
-    @rx.event
+    @event
     def add_cell(self):
         self.cells.append(self._new_cell())
 
-    @rx.event
+    @event
     def delete_cell(self, cell_id: str):
         index = self._cell_index(cell_id)
         if index >= 0 and not self.running:
@@ -943,11 +1238,78 @@ class State(rx.State):
         if not self.cells:
             self.cells.append(self._new_cell())
 
-    @rx.event
+    @event
     def clear_outputs(self):
         self._session().outputs.clear()
         for index in range(len(self.cells)):
             self._update(index, stdout="", text="", error="", **_trace_fields([]), view=ViewData())
+
+    @event
+    def submit_chat(self, form: dict[str, Any]):
+        """The chat box's Send. A message starting with "/" is a slash command (commands.py): it
+        runs what its palette row runs and is never sent to the agent. Anything else is a turn.
+
+        A command that ran shows in the chat as a tool call does: a row with the command, what
+        followed it and what it did, and, for one that adds a widget, the widget under it."""
+        prompt = str(form.get("prompt", "")).strip()
+        parsed = parse_slash(prompt)
+        if parsed is None:
+            return State.send_chat(form)
+        name, rest = parsed
+        command = SLASH.get(name)
+        known = ", ".join(f"/{other}" for other in SLASH)
+        if command is None:
+            self.chat.append(ChatItem(kind="note", text=f"/{name} isn't a command. There are: {known}"))
+            return None
+        if rest and not command.takes:
+            # running anyway could clear things on a sentence that only began with the command
+            self.chat.append(ChatItem(kind="note", name=f"/{name}", text="takes no text after it: not run"))
+            return None
+        row = State.slash_ran(f"/{name}", " · ".join(filter(None, [rest, self._slash_outcome(command)])))
+        if command.slash_event:
+            handler, *args = command.slash_event
+            return [row, getattr(State, handler)(*args, rest)]
+        if command.press:
+            return [row, rx.call_script(f"window.smashPress({json.dumps(command.keys)})")]
+        handler, *args = command.event
+        run = getattr(State, handler)(*args) if args else getattr(State, handler)
+        # clearing the chat takes its rows: the command's row comes after, in the new chat
+        return [run, row] if handler == "clear_chat" else [row, run]
+
+    def _slash_outcome(self, command: Any) -> str:
+        """What a slash command is about to do, for its row in the chat: what it changes where
+        that is known (how many variables go, a pane shown or hidden), else what it is."""
+        handler = command.event[0] if command.event else ""
+        if handler == "clear_all_vars":
+            count = len(variables.names(self._session(), self.var_show_all))
+            return f"cleared {count} variable{'s' if count != 1 else ''}" if count else "no variables to clear"
+        if handler == "clear_chat":
+            return "cleared: a new conversation"
+        if handler == "close_all_tabs":
+            return f"closed {len(self.objects)} tab{'s' if len(self.objects) != 1 else ''}"
+        if command.shown:
+            return f"{command.title}: {'hidden' if getattr(self, command.shown) else 'shown'}"
+        return f"{command.group}: {command.title}"
+
+    @event
+    def slash_ran(self, name: str, text: str):
+        """Add a slash command's row to the chat (kind slash: drawn as a tool call's row)."""
+        self.chat.append(ChatItem(kind="slash", name=name, text=text))
+
+    @event
+    def clear_chat(self):
+        """Start a new conversation: the chat's rows and what the agent remembers of it go. The
+        variables it made (r1, ...) stay, as does what was spent. Not while a turn is running."""
+        if self.busy:
+            self.chat.append(ChatItem(kind="note", text="The agent is still working: clear the chat once it is done."))
+            return
+        session = self._session()
+        self.chat, self.streaming = [], ""
+        session.ai_history, session.chat_tokens = [], 0
+        # results unfolded in the chat are gone with their rows
+        session.ui = {slot: ui for slot, ui in session.ui.items() if not slot.startswith("chat:")}
+        self._sync_usage()
+        self._refresh_debug()
 
     @rx.event(background=True)
     async def send_chat(self, form: dict[str, Any]):

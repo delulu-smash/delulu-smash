@@ -9,11 +9,13 @@ from __future__ import annotations
 
 import ast
 import contextlib
+import gc
 import keyword
 import io
 import itertools
 import linecache
 import sys
+import time
 import traceback
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -29,6 +31,7 @@ from pydantic_ai.models import infer_model
 
 from ds.util.logging import log_call
 
+from . import perf
 from .render import Ui, View, ViewData, to_view
 
 if TYPE_CHECKING:
@@ -80,6 +83,19 @@ class Call:
     None for a form added by hand."""
     changed: bool = False
     """The form was run since the agent's call (the view offers to put the original back)."""
+
+
+@dataclass
+class Trashed:
+    """A variable cleared from the Variables pane, held for a moment so the clear can be undone
+    (Session.clear / restore / purge). Not a cache: nothing reads it but restore."""
+
+    value: Any
+    size: int
+    """Its rough size when cleared (perf.rough_size), for the pane's "freed ..." line."""
+    source: str | None = None
+    call: Call | None = None
+    tool_call_id: str | None = None
 
 
 @dataclass
@@ -307,6 +323,8 @@ def split_trace(parts: list[dict[str, str]]) -> tuple[list[dict[str, str]], list
 
 class Session:
     def __init__(self) -> None:
+        # when it was made and last asked for (get_session), for the debug panel's System tab
+        self.started = self.used = time.time()
         # The session's SmashDb: `db` in the cells, and what a SmashDb console queries.
         self.db = ds.data.init_db()
         self.namespace: dict[str, Any] = {"__name__": "__main__", "pl": pl, "db": self.db}
@@ -334,6 +352,14 @@ class Session:
         # log's "requests of this result" (logs.in_focus). Kept when the name is rebound.
         self.tool_call_ids: dict[str, str] = {}
         self._table_count = 0
+        # The last batch cleared from the Variables pane (name -> what it was), until it is put
+        # back (restore) or dropped for good (purge: a timer in state.py, "Free now", the next
+        # clear). trash_seq numbers the batches, so a timer only drops the batch it was set for.
+        self.trash: dict[str, Trashed] = {}
+        self.trash_seq = 0
+        # what the last purge dropped: rough bytes and how many variables (the pane's "freed ..." line)
+        self.freed = 0
+        self.freed_names = 0
 
     # -- python ---------------------------------------------------------------
 
@@ -456,17 +482,19 @@ class Session:
 
     def show(self, slot: str, compact: bool = False) -> ViewData:
         """What the browser gets for a slot: its view with the user's Ui (an empty one when gone)."""
-        view = self.view_at(slot)
-        if view is None:
-            return ViewData()
-        call = self.call_at(slot, view.value)
-        data = view.data(
-            slot,
-            self.ui.get(slot),
-            compact,
-            inputs=call.inputs if call else None,
-            can_restore=bool(call and call.changed and call.original),
-        )
+        # timed (the System tab): to_view on the value, then filter / sort / rows for the browser
+        with perf.span("build view"):
+            view = self.view_at(slot)
+            if view is None:
+                return ViewData()
+            call = self.call_at(slot, view.value)
+            data = view.data(
+                slot,
+                self.ui.get(slot),
+                compact,
+                inputs=call.inputs if call else None,
+                can_restore=bool(call and call.changed and call.original),
+            )
         if view.kind == "smashdb":
             data.db_save_name = self.next_free_name("q")
         return data
@@ -501,6 +529,88 @@ class Session:
         if inputs is not None:
             self.calls[name] = Call(inputs, value, original=(inputs, value))
         return name
+
+    # -- clearing variables (the Variables pane) ----------------------------------
+
+    def clear(self, names: Iterable[str]) -> list[str]:
+        """Remove names from Python (as `del`), holding them as one batch that restore() can put
+        back until purge() drops it. An earlier batch is purged first. Returns the names cleared.
+
+        r<n> numbers are not given out again (_table_count stays), so "r2" in the chat never comes
+        to mean another result.
+        """
+        wanted = [
+            name for name in names if name in self.namespace and not name.startswith("_") and name not in BUILTIN_NAMES
+        ]
+        if not wanted:
+            return []
+        self.purge()
+        self.freed = self.freed_names = 0
+        for name in wanted:
+            value = self.namespace.pop(name)
+            self.trash[name] = Trashed(
+                value,
+                perf.rough_size(value),
+                self.sources.pop(name, None),
+                self.calls.pop(name, None),
+                self.tool_call_ids.pop(name, None),
+            )
+            self.closed.pop(name, None)
+            self.ui.pop(f"tab:{name}", None)
+            self.ui.pop(f"chat:{name}", None)
+        self.trash_seq += 1
+        return wanted
+
+    def restore(self) -> list[str]:
+        """Undo the last clear. A name bound to something new since is left as it is now: those
+        names are returned, and what they held before is dropped for good."""
+        skipped = []
+        for name, item in self.trash.items():
+            if name in self.namespace:
+                skipped.append(name)
+                continue
+            self.namespace[name] = item.value
+            if item.source is not None:
+                self.sources[name] = item.source
+            if item.call is not None:
+                self.calls[name] = item.call
+            if item.tool_call_id is not None:
+                self.tool_call_ids[name] = item.tool_call_id
+        self.trash = {name: item for name, item in self.trash.items() if name in skipped}
+        self.purge()
+        self.freed = self.freed_names = 0  # an undo freed nothing worth a line
+        self.trash_seq += 1
+        return skipped
+
+    def purge(self) -> list[str]:
+        """Drop the cleared batch for good, with everything else here that holds one of its
+        objects: `_`, a cell's result showing it, a tool call's record of it. Then collect, so the
+        memory goes back now. Returns the ids of the cells whose result was dropped.
+
+        An object still bound to another name (`a = r1`) is the user's to keep: nothing of it is
+        dropped and it doesn't count as freed.
+        """
+        if not self.trash:
+            return []
+        bound = {id(value) for name, value in self.namespace.items() if name != "_"}
+        gone = {id(item.value): item for item in self.trash.values() if id(item.value) not in bound}
+        self.freed = sum(item.size for item in gone.values())
+        self.freed_names = sum(id(item.value) in gone for item in self.trash.values())
+        if id(self.namespace.get("_")) in gone:
+            del self.namespace["_"]
+        cells = [cell_id for cell_id, view in self.outputs.items() if id(view.value) in gone]
+        for cell_id in cells:
+            del self.outputs[cell_id]
+            self.ui.pop(f"cell:{cell_id}", None)
+            self.calls.pop(f"cell:{cell_id}", None)
+        self.calls = {key: call for key, call in self.calls.items() if id(call.value) not in gone}
+        for call in self.calls.values():
+            if call.original is not None and id(call.original[1]) in gone:
+                call.original = None
+        self.trash = {}
+        del gone  # the last references held here
+        gc.collect()
+        return cells
 
     # -- agent ------------------------------------------------------------------
 
@@ -570,7 +680,15 @@ def get_session(token: str) -> Session:
     """The session for a browser tab, created on first use. Lives in server memory only."""
     if token not in _SESSIONS:
         _SESSIONS[token] = Session()
-    return _SESSIONS[token]
+    session = _SESSIONS[token]
+    session.used = time.time()
+    return session
+
+
+def all_sessions() -> dict[str, Session]:
+    """Every session the backend holds, by token (the debug panel's System tab). They are never
+    dropped: a browser tab that is gone keeps its variables until the backend restarts."""
+    return dict(_SESSIONS)
 
 
 def complete(token: str, code: str, line: int, column: int) -> list[dict[str, str]]:
