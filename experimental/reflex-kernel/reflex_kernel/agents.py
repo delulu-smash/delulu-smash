@@ -16,6 +16,7 @@ from pydantic_ai import Agent
 from pydantic_ai.models import infer_model
 
 from .inline_edit import edit_agent
+from .inline_fill import fill_agent
 from .session import tokens_text
 
 MILLION = 1_000_000
@@ -109,5 +110,10 @@ AGENTS: list[AgentInfo] = [
         edit_agent,
         "Inline chat in a cell or SQL box (Alt+A)",
         "experimental/reflex-kernel/reflex_kernel/inline_edit.py",
+    ),
+    _info(
+        fill_agent,
+        "Inline chat in a widget's tool form: fills its inputs (Alt+A)",
+        "experimental/reflex-kernel/reflex_kernel/inline_fill.py",
     ),
 ]

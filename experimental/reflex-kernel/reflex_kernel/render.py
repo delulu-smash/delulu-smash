@@ -38,7 +38,7 @@ from pydantic import BaseModel
 from .db_console import DbConsole, DbTable
 from .editor import sql_editor
 from .shortcuts import Shortcut, sql_keys
-from .tool_forms import FormField, ToolRequest
+from .tool_forms import FormField, ToolForm, ToolRequest
 from .widgets import form_for
 
 if TYPE_CHECKING:
@@ -47,6 +47,11 @@ if TYPE_CHECKING:
 MAX_GRID_ROWS = 2000
 # Two diagonal arrows pointing apart / together, as on Zed's zoom button (JetBrainsMono Nerd Font).
 ICON_EXPAND, ICON_COLLAPSE = "\U000f0616", "\U000f0615"
+# The robot the bottom bar's Chat toggle shows (commands.ICON_AI): one icon for "the AI" everywhere.
+ICON_AI = "\U000f06a9"
+# The name of a tool form's "Ask AI" box in the submitted form (no tool parameter starts with "_"):
+# filled = ask the AI for inputs (inline_fill.py), empty = run the tool.
+ASK_FIELD = "__ask"
 # Copy (two sheets) and a tick, for copy_button.
 ICON_COPY, ICON_COPIED = "\U000f018f", "\U000f012c"
 # A table view's SQL box starts with this; running it unchanged shows the table as it is.
@@ -190,6 +195,15 @@ class ViewData:
     running: bool = False
     form_changed: bool = False
     """The form was re-run on an agent's result: the original call can be put back."""
+    # the form's inline chat (inline_fill.py): the AI fills the inputs, the user runs them
+    ai_open: bool = False
+    """The form shows its "Ask AI" row."""
+    ai_busy: bool = False
+    ai_proposed: bool = False
+    """The inputs shown are the AI's proposal, not run yet (changed ones are highlighted)."""
+    ai_note: str = ""
+    """Under the row: what the last call used, eg '2 changed · $0.0004 · 9.2k in · 120 out · 1 request'."""
+    ai_error: str = ""
     # smashdb (db_console.py): the schema tree and the query editor; its result is the table above
     db_tables: list[DbTable] = dataclasses.field(default_factory=list)
     db_schema: dict[str, list[str]] = dataclasses.field(default_factory=dict)
@@ -262,6 +276,15 @@ class Ui:
     form_open: bool = False
     running: bool = False
     runs: int = 0
+    # the form's inline chat (inline_fill.py)
+    ai_open: bool = False
+    ai_busy: bool = False
+    proposed: dict[str, str] = dataclasses.field(default_factory=dict)
+    """The inputs the AI proposed, as the form's fields show them, until run or discarded ({} = none)."""
+    proposals: int = 0
+    """Counts proposals made and discarded: remounts the form's inputs so they show the change."""
+    ai_note: str = ""
+    ai_error: str = ""
     # smashdb console
     draft: str = ""
     """The editor's text as last sent by the browser (on blur and on run); "" = the result's query."""
@@ -308,6 +331,16 @@ def apply_event(view: View, ui: Ui, action: str, arg: Any) -> None:
             ui.window = str(arg)
         case "form_toggle":
             ui.form_open = not ui.form_open
+            if not ui.form_open:
+                drop_proposal(ui)
+        case "ai_toggle":
+            # the "Ask AI" row lives in the form: opening it unfolds the form
+            if ui.ai_open:
+                drop_proposal(ui)
+            else:
+                ui.ai_open = ui.form_open = True
+        case "ai_discard":
+            drop_proposal(ui)
         case "sql_toggle":
             ui.sql_open = not ui.sql_open
         case "sql":
@@ -326,6 +359,15 @@ def apply_event(view: View, ui: Ui, action: str, arg: Any) -> None:
             ui.draft, ui.db_resets, ui.history_open = str(arg), ui.db_resets + 1, False
         case "db_save_toggle":
             ui.save_open, ui.save_note, ui.save_error = not ui.save_open, "", ""
+
+
+def drop_proposal(ui: Ui) -> None:
+    """Close a form's inline chat; the inputs go back to the ones that made the result."""
+    if ui.proposed:
+        ui.proposals += 1
+    ui.proposed = {}
+    ui.ai_open = ui.ai_busy = False
+    ui.ai_note = ui.ai_error = ""
 
 
 @dataclasses.dataclass
@@ -393,7 +435,10 @@ class View:
             if isinstance(self.value, ToolRequest):
                 inputs, data.label, data.note = self.value.inputs, form.title, "not run yet"
             data.form, data.form_open, data.running = form.fields(inputs or {}), ui.form_open, ui.running
-            data.form_key, data.form_changed = f"{slot}#{ui.runs}", can_restore
+            data.form_key, data.form_changed = f"{slot}#{ui.runs}.{ui.proposals}", can_restore
+            data.ai_open, data.ai_busy, data.ai_note, data.ai_error = ui.ai_open, ui.ai_busy, ui.ai_note, ui.ai_error
+            if ui.proposed:
+                data.form, data.ai_proposed = _proposed_fields(form, inputs or {}, ui.proposed), True
         if isinstance(self.value, PlayerUsage):
             _usage_data(self.value, ui, data)
         if isinstance(self.value, DbConsole):
@@ -418,6 +463,19 @@ class View:
         if isinstance(self.value, DbConsole):
             data.note += f" · {self.value.timing}"
         return data
+
+
+def _proposed_fields(form: ToolForm, inputs: dict[str, Any], proposed: dict[str, str]) -> list[FormField]:
+    """A form's fields showing the AI's proposal: each one that differs from the inputs that made
+    the result is marked changed, its tooltip starting with the old value."""
+    before = form.texts(inputs)
+    fields = form.fields({**inputs, **proposed})
+    for item in fields:
+        was = before.get(item.name, "")
+        if item.value != was:
+            item.changed = True
+            item.help = f"Was: {was or '(empty)'}. {item.help}".strip()
+    return fields
 
 
 # -- match 1: Python value -> View ------------------------------------------------
@@ -809,7 +867,7 @@ def render_component(
             (
                 "tool",
                 rx.fragment(
-                    _bar(view, actions),
+                    _bar(view, actions, ai_toggle(view, send)),
                     form_section(view, send),
                     _error(view),
                     rx.el.div("Fill in the inputs and press Enter to run it.", class_name="empty sans"),
@@ -855,8 +913,10 @@ def _bar(
         rx.cond(view.note != view.label, rx.el.span(view.note, class_name="dim")),
         rx.el.span(class_name="spacer"),
         *controls,
-        # every view with a tool form (widgets.py) gets its Inputs button
-        rx.cond(view.form.length() > 0, form_toggle(view, send)) if send else rx.fragment(),
+        # every view with a tool form (widgets.py) gets its Inputs button and the AI that fills it
+        rx.cond(view.form.length() > 0, rx.fragment(ai_toggle(view, send), form_toggle(view, send)))
+        if send
+        else rx.fragment(),
         *actions,
         float_button(),
         class_name=rx.cond(hidden, "viewer-bar sans is-hidden", "viewer-bar sans"),
@@ -1096,8 +1156,24 @@ def form_toggle(view: rx.Var[ViewData], send: Any) -> rx.Component:
     )
 
 
+def ai_toggle(view: rx.Var[ViewData], send: Any) -> rx.Component:
+    """The bar's button for the form's inline chat (inline_fill.py): opens the "Ask AI" row in the
+    form, or closes it and drops a proposal. Shortcut.INLINE_EDIT clicks it for the view you are
+    in (assets/panes.js, by data-ai-toggle)."""
+    return rx.el.button(
+        ICON_AI,
+        title=Shortcut.INLINE_EDIT.hint("Ask AI to fill these inputs (you run them)"),
+        aria_label="Ask AI to fill the inputs",
+        on_click=send("ai_toggle"),
+        custom_attrs={"data-ai-toggle": ""},
+        class_name=rx.cond(view.ai_open, "act ai-toggle mono is-active", "act ai-toggle mono"),
+    )
+
+
 def form_section(view: rx.Var[ViewData], send: Any) -> rx.Component:
-    """The tool form, folded under the bar: one compact row of the tool's inputs; Enter or Run runs it."""
+    """The tool form, folded under the bar: one compact row of the tool's inputs; Enter or Run runs it.
+    With its inline chat open it starts with an "Ask AI" row: Enter there asks the AI for new inputs
+    (State.view_event gets the row's text as ASK_FIELD, with the inputs as they are on screen)."""
     return tool_form(
         fields=view.form,
         running=view.running,
@@ -1105,6 +1181,12 @@ def form_section(view: rx.Var[ViewData], send: Any) -> rx.Component:
         on_run=lambda form: send("form_run", form),
         on_reset=send("form_reset"),
         remount=view.form_key,
+        ai_open=view.ai_open,
+        ai_busy=view.ai_busy,
+        ai_proposed=view.ai_proposed,
+        ai_note=view.ai_note,
+        ai_error=view.ai_error,
+        on_ai_close=send("ai_discard"),
     )
 
 
@@ -1190,7 +1272,55 @@ def _form_field(item: rx.Var[FormField]) -> rx.Component:
         ),
     )
     return rx.el.label(
-        rx.el.span(item.label, class_name="form-label"), control, title=item.help, class_name="form-field"
+        rx.el.span(item.label, class_name="form-label"),
+        control,
+        title=item.help,
+        # changed: the AI's proposal differs here (inline_fill.py); the tooltip says what it was
+        class_name=rx.cond(item.changed, "form-field is-changed", "form-field"),
+    )
+
+
+def _ask_row(
+    busy: rx.Var[bool], proposed: rx.Var[bool], note: rx.Var[str], error: rx.Var[str], on_close: Any
+) -> rx.Component:
+    """A form's inline chat: the box to tell the AI what the inputs should be, and under it what
+    the last call used or why it failed. Part of the form, so Enter here submits the form with the
+    inputs as they are on screen. It takes the focus when it appears and after each proposal (the
+    form remounts), so Enter again, with the box empty, runs the proposal."""
+    return rx.el.div(
+        rx.el.span(ICON_AI, class_name="ask-icon mono"),
+        rx.el.input(
+            name=ASK_FIELD,
+            placeholder=rx.cond(
+                proposed,
+                "Enter runs these inputs · or say what else to change · Esc puts the old ones back",
+                "Say what the inputs should be, eg: sparg0 vs steve, offline, last 90 sets",
+            ),
+            auto_focus=True,
+            auto_complete="off",
+            spell_check=False,
+            read_only=busy,
+            class_name="form-input ask-input",
+            custom_attrs={"data-ask": ""},
+        ),
+        rx.el.button(
+            "×",
+            type="button",
+            title=Shortcut.CLOSE.hint("Close: the inputs go back to the ones that made this"),
+            on_click=on_close,
+            class_name="act",
+            custom_attrs={"data-ask-close": ""},
+        ),
+        rx.cond(
+            busy,
+            rx.el.span("Thinking…", class_name="ask-note dim"),
+            rx.cond(
+                error != "",
+                rx.el.span(error, class_name="ask-note is-error"),
+                rx.cond(note != "", rx.el.span(note, class_name="ask-note dim")),
+            ),
+        ),
+        class_name=rx.cond(busy, "ask-row is-thinking", "ask-row"),
     )
 
 
@@ -1202,16 +1332,23 @@ def tool_form(
     remount: rx.Var[str],
     on_run: rx.EventHandler[passthrough_event_spec(dict[str, Any])],
     on_reset: rx.EventHandler[no_args_event_spec],
+    ai_open: rx.Var[bool],
+    ai_busy: rx.Var[bool],
+    ai_proposed: rx.Var[bool],
+    ai_note: rx.Var[str],
+    ai_error: rx.Var[str],
+    on_ai_close: rx.EventHandler[no_args_event_spec],
 ) -> rx.Component:
     """The form itself. A memo component, as compact_grid is: a form's submit handler is generated
     outside any loop the view sits in (chat items, cells) and couldn't see the loop item otherwise."""
     return rx.el.form(
+        rx.cond(ai_open, _ask_row(ai_busy, ai_proposed, ai_note, ai_error, on_ai_close)),
         rx.foreach(fields, _form_field),
         rx.el.button(
             rx.cond(running, "Running…", "Run"),
             type="submit",
-            disabled=running,
-            title="Run the tool with these inputs (Enter)",
+            disabled=running | ai_busy,
+            title="Run the tool with these inputs (Enter; with text in the Ask AI box, Enter asks the AI instead)",
             class_name="act",
         ),
         rx.cond(

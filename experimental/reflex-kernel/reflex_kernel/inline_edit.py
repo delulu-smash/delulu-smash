@@ -25,7 +25,7 @@ from ds.util.logging import log_call, logger
 from ds.util.text import clean_f_str
 
 from . import logs
-from .session import BUILTIN_NAMES, TurnUsage, find_session
+from .session import BUILTIN_NAMES, find_session, log_usage
 
 # Context sent to the model is capped, so a namespace full of tables can't blow up the prompt.
 MAX_VARIABLES = 40
@@ -247,11 +247,8 @@ async def edit(body: dict[str, Any]) -> dict[str, str]:
         except Exception as error:  # noqa: BLE001  # shown in the inline box, not raised into the request
             call["error"] = answer["error"] = f"{type(error).__name__}: {error}"
         # from the messages, as a chat turn does (Session.ask), so a failed call still shows what it spent
-        usage = TurnUsage.of(captured[len(history) :])
-        usage.log_to(call)
+        usage = log_usage(call, session, captured[len(history) :])
         call["fixes"] = run.fixes  # proposals sent back to the model because they failed the check
-        if session:
-            session.ai_cost += usage.cost or 0
         if usage.requests:
             answer["usage"] = usage.summary()
     return answer

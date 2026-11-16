@@ -7,3 +7,5 @@ does.
 
 - [omarchy.md](omarchy.md): navigation, keys and many other parts of the app follow Omarchy, the desktop
   it runs on.
+- [inline_ai.md](inline_ai.md): `Alt+A`, the AI that changes what you are in. A widget with a tool is a
+  function; the AI fills its inputs and the user runs them.

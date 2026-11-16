@@ -1,0 +1,50 @@
+{
+  "theme": "dark",
+  "hooks": {
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$HOME/repos/delulu-smash/.os/scripts/hooks/agent-notify.sh\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "AskUserQuestion|ExitPlanMode",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$HOME/repos/delulu-smash/.os/scripts/hooks/agent-notify.sh\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$HOME/repos/delulu-smash/.os/scripts/hooks/agent-notify.sh\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$HOME/repos/delulu-smash/.os/scripts/hooks/agent-notify.sh\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

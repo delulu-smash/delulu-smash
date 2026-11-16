@@ -7,6 +7,8 @@
 #          argument validator, so a form can't drift from its tool. Which inputs made a result is
 #          recorded by the session (Session.calls), not read off the result.
 #          Which widgets have one is in widgets.py (Widget.tool); this file is the generic part.
+#          A form is also what the widget inline chat fills (inline_fill.py): fill_schema is the
+#          AI's output shape, check its validation, texts the values as the form shows them.
 # ---------------------------------------------------------------------------
 from __future__ import annotations
 
@@ -46,6 +48,13 @@ class FormField:
     search: bool = False
     """choice only: the options are many (over CHOICE_SEARCH_AT), so the list gets a search box,
     single or multiple alike."""
+    changed: bool = False
+    """The inline chat proposed this value and it differs from the one that made the result
+    (highlighted; `help` then starts with the old value)."""
+
+    def __setstate__(self, state: dict[str, Any]) -> None:
+        # kept in Reflex's on-disk state (inside a ViewData): one saved before `changed` existed
+        self.__dict__.update({"changed": False} | state)
 
 
 # A choice input with more options than this gets a search box above its list.
@@ -216,6 +225,35 @@ class ToolForm:
                 field.value = ",".join(_picked(values.get(field.name, field.value)))
         return fields
 
+    @property
+    def description(self) -> str:
+        """What the tool does and what each input means: its docstring, as the model gets it."""
+        return self.tool.tool_def.description or ""
+
+    @property
+    def fill_schema(self) -> dict[str, Any]:
+        """The schema of the inputs on the form (the tool's, without the hidden parameters):
+        what the widget inline chat's AI answers with (inline_fill.py)."""
+        shown = {name: prop for name, prop in self.schema.get("properties", {}).items() if name not in self.hide}
+        required = [name for name in self.schema.get("required", []) if name in shown]
+        return {**self.schema, "properties": shown, "required": required}
+
+    def check(self, given: dict[str, Any]) -> dict[str, Any]:
+        """Typed values as the tool's arguments, checked by the validator pydantic-ai uses for the
+        model's calls (hidden parameters are dropped: they keep their defaults). Raises ValueError
+        naming the bad fields."""
+        given = {name: value for name, value in given.items() if name not in self.hide}
+        try:
+            return self.tool.function_schema.validator.validate_python(given)
+        except ValidationError as error:
+            problems = [f"{'.'.join(map(str, e['loc']))}: {e['msg']}" for e in error.errors()]
+            raise ValueError("; ".join(problems)) from error
+
+    def texts(self, values: dict[str, Any]) -> dict[str, str]:
+        """Each input on the form as the text its field shows for these values (typed arguments,
+        or a submitted form): what a form submits, so two sets of inputs can be compared."""
+        return {field.name: field.value for field in self.fields(values)}
+
     def arguments(self, raw: dict[str, Any]) -> dict[str, Any]:
         """A submitted form as the tool's arguments, checked by the validator pydantic-ai uses for
         the model's calls. Raises ValueError naming the bad fields."""
@@ -242,11 +280,7 @@ class ToolForm:
                 given[name] = _choice_value(prop, value.strip())
             else:
                 given[name] = value.strip() if isinstance(value, str) else value
-        try:
-            return self.tool.function_schema.validator.validate_python(given)
-        except ValidationError as error:
-            problems = [f"{'.'.join(map(str, e['loc']))}: {e['msg']}" for e in error.errors()]
-            raise ValueError("; ".join(problems)) from error
+        return self.check(given)
 
     def run(self, raw: dict[str, Any]) -> tuple[Any, dict[str, Any]]:
         """Run the tool with a submitted form: (its result, the inputs used, for Session.calls)."""

@@ -138,12 +138,20 @@ os save webapp:Twitch setting:theme toggle:window-no-gaps
   - `.config/hypr/bindings.lua`: custom keybindings. Each binding that replaces a default has a
     `-- previously: X` comment.
   - `.config/chromium-flags.conf`: only on machines with the AMD Raphael iGPU (VP9 flicker workaround).
+  - `.claude/settings.json`: Claude Code's user settings (every project, in Zed and in a terminal); its
+    hooks call `agent-notify.sh` below.
 - `.os/rc`: bashrc additions (`os` / `ds` aliases, start in this repo).
 - `.os/scripts/keybindings/`: scripts called by keybindings:
   - `screenrecord.sh`: region recording toggle (`SUPER + SHIFT + Q`, `--save` on `SUPER + SHIFT + ALT + Q`).
   - `textual-kernel.sh`: launches the `experimental/textual-kernel` TUI (`SUPER + SHIFT + J`).
   - `claude-delulu.sh`: Claude Code in this repo, continuing the last session (`SUPER + SHIFT + A`).
   - `pwd-copy.sh`: copies the 1Password master password via `os pwd-copy` (`SUPER + SHIFT + P`).
+- `.os/scripts/hooks/`: scripts called by AI agent hooks:
+  - `agent-notify.sh`: an Omarchy notification when Claude needs you (a permission prompt, a question, a
+    plan to approve, a finished turn). Zed can't send desktop notifications itself (only its own pop-up,
+    `agent.notify_when_agent_waiting`), so this comes from Claude Code's hooks, which Zed's Claude agent
+    loads too. A finished turn is skipped while Zed is focused; a click focuses Zed. Other Zed agents
+    (not Claude) are not covered.
 - `.os/scripts/`: other machine helper scripts not bound to keys.
 
 ## Known machine issues

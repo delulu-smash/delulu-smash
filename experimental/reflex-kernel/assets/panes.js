@@ -10,7 +10,9 @@
 //          were pressed where you were (the palette's and the keybindings list's way to run one). TOGGLE_RESULTS / TOGGLE_PYTHON / HELP / DEBUG click the
 //          bottom bar's pane toggles and the title bar's ? and bug icon (data-toggle). A view's float button (render.float_button) and
 //          a click outside a floating view work too. reveal(id) scrolls to a chat row, result tab or
-//          cell and flashes it (State.reveal).
+//          cell and flashes it (State.reveal). INLINE_EDIT outside a code editor, in a view with a tool
+//          form, clicks that view's AI button (render.ai_toggle): the form's "Ask AI" row; CLOSE in
+//          that form closes the row.
 // ---------------------------------------------------------------------------
 (() => {
   const SHORTCUTS = window.SHORTCUTS || { FULL_SCREEN: "Alt+F", CLOSE: "Escape" };
@@ -29,6 +31,9 @@
   const paneOf = (node) => (node instanceof Element ? node.closest("[data-pane]") : null);
   const visible = (node) => node && node.isConnected && node.offsetParent !== null;
   const floating = () => document.querySelector(".widget.is-floating");
+  // the AI button of the view a node is in, when that view has a tool form (render.ai_toggle)
+  const aiToggleOf = (node) => (node instanceof Element && node.isConnected
+    ? (node.closest(".widget") || document.createElement("i")).querySelector("[data-ai-toggle]") : null);
 
   const setFloating = (widget, on) => {
     widget.classList.toggle("is-floating", on);
@@ -165,8 +170,10 @@
   window.smashPress = (keys, from) => setTimeout(() => {
     let target = [from, origin, document.activeElement].find((node) => node instanceof Element && node.isConnected);
     if (EDITOR_KEYS.has(keys) && !(target && target.closest(".cm-editor"))) {
-      // an editor's key, run from outside one: the editor you were last in, else the first cell
-      target = [lastEditor, document.querySelector(".cell .cm-content")].find((node) => visible(node));
+      // an editor's key, run from outside one: the result with a tool form you were in (the key
+      // fills its inputs there), else the editor you were last in, else the first cell
+      const inForm = [target, lastTarget].find((node) => aiToggleOf(node) && !node.closest(".cm-editor"));
+      target = inForm || [lastEditor, document.querySelector(".cell .cm-content")].find((node) => visible(node));
     }
     if (!target) target = document.body;
     if (target !== document.body) target.focus();
@@ -195,6 +202,17 @@
       // the top layer only: the palette (above everything), then a menu or panel
       const backdrop = document.querySelector(".palette-backdrop") || document.querySelector(".overlay-backdrop");
       const current = floating();
+      // in a tool form with its "Ask AI" row open: close the row first (an open choice list
+      // closes itself, assets/choice.js)
+      const form = !backdrop && event.target instanceof Element && !event.target.closest(".choice")
+        && event.target.closest(".tool-form");
+      const askClose = form && form.querySelector("[data-ask-close]");
+      if (askClose) {
+        event.preventDefault();
+        event.stopPropagation();
+        askClose.click();
+        return;
+      }
       if (!backdrop && !current) return;
       event.preventDefault();
       event.stopPropagation();
@@ -239,6 +257,18 @@
         event.stopPropagation();
         button.click();
       }
+      return;
+    }
+    if (SHORTCUTS.INLINE_EDIT && matches(event, SHORTCUTS.INLINE_EDIT)) {
+      // in a code editor it is the editor's own key (inline_edit.jsx); elsewhere, in a view with a
+      // tool form, it opens that form's "Ask AI" row
+      if (event.target instanceof Element && event.target.closest(".cm-editor")) return;
+      const spot = [event.target, document.activeElement, lastTarget].find((node) => aiToggleOf(node));
+      const button = aiToggleOf(floating()) || aiToggleOf(spot);
+      if (!button || !visible(button)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      button.click();
       return;
     }
     if (!matches(event, SHORTCUTS.FULL_SCREEN)) return;

@@ -80,7 +80,7 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   A new kind of record is one function in `logs.LOG_FORMATS`.
   Two tabs: **Requests** (the log above) and **AI** (spend first, then the agents):
   - **Agents** (`reflex_kernel/agents.py`): each agent the app runs (`smash-agent` for the chat and `ds ai eval`,
-    `inline-edit` for Alt+A) with its model, provider, context window, list price per 1M tokens (genai-prices),
+    `inline-edit` for Alt+A in an editor, `inline-fill` for Alt+A in a widget's form) with its model, provider, context window, list price per 1M tokens (genai-prices),
     model settings, output type, retries, and its capabilities (loaded always or on demand) with their tools.
     Read once from the Agent objects at start. The chat title shows the chat agent's model.
   - **Spend** (`reflex_kernel/spend.py`, `ds.data.raw.logfire`): AI spend from Logfire, so every machine and app
@@ -100,7 +100,7 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   | attribute | meaning |
   | --- | --- |
   | `kind`, `title` | the view kind `render.py` draws, and its name for people |
-  | `tool`, `hide` | the agent tool it mimics: gives it a tool form (below); `hide` = parameters not on the form |
+  | `tool`, `hide` | the agent tool it mimics: gives it a tool form (below) and the inline chat that fills it; `hide` = parameters not on the form |
   | `new` | for a widget that is no tool's result: the blank value `+` binds (eg a SmashDb console) |
   | `addable` | offered in the Results tab bar's `+` menu, to add by hand (needs `tool` or `new`) |
   | `chat_open` | starts unfolded in the chat when the agent returns it (others start as a folded row) |
@@ -292,6 +292,29 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   (`$0.0004 · 9.2k in · 120 out · 1 request`). Its cost is added to the chat title's meter; the meter's size
   stays the chat's, since the call isn't added to the chat. Another editor gets it by
   passing `edit_url` (`editor.py`).
+- **Inline chat in a widget** (`reflex_kernel/inline_fill.py`; what must hold is in
+  `spec/experimental/reflex-kernel/inline_ai.md`): a widget with a tool form works like a function, inputs in
+  and a result out, so there the same `Alt+A` (or the robot button next to `Inputs`) asks the AI for the
+  **inputs**. The form unfolds with an Ask AI row on top: type `sparg0 vs steve, offline, last 90 sets`, Enter.
+  The form then shows the AI's inputs, the changed ones outlined (hover one for its old value), and a line with
+  what the call used (`2 changed · $0.0003 · 2.4k in · 40 out · 1 request`).
+  - **The AI never runs the tool; you do.** The box takes the focus back after a proposal, so Enter again (the
+    box empty) or Run runs it. Text in the box means "ask", so a new instruction refines the proposal.
+  - Esc, the row's × or the robot button closes the row, and the inputs go back to the ones that made the result.
+  - The AI changes what is on screen: inputs you typed but didn't run are sent along, as is the last proposal.
+  - Its answer is the tool's own parameter schema (`ToolForm.fill_schema`, without hidden parameters such as
+    `page`) and must pass the tool's own validator (`ToolForm.check`); a refused answer goes back to the model
+    with the validator's words, up to twice, then the row shows the error and the form stays as it was.
+  - It reads the chat so far and has no tools, so it can't look anything up (eg which of two players sharing a
+    tag you mean); what the tool itself refuses (an unknown player) only shows when you run.
+  - Generic: nothing is written per widget. A widget gets it by having a `tool` in `widgets.py`. Today that is
+    Match videos and Player usage; a not-yet-run form (`+`) works too.
+  - Logged and counted like the editor's inline chat: one `inline-fill` record in the debug log (its `↖` goes
+    to the result), its cost on the chat title's meter, its own row in the AI tab's Agents and Spend.
+  - Inside the SmashDb console's SQL box, `Alt+A` is still the code inline chat.
+  - Not covered: the things a view changes without its tool (a table's filter, sort and `SQL ▸`, the usage
+    view's window, the videos page), and table results (head to head, tournaments, frame data), which have no
+    tool form yet (the spec says why).
 - **No autofill**: every input, textarea and editor is opted out of password managers (1Password, LastPass,
   Bitwarden, Dashlane) and browser autofill by `assets/no_autofill.js`, including inputs added later. To allow
   one, put `data-allow-autofill` on it or a parent.

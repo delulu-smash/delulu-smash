@@ -112,10 +112,10 @@ COMMANDS: list[Command] = [
     Command(
         "ai.inline",
         "AI",
-        "Inline chat in the editor you were in (knows the chat)",
+        "Inline chat in the editor or result you were in (knows the chat)",
         ICON_AI,
         press=Shortcut.INLINE_EDIT,
-        words="edit code copilot python sql",
+        words="edit code copilot python sql fill inputs form widget",
     ),  # fmt: skip
     Command("app.keys", "App", "Keybindings", ICON_KEYBOARD, press=Shortcut.KEYS, words="shortcuts keys"),
     Command("app.help", "App", "Help", ICON_HELP, event=("toggle_help",), shortcut=Shortcut.HELP),

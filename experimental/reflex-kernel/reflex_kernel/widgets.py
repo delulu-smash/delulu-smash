@@ -4,6 +4,8 @@
 #          data (WIDGETS). The app reads behaviour from here instead of hard-coding it per
 #          widget: which agent tool a widget mimics (its tool form), whether "+" can add it by
 #          hand (and what it starts as), whether it starts unfolded in the chat.
+#          A widget with a tool is a function: inputs in, a result out. That is what its form
+#          re-runs and what the inline chat fills (inline_fill.py), with no code per widget.
 # To add a widget: a Widget row here, a `case` in render.to_view that makes its View (kind =
 #          the row's kind), and its component in render.render_component.
 # To change behaviour: edit the row. Nothing else reads these facts from anywhere else.

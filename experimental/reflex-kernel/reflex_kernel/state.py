@@ -18,7 +18,9 @@ from ds.data.raw.smashtube import MatchVideos, search_videos
 from ds.util.logging import logger
 
 from . import logs, spend
-from .render import Ui, ViewData, apply_event, fill_defaults, rerun_inputs
+from .inline_fill import fill as fill_inputs
+from .render import ASK_FIELD, Ui, ViewData, apply_event, drop_proposal, fill_defaults, rerun_inputs
+from .tool_forms import ToolRequest
 from .db_console import DbConsole, clean_sql
 from .widgets import form_for, widget_of
 from .session import (
@@ -593,7 +595,11 @@ class State(rx.State):
             return
         ui = session.ui.setdefault(slot, Ui())
         if action == "form_run":
-            async for update in self._run_form(slot, view, ui, dict(arg or {})):
+            inputs = dict(arg or {})
+            # text in the form's "Ask AI" box: the AI fills the inputs instead of the tool running
+            ask = str(inputs.pop(ASK_FIELD, "") or "").strip()
+            step = self._ask_ai(slot, view, ui, inputs, ask) if ask else self._run_form(slot, view, ui, inputs)
+            async for update in step:
                 yield update
             return
         # an event that changes what the tool is asked for, eg a usage view's Offline / Online
@@ -640,7 +646,7 @@ class State(rx.State):
     async def _run_form(self, slot: str, view: Any, ui: Ui, inputs: dict[str, Any]):
         """Run a view's tool with the form's inputs; the result replaces the value at the slot."""
         form = form_for(view.value)
-        if form is None or ui.running:
+        if form is None or ui.running or ui.ai_busy:
             return
         ui.running, ui.error = True, ""
         self._show(slot)
@@ -653,8 +659,42 @@ class State(rx.State):
             ui.error = f"{form.title}: {error}"
         else:
             session.put(slot, result, inputs=used)
+            # a proposal that ran is the result's inputs now; a failed run keeps it to correct
+            drop_proposal(ui)
         ui.running = False
         self._new_result(slot, ui, replaced=not ui.error)
+        self._refresh_debug()
+
+    async def _ask_ai(self, slot: str, view: Any, ui: Ui, inputs: dict[str, Any], instruction: str):
+        """A form's inline chat (inline_fill.py): the AI turns the instruction into the form's
+        inputs, shown in the form as a proposal (Ui.proposed). Nothing runs: the user does that.
+        inputs: the form as submitted, so what is on screen (typed by hand, or the last proposal)
+        is what the AI changes."""
+        form = form_for(view.value)
+        if form is None or ui.running or ui.ai_busy:
+            return
+        ui.ai_open = ui.form_open = ui.ai_busy = True
+        ui.ai_error = ""
+        self._show(slot)
+        yield
+        session = self._session()
+        with self._log_context("inline fill", slot=slot):
+            answer = await fill_inputs(session, form, inputs, instruction, note=view.note or view.summary)
+        ui.ai_busy = False
+        if answer.error:
+            ui.ai_error, ui.ai_note = answer.error, answer.usage
+        else:
+            call = session.call_at(slot, view.value)
+            before = form.texts(
+                view.value.inputs if isinstance(view.value, ToolRequest) else call.inputs if call else {}
+            )
+            changed = sum(answer.inputs.get(name, "") != was for name, was in before.items())
+            ui.proposed, ui.proposals = answer.inputs, ui.proposals + 1
+            ui.ai_note = " · ".join(
+                filter(None, [f"{changed} changed" if changed else "nothing to change", answer.usage])
+            )
+        self._show(slot)
+        self._sync_usage()
         self._refresh_debug()
 
     def _save_query_result(self, slot: str, view: Any, ui: Ui, name: str) -> None:

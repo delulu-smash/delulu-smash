@@ -140,6 +140,7 @@ terminal = "kitty"
 ".config/zed/settings.json" = "always"
 ".config/hypr/autostart.lua" = "always"
 ".config/systemd/user/smashgpt.service" = "always"
+".claude/settings.json" = "always"
 
 [webapps]
 # Web apps: name = URL (`omarchy webapp install <name> <url>`). Icons are not synced: each machine

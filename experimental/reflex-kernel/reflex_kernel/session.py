@@ -170,6 +170,16 @@ class TurnUsage:
         return " · ".join(parts)
 
 
+def log_usage(call: dict[str, Any], session: Any, messages: Iterable[Any]) -> TurnUsage:
+    """What an inline chat's model requests used: put on its "agent" debug-log record and added
+    to the session's AI cost (as a chat turn does in Session.ask). session may be None."""
+    usage = TurnUsage.of(messages)
+    usage.log_to(call)
+    if session is not None:
+        session.ai_cost += usage.cost or 0
+    return usage
+
+
 def context_window() -> int | None:
     """The agent's model's context window in tokens (pydantic-ai's model profile, from genai-prices'
     bundled data; offline), None when unknown."""

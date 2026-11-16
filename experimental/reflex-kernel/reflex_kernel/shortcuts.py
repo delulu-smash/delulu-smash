@@ -40,11 +40,12 @@ class Shortcut(Enum):
     RUN_AND_ADVANCE = Binding("Shift+Enter", "cell", "Run and go to the next cell")
     RUN = Binding("Ctrl+Enter", "cell", "Run")
     COMPLETE = Binding("Tab", "cell, table SQL, SmashDb console", "Complete")
-    # Handled by inline_edit.jsx, in a cell and the SmashDb console's SQL box.
+    # Handled by inline_edit.jsx, in a cell and the SmashDb console's SQL box; outside an editor, in
+    # a result with a tool form, by assets/panes.js (it clicks the result's AI button, render.ai_toggle).
     INLINE_EDIT = Binding(
         "Alt+A",
-        "cell, SmashDb console",
-        "Inline chat, knowing the chat so far: ask AI to write or change the code (the selection, else all); Tab accepts, Esc discards",
+        "cell, SmashDb console, result with inputs",
+        "Inline chat, knowing the chat so far: ask AI to write or change the code (the selection, else all; Tab accepts, Esc discards), or to fill a result's inputs (you run them; Esc puts the old ones back)",
     )
     # Handled by the SQL box (sql_editor.jsx): a table view's, and a SmashDb console's editor.
     RUN_SQL = Binding(
@@ -74,7 +75,8 @@ BROWSER_SHORTCUTS = (
     Shortcut.PALETTE,
     Shortcut.KEYS,
     Shortcut.DEBUG,
-    # an editor's own keys (inline_edit.jsx): panes.js needs them to run one from the palette
+    # an editor's own keys (inline_edit.jsx): panes.js needs them to run one from the palette, and
+    # handles this one itself in a result with a tool form
     Shortcut.INLINE_EDIT,
 )
 
