@@ -31,6 +31,7 @@ from reflex.event import no_args_event_spec, passthrough_event_spec
 from ds.ai import TableResult
 from ds.data import char_icon_by_name
 from ds.data.raw.smashtube import MatchVideos
+from ds.data.raw.startgg import USAGE_PER_PAGE
 from ds.data.startgg import CharacterStats, PlayerUsage, StageStats
 from pydantic import BaseModel
 
@@ -442,9 +443,10 @@ def _videos_view(value: MatchVideos) -> View:
 def _usage_view(value: PlayerUsage) -> View:
     lookup, window = value.lookup, value.window
     span = f"{window.first_date} to {window.last_date}" if window.first_date else "no sets"
-    versus = f"vs {value.vs_character}" if value.vs_character else ""
+    versus = f"vs {', '.join(str(c.label) for c in value.vs_characters)}" if value.vs_characters else ""
     where = f"{value.setting} only" if value.setting != "all" else ""
-    counts = f"{window.sets} sets, {window.games} games"
+    events = f" from {window.events} event{'s' if window.events != 1 else ''}" if window.events else ""
+    counts = f"newest {window.sets} sets{events}, {window.games} games"
     note = " · ".join(part for part in [lookup.tag, versus, where, span, counts] if part)
     return View(kind="usage", value=value, summary=lookup.tag or "player usage", note=note)
 
@@ -516,16 +518,16 @@ def _switch_note(value: PlayerUsage) -> str:
 def rerun_inputs(view: View, action: str, arg: Any) -> dict[str, Any] | None:
     """The tool inputs for a view event that needs the view's tool run again (None: it doesn't).
 
-    'setting' on a usage view: the same player, character and months, for other events. The
+    'setting' on a usage view: the same player, character and sets, for other events. The
     inputs come from the result itself, so this works on a result the agent made too.
     """
     value = view.value
     if action == "setting" and isinstance(value, PlayerUsage) and arg in _SETTINGS and arg != value.setting:
         return {
             "player": value.lookup.query,
-            "vs_character": str(value.vs_character or ""),
-            "months": str(value.window.months),
+            "vs_characters": ",".join(value.vs_characters),
             "setting": arg,
+            "sets": str(value.window.requests * USAGE_PER_PAGE),
         }
     return None
 
@@ -900,10 +902,74 @@ def _character_picker(item: rx.Var[FormField]) -> rx.Component:
     )
 
 
+def _multi_select(item: rx.Var[FormField]) -> rx.Component:
+    """A list[<choices>] input (tool_forms.list_choices): a box showing what is picked that
+    opens a list to tick options in (with a search box when there are many), icons when the
+    options have them. assets/multiselect.js does the picking; this is its markup. The hidden
+    input carries the picked values joined by "," under the field's name; "" = any."""
+
+    def option(choice: rx.Var[dict[str, str]]) -> rx.Component:
+        return rx.el.button(
+            rx.cond(
+                choice["icon"] != "",
+                rx.el.img(src=ICON_URL + choice["icon"], alt="", loading="lazy", class_name="char-icon"),
+            ),
+            rx.el.span(choice["label"], class_name="multi-label"),
+            rx.el.span("✓", class_name="multi-check"),
+            type="button",
+            tab_index=-1,
+            custom_attrs={
+                "data-value": choice["value"],
+                "data-label": choice["label"],
+                "data-icon": rx.cond(choice["icon"] != "", ICON_URL + choice["icon"], ""),
+            },
+            class_name="multi-option",
+        )
+
+    return rx.el.span(
+        rx.el.button(
+            # filled by multiselect.js from the hidden value (it owns this span's contents)
+            rx.el.span(class_name="multi-summary", custom_attrs={"data-multi-summary": ""}),
+            rx.el.span("▾", class_name="multi-caret dim"),
+            type="button",
+            class_name="form-input multi-box",
+            custom_attrs={"data-multi-toggle": ""},
+        ),
+        rx.el.input(type="hidden", name=item.name, default_value=item.value, custom_attrs={"data-multi-value": ""}),
+        rx.el.span(
+            rx.cond(
+                item.search,
+                rx.el.input(
+                    placeholder="Search…",
+                    auto_complete="off",
+                    spell_check=False,
+                    class_name="form-input multi-search",
+                    custom_attrs={"data-multi-search": ""},
+                ),
+            ),
+            rx.el.button(
+                rx.el.span("Any", class_name="multi-label"),
+                rx.el.span("✓", class_name="multi-check"),
+                type="button",
+                tab_index=-1,
+                title="Clear the picks",
+                class_name="multi-option is-any",
+                custom_attrs={"data-multi-any": ""},
+            ),
+            rx.el.span(rx.foreach(item.choices, option), class_name="multi-options"),
+            class_name="multi-panel",
+            custom_attrs={"data-multi-panel": ""},
+        ),
+        class_name="multi",
+        custom_attrs={"data-multi": ""},
+    )
+
+
 def _form_field(item: rx.Var[FormField]) -> rx.Component:
     control = rx.match(
         item.kind,
         ("character", _character_picker(item)),
+        ("multi", _multi_select(item)),
         (
             "select",
             rx.el.select(
@@ -1085,8 +1151,7 @@ def usage_widget(view: rx.Var[ViewData], send: Any, actions: tuple[rx.Component,
                 class_name="usage-settings",
             ),
             bar_group(view.chars, windows),
-            rx.cond(view.switch_note != "", rx.el.div(view.switch_note, class_name="usage-switches dim")),
-            rx.foreach(view.stage_groups, lambda group: bar_group(group)),
+            # next to the characters, on the top row: the newest events at a glance
             rx.el.div(
                 rx.el.div(
                     rx.el.span("Last events", class_name="usage-title"),
@@ -1100,6 +1165,8 @@ def usage_widget(view: rx.Var[ViewData], send: Any, actions: tuple[rx.Component,
                 ),
                 class_name="usage-group is-events",
             ),
+            rx.cond(view.switch_note != "", rx.el.div(view.switch_note, class_name="usage-switches dim")),
+            rx.foreach(view.stage_groups, lambda group: bar_group(group)),
             class_name="usage sans",
         ),
     )

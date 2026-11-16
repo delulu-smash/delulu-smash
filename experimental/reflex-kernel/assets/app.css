@@ -438,7 +438,36 @@ select.form-input { width: auto; }
   opacity: 0; margin-left: auto; }
 .tool-step:hover .log-btn, .bubble.is-user:hover .log-btn, .cell:hover .log-btn, .log-btn:focus-visible { opacity: 1; }
 .log-btn:hover { color: var(--blue); }
-.bubble.is-user .log-btn { float: right; margin: 0 -4px 0 6px; }
 .dbg-focus { display: inline-flex; align-items: center; gap: 6px; padding: 1px 8px; border-radius: 10px; background: rgba(127, 187, 179, 0.16);
   color: var(--blue); font-size: 11.5px; }
 .dbg-focus b { font-weight: 600; color: var(--fg); }
+/* a chat message's corner buttons (copy; on your messages also the turn's requests), on hover, sitting on the top border so they never cover text */
+.bubble { position: relative; }
+.bubble-actions { position: absolute; top: -11px; right: 8px; display: flex; gap: 4px; align-items: center; opacity: 0;
+  transition: opacity 0.12s; }
+.bubble:hover .bubble-actions, .bubble-actions:focus-within, .bubble-actions:has(.is-copied) { opacity: 1; }
+.bubble-actions .copy-btn { position: static; opacity: 1; }
+.bubble-actions .log-btn { opacity: 1; margin: 0; background: var(--bg1); border: 1px solid var(--bg3); border-radius: 4px;
+  line-height: 18px; }
+/* a multi-select (render._multi_select, assets/multiselect.js): any tool input typed list[<choices>] */
+.multi { position: relative; display: inline-flex; }
+.multi-box { display: flex; align-items: center; gap: 4px; width: auto; min-width: 150px; max-width: 280px; cursor: pointer; text-align: left; }
+.multi-summary { flex: 1; min-width: 0; display: flex; align-items: center; gap: 3px; overflow: hidden; white-space: nowrap; }
+.multi-summary .char-icon { width: 16px; height: 16px; }
+.multi-names { overflow: hidden; text-overflow: ellipsis; margin-left: 2px; }
+.multi-caret { flex: none; font-size: 10px; }
+/* position: fixed, placed by multiselect.js under (or above) the box, so a scrolling parent can't clip it */
+.multi-panel { display: none; position: fixed; z-index: 60; flex-direction: column; width: 240px; padding: 4px; background: var(--bg1);
+  border: 1px solid var(--bg3); border-radius: 6px; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35); }
+.multi.is-open .multi-panel { display: flex; }
+.multi-search { width: auto; margin: 0 0 4px; padding: 3px 8px; }
+.multi-options { display: flex; flex-direction: column; overflow-y: auto; min-height: 0; }
+.multi-option { display: flex; align-items: center; gap: 7px; flex: none; padding: 2px 8px 2px 4px; border: 0; border-radius: 4px;
+  background: transparent; color: var(--fg); font: inherit; text-align: left; cursor: pointer; min-height: 24px; }
+.multi-option[hidden] { display: none; }
+.multi-option:hover, .multi-option.is-active { background: var(--bg3); }
+.multi-option.is-any { padding-left: 8px; border-bottom: 1px solid var(--bg3); border-radius: 4px 4px 0 0; margin-bottom: 2px; }
+.multi-option.is-picked { color: var(--blue); }
+.multi-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.multi-check { flex: none; visibility: hidden; color: var(--blue); }
+.multi-option.is-picked .multi-check { visibility: visible; }

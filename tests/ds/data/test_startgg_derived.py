@@ -108,12 +108,11 @@ def test_recent_and_game_1_characters():
 
 
 def test_window_reports_what_was_counted():
-    got = usage.usage_from_sets(_sets(), LOOKUP, months=3, max_sets=3)
+    got = usage.usage_from_sets(_sets(), LOOKUP, requests=2)
     window = got.window
-    assert (window.sets, window.games, window.months, window.max_sets) == (3, 5, 3, 3)
+    assert (window.sets, window.games, window.requests) == (3, 5, 2)
+    assert window.events == len({s.event.id for s in _sets()})
     assert (window.first_date, window.last_date) == (dt.date(2026, 11, 3), dt.date(2026, 11, 10))
-    assert window.capped  # as many sets as the cap: older ones may exist
-    assert not usage.usage_from_sets(_sets(), LOOKUP, max_sets=150).window.capped
 
 
 def test_stages_by_who_picked():
@@ -154,20 +153,23 @@ def test_last_events_count_per_event():
     assert (scores_only.events[0].characters, scores_only.characters.total) == ([], 0)
 
 
-def test_vs_character_narrows_every_count():
-    got = usage.usage_from_sets(_sets(), LOOKUP, vs_character="steve")
-    assert got.vs_character == "steve"
+def test_vs_characters_narrow_every_count():
+    got = usage.usage_from_sets(_sets(), LOOKUP, vs_characters=[CharGroup.STEVE])
+    assert got.vs_characters == ["steve"]
     assert (got.window.sets, got.window.games) == (1, 3)
     assert _names(got.recent) == [("Cloud", 2), ("Little Mac", 1)]
     assert [e.tournament for e in got.last_events.events] == ["Weekly 2"]
     assert got.switches.sets == 1
-    assert usage.usage_from_sets(_sets(), LOOKUP, vs_character="fox").window.games == 0
+    assert usage.usage_from_sets(_sets(), LOOKUP, vs_characters=[CharGroup.FOX]).window.games == 0
+    # several: games against any of them
+    both = usage.usage_from_sets(_sets(), LOOKUP, vs_characters=[CharGroup.STEVE, CharGroup.POKEMON_TRAINER])
+    assert (both.window.sets, both.window.games) == (2, 5)
 
 
 @pytest.mark.parametrize("given", ["pokemon_trainer", "pt_squirtle", "pt_ivysaur", "Charizard", "Pokemon Trainer"])
-def test_vs_character_accepts_a_group_or_any_member(given):
-    got = usage.usage_from_sets(_sets(), LOOKUP, vs_character=usage.vs_char_group(given))
-    assert (got.vs_character, got.window.sets, got.window.games) == ("pokemon_trainer", 1, 2)
+def test_vs_characters_accept_a_group_or_any_member(given):
+    got = usage.usage_from_sets(_sets(), LOOKUP, vs_characters=[usage.vs_char_group(given)])
+    assert (got.vs_characters, got.window.sets, got.window.games) == (["pokemon_trainer"], 1, 2)
 
 
 def test_vs_char_group():
@@ -324,9 +326,16 @@ def test_player_results(fetched):
     assert fetched["since"] < dt.datetime.now(dt.UTC) - dt.timedelta(days=59)
 
 
-def test_player_usage_fetches_a_capped_window(fetched):
-    got = asyncio.run(derived.player_usage("Mac", vs_character="Steve", months=2, max_sets=40))
-    assert (fetched["max_sets"], got.window.months, got.vs_character) == (40, 2, "steve")
+def test_player_usage_reads_one_request_of_the_newest_sets(fetched):
+    got = asyncio.run(derived.player_usage("Mac", vs_characters=["Steve", "steve", "Pac-Man"]))
+    per_page = startgg.USAGE_PER_PAGE
+    assert (fetched["max_pages"], fetched["per_page"], fetched["max_sets"]) == (1, per_page, per_page)
+    assert fetched["query"] is startgg.queries.USAGE_SETS
+    assert fetched["characters"] is not None  # stored (startgg_char.parquet): no request for them
+    assert "since" not in fetched or fetched["since"] is None
+    assert (got.window.requests, got.vs_characters) == (1, ["steve", "pac_man"])  # once each, in order
+    assert asyncio.run(derived.player_usage("Mac", requests=2)).window.requests == 2
+    assert fetched["max_pages"] == 2
     assert (fetched["online"], got.setting) == (None, "all")
     offline = asyncio.run(derived.player_usage("Mac", setting="offline"))
     assert (fetched["online"], offline.setting) == (False, "offline")
@@ -336,4 +345,4 @@ def test_player_usage_fetches_a_capped_window(fetched):
         asyncio.run(derived.player_usage("Mac", setting="lan"))
     assert _names(got.recent) == [("Little Mac", 1)]
     with pytest.raises(ValueError, match="unknown character"):
-        asyncio.run(derived.player_usage("Mac", vs_character="Goku"))
+        asyncio.run(derived.player_usage("Mac", vs_characters=["Goku"]))

@@ -116,6 +116,26 @@ Per-move frame data for one or all characters. Synced via `ds data framedata [ch
 _NOTE: most fields are stored as raw strings (not parsed numerics) since the site uses `--`, `**`, and slash-separated
 multi-hitbox values (eg `10/17`) that don't cleanly coerce to a single numeric type._
 
+## `startgg_char.parquet`
+
+start.gg's Ultimate characters, one row per **pick** as start.gg records it (Pokemon Trainer is one row here
+and three fighters in `char.parquet`). Synced by `uv run ds data startgg-char` (one start.gg request); read by
+`ds.data.startgg.stored_characters()`, so a player lookup spends no request on the character list.
+Ultimate's roster is final: refresh only if start.gg renumbers. Stored data, not a cache: nothing refills it
+on its own.
+
+| column       | meaning |
+| ------------ | ------- |
+| `startgg_id` | start.gg's character id (a game's `selectionValue`), eg `1297` |
+| `name`       | start.gg's display name, eg `Little Mac`, `Rosalina`, `Random Character` |
+| `char_group` | The pick, typed as the `CharGroup` enum itself (a Polars `Enum` of its members, so no other value can be written), eg `little_mac`, `pokemon_trainer`; null for `Random Character` |
+
+**Kept in step with `char.parquet`:** `CharGroup` is generated from `char.parquet` (`ds data roster` /
+`char_enum`), and this column's type is exactly its members. `tests/ds/data/test_startgg_api.py` fails when they
+differ (after a roster change: re-run `ds data startgg-char`) and checks every `CharGroup` has exactly one row.
+`char_group` is worked out from `name` (by name, plus `ds.data.raw.startgg.SITE_CHARACTER` for start.gg's
+`Rosalina` and `Simon Belmont`); `stored_characters()` works it out again on read, with `char_icon`.
+
 ## `raw/`
 
 See [raw/readme.md](raw/readme.md) for hand-copied/untransformed source data and the scripts that scrape live sites.

@@ -1,0 +1,172 @@
+interactions:
+- request:
+    body: '{"query":"\nquery Player($id: ID!) {\n  player(id: $id) { id gamerTag prefix
+      user { slug } }\n}\n","variables":{"id":158026}}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '125'
+      content-type:
+      - application/json
+      host:
+      - api.start.gg
+      user-agent:
+      - python-httpx2/2.12.0
+    method: POST
+    uri: https://api.start.gg/gql/alpha
+  response:
+    body:
+      string: '{"data":{"player":{"id":158026,"gamerTag":"Sparg0","prefix":"FaZe","user":{"slug":"user\/b5230de8"}}},"extensions":{"cacheControl":{"version":1,"hints":null},"queryComplexity":2},"actionRecords":[]}'
+    headers:
+      access-control-allow-credentials:
+      - 'true'
+      access-control-allow-headers:
+      - '*, Content-Type, Authorization'
+      access-control-allow-methods:
+      - POST, GET, OPTIONS
+      access-control-allow-origin:
+      - '*'
+      cache-control:
+      - private, max-age=0, s-maxage=0
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a5b1c6904c01a45b-IAD
+      connection:
+      - keep-alive
+      content-length:
+      - '198'
+      content-type:
+      - application/json
+      date:
+      - Sun, 15 Nov 2026 22:43:35 GMT
+      required-client-version:
+      - '20'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=15724800; includeSubDomains
+      transfer-encoding:
+      - chunked
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"query":"\nquery UsageSets($id: ID!, $page: Int!, $perPage: Int!, $opponentId:
+      ID, $filters: SetFilters) {\n  player(id: $id) {\n    id\n    sets(page: $page,
+      perPage: $perPage, opponentId: $opponentId, filters: $filters) {\n      pageInfo
+      { total totalPages page perPage }\n      nodes {\n        id completedAt state\n        event
+      { id name slug isOnline videogame { id } tournament { id name } }\n        slots
+      { entrant { id participants { player { id } } } }\n        games {\n          orderNum
+      winnerId\n          stage { id name }\n          selections { entrant { id }
+      selectionType selectionValue }\n        }\n      }\n    }\n  }\n}\n","variables":{"id":158026,"page":1,"perPage":30,"opponentId":null,"filters":{"entrantSize":[1]}}}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '745'
+      content-type:
+      - application/json
+      host:
+      - api.start.gg
+      user-agent:
+      - python-httpx2/2.12.0
+    method: POST
+    uri: https://api.start.gg/gql/alpha
+  response:
+    body:
+      string: '{"data":{"player":{"id":158026,"sets":{"pageInfo":{"total":4839,"totalPages":162,"page":1,"perPage":30},"nodes":[{"id":110055143,"completedAt":1794551098,"state":3,"event":{"id":1752350,"name":"Singles","slug":"tournament\/the-double-shot-19\/event\/singles","isOnline":false,"videogame":{"id":1386},"tournament":{"id":973359,"name":"The
+        Double Shot #19"}},"slots":[{"entrant":{"id":25281887,"participants":[{"player":{"id":504366}}]}},{"entrant":{"id":25282156,"participants":[{"player":{"id":158026}}]}}],"games":[{"orderNum":1,"winnerId":25282156,"stage":null,"selections":[{"entrant":{"id":25281887},"selectionType":"CHARACTER","selectionValue":1301},{"entrant":{"id":25282156},"selectionType":"CHARACTER","selectionValue":1275}]},{"orderNum":2,"winnerId":25282156,"stage":null,"selections":[{"entrant":{"id":25281887},"selectionType":"CHARACTER","selectionValue":1301},{"entrant":{"id":25282156},"selectionType":"CHARACTER","selectionValue":1275}]},{"orderNum":3,"winnerId":25282156,"stage":null,"selections":[{"entrant":{"id":25281887},"selectionType":"CHARACTER","selectionValue":1301},{"entrant":{"id":25282156},"selectionType":"CHARACTER","selectionValue":1275}]}]},{"id":110055142,"completedAt":1794550606,"state":3,"event":{"id":1752350,"name":"Singles","slug":"tournament\/the-double-shot-19\/event\/singles","isOnline":false,"videogame":{"id":1386},"tournament":{"id":973359,"name":"The
+        Double Shot #19"}},"slots":[{"entrant":{"id":25282156,"participants":[{"player":{"id":158026}}]}},{"entrant":{"id":25281887,"participants":[{"player":{"id":504366}}]}}],"games":[{"orderNum":1,"winnerId":25281887,"stage":null,"selections":[{"entrant":{"id":25281887},"selectionType":"CHARACTER","selectionValue":1301},{"entrant":{"id":25282156},"selectionType":"CHARACTER","selectionValue":1275}]},{"orderNum":2,"winnerId":25282156,"stage":null,"selections":[{"entrant":{"id":25281887},"selectionType":"CHARACTER","selectionValue":1301},{"entrant":{"id":25282156},"selectionType":"CHARACTER","selectionValue":1275}]},{"orderNum":3,"winnerId":25281887,"stage":null,"selections":[{"entrant":{"id":25281887},"selectionType":"CHARACTER","selectionValue":1301},{"entrant":{"id":25282156},"selectionType":"CHARACTER","selectionValue":1275}]},{"orderNum":4,"winnerId":25281887,"stage":null,"selections":[{"entrant":{"id":25281887},"selectionType":"CHARACTER","selectionValue":1301},{"entrant":{"id":25282156},"selectionType":"CHARACTER","selectionValue":1275}]}]},{"id":110055957,"completedAt":1794550377,"state":3,"event":{"id":1752351,"name":"Melee
+        Singles","slug":"tournament\/the-double-shot-melee-15\/event\/melee-singles","isOnline":false,"videogame":{"id":1},"tournament":{"id":973360,"name":"The
+        Double Shot Melee #15"}},"slots":[{"entrant":{"id":25282160,"participants":[{"player":{"id":158026}}]}},{"entrant":{"id":25251057,"participants":[{"player":{"id":179993}}]}}],"games":null},{"id":110055956,"completedAt":1794548851,"state":3,"event":{"id":1752351,"name":"Melee
+        Singles","slug":"tournament\/the-double-shot-melee-15\/event\/melee-singles","isOnline":false,"videogame":{"id":1},"tournament":{"id":973360,"name":"The
+        Double Shot Melee #15"}},"slots":[{"entrant":{"id":25251057,"participants":[{"player":{"id":179993}}]}},{"entrant":{"id":25282160,"participants":[{"player":{"id":158026}}]}}],"games":null},{"id":110055987,"completedAt":1794548090,"state":3,"event":{"id":1752351,"name":"Melee
+        Singles","slug":"tournament\/the-double-shot-melee-15\/event\/melee-singles","isOnline":false,"videogame":{"id":1},"tournament":{"id":973360,"name":"The
+        Double Shot Melee #15"}},"slots":[{"entrant":{"id":25260725,"participants":[{"player":{"id":225416}}]}},{"entrant":{"id":25282160,"participants":[{"player":{"id":158026}}]}}],"games":null},{"id":110055986,"completedAt":1794545724,"state":3,"event":{"id":1752351,"name":"Melee
+        Singles","slug":"tournament\/the-double-shot-melee-15\/event\/melee-singles","isOnline":false,"videogame":{"id":1},"tournament":{"id":973360,"name":"The
+        Double Shot Melee #15"}},"slots":[{"entrant":{"id":25282160,"participants":[{"player":{"id":158026}}]}},{"entrant":{"id":25280196,"participants":[{"player":{"id":1388830}}]}}],"games":null},{"id":110055984,"completedAt":1794544747,"state":3,"event":{"id":1752351,"name":"Melee
+        Singles","slug":"tournament\/the-double-shot-melee-15\/event\/melee-singles","isOnline":false,"videogame":{"id":1},"tournament":{"id":973360,"name":"The
+        Double Shot Melee #15"}},"slots":[{"entrant":{"id":25282160,"participants":[{"player":{"id":158026}}]}},{"entrant":{"id":25263731,"participants":[{"player":{"id":50177}}]}}],"games":null},{"id":110055141,"completedAt":1794543687,"state":3,"event":{"id":1752350,"name":"Singles","slug":"tournament\/the-double-shot-19\/event\/singles","isOnline":false,"videogame":{"id":1386},"tournament":{"id":973359,"name":"The
+        Double Shot #19"}},"slots":[{"entrant":{"id":25282156,"participants":[{"player":{"id":158026}}]}},{"entrant":{"id":25281887,"participants":[{"player":{"id":504366}}]}}],"games":[{"orderNum":1,"winnerId":25281887,"stage":null,"selections":[{"entrant":{"id":25281887},"selectionType":"CHARACTER","selectionValue":1301},{"entrant":{"id":25282156},"selectionType":"CHARACTER","selectionValue":1275}]},{"orderNum":2,"winnerId":25282156,"stage":null,"selections":[{"entrant":{"id":25281887},"selectionType":"CHARACTER","selectionValue":1301},{"entrant":{"id":25282156},"selectionType":"CHARACTER","selectionValue":1275}]},{"orderNum":3,"winnerId":25282156,"stage":null,"selections":[{"entrant":{"id":25281887},"selectionType":"CHARACTER","selectionValue":1301},{"entrant":{"id":25282156},"selectionType":"CHARACTER","selectionValue":1275}]},{"orderNum":4,"winnerId":25282156,"stage":null,"selections":[{"entrant":{"id":25281887},"selectionType":"CHARACTER","selectionValue":1301},{"entrant":{"id":25282156},"selectionType":"CHARACTER","selectionValue":1275}]}]},{"id":110055139,"completedAt":1794542847,"state":3,"event":{"id":1752350,"name":"Singles","slug":"tournament\/the-double-shot-19\/event\/singles","isOnline":false,"videogame":{"id":1386},"tournament":{"id":973359,"name":"The
+        Double Shot #19"}},"slots":[{"entrant":{"id":25282156,"participants":[{"player":{"id":158026}}]}},{"entrant":{"id":25282318,"participants":[{"player":{"id":282018}}]}}],"games":[{"orderNum":1,"winnerId":25282156,"stage":null,"selections":[{"entrant":{"id":25282156},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25282318},"selectionType":"CHARACTER","selectionValue":1294}]},{"orderNum":2,"winnerId":25282156,"stage":null,"selections":[{"entrant":{"id":25282156},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25282318},"selectionType":"CHARACTER","selectionValue":1294}]},{"orderNum":3,"winnerId":25282156,"stage":null,"selections":[{"entrant":{"id":25282156},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25282318},"selectionType":"CHARACTER","selectionValue":1294}]}]},{"id":110055953,"completedAt":1794542268,"state":3,"event":{"id":1752351,"name":"Melee
+        Singles","slug":"tournament\/the-double-shot-melee-15\/event\/melee-singles","isOnline":false,"videogame":{"id":1},"tournament":{"id":973360,"name":"The
+        Double Shot Melee #15"}},"slots":[{"entrant":{"id":25251057,"participants":[{"player":{"id":179993}}]}},{"entrant":{"id":25282160,"participants":[{"player":{"id":158026}}]}}],"games":[{"orderNum":1,"winnerId":25282160,"stage":null,"selections":[{"entrant":{"id":25251057},"selectionType":"CHARACTER","selectionValue":6},{"entrant":{"id":25282160},"selectionType":"CHARACTER","selectionValue":14}]},{"orderNum":2,"winnerId":25251057,"stage":null,"selections":[{"entrant":{"id":25251057},"selectionType":"CHARACTER","selectionValue":6},{"entrant":{"id":25282160},"selectionType":"CHARACTER","selectionValue":14}]},{"orderNum":3,"winnerId":25251057,"stage":null,"selections":[{"entrant":{"id":25251057},"selectionType":"CHARACTER","selectionValue":6},{"entrant":{"id":25282160},"selectionType":"CHARACTER","selectionValue":14}]},{"orderNum":4,"winnerId":25251057,"stage":null,"selections":[{"entrant":{"id":25251057},"selectionType":"CHARACTER","selectionValue":6},{"entrant":{"id":25282160},"selectionType":"CHARACTER","selectionValue":14}]}]},{"id":110055135,"completedAt":1794541150,"state":3,"event":{"id":1752350,"name":"Singles","slug":"tournament\/the-double-shot-19\/event\/singles","isOnline":false,"videogame":{"id":1386},"tournament":{"id":973359,"name":"The
+        Double Shot #19"}},"slots":[{"entrant":{"id":25282156,"participants":[{"player":{"id":158026}}]}},{"entrant":{"id":25282320,"participants":[{"player":{"id":400020}}]}}],"games":[{"orderNum":1,"winnerId":25282156,"stage":null,"selections":[{"entrant":{"id":25282156},"selectionType":"CHARACTER","selectionValue":1339},{"entrant":{"id":25282320},"selectionType":"CHARACTER","selectionValue":1287}]},{"orderNum":2,"winnerId":25282156,"stage":null,"selections":[{"entrant":{"id":25282156},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25282320},"selectionType":"CHARACTER","selectionValue":1287}]}]},{"id":110055950,"completedAt":1794540631,"state":3,"event":{"id":1752351,"name":"Melee
+        Singles","slug":"tournament\/the-double-shot-melee-15\/event\/melee-singles","isOnline":false,"videogame":{"id":1},"tournament":{"id":973360,"name":"The
+        Double Shot Melee #15"}},"slots":[{"entrant":{"id":25282597,"participants":[{"player":{"id":949654}}]}},{"entrant":{"id":25282160,"participants":[{"player":{"id":158026}}]}}],"games":null},{"id":110055127,"completedAt":1794538033,"state":3,"event":{"id":1752350,"name":"Singles","slug":"tournament\/the-double-shot-19\/event\/singles","isOnline":false,"videogame":{"id":1386},"tournament":{"id":973359,"name":"The
+        Double Shot #19"}},"slots":[{"entrant":{"id":25282156,"participants":[{"player":{"id":158026}}]}},{"entrant":{"id":25282550,"participants":[{"player":{"id":4509071}}]}}],"games":[{"orderNum":1,"winnerId":25282156,"stage":null,"selections":[{"entrant":{"id":25282156},"selectionType":"CHARACTER","selectionValue":1339},{"entrant":{"id":25282550},"selectionType":"CHARACTER","selectionValue":1747}]},{"orderNum":2,"winnerId":25282156,"stage":null,"selections":[{"entrant":{"id":25282156},"selectionType":"CHARACTER","selectionValue":1339},{"entrant":{"id":25282550},"selectionType":"CHARACTER","selectionValue":1526}]}]},{"id":109625692,"completedAt":1793523237,"state":3,"event":{"id":1695873,"name":"Singles
+        Ultimate","slug":"tournament\/psx-horror-land\/event\/singles-ultimate","isOnline":false,"videogame":{"id":1386},"tournament":{"id":944262,"name":"PSX:
+        Horror Land"}},"slots":[{"entrant":{"id":24601233,"participants":[{"player":{"id":158026}}]}},{"entrant":{"id":25123116,"participants":[{"player":{"id":1541586}}]}}],"games":[{"orderNum":1,"winnerId":24601233,"stage":{"id":378,"name":"Pok\u00e9mon
+        Stadium 2"},"selections":[{"entrant":{"id":24601233},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25123116},"selectionType":"CHARACTER","selectionValue":1405}]},{"orderNum":2,"winnerId":24601233,"stage":{"id":328,"name":"Final
+        Destination"},"selections":[{"entrant":{"id":24601233},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25123116},"selectionType":"CHARACTER","selectionValue":1405}]},{"orderNum":3,"winnerId":25123116,"stage":{"id":328,"name":"Final
+        Destination"},"selections":[{"entrant":{"id":24601233},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25123116},"selectionType":"CHARACTER","selectionValue":1405}]},{"orderNum":4,"winnerId":25123116,"stage":{"id":513,"name":"Hollow
+        Bastion"},"selections":[{"entrant":{"id":24601233},"selectionType":"CHARACTER","selectionValue":1339},{"entrant":{"id":25123116},"selectionType":"CHARACTER","selectionValue":1405}]},{"orderNum":5,"winnerId":24601233,"stage":{"id":513,"name":"Hollow
+        Bastion"},"selections":[{"entrant":{"id":24601233},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25123116},"selectionType":"CHARACTER","selectionValue":1405}]}]},{"id":109625691,"completedAt":1793519897,"state":3,"event":{"id":1695873,"name":"Singles
+        Ultimate","slug":"tournament\/psx-horror-land\/event\/singles-ultimate","isOnline":false,"videogame":{"id":1386},"tournament":{"id":944262,"name":"PSX:
+        Horror Land"}},"slots":[{"entrant":{"id":24601233,"participants":[{"player":{"id":158026}}]}},{"entrant":{"id":25123116,"participants":[{"player":{"id":1541586}}]}}],"games":[{"orderNum":1,"winnerId":24601233,"stage":null,"selections":[{"entrant":{"id":24601233},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25123116},"selectionType":"CHARACTER","selectionValue":1405}]},{"orderNum":2,"winnerId":25123116,"stage":null,"selections":[{"entrant":{"id":24601233},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25123116},"selectionType":"CHARACTER","selectionValue":1405}]},{"orderNum":3,"winnerId":24601233,"stage":null,"selections":[{"entrant":{"id":24601233},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25123116},"selectionType":"CHARACTER","selectionValue":1405}]},{"orderNum":4,"winnerId":24601233,"stage":null,"selections":[{"entrant":{"id":24601233},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25123116},"selectionType":"CHARACTER","selectionValue":1405}]}]},{"id":109625689,"completedAt":1793517584,"state":3,"event":{"id":1695873,"name":"Singles
+        Ultimate","slug":"tournament\/psx-horror-land\/event\/singles-ultimate","isOnline":false,"videogame":{"id":1386},"tournament":{"id":944262,"name":"PSX:
+        Horror Land"}},"slots":[{"entrant":{"id":24601233,"participants":[{"player":{"id":158026}}]}},{"entrant":{"id":25059046,"participants":[{"player":{"id":1810011}}]}}],"games":[{"orderNum":1,"winnerId":24601233,"stage":null,"selections":[{"entrant":{"id":24601233},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25059046},"selectionType":"CHARACTER","selectionValue":1846}]},{"orderNum":2,"winnerId":24601233,"stage":null,"selections":[{"entrant":{"id":24601233},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25059046},"selectionType":"CHARACTER","selectionValue":1846}]},{"orderNum":3,"winnerId":24601233,"stage":null,"selections":[{"entrant":{"id":24601233},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25059046},"selectionType":"CHARACTER","selectionValue":1846}]}]},{"id":109622987,"completedAt":1793512090,"state":3,"event":{"id":1695873,"name":"Singles
+        Ultimate","slug":"tournament\/psx-horror-land\/event\/singles-ultimate","isOnline":false,"videogame":{"id":1386},"tournament":{"id":944262,"name":"PSX:
+        Horror Land"}},"slots":[{"entrant":{"id":24601233,"participants":[{"player":{"id":158026}}]}},{"entrant":{"id":25137216,"participants":[{"player":{"id":2054286}}]}}],"games":[{"orderNum":1,"winnerId":24601233,"stage":null,"selections":[{"entrant":{"id":24601233},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25137216},"selectionType":"CHARACTER","selectionValue":1766}]},{"orderNum":2,"winnerId":24601233,"stage":null,"selections":[{"entrant":{"id":24601233},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25137216},"selectionType":"CHARACTER","selectionValue":1766}]},{"orderNum":3,"winnerId":24601233,"stage":null,"selections":[{"entrant":{"id":24601233},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25137216},"selectionType":"CHARACTER","selectionValue":1766}]}]},{"id":109622979,"completedAt":1793509876,"state":3,"event":{"id":1695873,"name":"Singles
+        Ultimate","slug":"tournament\/psx-horror-land\/event\/singles-ultimate","isOnline":false,"videogame":{"id":1386},"tournament":{"id":944262,"name":"PSX:
+        Horror Land"}},"slots":[{"entrant":{"id":24601233,"participants":[{"player":{"id":158026}}]}},{"entrant":{"id":24640150,"participants":[{"player":{"id":2252522}}]}}],"games":[{"orderNum":1,"winnerId":24601233,"stage":null,"selections":[{"entrant":{"id":24601233},"selectionType":"CHARACTER","selectionValue":1326},{"entrant":{"id":24640150},"selectionType":"CHARACTER","selectionValue":1332}]},{"orderNum":2,"winnerId":24601233,"stage":null,"selections":[{"entrant":{"id":24601233},"selectionType":"CHARACTER","selectionValue":1326},{"entrant":{"id":24640150},"selectionType":"CHARACTER","selectionValue":1332}]},{"orderNum":3,"winnerId":24601233,"stage":null,"selections":[{"entrant":{"id":24601233},"selectionType":"CHARACTER","selectionValue":1326},{"entrant":{"id":24640150},"selectionType":"CHARACTER","selectionValue":1332}]}]},{"id":109615226,"completedAt":1793499413,"state":3,"event":{"id":1695873,"name":"Singles
+        Ultimate","slug":"tournament\/psx-horror-land\/event\/singles-ultimate","isOnline":false,"videogame":{"id":1386},"tournament":{"id":944262,"name":"PSX:
+        Horror Land"}},"slots":[{"entrant":{"id":24601233,"participants":[{"player":{"id":158026}}]}},{"entrant":{"id":24995004,"participants":[{"player":{"id":2357398}}]}}],"games":[{"orderNum":1,"winnerId":24601233,"stage":null,"selections":[{"entrant":{"id":24601233},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":24995004},"selectionType":"CHARACTER","selectionValue":1279}]},{"orderNum":2,"winnerId":24601233,"stage":null,"selections":[{"entrant":{"id":24601233},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":24995004},"selectionType":"CHARACTER","selectionValue":1279}]},{"orderNum":3,"winnerId":24601233,"stage":null,"selections":[{"entrant":{"id":24601233},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":24995004},"selectionType":"CHARACTER","selectionValue":1279}]}]},{"id":109615218,"completedAt":1793497318,"state":3,"event":{"id":1695873,"name":"Singles
+        Ultimate","slug":"tournament\/psx-horror-land\/event\/singles-ultimate","isOnline":false,"videogame":{"id":1386},"tournament":{"id":944262,"name":"PSX:
+        Horror Land"}},"slots":[{"entrant":{"id":24601233,"participants":[{"player":{"id":158026}}]}},{"entrant":{"id":25070182,"participants":[{"player":{"id":4978998}}]}}],"games":[{"orderNum":1,"winnerId":24601233,"stage":null,"selections":[{"entrant":{"id":24601233},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25070182},"selectionType":"CHARACTER","selectionValue":1275}]},{"orderNum":2,"winnerId":24601233,"stage":null,"selections":[{"entrant":{"id":24601233},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25070182},"selectionType":"CHARACTER","selectionValue":1275}]}]},{"id":109615202,"completedAt":1793496428,"state":3,"event":{"id":1695873,"name":"Singles
+        Ultimate","slug":"tournament\/psx-horror-land\/event\/singles-ultimate","isOnline":false,"videogame":{"id":1386},"tournament":{"id":944262,"name":"PSX:
+        Horror Land"}},"slots":[{"entrant":{"id":24601233,"participants":[{"player":{"id":158026}}]}},{"entrant":{"id":25103158,"participants":[{"player":{"id":1688926}}]}}],"games":[{"orderNum":1,"winnerId":24601233,"stage":null,"selections":[{"entrant":{"id":24601233},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25103158},"selectionType":"CHARACTER","selectionValue":1453}]},{"orderNum":2,"winnerId":24601233,"stage":null,"selections":[{"entrant":{"id":24601233},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":25103158},"selectionType":"CHARACTER","selectionValue":1777}]}]},{"id":109413325,"completedAt":1792981032,"state":3,"event":{"id":1687524,"name":"ULTIMATE
+        Singles","slug":"tournament\/legends7\/event\/ultimate-singles","isOnline":false,"videogame":{"id":1386},"tournament":{"id":942547,"name":"LEGENDS7\u00ad"}},"slots":[{"entrant":{"id":24975667,"participants":[{"player":{"id":158026}}]}},{"entrant":{"id":24851741,"participants":[{"player":{"id":1497801}}]}}],"games":[{"orderNum":1,"winnerId":24975667,"stage":null,"selections":[{"entrant":{"id":24851741},"selectionType":"CHARACTER","selectionValue":1276},{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1275}]},{"orderNum":2,"winnerId":24851741,"stage":null,"selections":[{"entrant":{"id":24851741},"selectionType":"CHARACTER","selectionValue":1276},{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1275}]},{"orderNum":3,"winnerId":24851741,"stage":null,"selections":[{"entrant":{"id":24851741},"selectionType":"CHARACTER","selectionValue":1276},{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1275}]},{"orderNum":4,"winnerId":24851741,"stage":null,"selections":[{"entrant":{"id":24851741},"selectionType":"CHARACTER","selectionValue":1276},{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1275}]}]},{"id":109413323,"completedAt":1792978648,"state":3,"event":{"id":1687524,"name":"ULTIMATE
+        Singles","slug":"tournament\/legends7\/event\/ultimate-singles","isOnline":false,"videogame":{"id":1386},"tournament":{"id":942547,"name":"LEGENDS7\u00ad"}},"slots":[{"entrant":{"id":24787613,"participants":[{"player":{"id":504366}}]}},{"entrant":{"id":24975667,"participants":[{"player":{"id":158026}}]}}],"games":[{"orderNum":1,"winnerId":24975667,"stage":null,"selections":[{"entrant":{"id":24787613},"selectionType":"CHARACTER","selectionValue":1301},{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1275}]},{"orderNum":2,"winnerId":24975667,"stage":null,"selections":[{"entrant":{"id":24787613},"selectionType":"CHARACTER","selectionValue":1301},{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1275}]},{"orderNum":3,"winnerId":24975667,"stage":null,"selections":[{"entrant":{"id":24787613},"selectionType":"CHARACTER","selectionValue":1301},{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1275}]}]},{"id":109413321,"completedAt":1792973386,"state":3,"event":{"id":1687524,"name":"ULTIMATE
+        Singles","slug":"tournament\/legends7\/event\/ultimate-singles","isOnline":false,"videogame":{"id":1386},"tournament":{"id":942547,"name":"LEGENDS7\u00ad"}},"slots":[{"entrant":{"id":24975667,"participants":[{"player":{"id":158026}}]}},{"entrant":{"id":24982971,"participants":[{"player":{"id":184005}}]}}],"games":[{"orderNum":1,"winnerId":24975667,"stage":null,"selections":[{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":24982971},"selectionType":"CHARACTER","selectionValue":1319}]},{"orderNum":2,"winnerId":24975667,"stage":null,"selections":[{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":24982971},"selectionType":"CHARACTER","selectionValue":1319}]},{"orderNum":3,"winnerId":24975667,"stage":null,"selections":[{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1275},{"entrant":{"id":24982971},"selectionType":"CHARACTER","selectionValue":1319}]}]},{"id":109401869,"completedAt":1792963680,"state":3,"event":{"id":1687524,"name":"ULTIMATE
+        Singles","slug":"tournament\/legends7\/event\/ultimate-singles","isOnline":false,"videogame":{"id":1386},"tournament":{"id":942547,"name":"LEGENDS7\u00ad"}},"slots":[{"entrant":{"id":24975667,"participants":[{"player":{"id":158026}}]}},{"entrant":{"id":24389623,"participants":[{"player":{"id":1284808}}]}}],"games":[{"orderNum":1,"winnerId":24975667,"stage":null,"selections":[{"entrant":{"id":24389623},"selectionType":"CHARACTER","selectionValue":1331},{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1275}]},{"orderNum":2,"winnerId":24975667,"stage":null,"selections":[{"entrant":{"id":24389623},"selectionType":"CHARACTER","selectionValue":1331},{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1275}]},{"orderNum":3,"winnerId":24975667,"stage":null,"selections":[{"entrant":{"id":24389623},"selectionType":"CHARACTER","selectionValue":1331},{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1275}]}]},{"id":109401837,"completedAt":1792962545,"state":3,"event":{"id":1687524,"name":"ULTIMATE
+        Singles","slug":"tournament\/legends7\/event\/ultimate-singles","isOnline":false,"videogame":{"id":1386},"tournament":{"id":942547,"name":"LEGENDS7\u00ad"}},"slots":[{"entrant":{"id":24975667,"participants":[{"player":{"id":158026}}]}},{"entrant":{"id":24890205,"participants":[{"player":{"id":70916}}]}}],"games":[{"orderNum":1,"winnerId":24890205,"stage":null,"selections":[{"entrant":{"id":24890205},"selectionType":"CHARACTER","selectionValue":1747},{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1326}]},{"orderNum":2,"winnerId":24890205,"stage":null,"selections":[{"entrant":{"id":24890205},"selectionType":"CHARACTER","selectionValue":1747},{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1326}]},{"orderNum":3,"winnerId":24890205,"stage":null,"selections":[{"entrant":{"id":24890205},"selectionType":"CHARACTER","selectionValue":1747},{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1275}]}]},{"id":109392404,"completedAt":1792957410,"state":3,"event":{"id":1687524,"name":"ULTIMATE
+        Singles","slug":"tournament\/legends7\/event\/ultimate-singles","isOnline":false,"videogame":{"id":1386},"tournament":{"id":942547,"name":"LEGENDS7\u00ad"}},"slots":[{"entrant":{"id":24975667,"participants":[{"player":{"id":158026}}]}},{"entrant":{"id":24947656,"participants":[{"player":{"id":71071}}]}}],"games":[{"orderNum":1,"winnerId":24975667,"stage":null,"selections":[{"entrant":{"id":24947656},"selectionType":"CHARACTER","selectionValue":1274},{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1275}]},{"orderNum":2,"winnerId":24975667,"stage":null,"selections":[{"entrant":{"id":24947656},"selectionType":"CHARACTER","selectionValue":1274},{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1275}]},{"orderNum":3,"winnerId":24975667,"stage":null,"selections":[{"entrant":{"id":24947656},"selectionType":"CHARACTER","selectionValue":1274},{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1275}]}]},{"id":109392396,"completedAt":1792954387,"state":3,"event":{"id":1687524,"name":"ULTIMATE
+        Singles","slug":"tournament\/legends7\/event\/ultimate-singles","isOnline":false,"videogame":{"id":1386},"tournament":{"id":942547,"name":"LEGENDS7\u00ad"}},"slots":[{"entrant":{"id":24975667,"participants":[{"player":{"id":158026}}]}},{"entrant":{"id":24633082,"participants":[{"player":{"id":2562155}}]}}],"games":[{"orderNum":1,"winnerId":24975667,"stage":null,"selections":[{"entrant":{"id":24633082},"selectionType":"CHARACTER","selectionValue":1328},{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1795}]},{"orderNum":2,"winnerId":24975667,"stage":null,"selections":[{"entrant":{"id":24633082},"selectionType":"CHARACTER","selectionValue":1328},{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1795}]},{"orderNum":3,"winnerId":24975667,"stage":null,"selections":[{"entrant":{"id":24633082},"selectionType":"CHARACTER","selectionValue":1328},{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1795}]}]},{"id":109332807,"completedAt":1792876673,"state":3,"event":{"id":1687524,"name":"ULTIMATE
+        Singles","slug":"tournament\/legends7\/event\/ultimate-singles","isOnline":false,"videogame":{"id":1386},"tournament":{"id":942547,"name":"LEGENDS7\u00ad"}},"slots":[{"entrant":{"id":24975667,"participants":[{"player":{"id":158026}}]}},{"entrant":{"id":24905614,"participants":[{"player":{"id":3608233}}]}}],"games":[{"orderNum":1,"winnerId":24975667,"stage":null,"selections":[{"entrant":{"id":24905614},"selectionType":"CHARACTER","selectionValue":1407},{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1339}]},{"orderNum":2,"winnerId":24975667,"stage":null,"selections":[{"entrant":{"id":24905614},"selectionType":"CHARACTER","selectionValue":1407},{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1339}]},{"orderNum":3,"winnerId":24975667,"stage":null,"selections":[{"entrant":{"id":24905614},"selectionType":"CHARACTER","selectionValue":1407},{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1339}]}]},{"id":109332799,"completedAt":1792874105,"state":3,"event":{"id":1687524,"name":"ULTIMATE
+        Singles","slug":"tournament\/legends7\/event\/ultimate-singles","isOnline":false,"videogame":{"id":1386},"tournament":{"id":942547,"name":"LEGENDS7\u00ad"}},"slots":[{"entrant":{"id":24975667,"participants":[{"player":{"id":158026}}]}},{"entrant":{"id":24818883,"participants":[{"player":{"id":1500057}}]}}],"games":[{"orderNum":1,"winnerId":24975667,"stage":null,"selections":[{"entrant":{"id":24818883},"selectionType":"CHARACTER","selectionValue":1295},{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1275}]},{"orderNum":2,"winnerId":24975667,"stage":null,"selections":[{"entrant":{"id":24818883},"selectionType":"CHARACTER","selectionValue":1295},{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1275}]},{"orderNum":3,"winnerId":24975667,"stage":null,"selections":[{"entrant":{"id":24818883},"selectionType":"CHARACTER","selectionValue":1295},{"entrant":{"id":24975667},"selectionType":"CHARACTER","selectionValue":1339}]}]}]}}},"extensions":{"cacheControl":{"version":1,"hints":null},"queryComplexity":789},"actionRecords":[]}'
+    headers:
+      access-control-allow-credentials:
+      - 'true'
+      access-control-allow-headers:
+      - '*, Content-Type, Authorization'
+      access-control-allow-methods:
+      - POST, GET, OPTIONS
+      access-control-allow-origin:
+      - '*'
+      cache-control:
+      - private, max-age=0, s-maxage=0
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a5b1c6943a9a23bb-IAD
+      connection:
+      - keep-alive
+      content-length:
+      - '29234'
+      content-type:
+      - application/json
+      date:
+      - Sun, 15 Nov 2026 22:43:36 GMT
+      required-client-version:
+      - '20'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=15724800; includeSubDomains
+      transfer-encoding:
+      - chunked
+    status:
+      code: 200
+      message: OK
+version: 1

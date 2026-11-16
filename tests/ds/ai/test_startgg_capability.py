@@ -156,7 +156,7 @@ def test_find_players_caps_results(monkeypatch):
     assert len(tools.find_players("Luke")) == tools.MAX_PLAYERS
 
 
-def test_usage_resolves_the_character_and_checks_months(monkeypatch):
+def test_usage_resolves_the_character(monkeypatch):
     seen = _answers(monkeypatch, "player_usage", "usage")
     validator = Tool(tools.get_player_usage).function_schema.validator
 
@@ -164,24 +164,33 @@ def test_usage_resolves_the_character_and_checks_months(monkeypatch):
         """Call the tool the way pydantic-ai does: arguments through its validator first"""
         return tools.get_player_usage(**validator.validate_python(arguments))
 
-    assert call(player="Sparg0", vs_character="Little Mac", months=3) == "usage"
-    assert (seen["args"], seen["vs_character"], seen["months"]) == (("Sparg0",), CharGroup.LITTLE_MAC, 3)
-    assert seen["setting"] == "all"
+    assert call(player="Sparg0", vs_characters=["Little Mac"]) == "usage"
+    assert (seen["args"], seen["vs_characters"]) == (("Sparg0",), [CharGroup.LITTLE_MAC])
+    call(player="Sparg0", vs_characters=["steve", "Pac-Man"])  # several: games against any of them
+    assert seen["vs_characters"] == [CharGroup.STEVE, CharGroup.PAC_MAN]
+    assert (seen["setting"], seen["requests"]) == ("all", 1)  # 30 sets: one request
+    call(player="Sparg0", sets=90)
+    assert seen["requests"] == 3  # each 30 sets is one start.gg request
+    with pytest.raises(ValidationError, match="sets"):  # only whole requests' worth, up to 150
+        call(player="Sparg0", sets=45)
+    with pytest.raises(ValidationError, match="sets"):
+        call(player="Sparg0", sets=300)
     tools.get_player_usage("Sparg0", setting="offline")
     assert seen["setting"] == "offline"
     # the character type parses what the model writes: a name, a group member, part of a name
     for written in ("Pokemon Trainer", "pt_ivysaur", "squirtle"):
-        call(player="Sparg0", vs_character=written)
-        assert seen["vs_character"] is CharGroup.POKEMON_TRAINER
+        call(player="Sparg0", vs_characters=[written])
+        assert seen["vs_characters"] == [CharGroup.POKEMON_TRAINER]
     call(player="Sparg0")
-    assert seen["vs_character"] is None
-    with pytest.raises(ValidationError, match="vs_character"):  # pydantic-ai turns this into a retry
-        call(player="Sparg0", vs_character="Goku")
+    assert seen["vs_characters"] is None
+    with pytest.raises(ValidationError, match="vs_characters"):  # pydantic-ai turns this into a retry
+        call(player="Sparg0", vs_characters=["steve", "Goku"])
     # the model sees the allowed picks in the tool's schema
     schema = Tool(tools.get_player_usage).tool_def.parameters_json_schema
     assert schema["$defs"]["CharGroup"]["enum"] == [pick.value for pick in CharGroup]
-    with pytest.raises(ModelRetry, match="months must be between"):
-        tools.get_player_usage("Sparg0", months=0)
+    # the window is the newest sets, a choice the model sees with its allowed values
+    assert set(schema["properties"]) == {"player", "vs_characters", "setting", "sets"}
+    assert schema["properties"]["sets"]["enum"] == [30, 60, 90, 120, 150]
 
 
 def test_unknown_player_asks_the_model_to_retry(monkeypatch):

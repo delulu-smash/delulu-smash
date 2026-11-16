@@ -36,6 +36,7 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
 `ds.ai` uses.
 
 - **Chat**: Enter sends, Shift+Enter adds a line. Tool calls are listed above each reply.
+  Hover a message for its copy button on the top-right corner (a reply copies as its markdown source).
   A failed turn (the model or a tool raised) shows its traceback in the same component a Python cell uses
   (`traceback_view`): the frame that raised and the error, the rest folded, and a copy button (top right,
   on hover) that copies the full plain-text traceback.
@@ -102,6 +103,16 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   - **Fields** are built from the tool's parameter schema, the one pydantic-ai gives the model
     (`schema_fields`: names, types, defaults, descriptions; a `Literal` becomes a dropdown). Nothing about a
     tool's parameters is written a second time.
+  - **The type decides the input, not the name**, so any tool gets the same one:
+
+    | parameter type | input |
+    | --- | --- |
+    | `str`, `int`, `bool` | text box, number box, checkbox |
+    | a `Literal` / enum | dropdown |
+    | one `CharEnum` (eg `CharGroup`) | character picker: type to filter, icon + name (`assets/combo.js`) |
+    | `list[T]`, T a `CharEnum`, enum or `Literal` | multi-select: a box showing the picks (icons when T has them) that opens a list to tick in; a search box above it past `MULTI_SEARCH_AT` (8) options; submitted as `a,b` and turned back into T's values (`tool_forms.list_choices`, `assets/multiselect.js`) |
+
+    Player usage's `vs_characters: list[CharGroup]` is the multi-select today (games against any of the picks).
   - **Values** go through the validator pydantic-ai uses for the model's calls, then the same tool function.
   - **Which inputs made a result** is recorded by the session (`Session.calls`): the agent's tool-call
     arguments, or the form as run. Paging keeps them; a value made in Python has none (an empty form).

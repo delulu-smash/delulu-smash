@@ -43,13 +43,21 @@
 # - The cap decides the window for busy players: rm8's 150 newest sets cover 6 weeks, Sparg0's
 #   cover 4 months. Say the real span, not "last 6 months".
 # - Speed: 150 sets took 3-4 s at 15 per page (13-17 requests, 4 in parallel).
-# - Cost per lookup (15 Nov 2026, from the call log): a 150-set usage lookup is 14 start.gg
-#   requests for Sparg0 and 18 for rm8 (1 Videogame + the PlayerSets pages), so about 4-5
-#   lookups fit in a minute. player_sets fetches the character list once per call; it used
-#   to fetch it per page, which the old disk cache hid and which doubled the cost without it.
+# - Cost per lookup (15 Nov 2026, from the call log): a usage lookup is ONE start.gg request
+#   (queries.USAGE_SETS, 30 sets, singles only; the character list is stored data, see
+#   ds.data.startgg.characters), plus supermajor's tag search for a tag. It used to be the
+#   newest 150 sets: 14 requests for Sparg0, 18 for rm8. player_sets fetches the character
+#   list once per call when not given it; it used to fetch it per page, which the old disk
+#   cache hid.
+# - `entrantSize: [1]` in SetFilters (not in the docs' examples, works) returns 1v1 sets only:
+#   doubles were 13-15% of a player's sets. There is no videogame filter (`videogameIds` is
+#   rejected), so other games still come back: 7 of 30 for Sparg0, 1 of 30 for rm8.
+# - One request of 30 sets is 23-29 Ultimate sets, 3-4 events (Sparg0 Oct 24 to Nov 13, rm8
+#   Nov 3 to 11); two are about 48 sets, 6-7 events. Each event is 4-10 sets.
 # - Character names that are not one char.parquet id: 'Pokemon Trainer' and 'Pyra & Mythra'
 #   (group ids 'pokemon_trainer' / 'pyra_mythra', see spec/pkgs/ds/data/external_sources.md)
-#   and 'Random Character' (no char_group).
+#   and 'Random Character' (no char_group). 'Rosalina' and 'Simon Belmont' don't match ours
+#   by name (api.SITE_CHARACTER maps them; found by `ds data startgg-char`).
 # - All eight queries in queries.py ran without a schema error.
 #
 # Decisions:

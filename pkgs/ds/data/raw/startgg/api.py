@@ -17,6 +17,7 @@ from typing import Any
 import httpx2
 
 from ds.data.char_icons import char_group_by_name, char_icon_by_name
+from ds.data.chars import CharGroup
 from ds.data.raw.startgg import client, queries
 from ds.data.raw.startgg.models import (
     Character,
@@ -38,7 +39,9 @@ from ds.util.logging import log_group, logger
 
 __all__ = [
     "PER_PAGE",
+    "SITE_CHARACTER",
     "ULTIMATE",
+    "USAGE_PER_PAGE",
     "event_entrants",
     "event_ref",
     "event_standings",
@@ -46,6 +49,7 @@ __all__ = [
     "player",
     "player_sets",
     "player_sets_page",
+    "startgg_character",
     "tournaments",
     "user_player",
     "user_slug",
@@ -58,6 +62,13 @@ ULTIMATE = 1386  # start.gg videogame id of Super Smash Bros. Ultimate
 # but best-of-5 sets cost far more: for Sparg0, 25 and even 20 per page went over on some page
 # (probe, Nov 2026). 15 never did. player_sets starts over with a smaller page if one does.
 PER_PAGE = 15
+# Sets per request with queries.USAGE_SETS (about 27 objects a set): 30 came to 790-809 objects
+# for Sparg0 / rm8, 40 went over (Nov 2026).
+USAGE_PER_PAGE = 30
+# start.gg's names that don't match char.parquet's by name (a word more or less), by char_id
+# (spec/pkgs/ds/data/external_sources.md). Found by `ds data startgg-char`, Nov 2026.
+SITE_CHARACTER = {"rosalina_and_luma": "Rosalina", "simon": "Simon Belmont"}
+_CHAR_ID_BY_SITE_NAME = {name: char_id for char_id, name in SITE_CHARACTER.items()}
 _SET_COMPLETED = 3
 _EVENT_SLUG_RE = re.compile(r"(tournament/[^/?#]+/event/[^/?#]+)")
 _USER_SLUG_RE = re.compile(r"(?:^|/)user/([0-9a-zA-Z]+)")
@@ -226,18 +237,23 @@ async def _videogame(videogame_id: int) -> dict[str, Any]:
     return data.get("videogame") or {}
 
 
+def startgg_character(character_id: int, name: str) -> Character:
+    """One start.gg character with our `char_group` and `char_icon` (None for 'Random')"""
+    ours = _CHAR_ID_BY_SITE_NAME.get(name, name)
+    group = char_group_by_name(ours)
+    return Character(
+        id=character_id,
+        name=name,
+        # the enum itself, so a pick that isn't one of ours can't slip through as text
+        char_group=CharGroup(group) if group else None,
+        char_icon=char_icon_by_name(ours),
+    )
+
+
 async def videogame_characters(videogame_id: int = ULTIMATE) -> dict[int, Character]:
     """A videogame's characters by start.gg character id, with `char_group` filled in"""
     game = await _videogame(videogame_id)
-    return {
-        c["id"]: Character(
-            id=c["id"],
-            name=c["name"],
-            char_group=char_group_by_name(c["name"]),
-            char_icon=char_icon_by_name(c["name"]),
-        )
-        for c in game.get("characters") or []
-    }
+    return {c["id"]: startgg_character(c["id"], c["name"]) for c in game.get("characters") or []}
 
 
 async def videogame_stages(videogame_id: int = ULTIMATE) -> list[Stage]:
@@ -254,6 +270,8 @@ async def player_sets_page(  # mirrors the query's arguments
     opponent_id: int | None = None,
     has_vod: bool | None = None,
     online: bool | None = None,
+    singles_only: bool = False,
+    query: str = queries.PLAYER_SETS,
     characters: dict[int, Character] | None = None,
     http: httpx2.AsyncClient | None = None,
 ) -> SetsPage:
@@ -267,6 +285,10 @@ async def player_sets_page(  # mirrors the query's arguments
         has_vod: True for only sets with a VOD link. Ignored by start.gg together with
             `opponent_id` (its docs allow only event / tournament / state filters there).
         online: True / False for only online / offline events; None for both. Same caveat.
+        singles_only: ask start.gg for 1v1 sets only (its `entrantSize` filter), so doubles
+            don't use up the page. Same caveat.
+        query: PLAYER_SETS (everything) or USAGE_SETS (just what usage reads, twice the sets
+            per request); both take the same variables.
         characters: `videogame_characters()`, fetched once by a caller that reads many pages
             (player_sets does); fetched here when not given. One request either way.
         http: an AsyncClient to reuse across pages.
@@ -277,6 +299,8 @@ async def player_sets_page(  # mirrors the query's arguments
             filters["hasVod"] = True
         if online is not None:
             filters["isEventOnline"] = online
+        if singles_only:
+            filters["entrantSize"] = [1]
     variables = {
         "id": player_id,
         "page": page,
@@ -286,11 +310,11 @@ async def player_sets_page(  # mirrors the query's arguments
     }
     if characters is None:
         data, characters = await asyncio.gather(
-            client.gql(queries.PLAYER_SETS, variables, client=http),
+            client.gql(query, variables, client=http),
             videogame_characters(),
         )
     else:
-        data = await client.gql(queries.PLAYER_SETS, variables, client=http)
+        data = await client.gql(query, variables, client=http)
     if not data.get("player"):
         raise ValueError(f"no start.gg player with id {player_id}")
     sets = data["player"].get("sets") or {}
@@ -311,6 +335,9 @@ async def player_sets(  # one keyword per way of narrowing the sets
     videogame_id: int | None = ULTIMATE,
     singles_only: bool = True,
     per_page: int = PER_PAGE,
+    max_pages: int | None = None,
+    query: str = queries.PLAYER_SETS,
+    characters: dict[int, Character] | None = None,
 ) -> list[Set]:
     """A player's completed sets, newest first, paged until `max_sets` or `since`
 
@@ -327,6 +354,11 @@ async def player_sets(  # one keyword per way of narrowing the sets
         videogame_id: only this game's sets (filtered here, start.gg can't); None for all.
         singles_only: drop sets where a side has more than one player.
         per_page: sets per request; lowered automatically if start.gg says it's too many.
+        max_pages: at most this many requests for sets, whatever `max_sets` / `since` say
+            (eg 1 for one quick look at the newest sets); None for no limit.
+        query: PLAYER_SETS (everything) or USAGE_SETS (just what usage reads).
+        characters: start.gg's characters by id (eg ds.data.startgg.stored_characters()), so
+            no request is spent on them; fetched once (videogame_characters) when not given.
     """
 
     def wanted(s: Set) -> bool:
@@ -349,13 +381,15 @@ async def player_sets(  # one keyword per way of narrowing the sets
                 opponent_id=opponent_id,
                 has_vod=has_vod,
                 online=online,
+                singles_only=singles_only,
+                query=query,
                 characters=characters,
                 http=http,
             )
 
         pages = [await fetch(1)]
         # other games' sets are dropped after paging: allow extra pages, but not without end
-        last_allowed = min(pages[0].page_info.total_pages, math.ceil(max_sets / size) * 3)
+        last_allowed = min(pages[0].page_info.total_pages, math.ceil(max_sets / size) * 3, max_pages or math.inf)
         kept: list[Set] = []
         page_no, past_cutoff = 1, False
         while True:
@@ -374,7 +408,8 @@ async def player_sets(  # one keyword per way of narrowing the sets
     # one log group for the whole lookup (joins the caller's, eg a tool's, when there is one)
     with log_group(f"player_sets:{player_id}"):
         # once per call, not per page: every page needs it, and nothing keeps it between calls
-        characters = await videogame_characters()
+        if characters is None:
+            characters = await videogame_characters()
         async with httpx2.AsyncClient(timeout=30) as http:
             retry = 0
             while True:

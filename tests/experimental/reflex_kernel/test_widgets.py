@@ -8,7 +8,9 @@ from __future__ import annotations
 
 import datetime as dt
 import sys
+from enum import Enum
 from pathlib import Path
+from typing import Literal
 
 import pytest
 from ds.data.chars import CharGroup
@@ -30,6 +32,7 @@ from ds.data.startgg import (
 APP_DIR = Path(__file__).resolve().parents[3] / "experimental" / "reflex-kernel"
 sys.path.insert(0, str(APP_DIR))
 
+from reflex_kernel.tool_forms import ToolForm  # noqa: E402
 from reflex_kernel.widgets import ADDABLE, TOOL_FORMS, WIDGETS, Widget, form_for, widget_of  # noqa: E402
 
 
@@ -58,9 +61,8 @@ def _usage() -> PlayerUsage:
     return PlayerUsage(
         lookup=PlayerLookup(query="mac", match_type="tag_exact", player_id=1, tag="Mac", num_events=12),
         window=UsageWindow(
-            months=6,
-            max_sets=150,
-            capped=False,
+            requests=1,
+            events=4,
             sets=40,
             games=100,
             first_date=dt.date(2026, 6, 1),
@@ -110,29 +112,34 @@ def test_usage_widget_attributes():
     assert (usage.addable, usage.chat_open) == (True, True)
     assert not widget_of("videos").chat_open
     assert form_for(_usage()) is usage.form
-    assert [field.name for field in usage.form.fields({})] == ["player", "vs_character", "months", "setting"]
-    setting = usage.form.fields({})[-1]
+    assert [field.name for field in usage.form.fields({})] == ["player", "vs_characters", "setting", "sets"]
+    setting, sets = usage.form.fields({})[-2:]
     assert (setting.kind, setting.value, setting.options) == ("select", "all", ["all", "offline", "online"])
-    # vs_character is typed CharGroup, so the form draws it as the character picker
-    picker = usage.form.fields({"vs_character": "pokemon_trainer"})[1]
-    assert (picker.kind, picker.value, picker.shown) == ("character", "pokemon_trainer", "Pokemon Trainer")
-    assert picker.icon == "char_icons/pokemon_trainer.png"
+    # how much data: a select of whole requests' worth of sets
+    assert (sets.kind, sets.value, sets.options) == ("select", "30", ["30", "60", "90", "120", "150"])
+    # the form submits text; the tool gets the number its Literal wants
+    assert usage.form.arguments({"player": "Sparg0", "sets": "60"})["sets"] == 60
+    assert usage.form.arguments({"player": "Sparg0", "sets": ""})["sets"] == 30
+    # vs_characters is typed list[CharGroup], so the form draws it as a multi-select with icons
+    picker = usage.form.fields({"vs_characters": "steve,pac_man"})[1]
+    assert (picker.kind, picker.value, picker.search) == ("multi", "steve,pac_man", True)
     assert len(picker.choices) == len(CharGroup)
     assert picker.choices[0] == {
         "value": "banjo_and_kazooie",
         "label": "Banjo & Kazooie",
         "icon": "char_icons/banjo_and_kazooie.png",
     }
-    assert usage.form.fields({})[1].shown == ""
-    assert usage.form.character_types == {"vs_character": CharGroup}
-    assert (
-        usage.form.arguments({"player": "Mac", "vs_character": "pyra_mythra"})["vs_character"] is CharGroup.PYRA_MYTHRA
-    )
-    assert usage.form.arguments({"player": "Mac", "vs_character": ""})["vs_character"] is None
-    with pytest.raises(ValueError, match="vs_character"):
-        usage.form.arguments({"player": "Mac", "vs_character": "Goku"})
+    # the tool's own inputs (a list of CharGroup) show the same way
+    assert usage.form.fields({"vs_characters": [CharGroup.STEVE]})[1].value == "steve"
+    assert usage.form.fields({})[1].value == ""
+    picked = usage.form.arguments({"player": "Mac", "vs_characters": "pyra_mythra,steve"})["vs_characters"]
+    assert picked == [CharGroup.PYRA_MYTHRA, CharGroup.STEVE]
+    assert usage.form.arguments({"player": "Mac", "vs_characters": ""})["vs_characters"] is None
+    with pytest.raises(ValueError, match="vs_characters"):
+        usage.form.arguments({"player": "Mac", "vs_characters": "steve,Goku"})
     # other tools' forms have no character-typed parameter (yet)
     assert widget_of("videos").form.character_types == {}
+    assert widget_of("videos").form.multi_choices == {}
     # a select left out of the inputs keeps the tool's default (it has no empty choice)
     assert usage.form.arguments({"player": "Mac"})["setting"] == "all"
     assert usage.form.arguments({"player": "Mac", "setting": "offline"})["setting"] == "offline"
@@ -146,7 +153,7 @@ def test_usage_view_data(monkeypatch):
 
     view = to_view(_usage())
     assert (view.kind, view.summary) == ("usage", "Mac")
-    assert view.note == "Mac · 2026-06-01 to 2026-11-01 · 40 sets, 100 games"
+    assert view.note == "Mac · 2026-06-01 to 2026-11-01 · newest 40 sets from 4 events, 100 games"
 
     ui = Ui()
     data = view.data("tab:r1", ui)
@@ -178,18 +185,63 @@ def test_usage_view_data(monkeypatch):
     # Offline / Online ask the tool again for the same player; the setting shown doesn't
     assert rerun_inputs(view, "setting", "offline") == {
         "player": "mac",
-        "vs_character": "",
-        "months": "6",
+        "vs_characters": "",
         "setting": "offline",
+        "sets": "30",
     }
     assert rerun_inputs(view, "setting", "all") is None
     assert rerun_inputs(view, "setting", "nope") is None
     assert rerun_inputs(view, "window", "game_1") is None
     offline = to_view(_usage().model_copy(update={"setting": "offline"}))
-    assert offline.note == "Mac · offline only · 2026-06-01 to 2026-11-01 · 40 sets, 100 games"
+    assert offline.note == "Mac · offline only · 2026-06-01 to 2026-11-01 · newest 40 sets from 4 events, 100 games"
     assert [s["key"] for s in offline.data("tab:r1", Ui()).settings if s["on"]] == ["offline"]
 
     apply_event(view, ui, "window", "game_1")
     data = view.data("tab:r1", ui)
     assert [row.label for row in data.chars.rows] == ["Lucas"]
     assert data.chars.note == "10 games"
+
+
+class _Speed(Enum):
+    SLOW = "slow"
+    FAST = "fast"
+
+
+def _every_kind(  # one parameter per kind of input the form builds from a type
+    fighters: list[CharGroup] | None = None,
+    rounds: list[Literal[1, 2, 3]] | None = None,
+    speeds: list[_Speed] | None = None,
+    tags: list[str] | None = None,
+    main: CharGroup | None = None,
+) -> str:
+    """A made-up tool, to check the form follows the types, not the parameter names"""
+    return repr((fighters, rounds, speeds, tags, main))
+
+
+def test_the_form_follows_the_parameter_types():
+    form = ToolForm("Every kind", _every_kind)
+    fields = {field.name: field for field in form.fields({})}
+    # list[<a fixed set>] -> a multi-select, whatever the set is
+    assert {name: f.kind for name, f in fields.items()} == {
+        "fighters": "multi",
+        "rounds": "multi",
+        "speeds": "multi",
+        "tags": "text",  # a list of free text has no options to pick from
+        "main": "character",  # one character: the single picker
+    }
+    assert fields["fighters"].search  # 86 picks: a search box
+    assert not fields["rounds"].search  # 3 rounds: no need
+    assert fields["rounds"].choices == [{"value": str(n), "label": str(n), "icon": ""} for n in (1, 2, 3)]
+    assert [c["value"] for c in fields["speeds"].choices] == ["slow", "fast"]
+    # submitted text comes back as the typed values each list wants
+    got = form.arguments({"fighters": "steve", "rounds": "3,1", "speeds": "fast"})
+    assert (got["fighters"], got["rounds"], got["speeds"]) == ([CharGroup.STEVE], [3, 1], [_Speed.FAST])
+    with pytest.raises(ValueError, match="rounds"):
+        form.arguments({"rounds": "4"})
+    # a single character keeps the single picker
+    picker = form.fields({"main": "pokemon_trainer"})[-1]
+    assert (picker.kind, picker.value, picker.shown) == ("character", "pokemon_trainer", "Pokemon Trainer")
+    assert picker.icon == "char_icons/pokemon_trainer.png"
+    assert form.arguments({"main": "pyra_mythra"})["main"] is CharGroup.PYRA_MYTHRA
+    with pytest.raises(ValueError, match="main"):
+        form.arguments({"main": "Goku"})

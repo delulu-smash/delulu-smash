@@ -39,6 +39,8 @@ RESULT_NOTES = [
     "+ in the Results tab bar: add a result by hand, eg a match video search or a player's usage.",
     "Player usage: a player's characters and stages as bars; pick All games / Game 1 / Events, hover for counts.",
     "Player usage: All / Offline / Online at its top re-counts everything for in-person or online events only.",
+    "Player usage: sets (30 to 150) is how far back it reads; each 30 is one start.gg request.",
+    "Player usage: vs characters takes several (search, tick each); games against any of them count.",
     "SQL ▸ on a table: query it as self with polars SQL (PostgreSQL syntax), eg select name from self limit 5.",
     'Values you make in the Python cells get a tab too, eg chars = db.sql("select * from char").',
 ]
@@ -83,7 +85,12 @@ def chat_item(item: rx.Var) -> rx.Component:
             "user",
             rx.el.div(
                 item.text,
-                rx.cond(item.key != "", logs_button(item.key, "this turn")),
+                # top-right, on hover: this turn's requests, copy the message
+                rx.el.div(
+                    rx.cond(item.key != "", logs_button(item.key, "this turn")),
+                    copy_button(item.text, "the message"),
+                    class_name="bubble-actions",
+                ),
                 id=item.key,
                 class_name="bubble is-user",
             ),
@@ -111,7 +118,12 @@ def markdown_bubble(text: rx.Var[str]) -> rx.Component:
     """An agent message. A memo component, so each bubble is its own React component: rx.markdown
     calls a hook (the color mode, for its component map), and inside the chat loop that hook ran
     once per message, so the number of hooks changed with every answer (React's hook-order warning)."""
-    return rx.el.div(rx.markdown(text), class_name="bubble md")
+    return rx.el.div(
+        rx.markdown(text),
+        # top-right, on hover: copy the reply as written (its markdown)
+        rx.el.div(copy_button(text, "the reply"), class_name="bubble-actions"),
+        class_name="bubble md",
+    )
 
 
 def ref_item(item: rx.Var) -> rx.Component:
@@ -686,6 +698,8 @@ app = rx.App(
         rx.el.script(src="/panes.js", defer=True),
         # character pickers in tool forms (render._character_picker)
         rx.el.script(src="/combo.js", defer=True),
+        # multi-selects in tool forms: any list[<choices>] input (render._multi_select)
+        rx.el.script(src="/multiselect.js", defer=True),
     ],
 )
 # The page title is the web app window's title (SmashGPT); see .os/scripts/keybindings/smashgpt.py.

@@ -11,9 +11,10 @@
 from __future__ import annotations
 
 import dataclasses
+import enum
 import typing
 from functools import cached_property
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 from ds.data.chars import CharEnum
 from pydantic import ValidationError
@@ -30,18 +31,57 @@ class FormField:
     name: str
     label: str
     kind: str = "text"
-    """text | number | select | check | character (a parameter typed with a ds.data.CharEnum)"""
+    """text | number | select | check | character (a parameter typed with a ds.data.CharEnum) |
+    multi (typed list[<a fixed set of values>], see list_choices)"""
     value: str = ""
     options: list[str] = dataclasses.field(default_factory=list)
     """select only; "" means not set."""
     help: str = ""
     """The parameter's description from the tool's schema, shown as the field's tooltip."""
     choices: list[dict[str, str]] = dataclasses.field(default_factory=list)
-    """character only: every member as value, label, icon (a path under pkgs/ds/data/)."""
+    """character / multi: every option as value, label, icon (a path under pkgs/ds/data/; ""
+    when the options have none). A multi field's `value` is the picked values joined by ","."""
+    search: bool = False
+    """multi only: the options are many (over MULTI_SEARCH_AT), so the list gets a search box."""
     shown: str = ""
     """character only: the label of `value` ("" when nothing is picked)."""
     icon: str = ""
     """character only: the icon of `value`."""
+
+
+# A multi-select with more options than this gets a search box above its list.
+MULTI_SEARCH_AT = 8
+
+
+def _option_choices(item: Any) -> list[tuple[str, Any, str, str]] | None:
+    """(text, value, label, icon) for each value of a fixed-set type: a ds.data.CharEnum (with
+    its display names and icons), another Enum, or a Literal; None for any other type."""
+    if isinstance(item, type) and issubclass(item, CharEnum):
+        return [(c.value, item(c.value), c.label, c.icon) for c in item.choices()]
+    if isinstance(item, type) and issubclass(item, enum.Enum):
+        return [(str(m.value), m, str(m.value), "") for m in item]
+    if typing.get_origin(item) is Literal:
+        return [(str(arg), arg, str(arg), "") for arg in typing.get_args(item)]
+    return None
+
+
+def list_choices(hint: Any) -> list[tuple[str, Any, str, str]] | None:
+    """The options of a parameter typed `list[T]` (also `list[T] | None`) where T is a fixed
+    set of values (see _option_choices); None for any other type. Such a parameter is a
+    multi-select in the form, wherever it is: the type decides, not the parameter's name."""
+    for arg in [hint, *typing.get_args(hint)]:
+        if typing.get_origin(arg) is list and (items := typing.get_args(arg)):
+            return _option_choices(items[0])
+    return None
+
+
+def _picked(value: Any) -> list[str]:
+    """A multi field's picked values as text: from a list (the tool's own inputs, eg
+    [CharGroup.STEVE]) or the form's submitted "steve,pac_man"."""
+    if value is None or value == "":
+        return []
+    items = value.split(",") if isinstance(value, str) else value
+    return [str(item.value if isinstance(item, enum.Enum) else item).strip() for item in items if str(item).strip()]
 
 
 def schema_fields(schema: dict[str, Any], values: dict[str, Any], hide: tuple[str, ...] = ()) -> list[FormField]:
@@ -90,6 +130,16 @@ def _choices(prop: dict[str, Any]) -> list[str]:
     return options
 
 
+def _choice_value(prop: dict[str, Any], text: str) -> Any:
+    """The choice a select submitted, as its real value: a form sends "60", the tool's
+    Literal[30, 60, ...] wants 60 (pydantic doesn't turn text into a Literal number)."""
+    for branch in prop.get("anyOf") or [prop]:
+        for option in branch.get("enum", [branch["const"]] if "const" in branch else []):
+            if str(option) == text:
+                return option
+    return text
+
+
 @dataclasses.dataclass
 class ToolRequest:
     """A tool form not run yet (added with "+"): a placeholder value shown as just the form.
@@ -135,6 +185,14 @@ class ToolForm:
     # ds::exception: caching (approved 2026-11-15): from the tool function's signature, which
     #   only changes with a code edit
     @cached_property
+    def multi_choices(self) -> dict[str, list[tuple[str, Any, str, str]]]:
+        """Parameters typed list[<a fixed set>]: name -> their options (see list_choices)."""
+        hints = typing.get_type_hints(self.function)
+        return {name: found for name, hint in hints.items() if (found := list_choices(hint)) is not None}
+
+    # ds::exception: caching (approved 2026-11-15): from the tool function's signature, which
+    #   only changes with a code edit
+    @cached_property
     def character_types(self) -> dict[str, type[CharEnum]]:
         """Parameters typed with a character enum (CharId, CharGroup, also `| None`): name -> the enum.
         The form reads the type, not the parameter's name, so any tool gets the picker by typing
@@ -155,6 +213,11 @@ class ToolForm:
                 field.kind, field.choices = "character", choices
                 picked = next((c for c in choices if c["value"] == field.value), None)
                 field.shown, field.icon = (picked["label"], picked["icon"]) if picked else ("", "")
+            elif options := self.multi_choices.get(field.name):
+                field.kind = "multi"
+                field.choices = [{"value": text, "label": label, "icon": icon} for text, _, label, icon in options]
+                field.value = ",".join(_picked(values.get(field.name)))
+                field.search = len(options) > MULTI_SEARCH_AT
         return fields
 
     def arguments(self, raw: dict[str, Any]) -> dict[str, Any]:
@@ -165,7 +228,13 @@ class ToolForm:
             if name in self.hide:
                 continue
             value = raw.get(name, "")
-            if prop.get("type") == "boolean":
+            if options := self.multi_choices.get(name):
+                # "steve,pac_man" -> the typed values the tool wants (an unknown one stays text,
+                # so the validator names it); nothing picked = the default
+                by_text = {text: typed for text, typed, _, _ in options}
+                if picked := _picked(value):
+                    given[name] = [by_text.get(text, text) for text in picked]
+            elif prop.get("type") == "boolean":
                 # an unticked checkbox is missing from (or falsy in) the submitted form
                 given[name] = value not in ("", None, False, "false", "off")
             elif isinstance(value, str) and prop.get("type") != "string" and not _choices(prop):
@@ -173,6 +242,8 @@ class ToolForm:
                     given[name] = value.strip()
             elif value == "" and (choices := _choices(prop)) and "" not in choices:
                 continue  # a select left out of the submitted inputs = the default
+            elif isinstance(value, str) and _choices(prop):
+                given[name] = _choice_value(prop, value.strip())
             else:
                 given[name] = value.strip() if isinstance(value, str) else value
         try:

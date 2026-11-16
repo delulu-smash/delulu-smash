@@ -20,6 +20,7 @@ __all__ = [
     "PLAYER",
     "PLAYER_SETS",
     "TOURNAMENTS",
+    "USAGE_SETS",
     "USER_PLAYER",
     "VIDEOGAME",
 ]
@@ -123,6 +124,33 @@ query PlayerSets($id: ID!, $page: Int!, $perPage: Int!, $opponentId: ID, $filter
     _TOURNAMENT_FIELDS,
     _ENTRANT_FIELDS,
 )
+
+# PLAYER_SETS with only what character / stage usage reads (ds.data.startgg.usage): no
+# results, seeds, round names, VODs or tournament details. Same variables, so the same paging.
+# Costs 26-27 objects a set against PLAYER_SETS's 43-48 (Sparg0, rm8; Nov 2026), so
+# api.USAGE_PER_PAGE (30) sets fit in one request where PLAYER_SETS fits 15.
+# ds::external-source: checked 2026-11-15 https://developer.start.gg/reference/setfilters.doc.html
+#   taken from it: filters (entrantSize, used by api.player_sets_page)
+USAGE_SETS = """
+query UsageSets($id: ID!, $page: Int!, $perPage: Int!, $opponentId: ID, $filters: SetFilters) {
+  player(id: $id) {
+    id
+    sets(page: $page, perPage: $perPage, opponentId: $opponentId, filters: $filters) {
+      pageInfo { total totalPages page perPage }
+      nodes {
+        id completedAt state
+        event { id name slug isOnline videogame { id } tournament { id name } }
+        slots { entrant { id participants { player { id } } } }
+        games {
+          orderNum winnerId
+          stage { id name }
+          selections { entrant { id } selectionType selectionValue }
+        }
+      }
+    }
+  }
+}
+"""
 
 TOURNAMENTS = _with(
     """

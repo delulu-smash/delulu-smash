@@ -5,7 +5,7 @@
 # they change character within a set. Optionally only games against one character.
 # Facts only: PlayerUsage carries no result (no wins, scores, seeds, placements); the game
 # winners are read here only to tell a counterpick from a starter. Results: results.py.
-# Usage: `usage = asyncio.run(player_usage("Sparg0", vs_character="steve"))`
+# Usage: `usage = asyncio.run(player_usage("Sparg0", vs_characters=["steve", "pac_man"]))`
 # ---------------------------------------------------------------------------
 from __future__ import annotations
 
@@ -17,6 +17,8 @@ from pydantic import BaseModel, Field
 
 from ds.data.chars import CharGroup
 from ds.data.raw import startgg
+from ds.data.raw.startgg import queries
+from ds.data.startgg.characters import stored_characters
 from ds.data.startgg.lookup import PlayerLookup, resolve_player
 
 if TYPE_CHECKING:
@@ -29,6 +31,7 @@ __all__ = [
     "EventCharacters",
     "PlayerUsage",
     "RecentEvents",
+    "SetCount",
     "Setting",
     "StageStats",
     "StageUsage",
@@ -38,13 +41,18 @@ __all__ = [
     "usage_from_sets",
 ]
 
-# Defaults: the newest MAX_SETS sets within MONTHS months. Snappy over complete (about 3-4 s);
-# for a very active player the cap, not the months, decides how far back this reaches.
-MONTHS = 6
+# The window: the newest sets one start.gg request returns (USAGE_PAGES requests of
+# api.USAGE_PER_PAGE = 30 sets, singles only), not a span of months. Recent trends over
+# history, and as few requests as possible: one request is about 23-29 Ultimate sets, 3-4
+# events (Sparg0, rm8; Nov 2026). Raise USAGE_PAGES to look further back (~30 sets each).
+USAGE_PAGES = 1
+# The sets a caller can ask for (the agent tool's and the app form's `sets` input): one
+# start.gg request per 30, so the choice shows its cost. 150 was the old window (14-18
+# requests then, 5 now).
+SetCount = Literal[30, 60, 90, 120, 150]
 # Which events count: every one, only in-person ones, or only online ones (start.gg's isOnline)
 Setting = Literal["all", "offline", "online"]
 _ONLINE: dict[str, bool | None] = {"all": None, "offline": False, "online": True}
-MAX_SETS = 150
 EVENTS = 10
 
 
@@ -125,10 +133,9 @@ class Switches(BaseModel):
 class UsageWindow(BaseModel):
     """What the numbers are based on. Always tell the user the real date span and counts"""
 
-    months: int = Field(description="How far back was asked for")
-    max_sets: int = Field(description="The cap on sets fetched")
-    capped: bool = Field(description="True: the cap was reached, so the data ends before `months` (see first_date)")
-    sets: int = Field(description="Sets counted (with `vs_character`: sets with a game against that character)")
+    requests: int = Field(description="start.gg requests for sets: each reads the newest ~30 sets")
+    events: int = Field(description="Events the counted sets come from")
+    sets: int = Field(description="Sets counted (with `vs_characters`: sets with a game against one of them)")
     games: int = Field(description="Games counted: those with the player's character reported")
     first_date: dt.date | None = Field(None, description="Oldest counted set's date")
     last_date: dt.date | None = Field(None, description="Newest counted set's date")
@@ -138,7 +145,9 @@ class PlayerUsage(BaseModel):
     """A player's character and stage picks over their recent start.gg sets"""
 
     lookup: PlayerLookup = Field(description="Which player this is and how the input was matched")
-    vs_character: CharGroup | None = Field(None, description="The opponent's pick the games were narrowed to")
+    vs_characters: list[CharGroup] = Field(
+        default_factory=list, description="The opponent's picks the games were narrowed to ([] = every game)"
+    )
     setting: Setting = Field("all", description="Which events were counted: all, offline (in person) or online")
     window: UsageWindow
     recent: CharacterStats = Field(description="Every counted game in the window")
@@ -172,18 +181,17 @@ def _stage_stats(counts: Counter[str]) -> StageStats:
     return StageStats(games=total, stages=stages)
 
 
-def _same_character(character: Character | None, group: CharGroup) -> bool:
-    return bool(character and character.char_group == group)
+def _one_of(character: Character | None, groups: list[CharGroup]) -> bool:
+    return bool(character and character.char_group in groups)
 
 
 def usage_from_sets(  # one pass over the games, counting several things
     sets: list[Set],
     lookup: PlayerLookup,
     *,
-    vs_character: CharGroup | None = None,
+    vs_characters: list[CharGroup] | None = None,
     setting: Setting = "all",
-    months: int = MONTHS,
-    max_sets: int = MAX_SETS,
+    requests: int = USAGE_PAGES,
     events: int = EVENTS,
 ) -> PlayerUsage:
     """Count a player's picks over sets already fetched (newest first); see `player_usage`
@@ -191,10 +199,9 @@ def usage_from_sets(  # one pass over the games, counting several things
     Args:
         sets: the player's sets, eg from `ds.data.raw.startgg.player_sets`.
         lookup: who the player is (`lookup.player_id` finds their side of each set).
-        vs_character: only games where the opponent picked this are counted.
+        vs_characters: only games where the opponent picked one of these are counted.
         setting: which events `sets` was fetched for; recorded in the result, not applied.
-        months: what was asked for, recorded in `window`.
-        max_sets: the cap used, recorded in `window` (`capped` when `sets` reached it).
+        requests: how many requests fetched `sets`, recorded in `window`.
         events: how many of the newest events to list in `last_events`.
     """
     player_id = lookup.player_id
@@ -216,7 +223,7 @@ def usage_from_sets(  # one pass over the games, counting several things
         for game in s.games:
             character = game.character_of(mine.entrant_id)
             opponent = game.character_of(theirs.entrant_id) if theirs else None
-            if vs_character and not _same_character(opponent, vs_character):
+            if vs_characters and not _one_of(opponent, vs_characters):
                 continue
             set_counted = True
             before: Game | None = by_number.get(game.number - 1)
@@ -241,7 +248,7 @@ def usage_from_sets(  # one pass over the games, counting several things
                 if previous.id != character.id:
                     switch[f"switched_after_{when}"] += 1
                     switched_in_set = True
-        if vs_character and not set_counted:
+        if vs_characters and not set_counted:
             continue
         counted_sets.append(s)
         if picks_in_set > 1:
@@ -273,12 +280,11 @@ def usage_from_sets(  # one pass over the games, counting several things
     dates = [s.completed_at.date() for s in counted_sets if s.completed_at]
     return PlayerUsage(
         lookup=lookup,
-        vs_character=vs_character,
+        vs_characters=vs_characters or [],
         setting=setting,
         window=UsageWindow(
-            months=months,
-            max_sets=max_sets,
-            capped=len(sets) >= max_sets,
+            requests=requests,
+            events=len(per_event),
             sets=len(counted_sets),
             games=sum(recent.values()),
             first_date=min(dates, default=None),
@@ -312,33 +318,39 @@ def vs_char_group(character: CharGroup | str) -> CharGroup:
 
 async def player_usage(
     player: str,
-    vs_character: CharGroup | str | None = None,
-    months: int = MONTHS,
-    max_sets: int = MAX_SETS,
+    vs_characters: list[CharGroup | str] | None = None,
+    requests: int = USAGE_PAGES,
     events: int = EVENTS,
     setting: Setting = "all",
 ) -> PlayerUsage:
-    """A player's character and stage picks over their recent start.gg sets (facts, no results)
+    """A player's character and stage picks over their newest start.gg sets (facts, no results)
 
-    Covers the newest `max_sets` sets within `months` months; `window` says what that came to.
-    Raises PlayerLookupError for an unknown player and ValueError for an unknown character.
+    Covers the newest Ultimate singles sets `requests` start.gg requests return (about 30 each,
+    fewer once other games are left out); `window` says what that came to. Raises
+    PlayerLookupError for an unknown player and ValueError for an unknown character.
 
     Args:
         player: a tag ('Sparg0'), start.gg player id ('158026') or start.gg profile url.
-        vs_character: only games against this pick are counted: a `CharGroup`, or an id / name
-            it parses ('steve', 'Pokemon Trainer'; 'pt_ivysaur' means its group).
-        months: how far back to look.
-        max_sets: stop after this many sets (keeps it quick for very active players).
+        vs_characters: only games against one of these picks are counted: `CharGroup`s, or
+            ids / names they parse ('steve', 'Pokemon Trainer'; 'pt_ivysaur' means its group).
+        requests: how many requests' worth of sets to read (each ~30, newest first).
         events: how many of the newest events to list.
         setting: 'offline' for in-person events only, 'online' for online only, 'all' for both.
-            The cap applies after this, so 'offline' reaches further back than 'all' does.
+            start.gg filters, so 'offline' still gets a full request of in-person sets.
     """
     if setting not in _ONLINE:
         raise ValueError(f"setting must be one of {list(_ONLINE)}, got {setting!r}")
-    vs = vs_char_group(vs_character) if vs_character else None
+    vs = list(dict.fromkeys(vs_char_group(c) for c in vs_characters or []))  # in order, once each
     lookup = await resolve_player(player)
-    since = dt.datetime.now(dt.UTC) - dt.timedelta(days=30 * months)
-    sets = await startgg.player_sets(lookup.player_id, max_sets=max_sets, since=since, online=_ONLINE[setting])
-    return usage_from_sets(
-        sets, lookup, vs_character=vs, setting=setting, months=months, max_sets=max_sets, events=events
+    per_page = startgg.USAGE_PER_PAGE
+    sets = await startgg.player_sets(
+        lookup.player_id,
+        max_sets=requests * per_page,
+        per_page=per_page,
+        max_pages=requests,
+        online=_ONLINE[setting],
+        query=queries.USAGE_SETS,
+        # stored, so no request is spent on them (fetched once if the table isn't there)
+        characters=stored_characters(),
     )
+    return usage_from_sets(sets, lookup, vs_characters=vs, setting=setting, requests=requests, events=events)

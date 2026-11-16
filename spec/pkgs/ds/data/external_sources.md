@@ -66,7 +66,7 @@ ids, icon file names). The translation belongs to the site's module and is the m
 | ultimateframedata.com | `raw/framedata.py`, `raw/roster.py` | site slug is the origin of `char.parquet` ids | normalized (defines the standard) |
 | nasmashmate.com (icons) | `raw/smashmate.py` | `SITE_CHAR_ICON`: `char_id` -> site icon name | normalized |
 | smash-tube.com | `raw/smashtube.py` | `SITE_CHARACTER`: `char_id` -> Japanese name; inputs are `char_id` | normalized on input |
-| start.gg | `raw/startgg/` | name match; `Character.char_group` + `char_icon`, site `id` kept | normalized (picks, so `char_group`) |
+| start.gg | `raw/startgg/` | name match + `api.SITE_CHARACTER` (Rosalina, Simon Belmont); `Character.char_group` + `char_icon`, site `id` kept; ids stored in `startgg_char.parquet` | normalized (picks, so `char_group`) |
 | supermajor.gg | `raw/supermajor.py` | returns the site's ids (`A1297`) and names | **not normalized** (TODO in file); player pages blocked since Nov 2026, so left as is |
 
 ## Layers inside a large source

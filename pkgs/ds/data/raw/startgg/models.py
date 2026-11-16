@@ -11,6 +11,8 @@ import datetime as dt
 
 from pydantic import BaseModel, Field
 
+from ds.data.chars import CharGroup  # noqa: TC001  # pydantic reads field types at run time
+
 __all__ = [
     "Character",
     "Entrant",
@@ -36,7 +38,9 @@ class Character(BaseModel):
     name: str = Field(description="start.gg's display name, eg 'Little Mac'")
     # start.gg knows the pick, not the fighter: 'Pokemon Trainer' is 'pokemon_trainer', ie
     # three char.parquet rows (join on its `char_group` column); None for 'Random Character'
-    char_group: str | None = Field(None, description="char.parquet `char_group`, eg 'little_mac', 'pokemon_trainer'")
+    char_group: CharGroup | None = Field(
+        None, description="The pick as our CharGroup (char.parquet `char_group`), eg 'little_mac', 'pokemon_trainer'"
+    )
     char_icon: str | None = Field(None, description="Icon path under pkgs/ds/data/, eg 'char_icons/little_mac.png'")
 
 

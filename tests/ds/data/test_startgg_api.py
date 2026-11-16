@@ -336,7 +336,8 @@ def test_filters_go_to_startgg_except_next_to_an_opponent(fake_api):
     asyncio.run(startgg.player_sets(SPARG0, has_vod=True, online=False))
     asyncio.run(startgg.player_sets(SPARG0, has_vod=True, online=False, opponent_id=ACOLA))
     plain, versus = [v for name, v in fake_api.calls if name == "PlayerSets"]
-    assert plain["filters"] == {"hasVod": True, "isEventOnline": False}
+    # singles_only (the default) asks start.gg for 1v1 sets only: doubles don't use up a page
+    assert plain["filters"] == {"hasVod": True, "isEventOnline": False, "entrantSize": [1]}
     assert plain["opponentId"] is None
     assert versus["filters"] is None
     assert versus["opponentId"] == ACOLA
@@ -511,3 +512,61 @@ def test_recorded_lookup_request_count(call_logs):
     ops = Counter(r["op"] for r in call_logs if r["kind"] == "graphql")
     assert ops == {"Player": 1, "Videogame": 1, "PlayerSets": 1 + client.MAX_PARALLEL}
     assert all(r["status"] == 200 for r in call_logs)
+
+
+@pytest.mark.vcr
+@pytest.mark.usefixtures("recorded_token")
+def test_recorded_usage_is_one_request_for_sets(call_logs):
+    """A usage lookup by id: the player, then one request of sets (usage-only fields, singles
+    only), and none for the character list (stored in startgg_char.parquet).
+    """
+    from ds.data import startgg as derived  # the derived layer, only here
+
+    got = asyncio.run(derived.player_usage(str(SPARG0)))
+    ops = Counter(r["op"] for r in call_logs if r["kind"] == "graphql")
+    assert ops == {"Player": 1, "UsageSets": 1}
+    assert got.window.requests == 1
+    assert 0 < got.window.sets <= startgg.USAGE_PER_PAGE
+    assert got.window.events >= 1
+    assert got.recent.characters  # characters resolved from the stored table
+    (sets_call,) = [r for r in call_logs if r.get("op") == "UsageSets"]
+    assert sets_call["variables"]["perPage"] == startgg.USAGE_PER_PAGE
+    assert sets_call["variables"]["filters"] == {"entrantSize": [1]}
+    assert sets_call["objects"] < client.MAX_OBJECTS_PER_REQUEST
+
+
+def test_stored_characters_cover_every_startgg_character():
+    """startgg_char.parquet (ds data startgg-char): every pick maps to a char_group and icon,
+    but 'Random Character'; names that don't match by name are in api.SITE_CHARACTER.
+    """
+    from ds.data.startgg import stored_characters  # the derived layer, only here
+
+    stored = stored_characters()
+    assert stored is not None, "run `uv run ds data startgg-char`"
+    unmapped = sorted(c.name for c in stored.values() if c.char_group is None or c.char_icon is None)
+    assert unmapped == ["Random Character"]
+    assert stored[1297].char_group == "little_mac"
+    rosalina = next(c for c in stored.values() if c.name == "Rosalina")
+    assert (rosalina.char_group, rosalina.char_icon) == ("rosalina_and_luma", "char_icons/rosalina_and_luma.png")
+
+
+def test_stored_characters_are_the_char_group_enum():
+    """startgg_char.parquet's char_group is CharGroup itself, kept in step with char.parquet:
+    CharGroup is generated from char.parquet (ds data roster / char_enum), and this table's
+    column type is exactly its members, so a roster change shows up here first.
+    """
+    import polars as pl  # only this test reads the table directly
+    from ds.data.chars import CharGroup
+    from ds.data.startgg import CHAR_GROUP_DTYPE, STARTGG_CHAR_PARQUET, stored_characters
+
+    table = pl.read_parquet(STARTGG_CHAR_PARQUET)
+    hint = "CharGroup changed: re-run `uv run ds data startgg-char`"
+    assert table.schema["char_group"] == CHAR_GROUP_DTYPE, hint
+    assert CHAR_GROUP_DTYPE.categories.to_list() == [group.value for group in CharGroup], hint
+    # every pick on our side is one start.gg character, and the other way round (but Random)
+    groups = table["char_group"].drop_nulls().cast(pl.String).to_list()
+    assert sorted(groups) == sorted(group.value for group in CharGroup)
+    # what is stored is what the code works out from the names today
+    stored = stored_characters()
+    assert {c.id: c.char_group for c in stored.values()} == dict(table.select("startgg_id", "char_group").iter_rows())
+    assert all(isinstance(c.char_group, CharGroup) for c in stored.values() if c.char_group)

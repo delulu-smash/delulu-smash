@@ -37,7 +37,7 @@ from ds.ai.table import TableResult
 from ds.data import startgg as derived
 from ds.data.chars import CharGroup  # noqa: TC001  # pydantic-ai reads tool parameter types at run time
 from ds.data.raw import startgg
-from ds.data.startgg import PlayerCandidate, PlayerLookupError, PlayerUsage, Setting
+from ds.data.startgg import PlayerCandidate, PlayerLookupError, PlayerUsage, SetCount, Setting
 from ds.util.logging import log_group
 from ds.util.text import clean_f_str
 
@@ -58,22 +58,25 @@ MAX_PLAYERS = 25
 MAX_H2H_SETS = 30
 MAX_TOURNAMENTS = 30
 MAX_ENTRANTS = 200
-MAX_MONTHS = 24
 
 _INSTRUCTIONS = clean_f_str(
     """
     For a competitive Smash Ultimate player's picks, the sets two players played, tournaments and
     entrants, use these tools. The data is tournament sets reported on start.gg, not docs/.
     - "stats for <player>", "what does <player> play": get_player_usage with their tag. Add
-      vs_character for "what do they pick against Steve".
+      vs_characters for "what do they pick against Steve" (several for "against Steve or Pac-Man":
+      games against any of them count).
     - Tags aren't unique. Check `lookup`: `match_type` is tag_exact, tag_any_case, player_id or
       profile; `tied_matches` > 1 means several players share the tag and the one with the most
       events was picked. Say who was picked (tag, region, events) and, on a tie, offer find_players
       to choose another, then call again with that player's `player_id`.
-    - ALWAYS say what the numbers cover, from `window`: the real date span (`first_date` to
-      `last_date`) and the counts ("150 sets, 442 games"). When `capped` is true the data stops at
-      the newest `max_sets` sets, which can be much less than `months`: say so, don't call it
-      "the last 6 months".
+    - ALWAYS say what the numbers cover, from `window`: it is the player's newest sets (one quick
+      look, about 3-4 events), not a span of months. Give the real dates (`first_date` to
+      `last_date`) and the counts ("23 sets from 3 events, 90 games"), and call it their recent
+      play, not their overall habits.
+    - `sets` (30 by default) is how far back get_player_usage reads. Keep 30 unless the user asks
+      for a longer history ("the last couple of months", "since a tournament"): then 60-150, one
+      start.gg request per 30. Say the span you got; offer more rather than taking it unasked.
     - `setting` says which events were counted (all, offline, online). Online and in-person
       picks can differ, so when it isn't 'all', say which one the numbers are for. Each event in
       `last_events` has `online`.
@@ -144,30 +147,33 @@ def find_players(tag: str) -> list[PlayerCandidate]:
 
 def get_player_usage(
     player: str,
-    # a character type: validated, listed in the schema, a picker with icons in the app's form
-    vs_character: CharGroup | None = None,
-    months: int = 6,
+    # a list of a character type: validated, listed in the schema, a multi-select with icons
+    # in the app's form (tool_forms: any list[<choices>] parameter gets one)
+    vs_characters: list[CharGroup] | None = None,
     # choices in the type, so the tool's schema lists them (for the model and the app's form)
     setting: Setting = "all",
+    sets: SetCount = 30,
 ) -> PlayerUsage:
-    """Get which characters and stages a player picks, from their recent start.gg sets.
+    """Get which characters and stages a player picks, from their newest start.gg sets.
 
     Returns character usage overall, in game 1 and per recent event, stage usage (starters,
-    counterpicks, taken to) and how often they switch character within a set. `window` says
-    what the numbers cover.
+    counterpicks, taken to) and how often they switch character within a set, over the newest
+    ~30 sets (about 3-4 events). `window` says what the numbers cover.
 
     Args:
         player: a tag (eg 'Sparg0'), a start.gg player id (eg '158026') or a start.gg profile
             url. For a shared tag the player with the most events is picked (see `lookup`).
-        vs_character: only count games against this character, eg 'steve', 'little_mac' or
-            'pokemon_trainer'. Leave unset for all games.
-        months: how far back to look, eg 6. Very active players reach the set cap sooner.
+        vs_characters: only count games against these characters (any of them), eg
+            ['steve'] or ['steve', 'pac_man']; 'pokemon_trainer' for the Pokemon Trainer pick.
+            Leave unset for all games.
         setting: 'all' (default), 'offline' for in-person events only, or 'online' for online
             events only. Use 'offline' when the user asks about offline / in-person / LAN play.
+        sets: how many of their newest sets to read: 30 (default, about 3-4 events) up to 150.
+            Each 30 is one more start.gg request; ask for more only when the user wants a
+            longer history.
     """
-    if not 1 <= months <= MAX_MONTHS:
-        raise ModelRetry(f"months must be between 1 and {MAX_MONTHS}, got {months}.")
-    return _run(derived.player_usage(player, vs_character=vs_character, months=months, setting=setting))
+    requests = sets // startgg.USAGE_PER_PAGE
+    return _run(derived.player_usage(player, vs_characters=vs_characters, setting=setting, requests=requests))
 
 
 def get_head_to_head(player_1: str, player_2: str) -> TableResult:
