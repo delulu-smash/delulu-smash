@@ -25,24 +25,14 @@ from .state import State
 
 # Nerd Font glyphs come from commands.py (the palette draws the same ones). ICON_CHAT (the robot) is
 # also the inline chat's icon: inline_edit.jsx ICON_AI.
-# The help panel's notes on results.
-RESULT_NOTES = [
-    "Each tool call the agent makes that returns data (frame data, match videos, …) becomes a tab: r1, r2, …",
-    "The same result has a row in the chat under its tool call: click it to unfold it there, or open → for its tab.",
-    "↖ chat on a tab (or Show in Chat when you right-click it) jumps back to that row.",
-    "Debug log (bug icon, Alt+D): every request the app made; ↖ on a row jumps to the tool call, tab or cell behind it.",
-    "The bug on a tool call, your message or a cell (on hover), or Show Requests on a tab, opens the log on just its requests.",
-    "Closing a tab keeps the name in Python; open → in the chat brings it back.",
-    "Inputs ▸ on a match video search: what the tool was called with; change it and run again (Enter).",
-    "After re-running an agent's result, × in its inputs puts the agent's original call and result back.",
-    "+ in the Results tab bar (Alt+P anywhere): add a result by hand: match videos, player usage, a SmashDb console.",
-    "SmashDb console: tables on the left (▶ shows one), write SQL and Ctrl+Enter; a selection runs alone.",
-    "Player usage: a player's characters and stages as bars; pick All games / Game 1 / Events, hover for counts.",
-    "Player usage: All / Offline / Online at its top re-counts everything for in-person or online events only.",
-    "Player usage: sets (30 to 150) is how far back it reads; each 30 is one start.gg request.",
-    "Player usage: vs characters takes several (type to add each, x on a chip removes it); games against any of them count.",
-    "SQL ▸ on a table: query it as self with polars SQL (PostgreSQL syntax), eg select name from self limit 5.",
-    'Values you make in the Python cells get a tab too, eg chars = db.sql("select * from char").',
+# The help panel's FAQ: (question, answer, commands to run in a terminal). How the app works is in
+# the README (experimental/reflex-kernel/README.md); the panel keeps to keys and fixes.
+FAQ = [
+    (
+        'An answer says a key or token isn\'t stored (eg "no start.gg API token stored"), but you stored it',
+        "The server reads stored keys only when it starts. Store the key if you haven't, then restart SmashGPT:",
+        "ds settings sync\nds ui restart",
+    ),
 ]
 # The editor fetches completions straight from the backend (see api.py).
 COMPLETE_URL = rx.config.get_config().api_url + "/complete"
@@ -486,8 +476,20 @@ def help_panel() -> rx.Component:
             ),
             class_name="help-table",
         ),
-        rx.el.div("Results", class_name="help-title"),
-        rx.el.ul(*[rx.el.li(note) for note in RESULT_NOTES], class_name="help-notes"),
+        rx.el.div("FAQ", class_name="help-title"),
+        *[
+            rx.el.div(
+                rx.el.div(question, class_name="help-q"),
+                rx.el.div(answer),
+                rx.el.div(
+                    rx.el.pre(code, class_name="mono"),
+                    copy_button(code, "the commands"),
+                    class_name="help-code",
+                ),
+                class_name="help-faq",
+            )
+            for question, answer, code in FAQ
+        ],
         class_name="help-panel sans",
     )
 
@@ -649,11 +651,7 @@ def tables_pane() -> rx.Component:
             rx.cond(
                 State.has_objects,
                 viewer(),
-                rx.el.div(
-                    "What the agent's tools return opens here as tabs. ",
-                    rx.el.button("More in help", on_click=State.toggle_help, class_name="link-btn"),
-                    class_name="empty sans",
-                ),
+                rx.el.div("What the agent's tools return opens here as tabs.", class_name="empty sans"),
             ),
             class_name="ws-widget",
         ),

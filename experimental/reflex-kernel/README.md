@@ -93,7 +93,8 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   The one other form is a link drawn as a button (the video player's `YouTube ↗`, class `act`).
 - **Player usage** (kind `usage`, `ds.data.startgg.PlayerUsage`, built from start.gg sets; it replaced the
   supermajor.gg version when that site began blocking automated clients): a player at a glance. Its form has
-  `player`, `vs character` (only games against that character), `months` and `setting`. An All / Offline /
+  `player`, `vs characters` (several picks; games against any of them count), `setting` and `sets` (how many of
+  their newest sets it reads, 30 to 150; each 30 is one start.gg request). An All / Offline /
   Online toggle at the top picks which events the whole view counts; it runs the tool again with that
   `setting` (a few seconds the first time, since offline-only reaches further back than the capped mix), and
   each recent event carries an `offline` (filled) or `online` (outlined) tag and its name is a link to the
@@ -199,8 +200,9 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   bound to something new or the result is opened again from the chat (`Session.closed` / `tabs()`).
   A result the agent returned has `↖ chat` in its bar (and Show in Chat in the right-click menu): it
   scrolls the chat to that tool call's row and flashes it.
-- **Help**: the ? at the top right (Alt+H) lists the keyboard shortcuts; it is as tall as the window allows,
-  then scrolls.
+- **Help**: the ? at the top right (Alt+H) lists the keyboard shortcuts and an FAQ of fixes for common errors
+  (`FAQ` in `reflex_kernel.py`: question, answer, commands to run); it is as tall as the window allows, then
+  scrolls. How the app works lives here in the README, not in the panel.
 - **Command palette** (`Alt+P`, `Shortcut.PALETTE`; as VS Code's Ctrl+Shift+P and Omarchy's menu): a search
   box over every action of the app, one row each: icon, `Group: name`, its shortcut. Type to filter (a
   group name or other words work too, eg `view`, `jupyter`), arrows move, Enter runs, Esc or `Alt+P` closes. It always opens on top, as Omarchy's launcher does

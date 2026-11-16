@@ -173,9 +173,11 @@ button { font: inherit; color: inherit; }
   background: var(--bg1); border: 1px solid var(--bg3); border-radius: 8px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4); font-size: 12.5px; }
 .help-title { font-weight: 600; margin: 10px 0 6px; }
 .help-title:first-child { margin-top: 0; }
-.help-notes { margin: 0; padding-left: 18px; line-height: 1.45; list-style: disc; }
-.help-notes li { margin-bottom: 4px; }
-.help-notes li::marker { color: var(--grey1); }
+.help-faq { margin-bottom: 10px; line-height: 1.45; }
+.help-q { font-weight: 600; color: var(--fg); }
+.help-code { position: relative; margin-top: 4px; padding: 6px 36px 6px 8px; background: var(--bg1); border-radius: 4px;
+  font-size: 12px; }
+.help-code .copy-btn { opacity: 1; }
 .link-btn { border: 0; background: none; padding: 0; font: inherit; color: var(--blue); cursor: pointer; }
 .link-btn:hover { text-decoration: underline; }
 .help-table { width: 100%; border-collapse: collapse; }
