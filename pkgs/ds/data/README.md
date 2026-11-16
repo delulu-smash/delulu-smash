@@ -36,7 +36,6 @@ Character roster. Synced via `ds data roster` (see [raw/roster.py](raw/roster.py
 | `id`            | Character URL slug (eg `little_mac`), matches the ultimateframedata.com path |
 | `name`          | Character display name (eg `Little Mac`)                                     |
 | `framedata_url` | Full ultimateframedata.com URL for this character's move frame data          |
-| `char_icon`     | Stock icon file, relative to this folder (eg `char_icons/little_mac.png`); see below |
 | `char_group_id` | Enum (the `CharGroup` picks, so it joins to `char_ranking.char_group_id`). The character-select entry this fighter belongs to: `pokemon_trainer` for `pt_squirtle` / `pt_ivysaur` / `pt_charizard`, `pyra_mythra` for `pyra` / `mythra`, the fighter's own `id` for everyone else; see below |
 
 ### Fighters and picks (`char_group_id`)
@@ -75,15 +74,16 @@ ds.data.char_group_by_name("Pyra & Mythra")      # "pyra_mythra": a pick as anot
 ### `char_icons/`
 
 One 64x64 PNG stock icon per character, downloaded from [nasmashmate.com](https://nasmashmate.com/leaderboard)'s
-character picker with `ds data char_icon` (see [raw/smashmate.py](raw/smashmate.py), which also sets the `char_icon`
-column). Files are named by `char.parquet.id`, with two shared ones because the site has a single icon for
+character picker with `ds data char_icon` (see [raw/smashmate.py](raw/smashmate.py)). There is no icon column in
+`char.parquet`: the file follows from the id, so look it up with the functions below. Files are named by `char.parquet.id`, with two shared ones because the site has a single icon for
 each: `pokemon_trainer.png` (`pt_squirtle`, `pt_ivysaur`, `pt_charizard`) and `pyra_mythra.png` (`pyra`, `mythra`).
 
 ```python
 import ds.data
 
 ds.data.char_icon_path("little_mac")  # Path(".../pkgs/ds/data/char_icons/little_mac.png")
-ds.data.char_icon("little_mac")       # "char_icons/little_mac.png", the `char_icon` column's value
+ds.data.char_icon("little_mac")       # "char_icons/little_mac.png", relative to this folder
+chars.with_columns(char_icon=pl.col("id").map_elements(ds.data.char_icon, return_dtype=pl.String))  # as a column
 ds.data.char_icon_by_name("Pac-Man")  # "char_icons/pac_man.png": by a display name as other sites write it
 ```
 

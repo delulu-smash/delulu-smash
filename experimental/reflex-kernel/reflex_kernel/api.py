@@ -50,7 +50,7 @@ api = Starlette(
     routes=[
         Route("/complete", complete, methods=["POST"]),
         Route("/inline_edit", inline_edit, methods=["POST"]),
-        # the folder's name is the url prefix, so char.parquet's `char_icon` value is the path
+        # the folder's name is the url prefix, so ds.data.char_icon's value is the path
         Mount(f"/{CHAR_ICON_DIR.name}", StaticFiles(directory=CHAR_ICON_DIR), name="char_icons"),
     ],
     middleware=[Middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["GET", "POST"], allow_headers=["*"])],

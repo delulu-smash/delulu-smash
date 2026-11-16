@@ -15,8 +15,8 @@ from ds.cli.util import run_cmd
 from ds.data.char_icons import CHAR_ICON_DIR
 from ds.data.raw import char_ranking
 from ds.data.raw.framedata import scrape_framedata
-from ds.data.raw.roster import CHARS_MODULE, scrape_character_roster, with_char_icon, write_char_enums
-from ds.data.raw.smashmate import SITE_CHAR_ICON, scrape_char_icons
+from ds.data.raw.roster import CHARS_MODULE, scrape_character_roster, write_char_enums
+from ds.data.raw.smashmate import SITE_CHAR_ICON, char_icon_file, scrape_char_icons
 from ds.data.raw.startgg import videogame_characters, write_startgg_characters
 
 # TODO: consider consolidating to one command for syncing raw
@@ -29,7 +29,7 @@ data_app = typer.Typer(help="SubCommands for raw & transformed data (eg frame da
 # pkgs/ds/data/ (icons, raw/) and its smash_db/parquet/ folder: SmashDb, one file per table
 DATA_DIR = ds.data.paths.DATA_DIR
 PARQUET_DIR = ds.data.paths.PARQUET_DIR
-# the "database" of characters (id, name, char_icon) synced from ultimateframedata.com
+# the "database" of characters (id, name, char_group_id) synced from ultimateframedata.com
 CHAR_PARQUET_PATH = PARQUET_DIR / "char.parquet"
 # the "database" of move frame data synced from ultimateframedata.com
 FRAMEDATA_PARQUET_PATH = PARQUET_DIR / "framedata.parquet"
@@ -135,13 +135,12 @@ def char_enum() -> None:
 
 @data_app.command("char_icon")
 def char_icon() -> None:
-    """Download the character icons from nasmashmate.com; set char.parquet's char_icon."""
-    char_df = with_char_icon(pl.read_parquet(CHAR_PARQUET_PATH))
-    missing = char_df.filter(pl.col("char_icon").is_null())["id"].to_list()
+    """Download the character icons from nasmashmate.com into char_icons/."""
+    char_ids = pl.read_parquet(CHAR_PARQUET_PATH)["id"].to_list()
+    missing = [char_id for char_id in char_ids if char_id not in SITE_CHAR_ICON]
     if missing:
         print(f"No icon mapped for: {missing} (add them to SITE_CHAR_ICON in ds.data.raw.smashmate)")
-    files = char_df["char_icon"].drop_nulls().n_unique()
-    print(char_df)
+    files = len({char_icon_file(char_id) for char_id in SITE_CHAR_ICON})
     if not typer.confirm(
         f"Download {files} icons for {len(SITE_CHAR_ICON)} characters into {CHAR_ICON_DIR} (overwrites)?"
     ):
@@ -149,8 +148,7 @@ def char_icon() -> None:
         return
     with pl.Config(tbl_rows=-1):
         print(scrape_char_icons(CHAR_ICON_DIR))
-    char_df.write_parquet(CHAR_PARQUET_PATH)
-    print(f"Wrote the icons to {CHAR_ICON_DIR} and the char_icon column to {CHAR_PARQUET_PATH}")
+    print(f"Wrote the icons to {CHAR_ICON_DIR}")
 
 
 # the per-character rankings table, loaded from hand-downloaded CSVs (ds.data.raw.char_ranking)

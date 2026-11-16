@@ -13,7 +13,6 @@ import polars as pl
 from bs4 import BeautifulSoup
 
 from ds.data.raw.framedata import BASE_URL
-from ds.data.raw.smashmate import SITE_CHAR_ICON
 from ds.util import http
 
 ROSTER_URL = "https://ultimateframedata.com/smash"
@@ -40,19 +39,7 @@ def scrape_character_roster() -> pl.DataFrame:
         # TODO: see if framedata_url should store given its just derived by id
         rows.append({"id": slug, "name": link.get("title", ""), "framedata_url": BASE_URL.format(character=slug)})
 
-    return with_char_group(with_char_icon(pl.DataFrame(rows)))
-
-
-def with_char_icon(char_df: pl.DataFrame) -> pl.DataFrame:
-    """Add (or refresh) the `char_icon` column: each character's icon path relative to
-    pkgs/ds/data/, eg 'char_icons/little_mac.png' (null for an id with no icon yet,
-    see ds.data.raw.smashmate).
-    """
-    # imported here: ds.data.char_icons imports ds.data.raw, so a top-level import is circular
-    from ds.data.char_icons import char_icon
-
-    icons = {char_id: char_icon(char_id) for char_id in SITE_CHAR_ICON}
-    return char_df.with_columns(char_icon=pl.col("id").replace_strict(icons, default=None, return_dtype=pl.String))
+    return with_char_group(pl.DataFrame(rows))
 
 
 def with_char_group(char_df: pl.DataFrame) -> pl.DataFrame:
@@ -64,7 +51,7 @@ def with_char_group(char_df: pl.DataFrame) -> pl.DataFrame:
     `char_group_id` (the `CharGroup` enum, generated from this column), since polars SQL
     won't join an Enum column to a String one.
     """
-    # imported here for the same reason as in with_char_icon
+    # imported here: ds.data.char_icons imports ds.data.raw, so a top-level import is circular
     from ds.data.char_icons import char_group
 
     groups = char_df["id"].map_elements(char_group, return_dtype=pl.String)

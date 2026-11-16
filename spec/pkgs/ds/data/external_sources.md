@@ -21,7 +21,7 @@ functions built on different sites can be combined without translating between t
 |---|---|---|
 | Character (a fighter) | `char_id`, eg `little_mac`, `pt_squirtle` | `char.parquet` (`id`) |
 | Character (a pick) | `char_group`, eg `little_mac`, `pokemon_trainer` | `char.parquet` (`char_group_id`), `ds.data.CHAR_GROUPS` |
-| Character icon | `char_icon`, a path under `pkgs/ds/data/` | `char.parquet` (`char_icon`), `ds.data.char_icon` |
+| Character icon | `char_icon`, a path under `pkgs/ds/data/` | `ds.data.char_icon(char_id)` (from the id by the file naming rule; not a `char.parquet` column) |
 | Foreign key column / field | `{table}_id` | `.agents/instructions/pkgs.md`, "`ds/data` Conventions" |
 | Time | timezone-aware UTC `datetime`; `date` for day-only values | |
 | Field names | snake_case, the same word for the same thing across sites (`tag`, `online`, `start_at`) | |

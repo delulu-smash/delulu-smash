@@ -3,7 +3,7 @@
 # Purpose: Download the character stock icons nasmashmate.com shows in its character picker
 #          (64x64 PNGs) into pkgs/ds/data/char_icons/, one file per character.
 # Usage: `ds data char_icon` (calls `scrape_char_icons()`); look an icon up with
-#        `ds.data.char_icon_path("little_mac")`, or the `char_icon` column of char.parquet.
+#        `ds.data.char_icon_path("little_mac")` / `ds.data.char_icon("little_mac")`.
 # ---------------------------------------------------------------------------
 # Site notes: context the code doesn't show (findings, decisions), as of Nov 2026.
 # Re-check against the live site if a download fails.
