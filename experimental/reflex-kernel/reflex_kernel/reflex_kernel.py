@@ -14,13 +14,14 @@ import reflex as rx
 
 from .api import api
 from .editor import cell_editor
-from .render import ICON_COLLAPSE, ICON_EXPAND, copy_button, render_component, traceback_view
+from .render import ICON_COLLAPSE, ICON_EXPAND, INLINE_EDIT_URL, copy_button, render_component, traceback_view
 from .widgets import ADDABLE
 from .shortcuts import Shortcut, codemirror_keys, shortcuts_script
 from .state import State
 
 # Nerd Font glyphs (JetBrainsMono Nerd Font): python logo, robot, table.
 ICON_PY = ""
+# ICON_CHAT (the robot) is also the inline chat's icon: inline_edit.jsx ICON_AI
 ICON_CHAT, ICON_RESULTS = "\U000f06a9", "\U000f04eb"
 # A bug, for the debug panel's button.
 ICON_BUG = "\U000f00e4"
@@ -200,7 +201,8 @@ def chat_pane() -> rx.Component:
             ),
             on_submit=State.send_chat,
             reset_on_submit=True,
-            class_name="composer",
+            # while the agent works: the same sweep of light as the inline chat's (app.css)
+            class_name=rx.cond(State.busy, "composer is-thinking", "composer"),
         ),
         class_name=rx.match(
             State.chat_layout,
@@ -339,9 +341,18 @@ def debug_row(row: rx.Var) -> rx.Component:
             ),
             rx.foreach(
                 row.details,
-                lambda detail: rx.el.div(
-                    rx.el.div(detail["label"], class_name="dbg-label dim"),
-                    rx.el.pre(detail["text"], class_name="dbg-text mono"),
+                lambda detail: rx.cond(
+                    detail["fold"] != "",
+                    # long text you only sometimes want (a tool call's response): folded until clicked
+                    rx.el.details(
+                        rx.el.summary(detail["label"], class_name="dbg-label dim"),
+                        rx.el.pre(detail["text"], class_name="dbg-text mono"),
+                        class_name="dbg-fold",
+                    ),
+                    rx.el.div(
+                        rx.el.div(detail["label"], class_name="dbg-label dim"),
+                        rx.el.pre(detail["text"], class_name="dbg-text mono"),
+                    ),
                 ),
             ),
             class_name="dbg-details",
@@ -494,6 +505,7 @@ def cell_view(cell: rx.Var) -> rx.Component:
                 cell_editor(
                     initial_code=cell.code,
                     complete_url=COMPLETE_URL,
+                    edit_url=INLINE_EDIT_URL,
                     keys=codemirror_keys(),
                     token=State.token,
                     on_run=lambda code, advance: State.run_cell(cell.id, code, advance),

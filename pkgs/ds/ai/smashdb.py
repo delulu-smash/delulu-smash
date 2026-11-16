@@ -23,6 +23,8 @@ from ds.ai.table import TableResult
 from ds.data.smash_db import SmashDb, init_db
 
 __all__ = [
+    "DATA_NOTES",
+    "MOVE_ALIASES",
     "Character",
     "MoveRef",
     "find_character",
@@ -76,6 +78,14 @@ class MoveRef(BaseModel):
     move: str = Field(description="Move name as used by get_move_framedata, eg Forward Air")
 
 
+# How to read the data, for any AI that writes queries or code on SmashDb (this capability's
+# instructions; the reflex-kernel app's inline chat, which sees no tool results to learn from)
+DATA_NOTES = """\
+basedamage is listed WITHOUT the 1v1 damage multiplier (x1.2 in 1v1 matches).
+Frame data values are strings: '--' means not applicable, 'a/b' lists per-hitbox values (see
+whichhitbox), and activeframes like '5—7' are frame ranges. 'advantage' is frame advantage on
+shield (negative = punishable)."""
+
 _INSTRUCTIONS = """\
 You answer Super Smash Bros. Ultimate questions using SmashDb (frame data scraped from
 ultimateframedata.com). Always ground answers in tool results rather than memory; if the data
@@ -83,10 +93,7 @@ doesn't have it, say so.
 Prefer get_move_framedata / list_moves / find_character; use query_smashdb for cross-character or
 aggregate questions.
 get_move_framedata / query_smashdb return a TableResult: read its `csv` (header + rows) and check
-`truncated`. basedamage is listed WITHOUT the 1v1 damage multiplier (x1.2 in 1v1 matches).
-Frame data values are strings: '--' means not applicable, 'a/b' lists per-hitbox values (see
-whichhitbox), and activeframes like '5—7' are frame ranges. 'advantage' is frame advantage on
-shield (negative = punishable).
+`truncated`. {notes}
 
 SmashDb tables (framedata.char_id -> char.id):
 {schema}"""
@@ -208,7 +215,7 @@ def _instructions() -> str:
         f"- {table}: " + ", ".join(f"{col} ({dtype})" for col, dtype in cols.items())
         for table, cols in _db().schema().items()
     )
-    return _INSTRUCTIONS.format(schema=schema)
+    return _INSTRUCTIONS.format(schema=schema, notes=DATA_NOTES)
 
 
 smashdb_capability = Capability(

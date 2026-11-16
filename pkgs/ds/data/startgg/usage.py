@@ -59,7 +59,7 @@ EVENTS = 10
 class CharacterUsage(BaseModel):
     """One character's share of a count (games, or events)"""
 
-    char_group: str | None = Field(None, description="char.parquet `char_group`, eg 'cloud', 'pokemon_trainer'")
+    char_group: str | None = Field(None, description="char.parquet `char_group_id`, eg 'cloud', 'pokemon_trainer'")
     character: str = Field(description="Name as start.gg shows it, eg 'Little Mac', 'Pokemon Trainer'")
     char_icon: str | None = Field(None, description="Icon path under pkgs/ds/data/")
     usage_pct: float = Field(description="0-100, `count` / the stats' `total`")

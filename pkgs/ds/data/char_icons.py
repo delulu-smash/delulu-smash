@@ -94,7 +94,7 @@ def char_id_by_name(name: str) -> str | None:
 
 
 def char_group(char_id: str) -> str:
-    """The character-select entry a fighter belongs to, as in char.parquet's `char_group`
+    """The character-select entry a fighter belongs to, as in char.parquet's `char_group_id`
     column: 'pt_ivysaur' -> 'pokemon_trainer', 'mythra' -> 'pyra_mythra', 'little_mac' ->
     'little_mac'. A group id is returned as is.
     """

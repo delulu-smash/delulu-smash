@@ -20,7 +20,7 @@ functions built on different sites can be combined without translating between t
 | Thing | Standard | Source of truth |
 |---|---|---|
 | Character (a fighter) | `char_id`, eg `little_mac`, `pt_squirtle` | `char.parquet` (`id`) |
-| Character (a pick) | `char_group`, eg `little_mac`, `pokemon_trainer` | `char.parquet` (`char_group`), `ds.data.CHAR_GROUPS` |
+| Character (a pick) | `char_group`, eg `little_mac`, `pokemon_trainer` | `char.parquet` (`char_group_id`), `ds.data.CHAR_GROUPS` |
 | Character icon | `char_icon`, a path under `pkgs/ds/data/` | `char.parquet` (`char_icon`), `ds.data.char_icon` |
 | Foreign key column / field | `{table}_id` | `.agents/instructions/pkgs.md`, "`ds/data` Conventions" |
 | Time | timezone-aware UTC `datetime`; `date` for day-only values | |
@@ -52,12 +52,12 @@ ids, icon file names). The translation belongs to the site's module and is the m
   character-select entry. They differ for two picks: `pokemon_trainer` (`pt_squirtle`, `pt_ivysaur`,
   `pt_charizard`) and `pyra_mythra` (`pyra`, `mythra`). Frame-data sites list fighters (ultimateframedata.com
   has no Pokemon Trainer page); tournament sites record picks (start.gg doesn't say which Pokemon was out).
-  - **`char.parquet` has both:** `id` is the fighter, `char_group` the pick it belongs to (its own id when
+  - **`char.parquet` has both:** `id` is the fighter, `char_group_id` the pick it belongs to (its own id when
     it isn't grouped). Decided Nov 2026, after trying one member as a stand-in: that made a join to frame
     data return only that member's moves.
   - **A source that knows fighters returns `char_id`; one that only knows picks returns `char_group`.**
     Don't put a group id in a `char_id` field or a fighter in place of a pick.
-  - **Joining a pick to fighters:** on `char_group`, which gives every member (`ds.data.char_group_members`).
+  - **Joining a pick to fighters:** on `char.parquet`'s `char_group_id`, which gives every member (`ds.data.char_group_members`).
   - **Inputs:** a function about picks accepts a fighter id, a group id or a name and narrows it with
     `ds.data.char_group_by_name` (`pt_ivysaur` -> `pokemon_trainer`).
   - **Our id -> site (input to a site with one entry per pick):** every member maps to the site's one value.

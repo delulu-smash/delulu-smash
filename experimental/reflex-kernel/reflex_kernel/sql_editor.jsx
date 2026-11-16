@@ -6,7 +6,7 @@
 //          as in a cell), and the run key from shortcuts.py (Shortcut.RUN_SQL). Usually one line; grows if you add more.
 //          Also a SmashDb console's query editor (render.db_console_widget): given `schema`
 //          ({table: columns}) instead of `columns`, it completes every table. Run sends the
-//          selection when there is one, else the whole text.
+//          selection when there is one, else the whole text. With editUrl: Alt+A inline chat (inline_edit.jsx).
 // Usage: wrapped for Reflex by reflex_kernel/editor.py (SqlEditor).
 // ---------------------------------------------------------------------------
 import React, { useMemo, useRef } from "react";
@@ -17,6 +17,7 @@ import { EditorView, keymap } from "@codemirror/view";
 import { Prec } from "@codemirror/state";
 import { createTheme } from "@uiw/codemirror-themes";
 import { tags as t } from "@lezer/highlight";
+import { inlineEdit } from "./inline_edit.jsx";
 import { c, completeOrIndent, completionOptions, editorSettings } from "./cell_editor.jsx";
 
 // polars SQL: its keywords, functions and types only. CodeMirror's PostgreSQL dialect counts hundreds
@@ -58,17 +59,24 @@ const sqlTheme = createTheme({
   ],
 });
 
-export function SqlEditor({ initialSql, columns, schema, placeholder, keys, onRun, onSave }) {
+export function SqlEditor({ initialSql, columns, schema, placeholder, keys, editUrl, token, onRun, onSave }) {
   // the latest props, for the keymap built once
   const live = useRef({});
-  live.current = { onRun, onSave };
   const text = useRef(initialSql || "");
   // a table view gives its columns (the table is "self"); a console gives the whole schema
   const tables = schema || { self: columns || [] };
+  live.current = { onRun, onSave, editUrl, token, tables };
   const tablesKey = JSON.stringify(tables);
   const save = () => { if (live.current.onSave) live.current.onSave(text.current); };
 
+  // Alt+A inline chat, where editUrl is given (a SmashDb console). Built once: the extensions below
+  // are rebuilt when the tables change, which would drop an open box.
+  const chat = useMemo(() => inlineEdit(() => (
+    { url: live.current.editUrl, key: keys?.inlineEdit, freshKey: keys?.inlineEditFresh, language: "sql",
+      token: live.current.token, schema: live.current.tables })), []);
+
   const extensions = useMemo(() => [
+    chat, // first, so its Tab / Esc win while a proposal is shown
     sql({ dialect: PolarsSQL, schema: tables, defaultTable: schema ? undefined : "self", upperCaseKeywords: false }),
     EditorView.lineWrapping,
     autocompletion(completionOptions),

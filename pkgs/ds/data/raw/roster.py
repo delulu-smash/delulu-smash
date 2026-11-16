@@ -56,14 +56,20 @@ def with_char_icon(char_df: pl.DataFrame) -> pl.DataFrame:
 
 
 def with_char_group(char_df: pl.DataFrame) -> pl.DataFrame:
-    """Add (or refresh) the `char_group` column: the character-select entry each fighter
+    """Add (or refresh) the `char_group_id` column: the character-select entry each fighter
     belongs to ('pokemon_trainer' for the three Pokemon, 'pyra_mythra' for Pyra and Mythra,
     the fighter's own id otherwise). Tournament data joins on it (see ds.data.char_group).
+
+    It is an Enum of the picks in table order: the same type as `char_ranking.parquet`'s
+    `char_group_id` (the `CharGroup` enum, generated from this column), since polars SQL
+    won't join an Enum column to a String one.
     """
     # imported here for the same reason as in with_char_icon
     from ds.data.char_icons import char_group
 
-    return char_df.with_columns(char_group=pl.col("id").map_elements(char_group, return_dtype=pl.String))
+    groups = char_df["id"].map_elements(char_group, return_dtype=pl.String)
+    picks = pl.Enum(groups.unique(maintain_order=True).to_list())
+    return char_df.with_columns(char_group_id=groups.cast(picks))
 
 
 CHARS_MODULE = Path(__file__).resolve().parents[1] / "chars.py"
@@ -78,16 +84,16 @@ def _enum_class(name: str, doc: str, values: list[str]) -> list[str]:
 
 def char_enum_source(char_df: pl.DataFrame) -> str:
     """The generated part of ds/data/chars.py for a character table: `CharId` (one member per
-    row) and `CharGroup` (one per distinct `char_group`), in the table's order.
+    row) and `CharGroup` (one per distinct `char_group_id`), in the table's order.
     """
     fighters = char_df["id"].to_list()
-    picks = char_df["char_group"].unique(maintain_order=True).to_list()
+    picks = char_df["char_group_id"].unique(maintain_order=True).to_list()
     lines = [
         _BEGIN,
         *_enum_class("CharId", "A fighter: one row of char.parquet (`id`)", fighters),
         "",
         "",
-        *_enum_class("CharGroup", "A character-select pick: char.parquet's `char_group`", picks),
+        *_enum_class("CharGroup", "A character-select pick: char.parquet's `char_group_id`", picks),
         # two blank lines, as ruff-format leaves between a class and a comment: otherwise the
         # formatter and this generator rewrite each other's output
         "",

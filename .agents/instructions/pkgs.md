@@ -51,8 +51,9 @@ about a SQL table (primary key, foreign keys, grain), not as an arbitrary data d
   (eg `framedata.parquet` references `char.parquet` via a `char_id` column, not `character`).
 - **Column naming (user's convention, Nov 2026):** id-like columns end in `_id` (`char_id`, `char_group_id`,
   `player_id`), booleans start with `is_` (`is_solo_main`, not `solo_main`). Applies to new and changed columns;
-  `char_ranking.parquet` follows it. Older tables predate it (`char.parquet` still has
-  `char_group`): rename those only when asked, since start.gg code reads it by name.
+  `char_ranking.parquet` and `char.parquet` (`char_group_id`, renamed from `char_group` Nov 2026) follow it.
+  Older columns that predate it: rename only when asked. Python names for a pick keep the short form
+  (`ds.data.char_group()`, a model's `char_group` field); only the column is `char_group_id`.
 - **SmashDb holds our vocabulary only.** No table or column for a source's own ids or names (eg a start.gg
   character id): normalize when storing, or keep the translation in `raw/<site>/` behind that site's `ds.data`
   functions. Details: `spec/pkgs/ds/data/data_storage.md` ("Requirements").

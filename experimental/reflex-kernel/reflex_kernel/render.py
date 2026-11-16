@@ -55,6 +55,8 @@ DEFAULT_SQL = "select * from self"
 MAX_BAR_ROWS = 6
 # The backend serves the character icons (api.py); the browser loads them from here.
 ICON_URL = rx.config.get_config().api_url + "/"
+# the Alt+A inline chat's backend (api.py), given to the SmashDb console's SQL box
+INLINE_EDIT_URL = rx.config.get_config().api_url + "/inline_edit"
 # Longest text shown for one field value or table cell of a generic model view.
 MAX_VALUE_CHARS = 400
 # Rows shown per list in a generic model view.
@@ -1007,6 +1009,9 @@ def db_console_widget(
                             schema=view.db_schema,
                             placeholder="select * from framedata",
                             keys=sql_keys(),
+                            edit_url=INLINE_EDIT_URL,
+                            # the base state's var: no app State import here (state.py imports this file)
+                            token=rx.State.router.session.client_token,
                             on_run=lambda query: send("db_run", query),
                             on_save=lambda text: send("db_draft", text),
                         ),

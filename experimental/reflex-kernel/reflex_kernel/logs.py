@@ -34,6 +34,8 @@ MAX_RECORDS = 2000
 MAX_ROWS = 300
 SESSION_CHARS = 8  # a session is shown by the start of its client token
 _WINDOW = 60.0  # start.gg's rate window, seconds
+# Details shown folded inside an unfolded row (long text you only sometimes want), by label.
+FOLDED_DETAILS = frozenset({"tool response"})
 
 _records: deque[dict[str, Any]] = deque(maxlen=MAX_RECORDS)
 _seq = 0
@@ -197,7 +199,11 @@ def _http(record: dict[str, Any]) -> LogView:
 
 def _agent(record: dict[str, Any]) -> LogView:
     steps = record.get("steps", 0)
-    parts = ["turn", f"{record.get('ms', '?')} ms", f"{steps} tool call{'s' if steps != 1 else ''}"]
+    parts = [
+        str(record.get("name") or "turn"),
+        f"{record.get('ms', '?')} ms",
+        f"{steps} tool call{'s' if steps != 1 else ''}",
+    ]
     if record.get("input_tokens") is not None:
         parts.append(f"{record['input_tokens']} in / {record.get('output_tokens')} out tokens")
     return LogView(" · ".join(parts), _badges(record), [("prompt", str(record.get("prompt", "")))] + _common(record))
@@ -206,6 +212,10 @@ def _agent(record: dict[str, Any]) -> LogView:
 def _tool(record: dict[str, Any]) -> LogView:
     parts = [str(record.get("name", "tool")), f"{record.get('ms', '?')} ms", str(record.get("args", ""))]
     details = [("args", str(record.get("args", "")))]
+    # what the tool gave back to the AI (ds.ai.call_log): seen nowhere else, unlike an AI answer
+    # (the chat shows it) or an inline edit (the editor does)
+    if record.get("response"):
+        details.append(("tool response", str(record["response"])))
     return LogView(" · ".join(parts), _badges(record), details + _common(record))
 
 
@@ -283,7 +293,10 @@ def _row(record: dict[str, Any]) -> dict[str, Any]:
         "error": bool(record.get("error")),
         "summary": view.summary,
         "badges": [b for b in view.badges if b],
-        "details": [{"label": label, "text": text} for label, text in view.details],
+        "details": [
+            {"label": label, "text": text, "fold": "1" if label in FOLDED_DETAILS else ""}
+            for label, text in view.details
+        ],
         "copy": _json(plain),
         "curl": curl,
         "session": str(record.get("session") or ""),

@@ -37,9 +37,9 @@ class Character(BaseModel):
     id: int = Field(description="start.gg character id, eg 1297")
     name: str = Field(description="start.gg's display name, eg 'Little Mac'")
     # start.gg knows the pick, not the fighter: 'Pokemon Trainer' is 'pokemon_trainer', ie
-    # three char.parquet rows (join on its `char_group` column); None for 'Random Character'
+    # three char.parquet rows (join on its `char_group_id` column); None for 'Random Character'
     char_group: CharGroup | None = Field(
-        None, description="The pick as our CharGroup (char.parquet `char_group`), eg 'little_mac', 'pokemon_trainer'"
+        None, description="The pick as our CharGroup (char.parquet `char_group_id`), eg 'little_mac', 'pokemon_trainer'"
     )
     char_icon: str | None = Field(None, description="Icon path under pkgs/ds/data/, eg 'char_icons/little_mac.png'")
 

@@ -38,7 +38,8 @@ before running the app by hand (both use ports 3000 and 8000).
 Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway key the rest of
 `ds.ai` uses.
 
-- **Chat**: Enter sends, Shift+Enter adds a line. Tool calls are listed above each reply.
+- **Chat**: Enter sends, Shift+Enter adds a line. Tool calls are listed above each reply. While the agent works,
+  light sweeps across the chat box (as over the code in an inline chat).
   Hover a message for its copy button on the top-right corner (a reply copies as its markdown source).
   A failed turn (the model or a tool raised) shows its traceback in the same component a Python cell uses
   (`render.traceback_view`): the frame that raised and the error, the rest folded, and a copy button (top right,
@@ -47,7 +48,8 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   gallery, fields; folded by default), or `open →` to open it as a tab in Results.
 - **Debug log** (bug icon in the title bar, `Alt+D`): every outside call the app made, newest first:
   start.gg GraphQL requests (operation, page, status, time, start.gg's object count), other HTTP fetches
-  (supermajor search, smash-tube), agent turns (time, tool calls, tokens) and tool steps. A row unfolds to its
+  (supermajor search, smash-tube), agent turns (time, tool calls, tokens) and tool steps (a tool step has a `tool response` section, folded
+  until clicked: what the tool gave back to the AI, cut at 4,000 characters). A row unfolds to its
   details: the request as sent (method, url, headers with secrets filtered, body or GraphQL query and
   variables), the response (status, type, size, `cf-ray`, the start of an error body), page info, timing
   (including the wait for start.gg's rate budget), the lookup's `group`, session, origin
@@ -232,6 +234,23 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   opens the list after a name or a dot; elsewhere Tab indents. Ctrl+Space forces the list. Suggestions come from `jedi` run
   against the live variables, so `r1.` lists real DataFrame methods. `jedi` is present in the root
   venv only as a dependency of IPython; add it to the root `pyproject.toml` if that changes.
+- **Inline chat** (as Copilot's Ctrl+I; `reflex_kernel/inline_edit.jsx` + `inline_edit.py`): in a Python
+  cell or a SmashDb console's SQL box, opens a prompt box under the editor. Two keys:
+  - `Alt+A`: the AI also reads the chat so far (its answers and tool results), so "a query for the move we
+    just talked about" works. Slower and costlier the longer the chat is.
+  - `Alt+Shift+A`: fresh, without the chat. The box shows which one it is ("with chat" / "fresh").
+
+  Type what you want and press Enter: the AI rewrites the selection (or the whole box when nothing is
+  selected) and the change is shown as a diff in the editor. Tab accepts (one Ctrl+Z undoes it), Esc
+  discards, Enter with a new prompt refines the proposal. While the AI is thinking, light sweeps
+  across the lines it is rewriting. Either way the model sees the editor's text
+  plus the SmashDb tables (columns, their first rows, and notes on how values are written: a move is
+  `Neutral Air`, not `nair`; a startup is text like `10/13/16`) and, for Python, your live variables
+  (DataFrames with their columns and first rows). A proposal for the whole box is checked before you see
+  it: a query is run, Python is parsed; one that fails (or a query that returns no rows) goes back to the
+  model with the error, up to twice. It only reads the chat: an inline call is not added to it, and it has
+  none of the chat agent's tools. Each call is one record in the debug log. Another editor gets it by
+  passing `edit_url` (`editor.py`).
 - **No autofill**: every input, textarea and editor is opted out of password managers (1Password, LastPass,
   Bitwarden, Dashlane) and browser autofill by `assets/no_autofill.js`, including inputs added later. To allow
   one, put `data-allow-autofill` on it or a parent.

@@ -23,9 +23,10 @@ DATA_DIR = PARQUET_DIR
 class SmashDb:
     """The master Smash dataset: cleaned, normalized tables that share one vocabulary.
 
-    Every table speaks this repo's own terms (`char_id`, `char_group`, UTC dates, `{table}_id`
-    foreign keys; spec/pkgs/ds/data/external_sources.md), so any two can be joined without
-    translating. What is NOT in here: a source's own concepts (a site's character ids, names
+    Every table speaks this repo's own terms (`char_id`, `char_group_id`, UTC dates,
+    `{table}_id` foreign keys; spec/pkgs/ds/data/external_sources.md), so any two can be
+    joined without translating.
+    What is NOT in here: a source's own concepts (a site's character ids, names
     or slugs) and raw or intermediate data. Those are normalized before they are stored, or
     stay inside that source's code under ds/data/raw/<site>/.
 

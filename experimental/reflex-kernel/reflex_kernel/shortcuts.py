@@ -40,6 +40,17 @@ class Shortcut(Enum):
     RUN_AND_ADVANCE = Binding("Shift+Enter", "cell", "Run and go to the next cell")
     RUN = Binding("Ctrl+Enter", "cell", "Run")
     COMPLETE = Binding("Tab", "cell, table SQL, SmashDb console", "Complete")
+    # Handled by inline_edit.jsx, in a cell and the SmashDb console's SQL box.
+    INLINE_EDIT = Binding(
+        "Alt+A",
+        "cell, SmashDb console",
+        "Inline chat, knowing the chat so far: ask AI to write or change the code (the selection, else all); Tab accepts, Esc discards",
+    )
+    INLINE_EDIT_FRESH = Binding(
+        "Alt+Shift+A",
+        "cell, SmashDb console",
+        "Inline chat, fresh: the same, without the chat (faster; sees only the code, variables and tables)",
+    )
     # Handled by the SQL box (sql_editor.jsx): a table view's, and a SmashDb console's editor.
     RUN_SQL = Binding(
         "Ctrl+Enter",
@@ -77,13 +88,20 @@ def shortcuts_script() -> str:
 
 
 def codemirror_key(shortcut: Shortcut) -> str:
-    """CodeMirror's spelling of a binding: "Ctrl+Enter" -> "Mod-Enter" (Cmd on a Mac)."""
-    return "-".join("Mod" if part == "Ctrl" else part for part in shortcut.keys.split("+"))
+    """CodeMirror's spelling of a binding: "Ctrl+Enter" -> "Mod-Enter" (Cmd on a Mac), "Alt+A" -> "Alt-a",
+    "Alt+Shift+A" -> "Alt-Shift-a" (CodeMirror wants the letter in lower case, Shift named apart)."""
+    *mods, key = shortcut.keys.split("+")
+    return "-".join(["Mod" if mod == "Ctrl" else mod for mod in mods] + [key.lower() if len(key) == 1 else key])
 
 
 def sql_keys() -> dict[str, str]:
     """The SQL box's keymap, by the prop names sql_editor.jsx reads."""
-    return {"run": codemirror_key(Shortcut.RUN_SQL), "complete": codemirror_key(Shortcut.COMPLETE)}
+    return {
+        "run": codemirror_key(Shortcut.RUN_SQL),
+        "complete": codemirror_key(Shortcut.COMPLETE),
+        "inlineEdit": codemirror_key(Shortcut.INLINE_EDIT),
+        "inlineEditFresh": codemirror_key(Shortcut.INLINE_EDIT_FRESH),
+    }
 
 
 def codemirror_keys() -> dict[str, str]:
@@ -92,4 +110,6 @@ def codemirror_keys() -> dict[str, str]:
         "run": codemirror_key(Shortcut.RUN),
         "runAndAdvance": codemirror_key(Shortcut.RUN_AND_ADVANCE),
         "complete": codemirror_key(Shortcut.COMPLETE),
+        "inlineEdit": codemirror_key(Shortcut.INLINE_EDIT),
+        "inlineEditFresh": codemirror_key(Shortcut.INLINE_EDIT_FRESH),
     }

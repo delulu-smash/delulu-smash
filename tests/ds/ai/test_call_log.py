@@ -11,10 +11,10 @@ import asyncio
 
 import pytest
 from ds.ai.agent import agent as smash_agent
-from ds.ai.call_log import ToolCallLog
+from ds.ai.call_log import MAX_RESPONSE_CHARS, ToolCallLog, response_text
 from ds.util.logging import enable_call_logs, log_call, logger
 from ds.util.logging.calls import CALL_LOGGER
-from pydantic_ai import Agent, ModelRetry
+from pydantic_ai import Agent, ModelRetry, ToolReturn
 from pydantic_ai.models.test import TestModel
 
 
@@ -49,7 +49,17 @@ def test_records_inside_a_tool_carry_its_call_id(records):
     assert tool["tool_call_id"]
     assert (tool["name"], tool["source"]) == ("lookup", "smash-agent")
     assert tool["args"].startswith('{"tag":')
+    assert tool["response"] == "a"  # what the tool gave back to the AI (TestModel sends "a")
     assert isinstance(tool["ms"], int)
+
+
+def test_a_tool_response_is_text_and_cut_short():
+    assert response_text("plain") == "plain"
+    assert response_text({"rows": 2}) == '{\n  "rows": 2\n}'
+    assert response_text(ToolReturn(return_value=[1, 2])) == "[\n  1,\n  2\n]"
+    assert response_text(object()).startswith('"<object object')  # not JSON: its str()
+    long = response_text("x" * (MAX_RESPONSE_CHARS + 50))
+    assert (len(long), long[-1]) == (MAX_RESPONSE_CHARS + 1, "…")
 
 
 def test_a_failing_tool_call_is_logged_with_its_error(records):

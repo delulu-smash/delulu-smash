@@ -454,6 +454,11 @@ class Session:
 _SESSIONS: dict[str, Session] = {}
 
 
+def find_session(token: str) -> Session | None:
+    """The session for a browser tab if it has one; never creates it (completion, inline edit)."""
+    return _SESSIONS.get(token)
+
+
 def get_session(token: str) -> Session:
     """The session for a browser tab, created on first use. Lives in server memory only."""
     if token not in _SESSIONS:
@@ -467,7 +472,7 @@ def complete(token: str, code: str, line: int, column: int) -> list[dict[str, st
     Uses jedi's Interpreter mode, like IPython: `r1.` completes with real DataFrame methods because
     r1 exists. An unknown token completes against an empty namespace instead of creating a session.
     """
-    session = _SESSIONS.get(token)
+    session = find_session(token)
     namespace = session.namespace if session else {}
     try:
         found = jedi.Interpreter(code, [namespace]).complete(line, column)

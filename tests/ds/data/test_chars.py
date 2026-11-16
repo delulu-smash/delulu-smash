@@ -20,7 +20,7 @@ def test_generated_enums_match_char_parquet():
     """The enums are generated code. If this fails, run `ds data char_enum`"""
     assert char_enum_source(CHARS) in CHARS_MODULE.read_text(), "run `ds data char_enum`"
     assert [member.value for member in CharId] == CHARS["id"].to_list()
-    assert [member.value for member in CharGroup] == CHARS["char_group"].unique(maintain_order=True).to_list()
+    assert [member.value for member in CharGroup] == CHARS["char_group_id"].unique(maintain_order=True).to_list()
     assert (len(CharId), len(CharGroup)) == (89, 86)
 
 
@@ -29,7 +29,11 @@ def test_regenerating_changes_nothing_and_a_new_fighter_would(tmp_path, monkeypa
     copy.write_text(CHARS_MODULE.read_text())
     monkeypatch.setattr("ds.data.raw.roster.CHARS_MODULE", copy)
     assert write_char_enums(CHARS) is False
-    grown = pl.concat([CHARS, CHARS.head(1).with_columns(id=pl.lit("new_fighter"), char_group=pl.lit("new_fighter"))])
+    # as text: the column is an Enum of today's picks, which a new one isn't in
+    chars = CHARS.with_columns(pl.col("char_group_id").cast(pl.String))
+    grown = pl.concat(
+        [chars, chars.head(1).with_columns(id=pl.lit("new_fighter"), char_group_id=pl.lit("new_fighter"))]
+    )
     assert write_char_enums(grown) is True
     assert copy.read_text().count('NEW_FIGHTER = "new_fighter"') == 2  # once per enum
     assert copy.read_text().startswith(CHARS_MODULE.read_text().split("# --- generated")[0])  # the rest is untouched

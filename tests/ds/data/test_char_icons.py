@@ -81,8 +81,8 @@ def test_icon_by_unknown_name():
 
 
 def test_char_group_column_matches_the_lookup():
-    """char.parquet's `char_group` is the character-select entry: its own id unless grouped"""
-    groups = dict(CHARS.select("id", "char_group").iter_rows())
+    """char.parquet's `char_group_id` is the character-select entry (own id unless grouped)"""
+    groups = dict(CHARS.select("id", "char_group_id").iter_rows())
     assert groups == {char_id: char_group(char_id) for char_id in CHARS["id"]}
     grouped = {char_id: group for char_id, group in groups.items() if char_id != group}
     assert grouped == {
@@ -104,8 +104,9 @@ def test_a_group_shares_one_icon_named_after_it():
 
 def test_joining_a_pick_to_fighters_gives_every_member():
     """What tournament data (a pick) joins to: all of the group's fighters, not one stand-in"""
-    picks = pl.DataFrame({"char_group": ["pokemon_trainer", "little_mac"], "games": [5, 3]})
-    joined = picks.join(CHARS, on="char_group")
+    picks = pl.DataFrame({"char_group_id": ["pokemon_trainer", "little_mac"], "games": [5, 3]})
+    # the table's key is an Enum of the picks: text from elsewhere is cast to it to join
+    joined = picks.cast({"char_group_id": CHARS.schema["char_group_id"]}).join(CHARS, on="char_group_id")
     assert sorted(joined["id"]) == ["little_mac", "pt_charizard", "pt_ivysaur", "pt_squirtle"]
     assert char_group_members("pokemon_trainer") == ("pt_squirtle", "pt_ivysaur", "pt_charizard")
     assert char_group_members("little_mac") == ("little_mac",)

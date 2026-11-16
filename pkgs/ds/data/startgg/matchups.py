@@ -28,7 +28,7 @@ class MatchupGame(BaseModel):
     """One game between the two players"""
 
     number: int
-    char_group_1: str | None = Field(None, description="Player 1's pick (char.parquet `char_group`)")
+    char_group_1: str | None = Field(None, description="Player 1's pick (char.parquet `char_group_id`)")
     character_1: str | None = Field(None, description="Player 1's character as start.gg names it")
     char_group_2: str | None = None
     character_2: str | None = None

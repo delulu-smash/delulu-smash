@@ -98,3 +98,29 @@ def test_rows_of_one_session_leave_out_the_others(monkeypatch):
     mine, count = logs.rows([], session="mine0000")
     assert (count, [row["session"] for row in mine]) == (1, ["mine0000"])
     assert logs.rows([])[1] == 3  # unticked: every session's
+
+
+def test_a_tool_row_shows_its_response_folded():
+    record = {
+        "id": 1,
+        "time": 0.0,
+        "kind": "tool",
+        "source": "smash-agent",
+        "name": "frame_data",
+        "args": '{"char": "little_mac"}',
+        "response": "3 rows",
+        "ms": 12,
+    }
+    row = logs._row(record)
+    details = {detail["label"]: detail for detail in row["details"]}
+    assert (details["tool response"]["text"], details["tool response"]["fold"]) == ("3 rows", "1")
+    assert details["args"]["fold"] == ""
+    # no response (eg the tool failed): no empty section
+    assert "tool response" not in {d["label"] for d in logs._row(record | {"response": ""})["details"]}
+
+
+def test_an_agent_row_has_no_response_section():
+    """The AI's answer is in the chat (or the editor): not repeated in the log"""
+    record = {"id": 2, "time": 0.0, "kind": "agent", "source": "smash-agent", "name": "turn", "prompt": "hi", "ms": 5}
+    assert [detail["label"] for detail in logs._row(record)["details"]][0] == "prompt"
+    assert not any(detail["fold"] for detail in logs._row(record)["details"])

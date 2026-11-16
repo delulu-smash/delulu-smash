@@ -523,3 +523,41 @@ select.form-input { width: auto; }
 .db-save-row { align-items: center; gap: 10px; padding: 4px 8px; font-size: 12.5px; }
 .db-save-name { width: 160px; }
 .db-save-error { color: var(--red); }
+
+/* Alt+A inline chat (reflex_kernel/inline_edit.jsx): the prompt box under the editor, then the diff */
+.cm-panels.cm-panels-bottom { background: transparent; border-top: none; }
+.cm-inline-edit { display: flex; align-items: center; gap: 8px; margin-top: 6px; padding: 4px 8px; background: var(--bg-dim);
+  border: 2px solid var(--blue); border-radius: 7px; font-family: var(--sans); font-size: 12px; }
+.cm-inline-edit-icon { color: var(--blue); font-family: var(--mono); font-size: 14px; }
+.cm-inline-edit-input { flex: 1; min-width: 120px; background: transparent; border: none; outline: none; color: var(--fg);
+  font-family: var(--sans); font-size: 12.5px; }
+.cm-inline-edit-status { color: var(--grey1); white-space: nowrap; }
+.cm-inline-edit-status.is-error { color: var(--red); white-space: normal; }
+/* the proposal as a git diff: removed lines red, added / changed lines green, a bar down the left of each */
+.cm-editor .cm-changedLine, .cm-editor .cm-insertedLine { background: rgba(167, 192, 128, 0.16); box-shadow: inset 3px 0 0 var(--green); }
+.cm-editor .cm-changedText { background: rgba(167, 192, 128, 0.32); }
+.cm-editor .cm-deletedChunk { background: rgba(230, 126, 128, 0.16); box-shadow: inset 3px 0 0 var(--red); padding-left: 0; }
+.cm-editor .cm-deletedChunk .cm-deletedLine { opacity: 0.75; text-decoration: line-through; text-decoration-color: rgba(230, 126, 128, 0.6); }
+.cm-editor .cm-deletedChunk del, .cm-editor .cm-deletedText { background: rgba(230, 126, 128, 0.32); text-decoration: none; }
+.cm-editor .cm-changeGutter { display: none; }
+.cm-inline-edit-mode { color: var(--grey1); border: 1px solid var(--bg3); border-radius: 4px; padding: 0 5px; font-size: 11px; white-space: nowrap; }
+/* a detail folded inside an unfolded debug row (logs.FOLDED_DETAILS, eg a tool call's response) */
+.dbg-fold > summary { cursor: pointer; }
+.dbg-fold > summary:hover { color: var(--fg); }
+/* while the AI is thinking: light sweeps across the lines being rewritten (inline_edit.jsx), and the
+   box's icon and status text pulse */
+@keyframes inline-edit-pulse { 50% { opacity: 0.45; } }
+@keyframes inline-edit-sweep { from { background-position: 130% 0; } to { background-position: -30% 0; } }
+.cm-editor .cm-inline-thinking-line { background-color: rgba(127, 187, 179, 0.07);
+  background-image: linear-gradient(100deg, transparent 30%, rgba(127, 187, 179, 0.28) 45%, rgba(214, 153, 182, 0.28) 55%, transparent 70%);
+  background-size: 250% 100%; background-repeat: no-repeat; animation: inline-edit-sweep 1.5s linear infinite; }
+.cm-inline-edit.is-thinking .cm-inline-edit-icon { color: var(--purple); animation: inline-edit-pulse 1.1s ease-in-out infinite; }
+.cm-inline-edit.is-thinking .cm-inline-edit-status { color: var(--fg); animation: inline-edit-pulse 1.1s ease-in-out infinite; }
+/* the chat box while the agent works: the same sweep, and its border lit */
+.composer.is-thinking { border-color: var(--blue); background-color: var(--bg0);
+  background-image: linear-gradient(100deg, transparent 30%, rgba(127, 187, 179, 0.22) 45%, rgba(214, 153, 182, 0.22) 55%, transparent 70%);
+  background-size: 250% 100%; background-repeat: no-repeat; animation: inline-edit-sweep 1.8s linear infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .cm-inline-edit.is-thinking .cm-inline-edit-icon, .cm-inline-edit.is-thinking .cm-inline-edit-status,
+  .cm-editor .cm-inline-thinking-line, .composer.is-thinking { animation: none; }
+}

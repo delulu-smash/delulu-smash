@@ -88,7 +88,8 @@ class LogRow:
     summary: str = ""
     badges: list[str] = dataclasses.field(default_factory=list)
     details: list[dict[str, str]] = dataclasses.field(default_factory=list)
-    """{"label", "text"} pairs, shown when the row is unfolded."""
+    """{"label", "text", "fold"} items, shown when the row is unfolded; fold "1": folded itself
+    until clicked (logs.FOLDED_DETAILS, eg a tool call's response)."""
     copy: str = ""
     """The whole record as JSON, for the copy button."""
     curl: str = ""
