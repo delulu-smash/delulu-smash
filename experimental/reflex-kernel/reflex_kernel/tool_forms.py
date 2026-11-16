@@ -41,16 +41,10 @@ class FormField:
     choices: list[dict[str, str]] = dataclasses.field(default_factory=list)
     """character / multi: every option as value, label, icon (a path under pkgs/ds/data/; ""
     when the options have none). A multi field's `value` is the picked values joined by ","."""
-    search: bool = False
-    """multi only: the options are many (over MULTI_SEARCH_AT), so the list gets a search box."""
     shown: str = ""
     """character only: the label of `value` ("" when nothing is picked)."""
     icon: str = ""
     """character only: the icon of `value`."""
-
-
-# A multi-select with more options than this gets a search box above its list.
-MULTI_SEARCH_AT = 8
 
 
 def _option_choices(item: Any) -> list[tuple[str, Any, str, str]] | None:
@@ -217,7 +211,6 @@ class ToolForm:
                 field.kind = "multi"
                 field.choices = [{"value": text, "label": label, "icon": icon} for text, _, label, icon in options]
                 field.value = ",".join(_picked(values.get(field.name)))
-                field.search = len(options) > MULTI_SEARCH_AT
         return fields
 
     def arguments(self, raw: dict[str, Any]) -> dict[str, Any]:

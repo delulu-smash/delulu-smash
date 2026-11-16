@@ -40,7 +40,7 @@ RESULT_NOTES = [
     "Player usage: a player's characters and stages as bars; pick All games / Game 1 / Events, hover for counts.",
     "Player usage: All / Offline / Online at its top re-counts everything for in-person or online events only.",
     "Player usage: sets (30 to 150) is how far back it reads; each 30 is one start.gg request.",
-    "Player usage: vs characters takes several (search, tick each); games against any of them count.",
+    "Player usage: vs characters takes several (type to add each, x on a chip removes it); games against any of them count.",
     "SQL ▸ on a table: query it as self with polars SQL (PostgreSQL syntax), eg select name from self limit 5.",
     'Values you make in the Python cells get a tab too, eg chars = db.sql("select * from char").',
 ]

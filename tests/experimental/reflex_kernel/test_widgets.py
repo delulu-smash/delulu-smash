@@ -122,7 +122,7 @@ def test_usage_widget_attributes():
     assert usage.form.arguments({"player": "Sparg0", "sets": ""})["sets"] == 30
     # vs_characters is typed list[CharGroup], so the form draws it as a multi-select with icons
     picker = usage.form.fields({"vs_characters": "steve,pac_man"})[1]
-    assert (picker.kind, picker.value, picker.search) == ("multi", "steve,pac_man", True)
+    assert (picker.kind, picker.value) == ("multi", "steve,pac_man")
     assert len(picker.choices) == len(CharGroup)
     assert picker.choices[0] == {
         "value": "banjo_and_kazooie",
@@ -229,8 +229,6 @@ def test_the_form_follows_the_parameter_types():
         "tags": "text",  # a list of free text has no options to pick from
         "main": "character",  # one character: the single picker
     }
-    assert fields["fighters"].search  # 86 picks: a search box
-    assert not fields["rounds"].search  # 3 rounds: no need
     assert fields["rounds"].choices == [{"value": str(n), "label": str(n), "icon": ""} for n in (1, 2, 3)]
     assert [c["value"] for c in fields["speeds"].choices] == ["slow", "fast"]
     # submitted text comes back as the typed values each list wants

@@ -105,14 +105,24 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
     tool's parameters is written a second time.
   - **The type decides the input, not the name**, so any tool gets the same one:
 
-    | parameter type | input |
+    | type hint | input |
     | --- | --- |
-    | `str`, `int`, `bool` | text box, number box, checkbox |
-    | a `Literal` / enum | dropdown |
-    | one `CharEnum` (eg `CharGroup`) | character picker: type to filter, icon + name (`assets/combo.js`) |
-    | `list[T]`, T a `CharEnum`, enum or `Literal` | multi-select: a box showing the picks (icons when T has them) that opens a list to tick in; a search box above it past `MULTI_SEARCH_AT` (8) options; submitted as `a,b` and turned back into T's values (`tool_forms.list_choices`, `assets/multiselect.js`) |
+    | `str` | text box |
+    | `int` / `float` | number box |
+    | `bool` | checkbox |
+    | `Literal[...]` / `Enum` | dropdown |
+    | `CharEnum` (eg `CharGroup`) | character picker (`assets/combo.js`) |
+    | `list[CharGroup]`, `list[Literal[...]]`, `list[SomeEnum]` | multi-select, chips (`assets/multiselect.js`) |
+    | `list[str]` | text box (no options to pick from) |
 
-    Player usage's `vs_characters: list[CharGroup]` is the multi-select today (games against any of the picks).
+    Conventions:
+    - `T | None` gets the same input as `T` for dropdowns, pickers and multi-selects. A plain `int | None` /
+      `bool | None` gets a text box (its schema is an `anyOf` with no single `type`).
+    - The parameter's default fills the input, and its docstring description is the tooltip.
+    - An empty input means the default (`any` for pickers and multi-selects).
+    - A multi-select submits `a,b`, which `tool_forms.arguments` turns back into `T`'s values.
+    - To change an input, change the type hint. The form code needs no edit (`ToolForm.fields`;
+      tested in `tests/experimental/reflex_kernel/test_widgets.py`).
   - **Values** go through the validator pydantic-ai uses for the model's calls, then the same tool function.
   - **Which inputs made a result** is recorded by the session (`Session.calls`): the agent's tool-call
     arguments, or the form as run. Paging keeps them; a value made in Python has none (an empty form).

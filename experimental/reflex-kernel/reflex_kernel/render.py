@@ -903,9 +903,9 @@ def _character_picker(item: rx.Var[FormField]) -> rx.Component:
 
 
 def _multi_select(item: rx.Var[FormField]) -> rx.Component:
-    """A list[<choices>] input (tool_forms.list_choices): a box showing what is picked that
-    opens a list to tick options in (with a search box when there are many), icons when the
-    options have them. assets/multiselect.js does the picking; this is its markup. The hidden
+    """A list[<choices>] input (tool_forms.list_choices): each pick a chip (icon when the options
+    have one, name, x to remove), then a text box that filters a list to tick more in.
+    assets/multiselect.js does the picking and draws the chips; this is its markup. The hidden
     input carries the picked values joined by "," under the field's name; "" = any."""
 
     def option(choice: rx.Var[dict[str, str]]) -> rx.Component:
@@ -927,40 +927,18 @@ def _multi_select(item: rx.Var[FormField]) -> rx.Component:
         )
 
     return rx.el.span(
-        rx.el.button(
-            # filled by multiselect.js from the hidden value (it owns this span's contents)
-            rx.el.span(class_name="multi-summary", custom_attrs={"data-multi-summary": ""}),
-            rx.el.span("▾", class_name="multi-caret dim"),
-            type="button",
-            class_name="form-input multi-box",
-            custom_attrs={"data-multi-toggle": ""},
+        # filled by multiselect.js from the hidden value (it owns this span's contents)
+        rx.el.span(class_name="multi-chips", custom_attrs={"data-multi-chips": ""}),
+        rx.el.input(
+            placeholder="any",
+            auto_complete="off",
+            spell_check=False,
+            class_name="multi-text",
+            custom_attrs={"data-multi-text": ""},
         ),
         rx.el.input(type="hidden", name=item.name, default_value=item.value, custom_attrs={"data-multi-value": ""}),
-        rx.el.span(
-            rx.cond(
-                item.search,
-                rx.el.input(
-                    placeholder="Search…",
-                    auto_complete="off",
-                    spell_check=False,
-                    class_name="form-input multi-search",
-                    custom_attrs={"data-multi-search": ""},
-                ),
-            ),
-            rx.el.button(
-                rx.el.span("Any", class_name="multi-label"),
-                rx.el.span("✓", class_name="multi-check"),
-                type="button",
-                tab_index=-1,
-                title="Clear the picks",
-                class_name="multi-option is-any",
-                custom_attrs={"data-multi-any": ""},
-            ),
-            rx.el.span(rx.foreach(item.choices, option), class_name="multi-options"),
-            class_name="multi-panel",
-            custom_attrs={"data-multi-panel": ""},
-        ),
-        class_name="multi",
+        rx.el.span(rx.foreach(item.choices, option), class_name="multi-list", custom_attrs={"data-multi-list": ""}),
+        class_name="form-input multi",
         custom_attrs={"data-multi": ""},
     )
 
