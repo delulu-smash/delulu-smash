@@ -5,9 +5,12 @@ from pathlib import Path
 
 import polars as pl
 
+from ds.data.paths import PARQUET_DIR
+
 __all__ = ["SmashDb", "init_db"]
 
-DATA_DIR = Path(__file__).parent
+# the folder of *.parquet tables (ds.data.paths); kept as DATA_DIR, the name callers import
+DATA_DIR = PARQUET_DIR
 
 
 class SmashDb:

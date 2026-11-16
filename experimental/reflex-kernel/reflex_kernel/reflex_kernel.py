@@ -402,6 +402,44 @@ def help_panel() -> rx.Component:
     )
 
 
+def keys_palette() -> rx.Component:
+    """The keybindings list (Shortcut.KEYS), like Omarchy's: a search box over one row per
+    shortcut, "keys -> what it does" and where it works. Static markup, always in the page;
+    assets/keys.js opens it (.is-open), filters the rows and closes it."""
+    return rx.el.div(
+        rx.el.div(class_name="keys-backdrop", custom_attrs={"data-keys-close": ""}),
+        rx.el.div(
+            rx.el.input(
+                placeholder="Search keybindings…",
+                auto_complete="off",
+                spell_check=False,
+                class_name="keys-search",
+                custom_attrs={"data-keys-search": ""},
+            ),
+            rx.el.div(
+                *[
+                    rx.el.div(
+                        rx.el.kbd(shortcut.keys, class_name="keys-combo"),
+                        rx.el.span("→", class_name="keys-arrow dim"),
+                        rx.el.span(shortcut.value.what, class_name="keys-what"),
+                        rx.el.span(shortcut.value.where, class_name="keys-where dim"),
+                        class_name="keys-row",
+                        custom_attrs={
+                            "data-keys-row": f"{shortcut.keys} {shortcut.value.what} {shortcut.value.where}".lower()
+                        },
+                    )
+                    for shortcut in Shortcut
+                ],
+                rx.el.div("No matching keybinding", class_name="keys-empty dim"),
+                class_name="keys-list",
+            ),
+            class_name="keys-box sans",
+        ),
+        class_name="keys-palette",
+        custom_attrs={"data-keys": ""},
+    )
+
+
 def viewer() -> rx.Component:
     """The selected tab: the value's own component (render.py), plus a jump to the chat row of the
     tool call that returned it."""
@@ -681,6 +719,7 @@ def index() -> rx.Component:
         ),
         statusbar(),
         overlays(),
+        keys_palette(),
         class_name="page",
     )
 
@@ -696,10 +735,10 @@ app = rx.App(
         # window.SHORTCUTS (shortcuts.py), then panes.js: full screen, float a view, close menus
         rx.el.script(shortcuts_script()),
         rx.el.script(src="/panes.js", defer=True),
-        # character pickers in tool forms (render._character_picker)
-        rx.el.script(src="/combo.js", defer=True),
-        # multi-selects in tool forms: any list[<choices>] input (render._multi_select)
-        rx.el.script(src="/multiselect.js", defer=True),
+        # the keybindings list, Alt+K (keys_palette)
+        rx.el.script(src="/keys.js", defer=True),
+        # pick-from-a-list inputs in tool forms: characters, list[<choices>] (render._choice_input)
+        rx.el.script(src="/choice.js", defer=True),
     ],
 )
 # The page title is the web app window's title (SmashGPT); see .os/scripts/keybindings/smashgpt.py.

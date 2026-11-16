@@ -284,6 +284,13 @@ def _pages() -> tuple[_Page, ...]:
 - Ruff's own `# noqa: CODE  # reason` stays the way to except a **lint** rule; this tag is for the rules in
   these instructions.
 
+## The `ds` Command
+
+The user's shell has `alias ds='uv run ds'` (`.os/rc`), so text written for the user (READMEs, docs, usage
+headers, CLI / error messages, test failure hints) says `ds data char_ranking`, not `uv run ds ...`. Agents and
+scripts run non-interactive shells where the alias doesn't exist: run it as `uv run ds ...` (as below), and keep
+`uv run ds` in agent instructions and in scripts that run before the alias is set up (`.install.sh`).
+
 ## Linting
 
 Lint rules live in root `pyproject.toml` (`[tool.ruff]`) and run through the pre-commit hooks in

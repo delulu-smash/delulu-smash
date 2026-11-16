@@ -3,8 +3,8 @@
 
 ## Format: Parquet
 
-Persisted data is stored as Parquet files directly in `pkgs/ds/data/`, one file per table, named by table
-(eg `char.parquet` → table `char`, `framedata.parquet` → table `framedata`).
+Persisted data is stored as Parquet files in `pkgs/ds/data/parquet/` (`ds.data.paths.PARQUET_DIR`), one file per
+table, named by table (eg `char.parquet` → table `char`, `framedata.parquet` → table `framedata`).
 
 ### Why
 
@@ -21,7 +21,9 @@ Persisted data is stored as Parquet files directly in `pkgs/ds/data/`, one file 
 
 ## Requirements
 
-- Each direct child `pkgs/ds/data/*.parquet` is a table; the filename stem is the table name. Don't put
-  non-table Parquet files there (use a subfolder such as `raw/` for intermediate data).
+- Each direct child `pkgs/ds/data/parquet/*.parquet` is a table; the filename stem is the table name. Don't put
+  non-table Parquet files there (use `pkgs/ds/data/raw/` for intermediate data).
+- Code finds the folder through `ds.data.paths.PARQUET_DIR` (or `SmashDb`), never by building the path itself, so
+  the tables can move again with one change.
 - Writers should store real column types (numbers as numeric, not strings) so schema lookup is meaningful.
 - Parquet files are stored via Git LFS (`.gitattributes`).

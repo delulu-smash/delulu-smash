@@ -326,24 +326,8 @@ a.act { text-decoration: none; color: var(--fg); }
 .form-label { color: var(--grey1); white-space: nowrap; }
 .form-input { width: 110px; padding: 1px 6px; font: inherit; color: var(--fg); background: var(--bg1); border: 1px solid var(--bg3);
   border-radius: 4px; }
-.form-input:focus, .multi:focus-within { outline: none; border-color: var(--blue); }
+.form-input:focus { outline: none; border-color: var(--blue); }
 select.form-input { width: auto; }
-/* a character picker (render._character_picker, assets/combo.js): a text box with the picked
-   character's icon inside it, and a list of icon + name to type-filter and pick from */
-.combo { position: relative; display: inline-flex; align-items: center; }
-.combo-text { width: 150px; }
-.combo.has-value .combo-text { padding-left: 24px; }
-.combo .combo-icon { position: absolute; left: 4px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; pointer-events: none; display: none; }
-.combo.has-value .combo-icon { display: block; }
-/* position: fixed, placed by combo.js under (or above) the box, so a scrolling parent can't clip it */
-.combo-list { display: none; position: fixed; z-index: 60; flex-direction: column; overflow-y: auto; padding: 3px;
-  background: var(--bg1); border: 1px solid var(--bg3); border-radius: 6px; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35); }
-.combo.is-open .combo-list { display: flex; }
-.combo-option { display: flex; align-items: center; gap: 7px; flex: none; padding: 2px 8px 2px 4px; border: 0; border-radius: 4px;
-  background: transparent; color: var(--fg); font: inherit; font-size: 12px; text-align: left; white-space: nowrap; cursor: pointer; }
-.combo-option[hidden] { display: none; }
-.combo-option:hover, .combo-option.is-active { background: var(--bg3); }
-.combo-option .char-icon { width: 20px; height: 20px; }
 .tool-form .act { font-size: 11px; padding: 0 8px; }
 /* the Results tab bar's "+" (add a tool form by hand) */
 .tab-add { flex: none; border: 0; background: transparent; color: var(--grey1); cursor: pointer; font-size: 16px; padding: 0 10px; }
@@ -449,28 +433,49 @@ select.form-input { width: auto; }
 .bubble-actions .copy-btn { position: static; opacity: 1; }
 .bubble-actions .log-btn { opacity: 1; margin: 0; background: var(--bg1); border: 1px solid var(--bg3); border-radius: 4px;
   line-height: 18px; }
-/* a multi-select (render._multi_select, assets/multiselect.js): any tool input typed list[<choices>];
-   one box holding a chip per pick, then the text box that filters the list */
-.multi { position: relative; display: inline-flex; flex-wrap: wrap; align-items: center; gap: 3px; width: auto; min-width: 160px;
-  max-width: 360px; padding-top: 2px; padding-bottom: 2px; cursor: text; }
-.multi-chips { display: contents; }
-.multi-chip { display: inline-flex; align-items: center; gap: 3px; padding: 0 2px 0 5px; border-radius: 10px; background: var(--bg3);
+/* the pick-from-a-list input (render._choice_input, assets/choice.js), single or multiple alike:
+   a box with a chip per pick that opens the list; a search box on top of a long list */
+.choice { position: relative; display: inline-flex; }
+.choice-box { display: inline-flex; align-items: center; gap: 4px; width: auto; min-width: 160px; max-width: 360px; cursor: pointer;
+  padding-top: 2px; padding-bottom: 2px; }
+.choice-box:focus { outline: none; border-color: var(--blue); }
+.choice-chips { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 3px; }
+.choice-chip { display: inline-flex; align-items: center; gap: 3px; padding: 0 2px 0 5px; border-radius: 10px; background: var(--bg3);
   font-size: 12px; line-height: 18px; white-space: nowrap; }
-.multi-chip .char-icon { width: 16px; height: 16px; margin-left: -3px; }
-.multi-remove { border: 0; padding: 0 3px; background: transparent; color: var(--fg); opacity: 0.6; font: inherit; cursor: pointer;
-  border-radius: 8px; }
-.multi-remove:hover { opacity: 1; color: var(--red); }
-.multi-text { flex: 1; min-width: 50px; border: 0; padding: 1px 2px; background: transparent; color: inherit; font: inherit; outline: none; }
-/* position: fixed, placed by multiselect.js under (or above) the box, so a scrolling parent can't clip it */
-.multi-list { display: none; position: fixed; z-index: 60; flex-direction: column; overflow-y: auto; padding: 3px; background: var(--bg1);
+.choice-chip .char-icon { width: 16px; height: 16px; margin-left: -3px; }
+.choice-remove { padding: 0 3px; opacity: 0.6; cursor: pointer; border-radius: 8px; }
+.choice-remove:hover { opacity: 1; color: var(--red); }
+.choice-caret { flex: none; font-size: 10px; }
+/* position: fixed, placed by choice.js under (or above) the box, so a scrolling parent can't clip it */
+.choice-list { display: none; position: fixed; z-index: 60; flex-direction: column; padding: 4px; background: var(--bg1);
   border: 1px solid var(--bg3); border-radius: 6px; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35); }
-.multi.is-open .multi-list { display: flex; }
-.multi-option { display: flex; align-items: center; gap: 7px; flex: none; padding: 2px 8px 2px 4px; border: 0; border-radius: 4px;
+.choice.is-open .choice-list { display: flex; }
+.choice-search { width: auto; margin: 0 0 4px; padding: 3px 8px; }
+.choice-options { position: relative; display: flex; flex-direction: column; overflow-y: auto; min-height: 0; }
+.choice-option { display: flex; align-items: center; gap: 7px; flex: none; padding: 2px 8px 2px 4px; border: 0; border-radius: 4px;
   background: transparent; color: var(--fg); font: inherit; text-align: left; cursor: pointer; min-height: 24px; }
-.multi-option[hidden] { display: none; }
-.multi-option:hover, .multi-option.is-active { background: var(--bg3); }
-.multi-option .char-icon { width: 20px; height: 20px; }
-.multi-option.is-picked { color: var(--blue); }
-.multi-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.multi-check { flex: none; visibility: hidden; color: var(--blue); }
-.multi-option.is-picked .multi-check { visibility: visible; }
+.choice-option[hidden] { display: none; }
+.choice-option:hover, .choice-option.is-active { background: var(--bg3); }
+.choice-option .char-icon { width: 20px; height: 20px; }
+.choice-option.is-picked { color: var(--blue); }
+.choice-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.choice-check { flex: none; visibility: hidden; color: var(--blue); }
+.choice-option.is-picked .choice-check { visibility: visible; }
+/* the keybindings list, Alt+K (keys_palette in reflex_kernel.py, assets/keys.js): like Omarchy's SUPER+K menu */
+.keys-palette { display: none; position: fixed; inset: 0; z-index: 70; }
+.keys-palette.is-open { display: block; }
+.keys-backdrop { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.35); }
+.keys-box { position: absolute; top: 12vh; left: 50%; transform: translateX(-50%); width: min(640px, calc(100vw - 24px));
+  max-height: 70vh; display: flex; flex-direction: column; background: var(--bg1); border: 1px solid var(--blue); border-radius: 8px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5); overflow: hidden; font-size: 13px; }
+.keys-search { flex: none; padding: 10px 14px; border: 0; border-bottom: 1px solid var(--bg3); background: transparent; color: var(--fg);
+  font: inherit; font-size: 14px; outline: none; }
+.keys-list { position: relative; flex: 1; min-height: 0; overflow-y: auto; padding: 4px; }
+.keys-row { display: grid; grid-template-columns: 120px 18px 1fr auto; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 4px; }
+.keys-row[hidden] { display: none; }
+.keys-row.is-active { background: var(--bg3); }
+.keys-combo { justify-self: start; font-family: var(--mono); font-size: 11.5px; padding: 1px 6px; border: 1px solid var(--bg3);
+  border-bottom-width: 2px; border-radius: 4px; background: var(--bg0); white-space: nowrap; }
+.keys-where { font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+.keys-empty { display: none; padding: 10px; }
+.keys-palette.is-empty .keys-empty { display: block; }

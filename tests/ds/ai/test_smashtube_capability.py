@@ -9,6 +9,7 @@ from typing import Any
 
 import pytest
 from ds.ai import smashtube
+from ds.data import CharGroup
 from ds.data.raw.smashtube import MatchVideos, VideoQuery
 from pydantic_ai import ModelRetry
 
@@ -74,3 +75,15 @@ def test_character_names_in_player_fields_become_characters(
     smashtube.find_match_videos(**kwargs)
     assert (calls[0]["player_1"], calls[0]["player_2"]) == players
     assert (calls[0]["char_1"], calls[0]["char_2"]) == chars
+
+
+@pytest.mark.parametrize(
+    ("char", "char_id"),
+    [(CharGroup.POKEMON_TRAINER, "pt_squirtle"), ("Pyra & Mythra", "pyra"), ("squirtle", "pt_squirtle")],
+)
+def test_a_group_pick_is_searched_as_its_site_character(
+    calls: list[dict[str, Any]], char: CharGroup | str, char_id: str
+) -> None:
+    # smash-tube has one entry per pick; any of the group's fighters maps to it
+    smashtube.find_match_videos(char_1=char)
+    assert calls[0]["char_1"] == char_id

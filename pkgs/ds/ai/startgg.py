@@ -147,8 +147,8 @@ def find_players(tag: str) -> list[PlayerCandidate]:
 
 def get_player_usage(
     player: str,
-    # a list of a character type: validated, listed in the schema, a multi-select with icons
-    # in the app's form (tool_forms: any list[<choices>] parameter gets one)
+    # a list of a character type: validated, listed in the schema, the choice input (several
+    # picks) in the app's form (tool_forms: any list[<choices>] parameter gets one)
     vs_characters: list[CharGroup] | None = None,
     # choices in the type, so the tool's schema lists them (for the model and the app's form)
     setting: Setting = "all",

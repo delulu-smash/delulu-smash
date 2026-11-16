@@ -542,7 +542,7 @@ def test_stored_characters_cover_every_startgg_character():
     from ds.data.startgg import stored_characters  # the derived layer, only here
 
     stored = stored_characters()
-    assert stored is not None, "run `uv run ds data startgg-char`"
+    assert stored is not None, "run `ds data startgg-char`"
     unmapped = sorted(c.name for c in stored.values() if c.char_group is None or c.char_icon is None)
     assert unmapped == ["Random Character"]
     assert stored[1297].char_group == "little_mac"
@@ -560,7 +560,7 @@ def test_stored_characters_are_the_char_group_enum():
     from ds.data.startgg import CHAR_GROUP_DTYPE, STARTGG_CHAR_PARQUET, stored_characters
 
     table = pl.read_parquet(STARTGG_CHAR_PARQUET)
-    hint = "CharGroup changed: re-run `uv run ds data startgg-char`"
+    hint = "CharGroup changed: re-run `ds data startgg-char`"
     assert table.schema["char_group"] == CHAR_GROUP_DTYPE, hint
     assert CHAR_GROUP_DTYPE.categories.to_list() == [group.value for group in CharGroup], hint
     # every pick on our side is one start.gg character, and the other way round (but Random)

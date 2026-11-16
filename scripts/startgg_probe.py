@@ -4,7 +4,7 @@
 # does the supermajor id map to a start.gg player, what one set costs against the 1000-object
 # limit, how many games carry characters / a stage, and how long a capped fetch takes.
 # Its numbers go into the Site notes in pkgs/ds/data/raw/startgg/client.py.
-# Needs a start.gg API token: `uv run ds settings sync` (or export STARTGG_API_TOKEN).
+# Needs a start.gg API token: `ds settings sync` (or export STARTGG_API_TOKEN).
 #
 # Example CLI Commands:
 #   0. Sparg0 and rm8:       uv run scripts/startgg_probe.py

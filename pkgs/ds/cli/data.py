@@ -1,11 +1,19 @@
 from __future__ import annotations
 
 import asyncio
+import datetime as dt
+import subprocess
+import sys
+import zipfile
 from pathlib import Path
+from typing import Annotated
 
+import ds.data.paths
 import polars as pl
 import typer
+from ds.cli.util import run_cmd
 from ds.data.char_icons import CHAR_ICON_DIR
+from ds.data.raw import char_ranking
 from ds.data.raw.framedata import scrape_framedata
 from ds.data.raw.roster import CHARS_MODULE, scrape_character_roster, with_char_icon, write_char_enums
 from ds.data.raw.smashmate import SITE_CHAR_ICON, scrape_char_icons
@@ -19,12 +27,13 @@ __all__ = ["data_app"]
 
 data_app = typer.Typer(help="SubCommands for raw & transformed data (eg frame data)")
 
-# the folder holding our "database" parquet files (each direct child *.parquet is a table)
-DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+# pkgs/ds/data/ (icons, raw/) and its parquet/ folder: the "database", one *.parquet per table
+DATA_DIR = ds.data.paths.DATA_DIR
+PARQUET_DIR = ds.data.paths.PARQUET_DIR
 # the "database" of characters (id, name, char_icon) synced from ultimateframedata.com
-CHAR_PARQUET_PATH = DATA_DIR / "char.parquet"
+CHAR_PARQUET_PATH = PARQUET_DIR / "char.parquet"
 # the "database" of move frame data synced from ultimateframedata.com
-FRAMEDATA_PARQUET_PATH = DATA_DIR / "framedata.parquet"
+FRAMEDATA_PARQUET_PATH = PARQUET_DIR / "framedata.parquet"
 
 
 BYTES_PER_KB = 1024
@@ -41,10 +50,10 @@ def _human_size(num_bytes: int) -> str:
 
 @data_app.command("summary")
 def summary() -> None:
-    """List every parquet table in data/ with its row count, file size, and schema"""
+    """List every parquet table in data/parquet/ with its row count, file size, and schema"""
     rows = []
     schemas = {}
-    for parquet_path in sorted(DATA_DIR.glob("*.parquet")):
+    for parquet_path in sorted(PARQUET_DIR.glob("*.parquet")):
         lf = pl.scan_parquet(parquet_path)
         rows.append(
             {
@@ -70,7 +79,7 @@ def framedata(
         help="Character slug from the ultimateframedata.com URL (eg little_mac). Omit for all.",
     ),
 ) -> None:
-    """Scrape ultimateframedata.com move frame data and sync into data/framedata.parquet."""
+    """Scrape ultimateframedata.com move frame data and sync it into the framedata table."""
     if character is not None:
         df = scrape_framedata(character)
     else:
@@ -86,7 +95,7 @@ def framedata(
 
 @data_app.command("startgg-char")
 def startgg_char() -> None:
-    """Fetch start.gg's Ultimate characters (one request) into data/startgg_char.parquet."""
+    """Fetch start.gg's Ultimate characters (one request) into the startgg_char table."""
     characters = asyncio.run(videogame_characters())
     df = characters_table(characters)
     print(df)
@@ -101,7 +110,7 @@ def startgg_char() -> None:
 
 @data_app.command("roster")
 def roster() -> None:
-    """Scrape ultimateframedata.com/smash and sync the full roster into data/char.parquet."""
+    """Scrape ultimateframedata.com/smash and sync the full roster into the char table."""
     df = scrape_character_roster()
     print(df)
     if typer.confirm(f"Overwrite {CHAR_PARQUET_PATH} with these {df.height} characters?"):
@@ -117,12 +126,12 @@ def _sync_char_enums(char_df: pl.DataFrame) -> None:
     print(f"{'Updated' if changed else 'Already up to date:'} CharId / CharGroup in {CHARS_MODULE}")
     if changed:
         # startgg_char.parquet's char_group column is typed by CharGroup (CHAR_GROUP_DTYPE)
-        print("CharGroup may have changed: re-run `uv run ds data startgg-char` too")
+        print("CharGroup may have changed: re-run `ds data startgg-char` too")
 
 
 @data_app.command("char_enum")
 def char_enum() -> None:
-    """Regenerate the CharId / CharGroup enums (ds/data/chars.py) from data/char.parquet."""
+    """Regenerate the CharId / CharGroup enums (ds/data/chars.py) from the char table."""
     _sync_char_enums(pl.read_parquet(CHAR_PARQUET_PATH))
 
 
@@ -144,3 +153,91 @@ def char_icon() -> None:
         print(scrape_char_icons(CHAR_ICON_DIR))
     char_df.write_parquet(CHAR_PARQUET_PATH)
     print(f"Wrote the icons to {CHAR_ICON_DIR} and the char_icon column to {CHAR_PARQUET_PATH}")
+
+
+# the per-character rankings table, loaded from hand-downloaded CSVs (ds.data.raw.char_ranking)
+CHAR_RANKING_PARQUET_PATH = PARQUET_DIR / "char_ranking.parquet"
+
+
+def _char_ranking_steps() -> list[str]:
+    """What to do by hand to get a release's zip into the downloads folder"""
+    return [
+        "Open the shared Google Drive folder (its link is in the SchuStats Discord, Patreon channels).",
+        "Go into 'Character Rankings' and find the month's folder (eg 'November 2026').",
+        f"Download it (right-click > Download): Drive zips it into {char_ranking.DOWNLOADS_DIR}.",
+    ]
+
+
+# rows of a loaded release to show before writing it
+_SAMPLE_ROWS = 10
+
+
+@data_app.command("char_ranking")
+def char_ranking_cmd(
+    zip_name: Annotated[
+        str | None,
+        typer.Argument(
+            help="The downloaded zip: a file name in ~/Downloads or a path. Default: the newest .zip there."
+        ),
+    ] = None,
+) -> None:
+    """Load a month's per-character rankings (a zip of CSVs downloaded by hand) into the table.
+
+    Reads the zip in place (nothing is unpacked), works out its month from the folder inside
+    (eg 'November 2026' -> 2026-11-30) and asks before loading it into
+    data/parquet/char_ranking.parquet. Loading a month again replaces only that month's rows.
+    """
+    try:
+        zip_path = char_ranking.find_zip(zip_name)
+        folder, release = char_ranking.release_month(zip_path)
+    except (FileNotFoundError, ValueError, zipfile.BadZipFile) as error:
+        print(error)
+        print("To get a release:")
+        for step, line in enumerate(_char_ranking_steps(), 1):
+            print(f"  {step}. {line}")
+        raise typer.Exit(1) from None
+    downloaded = dt.datetime.fromtimestamp(zip_path.stat().st_mtime, tz=dt.UTC).astimezone()
+    print(f"Zip: {zip_path} (downloaded {downloaded:%Y-%m-%d %H:%M})")
+    typer.confirm(f"Load {folder!r} as the release of {release} (month end)?", default=True, abort=True)
+
+    df = char_ranking.read_release(zip_path)
+    print(f"{df['ranking'].n_unique()} rankings -> {df.height} rows; {_SAMPLE_ROWS} of them, by tag:")
+    # sorted by tag, so the sample mixes characters and ranks; every column, none cut off
+    with pl.Config(tbl_cols=-1, tbl_rows=_SAMPLE_ROWS, tbl_width_chars=200, fmt_str_lengths=40):
+        print(df.sort("tag", maintain_order=True).head(_SAMPLE_ROWS))
+    if missing := char_ranking.unmatched_rankings(df):
+        print(f"No character matched for: {missing} (add them to SITE_RANKING; char_group_id is null for now)")
+    table = pl.read_parquet(CHAR_RANKING_PARQUET_PATH) if CHAR_RANKING_PARQUET_PATH.exists() else None
+    replaced = 0 if table is None else table.filter(pl.col("date") == release).height
+    question = f"Write {df.height} rows for {release} to {CHAR_RANKING_PARQUET_PATH}"
+    if not typer.confirm(f"{question}{f' (replacing its {replaced})' if replaced else ''}?", default=True):
+        print("Skipped.")
+        return
+    merged = char_ranking.merge_release(table, df)
+    merged.write_parquet(CHAR_RANKING_PARQUET_PATH)
+    print(f"Wrote {CHAR_RANKING_PARQUET_PATH}: {merged.height} rows, {merged['date'].n_unique()} releases")
+
+
+# Data updates (data/ tables) that need a hand step (eg a download), run in order by
+# `manual_maintenance`: (what it is, the `ds` command). Data only: other maintenance (packages,
+# tech debt) doesn't belong here. The monthly reminder issue
+# (.github/workflows/manual_data_maintenance_reminder.yml) only names `manual_maintenance`.
+_MANUAL_STEPS = [
+    ("Monthly per-character rankings (the month's zip in ~/Downloads)", ["data", "char_ranking"]),
+]
+
+
+@data_app.command("manual_maintenance")
+def manual_maintenance() -> None:
+    """Run every data-table update that needs a hand step, one after another (monthly reminder)
+
+    Each runs as its own `ds` command, with its own prompts; one that stops or is skipped
+    doesn't stop the rest.
+    """
+    ds = str(Path(sys.executable).parent / "ds")  # this venv's ds, with or without the shell alias
+    for number, (what, args) in enumerate(_MANUAL_STEPS, 1):
+        print(f"\n[{number}/{len(_MANUAL_STEPS)}] {what}", flush=True)  # before the step's own output
+        try:
+            run_cmd([ds, *args])
+        except subprocess.CalledProcessError:
+            print(f"Stopped or skipped: run `ds {' '.join(args)}` on its own later.")

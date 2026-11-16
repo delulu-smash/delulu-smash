@@ -13,7 +13,8 @@ import httpx2
 from pydantic_ai import ModelRetry, Tool, ToolFailed
 from pydantic_ai.capabilities import Capability
 
-from ds.ai.smashdb import _char_df, resolve_char_id
+from ds.ai.smashdb import _char_df
+from ds.data import CHAR_GROUPS, CharGroup
 from ds.data.raw.smashtube import MAX_SEARCH_TERM_CHARS, REGIONS, MatchVideos, Region, search_videos
 
 __all__ = ["find_match_videos", "smashtube_capability"]
@@ -74,11 +75,28 @@ def _players_to_characters(players: list[str], chars: list[str]) -> tuple[list[s
     return players, chars
 
 
+def _site_char_id(char: CharGroup | str | None) -> str:
+    """The char id smash-tube is searched with for a pick ('' for none). The site has one entry
+    per character-select pick (Pokemon Trainer, Pyra/Mythra), so a group's first fighter
+    stands for it. Text (a direct Python call) is parsed like the model's arguments.
+    """
+    if char is None or (isinstance(char, str) and not char.strip()):
+        return ""
+    try:
+        group = CharGroup(char.strip() if isinstance(char, str) else char)
+    except ValueError as e:
+        raise ModelRetry(f"No character matches {char!r}. Use find_character to look up valid ids.") from e
+    return CHAR_GROUPS.get(group.value, (group.value,))[0]
+
+
 def find_match_videos(
     player_1: str = "",
     player_2: str = "",
-    char_1: str = "",
-    char_2: str = "",
+    # a character type: validated, listed in the schema, the choice input (one pick) in the
+    # app's form (tool_forms: any CharEnum parameter gets one); like get_player_usage's
+    # vs_characters
+    char_1: CharGroup | None = None,
+    char_2: CharGroup | None = None,
     search_term: str = "",
     # choices in the type, so the tool's schema lists them (for the model and for forms)
     region: Region | Literal[""] = "",
@@ -90,8 +108,8 @@ def find_match_videos(
     Args:
         player_1: a player's tag (a person, not a character), eg 'Sparg0'.
         player_2: the opponent's tag (a person, not a character), eg 'acola'.
-        char_1: a character in the match: id, name or partial name, eg 'little_mac' or
-            'Little Mac'.
+        char_1: a character in the match, eg 'little_mac' (a name like 'Little Mac' works too);
+            'pokemon_trainer' / 'pyra_mythra' for those picks. Leave unset for any.
         char_2: the other character, eg 'cloud'.
         search_term: free text to match, eg an event name like 'Kagaribi' (20 characters
             at most).
@@ -108,8 +126,7 @@ def find_match_videos(
         region = by_lower[region.lower()]
     if len(search_term.strip()) > MAX_SEARCH_TERM_CHARS:
         raise ModelRetry(f"search_term is limited to {MAX_SEARCH_TERM_CHARS} characters; use a shorter phrase.")
-    # resolve_char_id raises ModelRetry itself for unknown / ambiguous characters
-    chars = [resolve_char_id(char) if char.strip() else "" for char in (char_1, char_2)]
+    chars = [_site_char_id(char) for char in (char_1, char_2)]
     players = [player_1.strip(), player_2.strip()]
     if not players_are_tags:
         players, chars = _players_to_characters(players, chars)

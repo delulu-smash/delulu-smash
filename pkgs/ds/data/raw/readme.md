@@ -11,3 +11,4 @@ _NOTE: this data is untransformed and normalized, just straight copy paste from 
 5. `startgg/` -> [start.gg](https://www.start.gg)'s official GraphQL API (`client.py`, `queries.py`, `models.py`, `api.py`): a player's sets and games (characters, stages, results), tournaments, entrants, standings. Needs a token (`ds settings sync`). Check it live with `uv run scripts/startgg_probe.py`
 
 What is computed from start.gg data (player usage, head-to-head, results) is not here but in `../startgg/`.
+6. `char_ranking/` -> per-character player rankings, a zip of CSVs downloaded by hand each month and read in place by `ds data char_ranking` (the newest zip in `~/Downloads`) into `../parquet/char_ranking.parquet`. Steps: [char_ranking/README.md](char_ranking/README.md)

@@ -76,6 +76,26 @@ def test_a_request_is_logged_with_the_full_request_and_no_secrets(records):
     assert "error" not in r
 
 
+@pytest.mark.parametrize(
+    "body",
+    [
+        {"data": {"grant_type": "x", "client_secret": "s3cret", "code": "c0de"}},
+        {"json": {"grant_type": "x", "client_secret": "s3cret", "code": "c0de"}},
+    ],
+)
+def test_secret_body_fields_are_filtered(records, body):
+    # eg an OAuth token request: its form carries the client secret and the sign-in code
+    with (
+        _client(lambda _: httpx2.Response(200)) as client,
+        http.request("POST", "https://example.com/token", source="example", client=client, **body),
+    ):
+        pass
+    (r,) = records
+    assert r["request_body"] == {"grant_type": "x", "client_secret": "[filtered]", "code": "[filtered]"}
+    assert "s3cret" not in repr(r)
+    assert "c0de" not in repr(r)
+
+
 def test_an_error_status_keeps_the_start_of_the_body_and_the_raised_error(records):
     def handler(_):
         return httpx2.Response(503, text="Site is paused " * 100, headers={"retry-after": "300"})

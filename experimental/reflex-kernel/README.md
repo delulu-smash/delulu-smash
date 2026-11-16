@@ -15,6 +15,9 @@ uv run reflex run
 # -> http://localhost:3000
 ```
 
+Design intent lives in `spec/experimental/reflex-kernel/`: navigation, keys and much of the look follow
+Omarchy (`spec/experimental/reflex-kernel/omarchy.md`).
+
 ## SmashGPT (desktop app)
 
 On Omarchy this app is **SmashGPT**: `SUPER+SHIFT+I` opens it in its own web app window, or focuses
@@ -111,16 +114,21 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
     | `int` / `float` | number box |
     | `bool` | checkbox |
     | `Literal[...]` / `Enum` | dropdown |
-    | `CharEnum` (eg `CharGroup`) | character picker (`assets/combo.js`) |
-    | `list[CharGroup]`, `list[Literal[...]]`, `list[SomeEnum]` | multi-select, chips (`assets/multiselect.js`) |
+    | `CharEnum` (eg `CharGroup`) | choice input, one pick |
+    | `list[CharGroup]`, `list[Literal[...]]`, `list[SomeEnum]` | choice input, several picks |
     | `list[str]` | text box (no options to pick from) |
 
     Conventions:
-    - `T | None` gets the same input as `T` for dropdowns, pickers and multi-selects. A plain `int | None` /
+    - The choice input is one component, single or multiple (`render._choice_input`, `assets/choice.js`,
+      `tool_forms.picker_for`): a box with a chip per pick (× removes it) that opens the list. The only
+      difference: several picks tick and untick with the list kept open; one pick replaces the last.
+    - A long list (over `CHOICE_SEARCH_AT`, 8 options, eg characters) gets a search box on top, single or
+      multiple alike; a short one (eg `rounds`) doesn't.
+    - `T | None` gets the same input as `T` for dropdowns and choice inputs. A plain `int | None` /
       `bool | None` gets a text box (its schema is an `anyOf` with no single `type`).
     - The parameter's default fills the input, and its docstring description is the tooltip.
-    - An empty input means the default (`any` for pickers and multi-selects).
-    - A multi-select submits `a,b`, which `tool_forms.arguments` turns back into `T`'s values.
+    - An empty input means the default (`any` for choice inputs).
+    - A choice input submits `a,b`, which `tool_forms.arguments` turns back into `T`'s values.
     - To change an input, change the type hint. The form code needs no edit (`ToolForm.fields`;
       tested in `tests/experimental/reflex_kernel/test_widgets.py`).
   - **Values** go through the validator pydantic-ai uses for the model's calls, then the same tool function.
@@ -164,6 +172,8 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   A result the agent returned has `↖ chat` in its bar (and Show in Chat in the right-click menu): it
   scrolls the chat to that tool call's row and flashes it.
 - **Help**: the ? at the top right (Alt+H) lists the keyboard shortcuts.
+- **Keybindings**: Alt+K opens a searchable list of every shortcut, like Omarchy's SUPER+K: type to filter,
+  Esc (or Alt+K) closes (`keys_palette`, `assets/keys.js`).
 - **Floating a view**: every view (a tab, a cell's result, a result unfolded in the chat) has a button at
   its top right that floats it over the page, nearly full screen; click it again, press Esc or click
   outside to put it back. It is the same component, only restyled in the browser (`.is-floating`,

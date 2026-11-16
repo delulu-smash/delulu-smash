@@ -9,7 +9,7 @@ How Smash Ultimate knowledge is captured, curated, stored and used by AI (Claude
 
 | Layer | Where | What | Read by AI when answering? |
 |---|---|---|---|
-| **Structured** | `pkgs/ds/data/*.parquet` (SmashDb) | Frame data, roster: exact numbers | Yes, through `ds.ai.smashdb` tools |
+| **Structured** | `pkgs/ds/data/parquet/*.parquet` (SmashDb) | Frame data, roster: exact numbers | Yes, through `ds.ai.smashdb` tools |
 | **Curated** | `docs/` (MyST site) | Mechanics, matchups, tech, stages, glossary, reviewed by the user | Yes, and it's the **baseline** (`ds.ai.knowledge`) |
 | **Raw** | `local/staging/` (git-ignored, machine-local) | Unedited source captures: wiki text, Discord threads, tweets, transcripts | **No.** Only as input to research/curation |
 
@@ -78,7 +78,7 @@ capture  →  distill (smash-research skill)  →  user review  →  docs/ + Sou
 
 ## Evals
 
-- **Where:** `pkgs/ds/ai/evals/smash_knowledge.yaml` (pydantic-evals). Run with `uv run ds ai eval [filter]`.
+- **Where:** `pkgs/ds/ai/evals/smash_knowledge.yaml` (pydantic-evals). Run with `ds ai eval [filter]`.
   Each run calls the OpenAI API for both the agent and the judge.
 - **What each case has:** a question, the expected answer, `Contains` (the answer cites the source docs page),
   and a dataset-level `LLMJudge` for factual agreement.

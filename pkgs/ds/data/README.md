@@ -2,9 +2,9 @@
 
 # `ds/data` Data Dictionary
 
-This folder is the "database" for `ds` data: each parquet file here is a table, synced by a `ds data <command>` and
-is the current source of truth for its domain. `raw/` holds the scripts (and any hand-copied source data) used to
-produce them.
+This folder holds the "database" for `ds` data: each parquet file in `parquet/` is a table, synced by a
+`ds data <command>` and the current source of truth for its domain. `raw/` holds the scripts (and any hand-copied
+source data) used to produce them. Code gets the folder from `ds.data.paths.PARQUET_DIR`.
 
 **AI/Copilot instructions:** whenever you add/rename/remove a column produced by `ds/data/raw/*.py` or change what
 a `ds data <command>` writes, update the matching table below in the same change. Keep this file in sync with the
@@ -16,8 +16,8 @@ can join across these files the same way you would join SQL tables. Load with po
 ```python
 import polars as pl
 
-char_df = pl.read_parquet("pkgs/ds/data/char.parquet")
-framedata_df = pl.read_parquet("pkgs/ds/data/framedata.parquet")
+char_df = pl.read_parquet("pkgs/ds/data/parquet/char.parquet")
+framedata_df = pl.read_parquet("pkgs/ds/data/parquet/framedata.parquet")
 
 # join framedata.parquet -> char.parquet on the character/id foreign key
 little_mac_moves = framedata_df.join(char_df, left_on="char_id", right_on="id").filter(pl.col("char_id") == "little_mac")
@@ -61,9 +61,9 @@ import polars as pl
 import ds.data
 
 usage = pl.DataFrame({"char_group": ["pokemon_trainer", "cloud"], "games": [12, 30]})  # eg from start.gg
-char_df = pl.read_parquet("pkgs/ds/data/char.parquet")
+char_df = pl.read_parquet("pkgs/ds/data/parquet/char.parquet")
 fighters = usage.join(char_df, on="char_group")  # 3 rows for pokemon_trainer, 1 for cloud
-moves = fighters.join(pl.read_parquet("pkgs/ds/data/framedata.parquet"), left_on="id", right_on="char_id")
+moves = fighters.join(pl.read_parquet("pkgs/ds/data/parquet/framedata.parquet"), left_on="id", right_on="char_id")
 
 ds.data.char_group("pt_ivysaur")                 # "pokemon_trainer"
 ds.data.char_group_members("pokemon_trainer")    # ("pt_squirtle", "pt_ivysaur", "pt_charizard")
@@ -119,7 +119,7 @@ multi-hitbox values (eg `10/17`) that don't cleanly coerce to a single numeric t
 ## `startgg_char.parquet`
 
 start.gg's Ultimate characters, one row per **pick** as start.gg records it (Pokemon Trainer is one row here
-and three fighters in `char.parquet`). Synced by `uv run ds data startgg-char` (one start.gg request); read by
+and three fighters in `char.parquet`). Synced by `ds data startgg-char` (one start.gg request); read by
 `ds.data.startgg.stored_characters()`, so a player lookup spends no request on the character list.
 Ultimate's roster is final: refresh only if start.gg renumbers. Stored data, not a cache: nothing refills it
 on its own.
@@ -135,6 +135,38 @@ on its own.
 differ (after a roster change: re-run `ds data startgg-char`) and checks every `CharGroup` has exactly one row.
 `char_group` is worked out from `name` (by name, plus `ds.data.raw.startgg.SITE_CHARACTER` for start.gg's
 `Rosalina` and `Simon Belmont`); `stored_characters()` works it out again on read, with `char_icon`.
+
+## `char_ranking.parquet`
+
+Per-character player rankings (every ranked player of each character, eg 931 for Cloud), one release a month,
+downloaded by hand as a zip and loaded by `ds data char_ranking` (see [raw/char_ranking/](raw/char_ranking/README.md)).
+Every loaded month is kept; loading a month again replaces only that month.
+
+- **Grain:** one row per ranked player per pick per month. A ranking of echo fighters ranked together
+  (`Peach-Daisy`, ...) is stored once per member pick, so the same player can appear under both.
+- **Primary key:** (`date`, `ranking`, `rank`, `char_group_id`)
+- **Foreign keys:** `char_group_id` -> `char.parquet.char_group` (a pick; that table keeps the older name); `player_id` is a start.gg player id, as in
+  `ds.data.startgg` (no player table yet)
+
+| column       | meaning |
+| ------------ | ------- |
+| `date`       | The release, a `Date` (no time): always a calendar month end, eg `2026-11-30` (from the zip's `November 2026` folder) |
+| `char_group_id` | The pick, typed as the `CharGroup` enum; null for `Random` (and a name not matched yet) |
+| `ranking`    | The source's ranking name, eg `Cloud`, `Peach-Daisy` (shows when a ranking was combined) |
+| `rank`       | Place in that ranking, from 1 |
+| `tag`        | The player's tag |
+| `player_id`  | start.gg player id, eg `158026` (Sparg0) |
+| `country`    | Two-letter country code, lowercase, eg `mx` |
+| `rating`     | The **player's** overall rating, the same in every ranking they're in (each ranking orders its players by it); a number, big ones rounded by the source (`10.1k` -> 10100) |
+| `is_solo_main`  | Whether the player is a solo main of this character (the source's `Is solo main`) |
+
+```python
+import polars as pl
+
+ranks = pl.read_parquet("pkgs/ds/data/parquet/char_ranking.parquet")
+newest = ranks.filter(pl.col("date") == pl.col("date").max())
+mac = newest.filter(pl.col("char_group_id") == "little_mac").sort("rank")
+```
 
 ## `raw/`
 

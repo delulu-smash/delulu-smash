@@ -12,6 +12,7 @@ from pathlib import Path
 
 import polars as pl
 
+from ds.data.paths import PARQUET_DIR
 from ds.data.raw.smashmate import SHARED_FILE, char_icon_file
 
 __all__ = [
@@ -43,7 +44,7 @@ def _name_key(name: str) -> str:
 #   roster re-scrape (new DLC)
 @cache
 def _icons_by_name() -> dict[str, str]:
-    chars = pl.read_parquet(CHAR_ICON_DIR.parent / "char.parquet")
+    chars = pl.read_parquet(PARQUET_DIR / "char.parquet")
     by_name = {_name_key(name): char_icon for name, char_icon in chars.select("name", "char_icon").iter_rows()}
     by_name |= {
         _name_key(char_id): by_name[_name_key(name)] for char_id, name in chars.select("id", "name").iter_rows()
@@ -79,7 +80,7 @@ _GROUP_NAMES |= {_name_key(group): group for group in CHAR_GROUPS}  # the group 
 #   roster re-scrape (new DLC)
 @cache
 def _ids_by_name() -> dict[str, str]:
-    chars = pl.read_parquet(CHAR_ICON_DIR.parent / "char.parquet")
+    chars = pl.read_parquet(PARQUET_DIR / "char.parquet")
     by_name = {_name_key(name): char_id for char_id, name in chars.select("id", "name").iter_rows()}
     return by_name | {_name_key(char_id): char_id for char_id in chars["id"]}
 

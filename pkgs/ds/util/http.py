@@ -23,6 +23,7 @@ from collections import Counter
 from collections.abc import AsyncIterator, Iterator, Mapping
 from contextlib import asynccontextmanager, contextmanager
 from typing import Any
+from urllib.parse import parse_qsl
 
 import httpx2
 
@@ -31,6 +32,7 @@ from ds.util.logging import log_call
 __all__ = [
     "DEFAULT_TIMEOUT",
     "FILTERED",
+    "SECRET_BODY_FIELDS",
     "SECRET_HEADERS",
     "arequest",
     "curl_command",
@@ -42,6 +44,11 @@ DEFAULT_TIMEOUT = 30.0  # seconds, for requests without their own client
 # Header names whose values never reach a log record (compared lowercased). Add new ones here.
 SECRET_HEADERS = frozenset(
     {"authorization", "proxy-authorization", "apikey", "x-api-key", "api-key", "cookie", "set-cookie"},
+)
+# Request body field names (form or JSON, top level) whose values never reach a log record,
+# eg an OAuth token request's client secret and code. Add new ones here.
+SECRET_BODY_FIELDS = frozenset(
+    {"client_secret", "code", "code_verifier", "refresh_token", "access_token", "password", "token"},
 )
 FILTERED = "[filtered]"
 MAX_BODY_CHARS = 2000  # request body kept in the record
@@ -73,15 +80,24 @@ def filter_headers(headers: Mapping[str, str]) -> dict[str, str]:
     return shown
 
 
-def _body(content: bytes) -> Any:
-    """A request body for the record: parsed JSON when it is JSON, else (cut) text."""
+def _body(content: bytes, content_type: str = "") -> Any:
+    """A request body for the record: parsed JSON, a form as its fields, else (cut) text.
+
+    Secret fields (SECRET_BODY_FIELDS) are replaced in JSON and forms.
+    """
     if not content:
         return None
     text = content.decode("utf-8", errors="replace")
+    if content_type.startswith("application/x-www-form-urlencoded"):
+        form = dict(parse_qsl(text, keep_blank_values=True))
+        return {key: FILTERED if key.lower() in SECRET_BODY_FIELDS else value for key, value in form.items()}
     try:
-        return json.loads(text) if len(text) <= MAX_BODY_CHARS else text[:MAX_BODY_CHARS] + "…"
+        parsed = json.loads(text) if len(text) <= MAX_BODY_CHARS else text[:MAX_BODY_CHARS] + "…"
     except ValueError:
         return text[:MAX_BODY_CHARS]
+    if isinstance(parsed, dict):
+        return {key: FILTERED if key.lower() in SECRET_BODY_FIELDS else value for key, value in parsed.items()}
+    return parsed
 
 
 def _request_fields(method: str, url: str, kwargs: dict[str, Any]) -> dict[str, Any]:
@@ -95,7 +111,7 @@ def _response_fields(resp: httpx2.Response) -> dict[str, Any]:
     fields: dict[str, Any] = {
         "url": str(request.url) if not resp.history else str(resp.history[0].request.url),
         "request_headers": filter_headers(request.headers),
-        "request_body": _body(request.content),
+        "request_body": _body(request.content, request.headers.get("content-type", "")),
         "status": resp.status_code,
         "content_type": resp.headers.get("content-type", "").split(";")[0] or None,
         "bytes": len(resp.content),

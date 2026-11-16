@@ -17,8 +17,8 @@ CHARS = pl.read_parquet(CHAR_PARQUET_PATH)
 
 
 def test_generated_enums_match_char_parquet():
-    """The enums are generated code. If this fails, run `uv run ds data char_enum`"""
-    assert char_enum_source(CHARS) in CHARS_MODULE.read_text(), "run `uv run ds data char_enum`"
+    """The enums are generated code. If this fails, run `ds data char_enum`"""
+    assert char_enum_source(CHARS) in CHARS_MODULE.read_text(), "run `ds data char_enum`"
     assert [member.value for member in CharId] == CHARS["id"].to_list()
     assert [member.value for member in CharGroup] == CHARS["char_group"].unique(maintain_order=True).to_list()
     assert (len(CharId), len(CharGroup)) == (89, 86)

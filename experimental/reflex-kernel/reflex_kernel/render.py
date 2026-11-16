@@ -52,8 +52,6 @@ DEFAULT_SQL = "select * from self"
 MAX_BAR_ROWS = 6
 # The backend serves the character icons (api.py); the browser loads them from here.
 ICON_URL = rx.config.get_config().api_url + "/"
-# A transparent 1x1 GIF: the src of an image that has nothing to show yet.
-BLANK_IMAGE = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
 # Longest text shown for one field value or table cell of a generic model view.
 MAX_VALUE_CHARS = 400
 # Rows shown per list in a generic model view.
@@ -859,54 +857,13 @@ def form_section(view: rx.Var[ViewData], send: Any) -> rx.Component:
     )
 
 
-def _character_picker(item: rx.Var[FormField]) -> rx.Component:
-    """A character input: type to filter, pick from a list of icon + name (assets/combo.js does
-    the typing, keys and picking; this is its markup). The hidden input carries the picked
-    value under the field's name, so the form submits it like any other input; "" = any."""
-
-    def option(choice: rx.Var[dict[str, str]]) -> rx.Component:
-        return rx.el.button(
-            rx.el.img(src=ICON_URL + choice["icon"], alt="", loading="lazy", class_name="char-icon"),
-            rx.el.span(choice["label"]),
-            type="button",
-            tab_index=-1,
-            custom_attrs={
-                "data-value": choice["value"],
-                "data-label": choice["label"],
-                "data-icon": ICON_URL + choice["icon"],
-            },
-            class_name="combo-option",
-        )
-
-    return rx.el.span(
-        # the picked character's icon, inside the box (hidden while nothing is picked)
-        rx.el.img(
-            # never "": an empty src makes the browser request the page itself (React warns)
-            src=rx.cond(item.icon != "", ICON_URL + item.icon, BLANK_IMAGE),
-            alt="",
-            class_name="char-icon combo-icon",
-            custom_attrs={"data-combo-icon": ""},
-        ),
-        rx.el.input(
-            default_value=item.shown,
-            placeholder="any",
-            auto_complete="off",
-            spell_check=False,
-            class_name="form-input combo-text",
-            custom_attrs={"data-combo-text": ""},
-        ),
-        rx.el.input(type="hidden", name=item.name, default_value=item.value, custom_attrs={"data-combo-value": ""}),
-        rx.el.span(rx.foreach(item.choices, option), class_name="combo-list", custom_attrs={"data-combo-list": ""}),
-        class_name=rx.cond(item.value != "", "combo has-value", "combo"),
-        custom_attrs={"data-combo": ""},
-    )
-
-
-def _multi_select(item: rx.Var[FormField]) -> rx.Component:
-    """A list[<choices>] input (tool_forms.list_choices): each pick a chip (icon when the options
-    have one, name, x to remove), then a text box that filters a list to tick more in.
-    assets/multiselect.js does the picking and draws the chips; this is its markup. The hidden
-    input carries the picked values joined by "," under the field's name; "" = any."""
+def _choice_input(item: rx.Var[FormField]) -> rx.Component:
+    """The one pick-from-a-list input (tool_forms.picker_for), single or multiple
+    (item.multiple, the only difference: whether a pick replaces the last one). A box showing
+    each pick as a chip (icon when the options have one, name, x to remove) that opens the
+    list; a search box on top of the list when it is long (item.search). assets/choice.js does
+    the picking and draws the chips; this is its markup. The hidden input carries the picked
+    values joined by "," under the field's name; "" = any."""
 
     def option(choice: rx.Var[dict[str, str]]) -> rx.Component:
         return rx.el.button(
@@ -914,8 +871,8 @@ def _multi_select(item: rx.Var[FormField]) -> rx.Component:
                 choice["icon"] != "",
                 rx.el.img(src=ICON_URL + choice["icon"], alt="", loading="lazy", class_name="char-icon"),
             ),
-            rx.el.span(choice["label"], class_name="multi-label"),
-            rx.el.span("✓", class_name="multi-check"),
+            rx.el.span(choice["label"], class_name="choice-label"),
+            rx.el.span("✓", class_name="choice-check"),
             type="button",
             tab_index=-1,
             custom_attrs={
@@ -923,31 +880,45 @@ def _multi_select(item: rx.Var[FormField]) -> rx.Component:
                 "data-label": choice["label"],
                 "data-icon": rx.cond(choice["icon"] != "", ICON_URL + choice["icon"], ""),
             },
-            class_name="multi-option",
+            class_name="choice-option",
         )
 
     return rx.el.span(
-        # filled by multiselect.js from the hidden value (it owns this span's contents)
-        rx.el.span(class_name="multi-chips", custom_attrs={"data-multi-chips": ""}),
-        rx.el.input(
-            placeholder="any",
-            auto_complete="off",
-            spell_check=False,
-            class_name="multi-text",
-            custom_attrs={"data-multi-text": ""},
+        rx.el.span(
+            # filled by choice.js from the hidden value (it owns this span's contents)
+            rx.el.span(class_name="choice-chips", custom_attrs={"data-choice-chips": ""}),
+            rx.el.span("▾", class_name="choice-caret dim"),
+            tab_index=0,
+            class_name="form-input choice-box",
+            custom_attrs={"data-choice-box": "", "role": "combobox"},
         ),
-        rx.el.input(type="hidden", name=item.name, default_value=item.value, custom_attrs={"data-multi-value": ""}),
-        rx.el.span(rx.foreach(item.choices, option), class_name="multi-list", custom_attrs={"data-multi-list": ""}),
-        class_name="form-input multi",
-        custom_attrs={"data-multi": ""},
+        rx.el.input(type="hidden", name=item.name, default_value=item.value, custom_attrs={"data-choice-value": ""}),
+        rx.el.span(
+            rx.cond(
+                item.search,
+                rx.el.input(
+                    placeholder="Search…",
+                    auto_complete="off",
+                    spell_check=False,
+                    class_name="form-input choice-search",
+                    custom_attrs={"data-choice-search": ""},
+                ),
+            ),
+            rx.el.span(
+                rx.foreach(item.choices, option), class_name="choice-options", custom_attrs={"data-choice-options": ""}
+            ),
+            class_name="choice-list",
+            custom_attrs={"data-choice-list": ""},
+        ),
+        class_name="choice",
+        custom_attrs={"data-choice": "", "data-multiple": rx.cond(item.multiple, "true", "false")},
     )
 
 
 def _form_field(item: rx.Var[FormField]) -> rx.Component:
     control = rx.match(
         item.kind,
-        ("character", _character_picker(item)),
-        ("multi", _multi_select(item)),
+        ("choice", _choice_input(item)),
         (
             "select",
             rx.el.select(

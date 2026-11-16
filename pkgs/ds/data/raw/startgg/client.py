@@ -5,7 +5,7 @@
 # ds.util.graphql (one 'graphql' record per request); no caching.
 # Usage: `data = await gql(queries.PLAYER, {"id": 158026})` (called by api.py, not directly).
 # Token: create one at https://start.gg/admin/profile/developer, store it with
-# `uv run ds settings sync` (keyring), or export STARTGG_API_TOKEN.
+# `ds settings sync` (keyring), or export STARTGG_API_TOKEN.
 # ---------------------------------------------------------------------------
 #
 # Site notes: context the code doesn't show (findings, decisions), as of 15 Nov 2026.
@@ -22,7 +22,7 @@
 # How the API behaves (limits from the docs; the rest measured with scripts/startgg_probe.py
 # on 15 Nov 2026 for Sparg0 and rm8, 150 newest sets each):
 # - Tokens expire a year after they are created: a token that worked and now gets "rejected
-#   the API token" most likely just needs replacing (`uv run ds settings sync`).
+#   the API token" most likely just needs replacing (`ds settings sync`).
 # - Limits: 80 requests per 60 s on average, and 1000 objects per request, nested objects
 #   included. Over the first: `{"success": false, "message": "Rate limit exceeded ..."}`.
 #   Over the second: `"Query complexity too high. ... (actual: 1235)"`. The count is of the
@@ -167,7 +167,7 @@ def _token() -> str:
             " ".join(
                 [
                     f"no start.gg API token stored: create one at {DEVELOPER_SETTINGS_URL},",
-                    "then run `uv run ds settings sync --guide`",
+                    "then run `ds settings sync --guide`",
                 ]
             )
         )
@@ -220,7 +220,7 @@ def _raise_for_body(status: int, body: Any) -> None:
                 [
                     f"start.gg rejected the API token ({message or status}).",
                     f"Tokens expire {TOKEN_LIFETIME_DAYS} days after they are created:",
-                    f"make a new one at {DEVELOPER_SETTINGS_URL} and store it with `uv run ds settings sync`.",
+                    f"make a new one at {DEVELOPER_SETTINGS_URL} and store it with `ds settings sync`.",
                 ]
             )
         )

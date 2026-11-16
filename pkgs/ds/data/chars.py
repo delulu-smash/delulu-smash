@@ -6,14 +6,13 @@
 # tool's schema, and drawn by the app's tool forms as a searchable picker with icons.
 # Usage: `CharGroup("Pokemon Trainer")`, `CharId("mac").label`, `CharGroup.choices()`.
 # The members below are generated from char.parquet: after the roster changes run
-#   uv run ds data char_enum      (`ds data roster` does it too)
+#   ds data char_enum      (`ds data roster` does it too)
 # tests/ds/data/test_chars.py fails when this file and char.parquet disagree.
 # ---------------------------------------------------------------------------
 from __future__ import annotations
 
 from enum import StrEnum
 from functools import cache
-from pathlib import Path
 from typing import Self
 
 import polars as pl
@@ -26,10 +25,11 @@ from ds.data.char_icons import (
     char_icon,
     char_id_by_name,
 )
+from ds.data.paths import PARQUET_DIR
 
 __all__ = ["CharChoice", "CharEnum", "CharGroup", "CharId"]
 
-_CHAR_PARQUET = Path(__file__).resolve().parent / "char.parquet"
+_CHAR_PARQUET = PARQUET_DIR / "char.parquet"
 
 
 class CharChoice(BaseModel):

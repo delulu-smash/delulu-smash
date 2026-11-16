@@ -120,9 +120,9 @@ def test_usage_widget_attributes():
     # the form submits text; the tool gets the number its Literal wants
     assert usage.form.arguments({"player": "Sparg0", "sets": "60"})["sets"] == 60
     assert usage.form.arguments({"player": "Sparg0", "sets": ""})["sets"] == 30
-    # vs_characters is typed list[CharGroup], so the form draws it as a multi-select with icons
+    # vs_characters is typed list[CharGroup], so the form draws the choice input, several picks
     picker = usage.form.fields({"vs_characters": "steve,pac_man"})[1]
-    assert (picker.kind, picker.value) == ("multi", "steve,pac_man")
+    assert (picker.kind, picker.multiple, picker.value) == ("choice", True, "steve,pac_man")
     assert len(picker.choices) == len(CharGroup)
     assert picker.choices[0] == {
         "value": "banjo_and_kazooie",
@@ -137,9 +137,10 @@ def test_usage_widget_attributes():
     assert usage.form.arguments({"player": "Mac", "vs_characters": ""})["vs_characters"] is None
     with pytest.raises(ValueError, match="vs_characters"):
         usage.form.arguments({"player": "Mac", "vs_characters": "steve,Goku"})
-    # other tools' forms have no character-typed parameter (yet)
-    assert widget_of("videos").form.character_types == {}
-    assert widget_of("videos").form.multi_choices == {}
+    # match videos: one character per side, so the same input with one pick each
+    videos = widget_of("videos").form.pickers
+    assert {name: picker.multiple for name, picker in videos.items()} == {"char_1": False, "char_2": False}
+    assert videos["char_1"].options == usage.form.pickers["vs_characters"].options
     # a select left out of the inputs keeps the tool's default (it has no empty choice)
     assert usage.form.arguments({"player": "Mac"})["setting"] == "all"
     assert usage.form.arguments({"player": "Mac", "setting": "offline"})["setting"] == "offline"
@@ -221,14 +222,17 @@ def _every_kind(  # one parameter per kind of input the form builds from a type
 def test_the_form_follows_the_parameter_types():
     form = ToolForm("Every kind", _every_kind)
     fields = {field.name: field for field in form.fields({})}
-    # list[<a fixed set>] -> a multi-select, whatever the set is
-    assert {name: f.kind for name, f in fields.items()} == {
-        "fighters": "multi",
-        "rounds": "multi",
-        "speeds": "multi",
-        "tags": "text",  # a list of free text has no options to pick from
-        "main": "character",  # one character: the single picker
+    # list[<a fixed set>] -> the choice input with several picks, whatever the set is; one
+    # character -> the same input with one pick
+    assert {name: (f.kind, f.multiple) for name, f in fields.items()} == {
+        "fighters": ("choice", True),
+        "rounds": ("choice", True),
+        "speeds": ("choice", True),
+        "tags": ("text", False),  # a list of free text has no options to pick from
+        "main": ("choice", False),
     }
+    # a search box for a long list only, whether it takes one pick or several
+    assert (fields["fighters"].search, fields["main"].search, fields["rounds"].search) == (True, True, False)
     assert fields["rounds"].choices == [{"value": str(n), "label": str(n), "icon": ""} for n in (1, 2, 3)]
     assert [c["value"] for c in fields["speeds"].choices] == ["slow", "fast"]
     # submitted text comes back as the typed values each list wants
@@ -236,10 +240,10 @@ def test_the_form_follows_the_parameter_types():
     assert (got["fighters"], got["rounds"], got["speeds"]) == ([CharGroup.STEVE], [3, 1], [_Speed.FAST])
     with pytest.raises(ValueError, match="rounds"):
         form.arguments({"rounds": "4"})
-    # a single character keeps the single picker
-    picker = form.fields({"main": "pokemon_trainer"})[-1]
-    assert (picker.kind, picker.value, picker.shown) == ("character", "pokemon_trainer", "Pokemon Trainer")
-    assert picker.icon == "char_icons/pokemon_trainer.png"
+    # a single character: one value in, one value out (not a list)
+    picker = form.fields({"main": CharGroup.POKEMON_TRAINER})[-1]
+    assert picker.value == "pokemon_trainer"
     assert form.arguments({"main": "pyra_mythra"})["main"] is CharGroup.PYRA_MYTHRA
+    assert form.arguments({"main": ""})["main"] is None
     with pytest.raises(ValueError, match="main"):
         form.arguments({"main": "Goku"})

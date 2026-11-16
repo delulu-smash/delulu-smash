@@ -3,9 +3,9 @@
 # Purpose: `ds settings` commands: store the secrets in ds.settings (keyring) and show them.
 #
 # Example CLI Commands:
-#   0. Store / replace secrets:        uv run ds settings sync
-#   1. Same, with how to get each one: uv run ds settings sync --guide
-#   2. Show what is stored (masked):   uv run ds settings show
+#   0. Store / replace secrets:        ds settings sync
+#   1. Same, with how to get each one: ds settings sync --guide
+#   2. Show what is stored (masked):   ds settings show
 # ---------------------------------------------------------------------------
 from __future__ import annotations
 
