@@ -119,3 +119,30 @@ def test_widget_is_addable_on_the_sessions_db():
     assert isinstance(made, DbConsole)
     assert made.db is session.db
     assert session.namespace["db"] is session.db
+
+
+def test_save_as_names():
+    from reflex_kernel.session import Session
+
+    session = Session()
+    assert session.next_free_name("q") == "q1"
+    session.namespace["q1"] = 1
+    assert session.next_free_name("q") == "q2"
+    assert session.name_problem("top_moves") == ""
+    assert session.name_problem("q1") == ""  # replaced, as in Python
+    for bad in ["1x", "my name", "class", "_hidden", "db", "pl"]:
+        assert session.name_problem(bad), bad
+    assert session.name_problem("r1", keep="r1")  # the console itself
+
+
+def test_save_as_toggle_and_suggestion(console: DbConsole):
+    from reflex_kernel.session import Session
+
+    session = Session()
+    session.namespace["r1"] = console.run("select id from char limit 2")
+    ui = session.ui.setdefault("tab:r1", Ui())
+    apply_event(session.view_at("tab:r1"), ui, "db_save_toggle", "")
+    data = session.show("tab:r1")
+    assert (data.db_save_open, data.db_save_name) == (True, "q1")
+    apply_event(session.view_at("tab:r1"), ui, "db_save_toggle", "")
+    assert not session.show("tab:r1").db_save_open

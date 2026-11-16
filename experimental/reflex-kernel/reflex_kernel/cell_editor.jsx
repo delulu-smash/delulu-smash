@@ -8,7 +8,7 @@
 import React, { useMemo, useRef } from "react";
 import CodeMirror from "@uiw/react-codemirror";
 import { python } from "@codemirror/lang-python";
-import { acceptCompletion, autocompletion, closeCompletion, completionStatus, startCompletion } from "@codemirror/autocomplete";
+import { acceptCompletion, autocompletion, closeCompletion, startCompletion } from "@codemirror/autocomplete";
 import { EditorView, keymap, tooltips } from "@codemirror/view";
 import { Prec } from "@codemirror/state";
 import { createTheme } from "@uiw/codemirror-themes";
@@ -52,6 +52,23 @@ const everforest = createTheme({
 // jedi completion types -> CodeMirror's icon classes
 const kinds = { function: "function", class: "class", module: "namespace", keyword: "keyword", property: "property",
   param: "variable", instance: "variable", statement: "variable", path: "text" };
+
+/**
+ * Tab, as in Jupyter: accept the open suggestion, or ask for one after a name or dot; anywhere else
+ * return false so it indents. Shared with sql_editor.jsx.
+ */
+export function completeOrIndent(view) {
+  if (acceptCompletion(view)) return true;
+  const { head, empty } = view.state.selection.main;
+  const line = view.state.doc.lineAt(head);
+  if (empty && /[\w.]$/.test(line.text.slice(0, head - line.from))) return startCompletion(view);
+  return false;
+}
+
+// interactionDelay 0: by default CodeMirror ignores Tab/Enter for 75 ms after the popup opens or
+// updates, which it does on every keystroke and again when the backend answers, so a Tab typed at
+// normal speed fell through and indented instead of completing.
+export const completionOptions = { interactionDelay: 0 };
 
 /** Focus the editor of the cell after `node`'s cell; it may not exist yet when the last cell was just run. */
 function focusNextCell(node) {
@@ -117,24 +134,14 @@ export function CellEditor({ initialCode, completeUrl, token, keys, onRun, onSav
       python(),
       // Wrap long lines instead of scrolling the cell sideways (which hid the start of every line).
       EditorView.lineWrapping,
-      autocompletion({ override: [complete] }),
+      autocompletion({ ...completionOptions, override: [complete] }),
       // Attach popups to the page so the notebook's scroll area can't clip them.
       tooltips({ parent: document.body }),
       Prec.highest(
         keymap.of([
           // keys come from shortcuts.py (Shortcut.COMPLETE / RUN_AND_ADVANCE / RUN), read once at mount.
-          // Complete, as in Jupyter's Tab: accept the open suggestion, or ask for one after a name or dot;
-          // anywhere else it falls through and indents.
-          {
-            key: keys?.complete || "Tab",
-            run: (view) => {
-              if (completionStatus(view.state) === "active") return acceptCompletion(view);
-              const { head, empty } = view.state.selection.main;
-              const line = view.state.doc.lineAt(head);
-              if (empty && /[\w.]$/.test(line.text.slice(0, head - line.from))) return startCompletion(view);
-              return false;
-            },
-          },
+          // Complete (Tab): completeOrIndent
+          { key: keys?.complete || "Tab", run: completeOrIndent },
           { key: keys?.runAndAdvance || "Shift-Enter", run: run(true) },
           { key: keys?.run || "Mod-Enter", run: run(false) },
         ]),

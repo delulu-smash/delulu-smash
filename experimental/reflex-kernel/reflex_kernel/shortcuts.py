@@ -39,7 +39,7 @@ class Shortcut(Enum):
     # Handled by the cell editor's keymap (cell_editor.jsx, given by codemirror_keys).
     RUN_AND_ADVANCE = Binding("Shift+Enter", "cell", "Run and go to the next cell")
     RUN = Binding("Ctrl+Enter", "cell", "Run")
-    COMPLETE = Binding("Tab", "cell", "Complete")
+    COMPLETE = Binding("Tab", "cell, table SQL, SmashDb console", "Complete")
     # Handled by the SQL box (sql_editor.jsx): a table view's, and a SmashDb console's editor.
     RUN_SQL = Binding(
         "Ctrl+Enter",
@@ -83,7 +83,7 @@ def codemirror_key(shortcut: Shortcut) -> str:
 
 def sql_keys() -> dict[str, str]:
     """The SQL box's keymap, by the prop names sql_editor.jsx reads."""
-    return {"run": codemirror_key(Shortcut.RUN_SQL)}
+    return {"run": codemirror_key(Shortcut.RUN_SQL), "complete": codemirror_key(Shortcut.COMPLETE)}
 
 
 def codemirror_keys() -> dict[str, str]:

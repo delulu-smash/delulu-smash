@@ -82,3 +82,19 @@ _OTHER = {"tool_call_id": "toolu_9", "turn": "turn-5"}
 def test_in_focus_is_the_reverse_of_the_links(focus, made_by, shown):
     records = [_TOOL, _FORM_IN_TAB, _FORM_IN_CHAT, _CELL, _OTHER]
     assert [r for r in records if logs.in_focus(r, focus, made_by)] == shown
+
+
+def test_rows_of_one_session_leave_out_the_others(monkeypatch):
+    """What a fresh window's debug log shows (State.debug_mine is on by default): its own
+    records, not earlier windows' or those made outside any browser tab.
+    """
+    records = [
+        {"id": 1, "time": 1_790_000_000.0, "kind": "tool", "session": "earlier1"},
+        {"id": 2, "time": 1_790_000_001.0, "kind": "tool"},
+        {"id": 3, "time": 1_790_000_002.0, "kind": "tool", "session": "mine0000"},
+    ]
+    monkeypatch.setattr(logs, "_records", records)
+    assert logs.rows([], session="fresh000") == ([], 0)
+    mine, count = logs.rows([], session="mine0000")
+    assert (count, [row["session"] for row in mine]) == (1, ["mine0000"])
+    assert logs.rows([])[1] == 3  # unticked: every session's

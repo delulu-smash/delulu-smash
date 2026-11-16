@@ -73,7 +73,7 @@ class SqlEditor(rx.NoSSRComponent):
     schema: rx.Var[dict[str, list[str]]]
     # Shown while the box is empty (default: "select * from self").
     placeholder: rx.Var[str]
-    # {"run": ...} in CodeMirror's spelling (shortcuts.codemirror_keys).
+    # {"run", "complete"} in CodeMirror's spelling (shortcuts.sql_keys).
     keys: rx.Var[dict[str, str]]
 
     # (sql): fired by Shortcut.RUN_SQL, with the selection when there is one, else the whole text.

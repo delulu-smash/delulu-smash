@@ -519,3 +519,7 @@ select.form-input { width: auto; }
 /* in a cell's result or the chat: no pane to fill, so the tree gets a height of its own */
 .cell-widget .db-console { min-width: 640px; }
 .cell-widget .db-tree { max-height: 320px; }
+/* a SmashDb console's Save as row (render._db_save_row) */
+.db-save-row { align-items: center; gap: 10px; padding: 4px 8px; font-size: 12.5px; }
+.db-save-name { width: 160px; }
+.db-save-error { color: var(--red); }

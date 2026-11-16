@@ -250,3 +250,11 @@ def test_the_form_follows_the_parameter_types():
     assert form.arguments({"main": ""})["main"] is None
     with pytest.raises(ValueError, match="main"):
         form.arguments({"main": "Goku"})
+
+
+def test_app_loads_no_autofill_guard() -> None:
+    """assets/no_autofill.js keeps password managers off every input."""
+    from reflex_kernel.reflex_kernel import app
+
+    sources = [str(src._var_value) for comp in app.head_components if (src := getattr(comp, "src", None)) is not None]
+    assert "/no_autofill.js" in sources

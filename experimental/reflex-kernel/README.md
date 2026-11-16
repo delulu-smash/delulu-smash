@@ -60,7 +60,10 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   cell (on hover), or Show Requests in a result tab's right-click menu, opens the log on just that thing's
   requests (`State.show_logs`, `logs.in_focus`; the same target ids as the links). On top:
   start.gg requests in the last 60 s against the 80 allowed, the backend's memory, and this session's variables
-  (count, rough size). Filter by kind or to this session; Clear forgets them. Records come from
+  (count, rough size). It opens on **this session's** records only (so a fresh window's log is empty): the
+  backend is a long-running service and keeps one log for every window, so untick "this session only" to see the
+  other windows' records too (and those made outside any browser tab). Filter by kind; Clear forgets what is shown
+  (this session's, or everything when unticked). Records come from
   `ds.util.http` / `ds.util.graphql` and are kept in memory only (`reflex_kernel/logs.py`, newest 2000, gone on restart);
   the panel loads them when opened, on Refresh and when a turn, form or cell finishes, never while closed.
   A new kind of record is one function in `logs.LOG_FORMATS`.
@@ -164,6 +167,11 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   - It queries the session's `db`, the one the Python cells have, so `create table x as select ...` in the
     console is there in a cell and the other way round (in memory only; the parquet files are never written).
   - The tab's name is bound to the console: `r3.df` is the result DataFrame, `r3.sql` its query.
+  - **Save as ▸** (in the bar, once a query has run) keeps the result under a name of your own: the next free
+    `q1`, `q2`, ... is filled in, so Enter alone saves, or type one. It is bound in Python like `q1 = <result>`
+    and gets its own tab; you stay in the console. It is the query's result, without the bar's row filter, sort
+    or `SQL ▸`. A name that isn't a Python name, starts with `_`, is `pl` / `db` or is the console itself is
+    refused; an existing name is replaced, as in Python.
   - Running a query makes a new `DbConsole` that replaces the old one at its slot, as a tool form's run does.
   - No cache: the tree is read from the db on every redraw (about 2 ms), so a new table shows at once.
 - **Rendering** (`reflex_kernel/render.py`): everything about showing a value lives in this one file, used
@@ -224,6 +232,9 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   opens the list after a name or a dot; elsewhere Tab indents. Ctrl+Space forces the list. Suggestions come from `jedi` run
   against the live variables, so `r1.` lists real DataFrame methods. `jedi` is present in the root
   venv only as a dependency of IPython; add it to the root `pyproject.toml` if that changes.
+- **No autofill**: every input, textarea and editor is opted out of password managers (1Password, LastPass,
+  Bitwarden, Dashlane) and browser autofill by `assets/no_autofill.js`, including inputs added later. To allow
+  one, put `data-allow-autofill` on it or a parent.
 - **Local only**: the backend binds to 127.0.0.1, since the app executes arbitrary Python.
 
 Layout: `reflex_kernel/session.py` (namespace, agent, completion; no UI), `render.py` (Python value -> view -> component), `state.py` (Reflex

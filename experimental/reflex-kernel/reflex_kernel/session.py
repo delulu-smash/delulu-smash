@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import ast
 import contextlib
+import keyword
 import io
 import itertools
 import linecache
@@ -355,13 +356,34 @@ class Session:
         if view is None:
             return ViewData()
         call = self.call_at(slot, view.value)
-        return view.data(
+        data = view.data(
             slot,
             self.ui.get(slot),
             compact,
             inputs=call.inputs if call else None,
             can_restore=bool(call and call.changed and call.original),
         )
+        if view.kind == "smashdb":
+            data.db_save_name = self.next_free_name("q")
+        return data
+
+    def next_free_name(self, prefix: str) -> str:
+        """The first of prefix1, prefix2, ... not bound in Python (eg a SmashDb console's Save as)."""
+        return next(f"{prefix}{n}" for n in itertools.count(1) if f"{prefix}{n}" not in self.namespace)
+
+    def name_problem(self, name: str, keep: str = "") -> str:
+        """Why a name can't be bound by hand ("" if it can): a Python identifier, not private,
+        not a keyword, not one of the names put in up front (pl, db), not `keep` (eg the
+        console being saved from). An existing name is fine: it is replaced, as in Python."""
+        if not name.isidentifier() or keyword.iskeyword(name):
+            return f"{name!r} isn't a Python name"
+        if name.startswith("_"):
+            return "names starting with _ are hidden: pick another"
+        if name in BUILTIN_NAMES:
+            return f"{name} is predefined: pick another"
+        if name == keep:
+            return f"{name} is this console: pick another"
+        return ""
 
     def bind_result(self, value: Any, source: str, inputs: dict[str, Any] | None = None, tool_call_id: str = "") -> str:
         """Bind a tool result to the next r<n> name. inputs: the arguments the tool was called with;

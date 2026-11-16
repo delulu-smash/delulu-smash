@@ -200,6 +200,14 @@ class ViewData:
     """A query has run: there is a result table to show."""
     db_history: list[str] = dataclasses.field(default_factory=list)
     db_history_open: bool = False
+    # Save as: the query's result bound to a Python name (State.view_event "db_save")
+    db_save_open: bool = False
+    db_save_name: str = ""
+    """The suggested name, the next free q1, q2, ... (Session.show fills it)."""
+    db_save_key: str = ""
+    """Remounts the name box (with the new suggestion) after each save."""
+    db_save_note: str = ""
+    db_save_error: str = ""
     # a failed query's traceback, as under a Python cell (state._trace_fields): the styled parts
     # shown, the ones folded away, the fold's label, and the full plain text
     trace: list[dict[str, str]] = dataclasses.field(default_factory=list)
@@ -259,6 +267,11 @@ class Ui:
     db_open: list[str] = dataclasses.field(default_factory=list)
     """The tables unfolded in the schema tree."""
     history_open: bool = False
+    save_open: bool = False
+    saves: int = 0
+    save_note: str = ""
+    """After a save: what was saved, eg 'saved as q1 (125 × 3)'."""
+    save_error: str = ""
     trace: dict[str, Any] = dataclasses.field(default_factory=dict)
     """The last query's error, as ViewData's trace fields plus `text` ({} = it ran)."""
 
@@ -309,6 +322,8 @@ def apply_event(view: View, ui: Ui, action: str, arg: Any) -> None:
             ui.history_open = not ui.history_open
         case "db_pick":
             ui.draft, ui.db_resets, ui.history_open = str(arg), ui.db_resets + 1, False
+        case "db_save_toggle":
+            ui.save_open, ui.save_note, ui.save_error = not ui.save_open, "", ""
 
 
 @dataclasses.dataclass
@@ -628,6 +643,8 @@ def _console_data(value: DbConsole, ui: Ui, data: ViewData) -> None:
     data.db_sql, data.db_key = ui.draft or value.sql, f"{data.slot}#{ui.db_resets}"
     data.db_ran, data.running = value.df is not None, ui.running
     data.db_history, data.db_history_open = list(value.history), ui.history_open
+    data.db_save_open, data.db_save_key = ui.save_open and value.df is not None, f"{data.slot}#save{ui.saves}"
+    data.db_save_note, data.db_save_error = ui.save_note, ui.save_error
     data.trace = ui.trace.get("trace", [])
     data.trace_hidden = ui.trace.get("trace_hidden", [])
     data.trace_more = ui.trace.get("trace_more", "")
@@ -922,6 +939,32 @@ def _db_table(table: rx.Var[DbTable], send: Any) -> rx.Component:
     )
 
 
+def _db_save_row(view: rx.Var[ViewData], send: Any) -> rx.Component:
+    """Save as: a name for the query's result (the next free q<n> filled in and selected, so
+    Enter alone saves), bound in Python like `q1 = <result>`; Esc folds it."""
+    return rx.el.form(
+        rx.el.span("Save result as", class_name="dim sans"),
+        rx.el.input(
+            key=view.db_save_key,
+            name="var_name",  # not "name": password managers read that as an identity field
+            default_value=view.db_save_name,
+            auto_focus=True,
+            auto_complete="off",
+            spell_check=False,
+            on_focus=rx.call_script("document.activeElement.select()"),
+            on_key_down=lambda key: rx.cond(key == "Escape", send("db_save_toggle"), rx.noop()),
+            class_name="viewer-filter mono db-save-name",
+        ),
+        rx.el.button("Save", type="submit", class_name="act"),
+        rx.cond(view.db_save_error != "", rx.el.span(view.db_save_error, class_name="db-save-error sans")),
+        rx.cond(view.db_save_note != "", rx.el.span(view.db_save_note, class_name="dim sans")),
+        # the whole form (its "var_name"): a form var has no typed items to pick from here
+        on_submit=lambda form: send("db_save", form),
+        reset_on_submit=False,
+        class_name="sql-row db-save-row",
+    )
+
+
 def db_console_widget(
     view: rx.Var[ViewData], send: Any, grid: rx.Component, actions: tuple[rx.Component, ...]
 ) -> rx.Component:
@@ -939,6 +982,13 @@ def db_console_widget(
                 title="The queries run in this console",
                 on_click=send("db_history"),
                 disabled=view.db_history.length() == 0,
+                class_name="act",
+            ),
+            rx.el.button(
+                rx.cond(view.db_save_open, "Save as ▾", "Save as ▸"),
+                title="Keep the query's result as a Python variable (a DataFrame, with its own tab)",
+                on_click=send("db_save_toggle"),
+                disabled=~view.db_ran,
                 class_name="act",
             ),
         ),
@@ -975,6 +1025,7 @@ def db_console_widget(
                     ),
                     class_name="db-editor-row",
                 ),
+                rx.cond(view.db_save_open, _db_save_row(view, send)),
                 rx.cond(
                     view.db_history_open,
                     rx.el.div(

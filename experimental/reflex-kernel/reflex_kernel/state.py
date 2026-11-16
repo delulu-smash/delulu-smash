@@ -161,9 +161,11 @@ class State(rx.State):
     debug_count: int = 0
     debug_stats: str = ""
     debug_kinds: list[str] = list(logs.LOG_FORMATS)
-    # kinds shown ([] = all) and whether only this tab's session
+    # kinds shown ([] = all) and whether only this tab's session. On by default: the log is one
+    # list for the whole backend (a long-running service), so a new window would otherwise open
+    # on what earlier windows did
     debug_shown: list[str] = []
-    debug_mine: bool = False
+    debug_mine: bool = True
     # only the records of one thing (State.show_logs; logs.in_focus): a tool call, an agent turn,
     # a result, a cell; "" = all. Same ids as the rows' ↖ links (State.reveal).
     debug_focus: str = ""
@@ -504,6 +506,10 @@ class State(rx.State):
             async for update in self._run_form(slot, view, ui, inputs):
                 yield update
             return
+        if action == "db_save":
+            name = arg.get("var_name", "") if isinstance(arg, dict) else arg  # the Save as form
+            self._save_query_result(slot, view, ui, str(name or "").strip())
+            return
         if action in ("db_run", "db_open"):
             async for update in self._run_query(slot, view, ui, action, str(arg)):
                 yield update
@@ -555,6 +561,28 @@ class State(rx.State):
         ui.running = False
         self._new_result(slot, ui, replaced=not ui.error)
         self._refresh_debug()
+
+    def _save_query_result(self, slot: str, view: Any, ui: Ui, name: str) -> None:
+        """A SmashDb console's Save as: bind its query's result to `name` in Python (it gets a
+        tab, as any DataFrame bound to a name), staying in the console."""
+        console = view.value
+        if not isinstance(console, DbConsole) or console.df is None:
+            return
+        session = self._session()
+        _, _, own = slot.partition(":")
+        if problem := session.name_problem(name, keep=own):
+            ui.save_error, ui.save_note = problem, ""
+            self._show(slot)
+            return
+        session.namespace[name] = console.df
+        session.sources[name] = "SmashDb console"
+        session.closed.pop(name, None)
+        # the grid's filter / sort / SQL on self are views of the result, not part of it
+        extras = [part for part, on in [("row filter", ui.query), ("sort", ui.sort_col), ("SQL ▸", ui.sql)] if on]
+        without = f"; the query's result, without the {' / '.join(extras)}" if extras else ""
+        ui.save_note = f"saved as {name} ({console.df.height} × {console.df.width}{without})"
+        ui.save_error, ui.saves = "", ui.saves + 1
+        self._sync()
 
     async def _run_query(self, slot: str, view: Any, ui: Ui, action: str, arg: str):
         """Run a SmashDb console's query; the console with the result replaces the one at the slot.

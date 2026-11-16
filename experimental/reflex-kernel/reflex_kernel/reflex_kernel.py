@@ -684,6 +684,8 @@ app = rx.App(
         rx.el.script(src="/keys.js", defer=True),
         # pick-from-a-list inputs in tool forms: characters, list[<choices>] (render._choice_input)
         rx.el.script(src="/choice.js", defer=True),
+        # no password-manager or browser autofill on any input (data-allow-autofill opts one back in)
+        rx.el.script(src="/no_autofill.js", defer=True),
     ],
 )
 # The page title is the web app window's title (SmashGPT); see .os/scripts/keybindings/smashgpt.py.
