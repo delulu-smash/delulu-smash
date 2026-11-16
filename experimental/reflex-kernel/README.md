@@ -106,9 +106,8 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   `pkgs/ds/data/char_icons/` (`ds.data.char_icon_by_name`), served by the backend (`api.py`).
 - **Tool forms** (`reflex_kernel/tool_forms.py`): some results show the inputs of the agent tool that made
   them. `Inputs ▸` in their bar folds them open, filled with what the tool was called with; change them and
-  press Enter (or Run) to run the tool again in place. The `+` at the end of the Results tab bar, or `Alt+P` anywhere
-  (`Shortcut.ADD_WIDGET`: the same menu in the middle of the window; it has a search box, so type to filter, arrows and Enter pick, `Alt+P` or Esc
-  closes), adds one
+  press Enter (or Run) to run the tool again in place. The `+` at the end of the Results tab bar (a small menu with a search box), or an
+  `Add: ...` command in the command palette (`Alt+P`), adds one
   by hand: a placeholder (`ToolRequest`) that is just the form, replaced by the result on its first run.
   How the form stays aligned with the tool:
   - **Fields** are built from the tool's parameter schema, the one pydantic-ai gives the model
@@ -199,9 +198,25 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   bound to something new or the result is opened again from the chat (`Session.closed` / `tabs()`).
   A result the agent returned has `↖ chat` in its bar (and Show in Chat in the right-click menu): it
   scrolls the chat to that tool call's row and flashes it.
-- **Help**: the ? at the top right (Alt+H) lists the keyboard shortcuts.
+- **Help**: the ? at the top right (Alt+H) lists the keyboard shortcuts; it is as tall as the window allows,
+  then scrolls.
+- **Command palette** (`Alt+P`, `Shortcut.PALETTE`; as VS Code's Ctrl+Shift+P and Omarchy's menu): a search
+  box over every action of the app, one row each: icon, `Group: name`, its shortcut. Type to filter (a
+  group name or other words work too, eg `view`, `jupyter`), arrows move, Enter runs, Esc or `Alt+P` closes. It always opens on top, as Omarchy's launcher does
+  (over the debug log, help, the keybindings list, a floating view), and closing it leaves those open.
+  - Commands are data, in `reflex_kernel/commands.py` (`COMMANDS`): `Add:` the widgets you can add by hand,
+    `View:` show / hide Chat, Results, the Python console (the name says which: "Hide" when it is showing)
+    and full screen, `Python:` new cell / run all / clear outputs, `Results:` close all tabs, `AI:` the two
+    inline chats, `App:` keybindings, help, debug log. A new command is one row there.
+  - `Go to: r1` rows list the open results: the palette is also a tab switcher.
+  - The commands you ran last come first, marked "recent" (the last 5, remembered in this browser's
+    localStorage by `assets/panes.js`).
+  - A command that acts where you are (full screen, inline chat) uses where you were before the palette
+    opened: the result or pane, or the editor you were last in.
 - **Keybindings**: Alt+K opens a searchable list of every shortcut, like Omarchy's SUPER+K: type to filter,
-  Esc (or Alt+K) closes (`keys_palette`, `assets/keys.js`).
+  Esc (or Alt+K) closes (`keys_palette`, `assets/keys.js`). Enter runs the picked shortcut, as in Omarchy,
+  when a key press alone can run it (`commands.RUNNABLE`: the `Alt` keys; a ↵ marks those rows). Enter does
+  nothing on keys that act on what you are typing (Enter in the chat, Tab in a cell).
 - **Floating a view**: every view (a tab, a cell's result, a result unfolded in the chat) has a button at
   its top right that floats it over the page, nearly full screen; click it again, press Esc or click
   outside to put it back. It is the same component, only restyled in the browser (`.is-floating`,
@@ -209,7 +224,7 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
 - **Keyboard shortcuts** are all defined once, in `reflex_kernel/shortcuts.py`, as the `Shortcut` enum named
   by what they do (`Shortcut.FULL_SCREEN`, `Shortcut.RUN`, …). The help panel, tooltips, the cell editor's
   keymap (`codemirror_keys`) and `assets/panes.js` (`window.SHORTCUTS`) all read it: change a key there only.
-- **Panes**: the bottom bar toggles Chat, Results (Alt+R) and Python (Alt+J, J for Jupyter; Alt+P is the add-widget menu), as in Zed. (Neither letter follows
+- **Panes**: the bottom bar toggles Chat, Results (Alt+R) and Python (Alt+J, J for Jupyter; Alt+P is the command palette), as in Zed. (Neither letter follows
   Omarchy, where `SUPER+P` / `SUPER+J` are window layout actions with nothing comparable here.) Only the chat
   shows at first (results also unfold inline in it, and `open →` brings up Results); a pane
   whose neighbour is hidden takes the freed space. Hidden cells keep their text.

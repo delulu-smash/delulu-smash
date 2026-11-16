@@ -8,23 +8,23 @@
 # ---------------------------------------------------------------------------
 from __future__ import annotations
 
+import json
 from typing import Any
 
 import reflex as rx
 
 from .api import api
+from .commands import COMMANDS, ICON_BUG, ICON_PY, RUNNABLE, Command
+from .commands import ICON_AI as ICON_CHAT
+from .commands import ICON_TABLE as ICON_RESULTS
 from .editor import cell_editor
 from .render import ICON_COLLAPSE, ICON_EXPAND, INLINE_EDIT_URL, copy_button, render_component, traceback_view
 from .widgets import ADDABLE
 from .shortcuts import Shortcut, codemirror_keys, shortcuts_script
 from .state import State
 
-# Nerd Font glyphs (JetBrainsMono Nerd Font): python logo, robot, table.
-ICON_PY = ""
-# ICON_CHAT (the robot) is also the inline chat's icon: inline_edit.jsx ICON_AI
-ICON_CHAT, ICON_RESULTS = "\U000f06a9", "\U000f04eb"
-# A bug, for the debug panel's button.
-ICON_BUG = "\U000f00e4"
+# Nerd Font glyphs come from commands.py (the palette draws the same ones). ICON_CHAT (the robot) is
+# also the inline chat's icon: inline_edit.jsx ICON_AI.
 # The help panel's notes on results.
 RESULT_NOTES = [
     "Each tool call the agent makes that returns data (frame data, match videos, …) becomes a tab: r1, r2, …",
@@ -255,6 +255,56 @@ def menu_search(placeholder: str) -> rx.Component:
     )
 
 
+def palette_row(command: Command) -> rx.Component:
+    """One command of the palette: icon, "Group: title", its shortcut. Running it closes the
+    palette first; a `press` command is then run in the browser as its key (assets/panes.js)."""
+    if command.event:
+        name, *args = command.event
+        run = getattr(State, name)(*args) if args else getattr(State, name)
+    else:
+        run = rx.call_script(f"window.smashPress({json.dumps(command.keys)})")
+    title: Any = command.title
+    if command.shown:
+        title = rx.fragment(rx.cond(getattr(State, command.shown), "Hide ", "Show "), command.title)
+    return rx.el.button(
+        rx.el.span(command.icon, class_name="palette-icon mono"),
+        rx.el.span(rx.el.span(command.group + ": ", class_name="dim"), title, class_name="palette-title"),
+        rx.el.span(command.keys, class_name="palette-keys mono dim"),
+        on_click=[State.close_palette, run],
+        # data-command: what "recently used" remembers; data-words: found by these too (panes.js)
+        custom_attrs={"data-command": command.id, "data-words": command.words},
+        class_name="menu-item palette-item",
+    )
+
+
+def palette() -> rx.Component:
+    """The command palette (Shortcut.PALETTE), as VS Code's and Omarchy's menu: a search box over
+    every command (commands.py) and every open result ("Go to"). Typing filters, arrows move, Enter
+    runs; the ones you ran last come first (assets/panes.js). Always on top, as Omarchy's launcher
+    is: over the debug log, help, the keybindings list and a floating view, with its own backdrop,
+    so closing it leaves what is under it open."""
+    menu = rx.el.div(
+        menu_search("Run a command…"),
+        *[palette_row(command) for command in COMMANDS],
+        rx.foreach(
+            State.objects,
+            lambda obj: rx.el.button(
+                rx.el.span(ICON_RESULTS, class_name="palette-icon mono"),
+                rx.el.span(rx.el.span("Go to: ", class_name="dim"), obj["name"], class_name="palette-title"),
+                rx.el.span(obj["shape"], class_name="palette-keys dim"),
+                on_click=[State.close_palette, State.select_object(obj["name"])],
+                custom_attrs={"data-words": "result tab open switch"},
+                class_name="menu-item palette-item",
+            ),
+        ),
+        rx.el.div("No matching command", class_name="menu-empty dim"),
+        custom_attrs={"data-palette": ""},
+        class_name="menu sans is-centered is-palette",
+    )
+    backdrop = rx.el.div(on_click=State.close_palette, class_name="palette-backdrop")
+    return rx.cond(State.palette, rx.fragment(backdrop, menu))
+
+
 def overlays() -> rx.Component:
     """What floats over the page: a tab's right-click menu and the help panel. Clicking outside
     (or Esc, assets/panes.js) closes them."""
@@ -290,21 +340,13 @@ def overlays() -> rx.Component:
             rx.cond(
                 State.add_menu,
                 rx.el.div(
-                    rx.el.div(
-                        "Add",
-                        rx.el.span(Shortcut.ADD_WIDGET.keys, class_name="menu-keys mono"),
-                        class_name="menu-head",
-                    ),
+                    rx.el.div("Add", class_name="menu-head"),
                     menu_search("Search widgets…"),
                     *[menu_item(widget.title, State.add_widget(widget.kind)) for widget in ADDABLE],
                     rx.el.div("No matching widget", class_name="menu-empty dim"),
-                    # at the pointer ("+"), or in the middle of the window (Shortcut.ADD_WIDGET)
-                    style=rx.cond(
-                        State.add_menu_centered,
-                        {},
-                        {"left": State.menu_x.to(str) + "px", "top": State.menu_y.to(str) + "px"},
-                    ),
-                    class_name=rx.cond(State.add_menu_centered, "menu sans is-centered", "menu sans"),
+                    # the "+" on the Results tab bar, at the pointer (the palette has these too)
+                    style={"left": State.menu_x.to(str) + "px", "top": State.menu_y.to(str) + "px"},
+                    class_name="menu sans",
                 ),
             ),
             rx.cond(State.show_help, help_panel()),
@@ -440,7 +482,8 @@ def help_panel() -> rx.Component:
 
 def keys_palette() -> rx.Component:
     """The keybindings list (Shortcut.KEYS), like Omarchy's: a search box over one row per
-    shortcut, "keys -> what it does" and where it works. Static markup, always in the page;
+    shortcut, "keys -> what it does" and where it works; Enter runs the picked one when a key
+    press alone can (commands.RUNNABLE). Static markup, always in the page;
     assets/keys.js opens it (.is-open), filters the rows and closes it."""
     return rx.el.div(
         rx.el.div(class_name="keys-backdrop", custom_attrs={"data-keys-close": ""}),
@@ -461,7 +504,9 @@ def keys_palette() -> rx.Component:
                         rx.el.span(shortcut.value.where, class_name="keys-where dim"),
                         class_name="keys-row",
                         custom_attrs={
-                            "data-keys-row": f"{shortcut.keys} {shortcut.value.what} {shortcut.value.where}".lower()
+                            "data-keys-row": f"{shortcut.keys} {shortcut.value.what} {shortcut.value.where}".lower(),
+                            # Enter runs it, as in Omarchy's list ("" = not one a key press alone can run)
+                            "data-keys-run": shortcut.keys if shortcut in RUNNABLE else "",
                         },
                     )
                     for shortcut in Shortcut
@@ -579,7 +624,7 @@ def tables_pane() -> rx.Component:
                 rx.cond(~State.has_objects, rx.el.span("no open results", class_name="tab dim")),
                 rx.el.button(
                     "+",
-                    title=Shortcut.ADD_WIDGET.hint("Add a result by hand (eg a match video search, a SmashDb console)"),
+                    title="Add a result by hand (eg a match video search, a SmashDb console)",
                     on_click=State.open_add_menu,
                     class_name="tab-add",
                 ),
@@ -675,8 +720,9 @@ def index() -> rx.Component:
         statusbar(),
         overlays(),
         keys_palette(),
-        # assets/panes.js clicks it on Shortcut.ADD_WIDGET (the "+" itself is hidden with its pane)
-        rx.el.button(on_click=State.toggle_add_menu, hidden=True, custom_attrs={"data-toggle": "add"}),
+        palette(),
+        # assets/panes.js clicks it on Shortcut.PALETTE
+        rx.el.button(on_click=State.toggle_palette, hidden=True, custom_attrs={"data-toggle": "palette"}),
         class_name="page",
     )
 

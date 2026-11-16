@@ -152,8 +152,8 @@ class State(rx.State):
     show_help: bool = False
     # The Results tab bar's "+" menu (at menu_x / menu_y).
     add_menu: bool = False
-    # Opened from the keyboard (Shortcut.ADD_WIDGET): shown in the middle of the window instead.
-    add_menu_centered: bool = False
+    # The command palette (Shortcut.PALETTE): every command by name (commands.py), mid-window.
+    palette: bool = False
     # The debug panel (bug icon in the title bar, Shortcut.DEBUG): the app's outside calls (logs.py).
     # Loaded when opened, on Refresh and after a turn / form / cell finishes while it is open;
     # never pushed as calls happen, so it costs nothing while closed.
@@ -357,6 +357,7 @@ class State(rx.State):
         """Close the tab menu, the "+" menu and the help panel (click outside, Escape)."""
         self.menu_tab = ""
         self.add_menu = False
+        self.palette = False
         self.show_help = False
         self.show_debug = False
 
@@ -635,21 +636,26 @@ class State(rx.State):
     def open_add_menu(self, info: dict[str, Any]):
         """The Results tab bar's "+": a menu of the widgets that can be added by hand, at the pointer."""
         self.menu_tab = ""
-        self.add_menu, self.add_menu_centered = True, False
+        self.add_menu, self.palette = True, False
         self.menu_x, self.menu_y = int(info.get("client_x", 0)), int(info.get("client_y", 0))
 
     @rx.event
-    def toggle_add_menu(self):
-        """Shortcut.ADD_WIDGET: the same menu from the keyboard, in the middle of the window
-        (there is no pointer, and the Results pane with its "+" may be hidden)."""
+    def close_palette(self):
+        """Close the palette only: it sits on top of everything, so what is under it (the debug
+        log, help) stays (running a command, a click outside it, Escape)."""
+        self.palette = False
+
+    @rx.event
+    def toggle_palette(self):
+        """Shortcut.PALETTE: the command palette, in the middle of the window."""
         self.menu_tab = ""
-        self.add_menu, self.add_menu_centered = not self.add_menu, True
+        self.add_menu, self.palette = False, not self.palette
 
     @rx.event
     def add_widget(self, kind: str):
         """Add a widget by hand, as a new tab: a tool form to fill in and run (a ToolRequest until
         its first run), or the widget's own blank value (eg a SmashDb console)."""
-        self.add_menu = False
+        self.add_menu = self.palette = False
         widget = widget_of(kind)
         session = self._session()
         value = widget.blank(session) if widget and widget.addable else None

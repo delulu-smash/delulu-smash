@@ -4,8 +4,10 @@
 //          (set from reflex_kernel/shortcuts.py, the one place they are defined):
 //          FULL_SCREEN floats the view (.widget) you are in nearly full screen, or, outside a view,
 //          fills the window with your pane (clicks its zoom button). CLOSE (Esc) closes a menu or
-//          the help or debug panel, then a floating view. ADD_WIDGET clicks the hidden button that shows or hides the
-//          "+" menu (a search box over the list: type to filter, arrows, Enter); in a menu, arrows move between its rows. TOGGLE_RESULTS / TOGGLE_PYTHON / HELP / DEBUG click the
+//          the help or debug panel, then a floating view. PALETTE clicks the hidden button that shows or hides the
+//          command palette (a search box over every command: type to filter, arrows, Enter; the ones run last come
+//          first); in a menu, arrows move between its rows. window.smashPress(keys) runs a shortcut as if its key
+//          were pressed where you were (the palette's and the keybindings list's way to run one). TOGGLE_RESULTS / TOGGLE_PYTHON / HELP / DEBUG click the
 //          bottom bar's pane toggles and the title bar's ? and bug icon (data-toggle). A view's float button (render.float_button) and
 //          a click outside a floating view work too. reveal(id) scrolls to a chat row, result tab or
 //          cell and flashes it (State.reveal).
@@ -61,7 +63,7 @@
     // a click outside the floating view puts it back (menus and popups float above it, so not those)
     const current = floating();
     if (current && !current.contains(event.target)
-      && !event.target.closest(".menu, .help-panel, .debug-panel, .overlay-backdrop, .cm-tooltip, .gdg-overlay, #portal")) {
+      && !event.target.closest(".menu, .help-panel, .debug-panel, .overlay-backdrop, .palette-backdrop, .cm-tooltip, .gdg-overlay, #portal")) {
       setFloating(current, false);
     }
   }, true);
@@ -88,15 +90,85 @@
 
   // a menu with a search box (reflex_kernel.menu_search): typing keeps the rows that have every
   // word and highlights the first; it starts with all rows, when the box takes focus on opening
-  const menuRows = (search) => [...search.closest(".menu").querySelectorAll(".menu-item")];
+  // The palette's "recently used": the ids of the last commands run (data-command), newest first,
+  // kept in this browser. They are listed first, by CSS order (the rows themselves are React's).
+  const RECENT_KEY = "smashgpt.palette.recent";
+  const MAX_RECENT = 5;
+  const recent = () => {
+    try { return JSON.parse(localStorage.getItem(RECENT_KEY) || "[]"); } catch { return []; }
+  };
+  const remember = (id) => {
+    try {
+      localStorage.setItem(RECENT_KEY, JSON.stringify([id, ...recent().filter((other) => other !== id)].slice(0, MAX_RECENT)));
+    } catch { /* storage blocked: no recents */ }
+  };
+  // rows as shown: recently used first, then as written
+  const menuRows = (search) => {
+    const rows = [...search.closest(".menu").querySelectorAll(".menu-item")];
+    return rows.sort((a, b) => Number(a.style.order || 0) - Number(b.style.order || 0));
+  };
+  const setActive = (rows, row) => {
+    rows.forEach((other) => other.classList.toggle("is-active", other === row));
+    if (row) row.scrollIntoView({ block: "nearest" });
+  };
   const filterMenu = (search) => {
+    const menu = search.closest(".menu");
+    if (menu.matches("[data-palette]")) {
+      const ids = recent();
+      menu.querySelectorAll(".menu-item").forEach((row) => {
+        const at = ids.indexOf(row.dataset.command);
+        row.style.order = at < 0 ? "" : String(at - MAX_RECENT);
+        row.classList.toggle("is-recent", at >= 0);
+      });
+    }
     const words = search.value.trim().toLowerCase().split(/\s+/).filter(Boolean);
     const rows = menuRows(search);
-    rows.forEach((row) => { row.hidden = !words.every((word) => row.textContent.toLowerCase().includes(word)); });
+    rows.forEach((row) => {
+      const text = `${row.textContent} ${row.dataset.words || ""}`.toLowerCase();
+      row.hidden = !words.every((word) => text.includes(word));
+    });
     const shown = rows.filter((row) => !row.hidden);
-    rows.forEach((row) => row.classList.toggle("is-active", row === shown[0]));
-    search.closest(".menu").classList.toggle("is-empty", shown.length === 0);
+    setActive(rows, shown[0]);
+    menu.classList.toggle("is-empty", shown.length === 0);
   };
+  document.addEventListener("click", (event) => {
+    const row = event.target instanceof Element && event.target.closest("[data-palette] [data-command]");
+    if (row) remember(row.dataset.command);
+  }, true);
+
+  // Where you were before a menu took the focus (the palette's search box): what "the result you
+  // are in" and "the editor you were in" mean for a command run from it.
+  let origin = null;
+  let lastEditor = null;
+  document.addEventListener("focusin", (event) => {
+    if (!(event.target instanceof Element)) return;
+    if (event.target.closest(".cm-editor")) lastEditor = event.target;
+    if (event.target.matches("[data-menu-search]") && event.relatedTarget instanceof Element) origin = event.relatedTarget;
+  });
+
+  // Run a shortcut by its keys ("Alt+F"), as if pressed where you were. Waits a moment, for the
+  // menu that asked to be gone and the focus to be back.
+  const EDITOR_KEYS = new Set([SHORTCUTS.INLINE_EDIT, SHORTCUTS.INLINE_EDIT_FRESH].filter(Boolean));
+  window.smashPress = (keys, from) => setTimeout(() => {
+    let target = [from, origin, document.activeElement].find((node) => node instanceof Element && node.isConnected);
+    if (EDITOR_KEYS.has(keys) && !(target && target.closest(".cm-editor"))) {
+      // an editor's key, run from outside one: the editor you were last in, else the first cell
+      target = [lastEditor, document.querySelector(".cell .cm-content")].find((node) => visible(node));
+    }
+    if (!target) target = document.body;
+    if (target !== document.body) target.focus();
+    const parts = keys.split("+");
+    const key = parts.pop();
+    const letter = /^[A-Z]$/.test(key);
+    const shift = parts.includes("Shift");
+    target.dispatchEvent(new KeyboardEvent("keydown", {
+      key: letter ? (shift ? key : key.toLowerCase()) : key,
+      code: letter ? `Key${key}` : key,
+      keyCode: letter ? key.charCodeAt(0) : 0,
+      altKey: parts.includes("Alt"), ctrlKey: parts.includes("Ctrl"), shiftKey: shift, metaKey: parts.includes("Meta"),
+      bubbles: true, cancelable: true,
+    }));
+  }, 80);
   document.addEventListener("input", (event) => {
     if (event.target.matches?.("[data-menu-search]")) filterMenu(event.target);
   });
@@ -107,7 +179,8 @@
   // capture phase, so it also works while typing in a code cell or the chat box
   document.addEventListener("keydown", (event) => {
     if (matches(event, SHORTCUTS.CLOSE)) {
-      const backdrop = document.querySelector(".overlay-backdrop");
+      // the top layer only: the palette (above everything), then a menu or panel
+      const backdrop = document.querySelector(".palette-backdrop") || document.querySelector(".overlay-backdrop");
       const current = floating();
       if (!backdrop && !current) return;
       event.preventDefault();
@@ -124,7 +197,7 @@
         event.preventDefault();
         event.stopPropagation();
         const next = shown[(at + (event.key === "ArrowDown" ? 1 : -1) + shown.length) % shown.length];
-        shown.forEach((row) => row.classList.toggle("is-active", row === next));
+        setActive(shown, next);
         return;
       }
       if (event.key === "Enter") {
@@ -144,7 +217,7 @@
       items[(next + items.length) % items.length].focus();
       return;
     }
-    const toggle = [["TOGGLE_RESULTS", "results"], ["TOGGLE_PYTHON", "python"], ["HELP", "help"], ["DEBUG", "debug"], ["ADD_WIDGET", "add"]]
+    const toggle = [["TOGGLE_RESULTS", "results"], ["TOGGLE_PYTHON", "python"], ["HELP", "help"], ["DEBUG", "debug"], ["PALETTE", "palette"]]
       .find(([name]) => SHORTCUTS[name] && matches(event, SHORTCUTS[name]));
     if (toggle) {
       const button = document.querySelector(`[data-toggle="${toggle[1]}"]`);

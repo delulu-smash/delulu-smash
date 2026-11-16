@@ -27,8 +27,8 @@ class Shortcut(Enum):
     TOGGLE_RESULTS = Binding("Alt+R", "anywhere", "Show or hide the Results pane")
     TOGGLE_PYTHON = Binding("Alt+J", "anywhere", "Show or hide the Python (Jupyter) pane")
     HELP = Binding("Alt+H", "anywhere", "Show or hide this help")
-    ADD_WIDGET = Binding(
-        "Alt+P", "anywhere", "Add a widget by hand: show or hide the list (type to filter, arrows, Enter)"
+    PALETTE = Binding(
+        "Alt+P", "anywhere", "Command palette: run anything by name, eg add a widget (type to filter, arrows, Enter)"
     )
     # Handled by assets/keys.js.
     KEYS = Binding("Alt+K", "anywhere", "Show or hide the keybindings list (type to filter)")
@@ -76,9 +76,12 @@ BROWSER_SHORTCUTS = (
     Shortcut.TOGGLE_RESULTS,
     Shortcut.TOGGLE_PYTHON,
     Shortcut.HELP,
-    Shortcut.ADD_WIDGET,
+    Shortcut.PALETTE,
     Shortcut.KEYS,
     Shortcut.DEBUG,
+    # an editor's own keys (inline_edit.jsx): panes.js needs them to run one from the palette
+    Shortcut.INLINE_EDIT,
+    Shortcut.INLINE_EDIT_FRESH,
 )
 
 

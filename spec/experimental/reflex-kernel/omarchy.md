@@ -42,4 +42,5 @@ they are, including ones whose letter means something else in Omarchy.
 ## Not done yet
 
 - The palette is Everforest, written into `assets/app.css`; it doesn't follow a change of Omarchy theme.
-- In Omarchy's keybindings menu, Enter runs the picked binding. In the `Alt+K` list it does nothing.
+- In Omarchy's keybindings menu, Enter runs the picked binding. In the `Alt+K` list it does for the
+  page-wide `Alt` keys only (`commands.RUNNABLE`), not for keys that act on what is being typed.
