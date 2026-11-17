@@ -11,3 +11,4 @@ Short notes the AI added, not confirmed todos. Triage: move one to a todo file, 
 - (2026-11-17) Agents tab shows WebFetch as "0 tools"; could say "provider tool: web_fetch".
 - (2026-11-17) `summarization-pydantic-ai` installed but doesn't import.
 - (2026-11-17) Spend tiles assume UTC limit windows; unverified.
+- (2026-11-17) Paused POC on branch `poc-omarchy`: panels tiled like Hyprland's dwindle layout with Omarchy's animations. Details: `spec/services/ui/poc_omarchy.md` (on that branch).
