@@ -240,15 +240,31 @@ directory that references `.agents/` content, never a second copy of it.
 
 The user works as the **architect**: they decide the design, the AI builds it. A plan has to let them judge the
 design at that level without reading the finished code, so when presenting a plan, a design, options to choose
-from, or ideas for a feature (before or instead of building it), always show two things:
+from, or ideas for a feature (before or instead of building it), always show two things (a full plan with
+every section, approved by the user as the model: `personal/ai/plan-example.md`):
 
-1. **The interface, as the user would use it.** What they type or click and what comes back: for a chat
+1. **What the user types and sees.** What they type or click and what comes back: for a chat
    feature, the message and the rows the app shows; for a CLI, the command and its output; for a function, a
    call and its result; for a UI, a small text sketch of the screen.
-2. **Pseudo code for the spirit of the implementation.** The underlying functions, what each one does, what
+2. **Interfaces: pseudo code for the spirit of the implementation** (head this section "Interfaces" in a
+   plan). The underlying functions, what each one does, what
    goes in and comes out, and how they call each other, plus the data that drives them (eg an allowlist, a
    table of rules). Short and readable: the shape of the solution, not the final code. Name where each piece
    would live when that is part of the decision (which module, which existing function it reuses).
+   - **Show the types**: each function's parameter types and return type (`def ready() -> bool`,
+     `-> NoReturn` for one that execs or exits), with a short docstring or `# ...` comment saying what it
+     does. High-level details like these help most; anything more is extra.
+   - **Show the workflows**: when functions work together, add a short pseudo code use of them for each
+     flow, so it's clear how they compose (eg what SUPER+SHIFT+I does on a cold start):
+
+     ```python
+     # SUPER+SHIFT+I, server down
+     open_window()                    # delulu-smash.py, the keybinding's target
+       ds_ui("status")  -> False      #   not answering
+       notify("Starting…")
+       ds_ui("restart") -> True       #   systemctl restart, waited until it answered
+       exec omarchy-launch-or-focus-webapp(window_class, URL)   # the window opens
+     ```
 
 Also:
 
