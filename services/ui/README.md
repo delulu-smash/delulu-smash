@@ -27,12 +27,12 @@ if it isn't up, the shortcut starts it and opens the window once it answers (col
 a minute). It's also in the app launcher as the delulu-smash web app. All of this is tracked by `os sync`.
 
 ```sh
-systemctl --user restart delulu-smash      # eg after changing dependencies
+ds ui restart                              # eg after changing dependencies or `ds settings sync`
+ds ui status                               # up / down
 journalctl --user -u delulu-smash -f       # server logs
-.os/scripts/keybindings/delulu-smash.sh status
 ```
 
-The service runs `reflex run` in dev mode, so code edits hot-reload in the open window. Stop it
+The service runs `ds ui run` (`reflex run` in dev mode), so code edits hot-reload in the open window. Stop it
 before running the app by hand (both use ports 3000 and 8000).
 
 Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway key the rest of

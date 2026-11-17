@@ -8,8 +8,10 @@
 - `services/ui/` is the delulu-smash Reflex app (`SUPER+SHIFT+I`, run by `delulu-smash.service`). Its
   Python package is `services/ui/ui/`, its specs are in `spec/services/ui/`, its tests in `tests/services/ui/`.
   What is built is documented in `services/ui/README.md`.
-- After changing the app's dependencies or stored keys, restart it with `uv run ds ui restart`; the dev
-  server reloads plain code edits by itself.
+- How the app runs is `ds ui` (`pkgs/ds/cli/ui.py`): `run` (the server, what the service runs), `restart`,
+  `status`. The Omarchy window (SUPER+SHIFT+I) is `.os/scripts/keybindings/delulu-smash.py`, which calls
+  `ds ui status` / `restart` rather than repeating them. After changing the app's dependencies or stored keys, restart it
+  with `uv run ds ui restart`; the dev server reloads plain code edits by itself.
 - Keep UI logic apart from supporting utilities, and follow the Reflex conventions already in the app
   rather than introducing unrelated patterns.
 - Linted like the rest of the repo, with app-code relaxations (no required docstrings or annotations,

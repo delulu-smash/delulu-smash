@@ -1015,15 +1015,14 @@ def spend_view() -> rx.Component:
             (
                 "setup",
                 rx.el.div(
-                    rx.el.p("Spend needs a Logfire read token, which this machine doesn't have yet:"),
+                    rx.el.p("Spend needs the Pydantic API key, which this machine doesn't have yet:"),
                     rx.el.ol(
                         rx.el.li(
                             "Run ",
                             rx.el.code("ds settings sync"),
-                            ". It asks for the Logfire read token and shows how to create one",
-                            " (project Settings > Read tokens).",
+                            ". It asks for the Pydantic API key (full access) and shows how to create one.",
                         ),
-                        rx.el.li("Restart the app (", rx.el.code("ds ui"), "): it reads tokens when it starts."),
+                        rx.el.li("Restart the app (", rx.el.code("ds ui restart"), "): it reads keys when it starts."),
                     ),
                     class_name="spend-setup",
                 ),

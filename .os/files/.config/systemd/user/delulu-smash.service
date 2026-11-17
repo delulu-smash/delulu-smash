@@ -8,7 +8,8 @@ After=graphical-session.target
 
 [Service]
 Type=simple
-ExecStart=%h/repos/delulu-smash/.os/scripts/keybindings/delulu-smash.sh serve
+# `ds ui run` (pkgs/ds/cli/ui.py); uv from the user manager's PATH, as there is no `ds` alias here
+ExecStart=/usr/bin/env uv run --project %h/repos/delulu-smash ds ui run
 Restart=on-failure
 RestartSec=5
 TimeoutStopSec=15
