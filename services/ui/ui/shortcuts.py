@@ -29,6 +29,7 @@ class Shortcut(Enum):
         "Full screen: float the result you are in, else fill with your pane; the debug panel while it is open",
     )
     CLOSE = Binding("Escape", "floating result, menu, help, debug log, keybindings", "Close it")
+    TOGGLE_CHAT = Binding("Alt+A", "anywhere", "Show or hide the AI chat pane")
     TOGGLE_RESULTS = Binding("Alt+R", "anywhere", "Show or hide the Results pane")
     TOGGLE_PYTHON = Binding("Alt+J", "anywhere", "Show or hide the Python (Jupyter) pane")
     TOGGLE_VARIABLES = Binding(
@@ -37,10 +38,16 @@ class Shortcut(Enum):
         "Show or hide the Variables pane: the Python names you have (r1, q1, your own), to see and clear",
     )
     TOGGLE_PYTHON_VARIABLES = Binding(
-        "Alt+Shift+J",
+        "Alt+Ctrl+J",
         "anywhere",
         "Show the Python and Variables panes together (opens whichever is hidden); hide both when both are open",
     )
+    # One pane full screen, from anywhere (shown even if hidden); the same key
+    # again restores the layout. Alt+F does it for the pane (or result) you are in.
+    ZOOM_CHAT = Binding("Alt+Shift+A", "anywhere", "Full screen the AI chat pane (again: restore panes)")
+    ZOOM_RESULTS = Binding("Alt+Shift+R", "anywhere", "Full screen the Results pane (again: restore panes)")
+    ZOOM_PYTHON = Binding("Alt+Shift+J", "anywhere", "Full screen the Python pane (again: restore panes)")
+    ZOOM_VARIABLES = Binding("Alt+Shift+V", "anywhere", "Full screen the Variables pane (again: restore panes)")
     HELP = Binding("Alt+H", "anywhere", "Show or hide this help")
     PALETTE = Binding(
         "Alt+P", "anywhere", "Command palette: run anything by name, eg add a widget (type to filter, arrows, Enter)"
@@ -74,7 +81,7 @@ class Shortcut(Enum):
     # editor, in a result with a tool form, by assets/panes.js (it
     # clicks the result's AI button, render.ai_toggle).
     INLINE_EDIT = Binding(
-        "Alt+A",
+        "Alt+I",
         "cell, SmashDb console, result with inputs",
         " ".join(
             [
@@ -106,10 +113,15 @@ class Shortcut(Enum):
 BROWSER_SHORTCUTS = (
     Shortcut.FULL_SCREEN,
     Shortcut.CLOSE,
+    Shortcut.TOGGLE_CHAT,
     Shortcut.TOGGLE_RESULTS,
     Shortcut.TOGGLE_PYTHON,
     Shortcut.TOGGLE_VARIABLES,
     Shortcut.TOGGLE_PYTHON_VARIABLES,
+    Shortcut.ZOOM_CHAT,
+    Shortcut.ZOOM_RESULTS,
+    Shortcut.ZOOM_PYTHON,
+    Shortcut.ZOOM_VARIABLES,
     Shortcut.HELP,
     Shortcut.PALETTE,
     Shortcut.KEYS,
@@ -128,8 +140,8 @@ def shortcuts_script() -> str:
 
 
 def codemirror_key(shortcut: Shortcut) -> str:
-    """CodeMirror's spelling of a binding: "Ctrl+Enter" -> "Mod-Enter" (Cmd on a Mac), "Alt+A"
-    -> "Alt-a", "Alt+Shift+A" -> "Alt-Shift-a" (CodeMirror wants
+    """CodeMirror's spelling of a binding: "Ctrl+Enter" -> "Mod-Enter" (Cmd on a Mac), "Alt+I"
+    -> "Alt-i", "Alt+Shift+A" -> "Alt-Shift-a" (CodeMirror wants
     the letter in lower case, Shift named apart).
     """
     *mods, key = shortcut.keys.split("+")

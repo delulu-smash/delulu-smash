@@ -180,6 +180,9 @@ button { font: inherit; color: inherit; }
   line-height: 20px; padding: 0 5px; }
 .zoom-btn:hover { color: var(--fg); background: var(--bg1); }
 .zoom-btn.is-on { color: var(--green); }
+/* a pane's close button, right of its expand arrow: the same look, a touch smaller glyph */
+.pane-close { font-size: 15px; }
+.console-head .pane-close { flex: none; }
 .tab { display: flex; gap: 8px; align-items: center; padding: 0 14px; border: 0; border-right: 1px solid var(--bg2);
   background: transparent; color: var(--grey2); cursor: pointer; white-space: nowrap; }
 .tab.is-active { background: var(--bg0); color: var(--fg); }
@@ -419,6 +422,18 @@ a.act { text-decoration: none; color: var(--fg); }
   border-bottom: 1px solid var(--bg2); font-size: 12.5px; flex: none; }
 .player-title { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .player-frame { flex: 1; min-height: 0; width: 100%; border: 0; }
+/* the Browser widget (render.browser_widget): web_frame with an address box for its title;
+   a white page behind the frame, as a browser has, so a site's own colours read right */
+.browser-address { flex: 1; min-width: 0; display: flex; }
+.browser-url { flex: 1; min-width: 0; }
+.browser-keys { flex: none; font-size: 11px; white-space: nowrap; }
+.player.browser .player-frame { background: #fff; }
+.browser-hint { flex: none; padding: 2px 10px 4px; font-size: 11px; }
+/* a site the check found refusing to be framed: this card in the frame's place */
+.browser-refused { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 8px; padding: 24px; text-align: center; font-size: 12.5px; background: var(--bg0); }
+.browser-refused-title { font-size: 15px; color: var(--fg); }
+.browser-open { font-size: 13px; padding: 6px 14px; margin-top: 6px; }
 
 /* generic pydantic model view (render kind "fields") */
 .model-view { flex: 1; min-height: 0; overflow: auto; padding: 10px 12px; font-size: 12.5px; background: var(--bg0); }
@@ -453,6 +468,8 @@ a.act { text-decoration: none; color: var(--fg); }
 .float-btn { flex: none; border: 0; border-radius: 4px; background: transparent; color: var(--grey1); cursor: pointer; font-size: 15px;
   line-height: 18px; padding: 0 4px; }
 .float-btn:hover { color: var(--fg); background: var(--bg1); }
+/* a view's × after its float button (render.close_view_button): the same look */
+.close-view-btn { font-size: 16px; }
 .float-btn .when-floating, .widget.is-floating .float-btn .when-docked { display: none; }
 .widget.is-floating .float-btn .when-floating { display: inline; }
 .widget.is-floating { position: fixed !important; inset: 24px; z-index: 40; width: auto !important; min-width: 0 !important;
@@ -692,7 +709,7 @@ select.form-input { width: auto; }
 .db-save-name { width: 160px; }
 .db-save-error { color: var(--red); }
 
-/* Alt+A inline chat (ui/inline_edit.jsx): the prompt box under the editor, then the diff */
+/* Alt+I inline chat (ui/inline_edit.jsx): the prompt box under the editor, then the diff */
 .cm-panels.cm-panels-bottom { background: transparent; border-top: none; }
 .cm-inline-edit { display: flex; align-items: center; gap: 8px; margin-top: 6px; padding: 4px 8px; background: var(--bg-dim);
   border: 2px solid var(--blue); border-radius: 7px; font-family: var(--sans); font-size: 12px; }
@@ -748,13 +765,30 @@ input, textarea { caret-color: var(--blue); }
 /* its 'N requests': a plain inline hyperlink in the same line (opens the debug log's Requests tab) */
 .turn-usage .link-btn { display: inline; font: inherit; color: var(--blue); text-decoration: underline;
   text-underline-offset: 2px; vertical-align: baseline; }
-/* the chat title's context meter: conversation size / context window, chat cost */
+/* the title bar's meters: context (conversation size / context window, chat cost), then one per
+   spending limit (a button: opens the Spend tab; fill = severity, as the Spend tab's meters) */
 .ctx-meter { display: flex; align-items: center; gap: 6px; margin-right: 8px; font-size: 11px; letter-spacing: 0; text-transform: none;
   color: var(--grey1); }
 .ctx-bar { width: 48px; height: 4px; border-radius: 2px; background: var(--bg2); overflow: hidden; }
 .ctx-bar i { display: block; height: 100%; min-width: 2px; background: var(--green); }
 .ctx-meter.is-full { color: var(--yellow); }
+/* the context meter shows a percent; hovering it unveils the token counts in its place */
+.ctx-tokens { display: none; }
+.ctx-meter:hover .ctx-pct { display: none; }
+.ctx-meter:hover .ctx-tokens { display: inline; color: var(--fg); }
 .ctx-meter.is-full .ctx-bar i { background: var(--yellow); }
+/* the spend meters' box: Logfire's numbers as of a time, apart from the live context meter */
+.spend-box { display: flex; align-items: center; gap: 12px; padding: 2px 8px; border: 1px solid var(--bg3);
+  border-radius: 4px; }
+.spend-box .ctx-meter { margin-right: 0; }
+.spend-as-of { font-size: 11px; color: var(--grey1); opacity: 0.8; }
+.spend-meter-btn { background: none; border: 0; padding: 0; font-family: var(--mono); cursor: pointer; }
+.spend-meter-btn:hover { color: var(--fg); }
+/* a spend window with no limit (or before it's read): an empty bar, not a sliver */
+.ctx-bar i[data-level=""] { min-width: 0; }
+.ctx-bar i[data-level="warn"] { background: var(--yellow); }
+.ctx-bar i[data-level="danger"] { background: var(--red); }
+.spend-meter-btn[data-level="danger"] { color: var(--red); }
 /* debug panel tabs: Requests (the log) | System | Spend | Agents (perf.py / spend.py / agents.py) */
 .dbg-tab { font: inherit; font-size: 12px; padding: 1px 10px; border: 0; border-bottom: 2px solid transparent; background: transparent;
   color: var(--grey1); cursor: pointer; }
@@ -804,7 +838,7 @@ input, textarea { caret-color: var(--blue); }
 .spend-tile { flex: 1; background: var(--bg0); border-radius: 4px; padding: 6px 10px; font-size: 11.5px; }
 .spend-tile-label { color: var(--grey1); }
 .spend-tile-value { font-size: 18px; color: var(--fg); }
-/* a tile's limit: "/ $5" in muted ink next to the amount; the meter under it (fill = severity,
+/* a tile's limit: "of $15.00" / "· No limit" in muted ink next to the amount; the meter under it (fill = severity,
    track = a lighter step; the share is always written beside it, never colour alone) */
 .spend-tile-limit { font-size: 12px; color: var(--grey1); }
 .spend-meter { height: 6px; margin: 4px 0 3px; background: var(--bg2); border-radius: 3px; overflow: hidden; }
@@ -813,17 +847,13 @@ input, textarea { caret-color: var(--blue); }
 .spend-meter i[data-level="danger"] { background: var(--red); }
 .spend-limits { margin: 4px 0 8px; font-size: 11.5px; }
 /* the chart: a y axis (top / half / 0, muted ink) beside the plot; recessive 1px solid gridlines at
-   the same heights; the daily limit as a dashed labelled line (dashed so it never reads as a
-   gridline), pinned to the top when it's above the scale */
+   the same heights */
 .spend-chart { display: flex; gap: 6px; margin-bottom: 14px; }
 .spend-axis { position: relative; width: 44px; height: 90px; font-size: 10px; color: var(--grey1); }
 .spend-axis span { position: absolute; right: 0; transform: translateY(50%); white-space: nowrap; }
 .spend-plot { position: relative; flex: 1; height: 90px; }
 .spend-plot > b { position: absolute; left: 0; right: 0; height: 0; border-top: 1px solid var(--bg2); }
 .spend-plot > b:last-of-type { border-top-color: var(--bg3); }
-.spend-limit-line { position: absolute; left: 0; right: 0; height: 0; border-top: 1px dashed var(--grey1); z-index: 1; }
-.spend-limit-line span { position: absolute; right: 0; bottom: 1px; font-size: 10px; color: var(--grey1);
-  background: var(--bg0); padding: 0 3px; }
 /* a bar per day: one hue from the theme, 4px rounded tops on the baseline, 2px gaps */
 .spend-bars { position: absolute; inset: 0; display: flex; align-items: flex-end; gap: 2px; }
 .spend-bar { flex: 1; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; position: relative; }

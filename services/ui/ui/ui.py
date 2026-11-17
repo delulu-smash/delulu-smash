@@ -16,7 +16,7 @@ import reflex as rx
 
 from ui.agents import AGENTS, DEFERRED, LOAD_TOOL, AgentInfo, CapabilityInfo, ToolInfo
 from ui.api import api
-from ui.commands import COMMANDS, ICON_BUG, ICON_PY, ICON_VARIABLE, RUNNABLE, SLASH, Command, slash_about
+from ui.commands import COMMANDS, ICON_BUG, ICON_CLOSE, ICON_PY, ICON_VARIABLE, RUNNABLE, SLASH, Command, slash_about
 from ui.commands import ICON_AI as ICON_CHAT
 from ui.commands import ICON_TABLE as ICON_RESULTS
 from ui.editor import cell_editor
@@ -42,8 +42,8 @@ from ui.widgets import ADDABLE
 FAQ = [
     (
         'An answer says a key or token isn\'t stored (eg "no start.gg API token stored"), but you stored it',
-        "The server reads stored keys only when it starts. Store the key if you haven't, then restart delulu-smash:",
-        "ds settings sync\nds ui restart",
+        "The server reads stored keys only when it starts. Store the key (sync restarts delulu-smash at the end):",
+        "ds settings sync",
     ),
 ]
 # The help panel's examples: (section, [(what to type in the chat box, what it does)]). Short
@@ -56,6 +56,7 @@ HELP_EXAMPLES: list[tuple[str, list[tuple[str, str]]]] = [
             ("/vods mkleo vs sparg0 grand finals", "AI fills the form, you run it"),
             ("/usage tweek offline, last 60 sets", "same, for player usage"),
             ("/smashdb", "a SQL console, right in the chat"),
+            ("/assign the date Ultimate came out", "a new variable; the AI names it"),
             ("/assign top5 = the five best players in @q1", "AI writes the code, you run it"),
             ("/clear-chat", "new conversation, variables stay"),
             ("/clear-variables", "free the memory (3 s to undo)"),
@@ -82,6 +83,8 @@ COMPLETE_URL = rx.config.get_config().api_url + "/complete"
 # assets/mentions.js asks it what can follow the dot
 # in an "@" mention (api.py, mentions.complete)
 MENTION_COMPLETE_URL = rx.config.get_config().api_url + "/mention_complete"
+# assets/panes.js asks it whether a clicked link's site can be framed (api.py, web.frameable)
+FRAMEABLE_URL = rx.config.get_config().api_url + "/frameable"
 
 
 def handle(name: rx.Var | str) -> rx.Component:
@@ -89,15 +92,43 @@ def handle(name: rx.Var | str) -> rx.Component:
     return rx.el.span(name, class_name="handle mono")
 
 
+# Each pane's own full-screen key (Alt+F does the same for the pane you are in).
+ZOOM_KEYS = {
+    "chat": Shortcut.ZOOM_CHAT,
+    "results": Shortcut.ZOOM_RESULTS,
+    "python": Shortcut.ZOOM_PYTHON,
+    "variables": Shortcut.ZOOM_VARIABLES,
+}
+
+
+# Each pane's show / hide key, named on its close button.
+TOGGLE_KEYS = {
+    "chat": Shortcut.TOGGLE_CHAT,
+    "results": Shortcut.TOGGLE_RESULTS,
+    "python": Shortcut.TOGGLE_PYTHON,
+    "variables": Shortcut.TOGGLE_VARIABLES,
+}
+
+
+def close_button(pane: str) -> rx.Component:
+    """Hide this pane (as its bottom-bar toggle; the same key shows it again)."""
+    return rx.el.button(
+        ICON_CLOSE,
+        title=TOGGLE_KEYS[pane].hint("Close"),
+        aria_label="Close",
+        on_click=State.hide_pane(pane),
+        class_name="zoom-btn pane-close mono",
+    )
+
+
 def zoom_button(pane: str) -> rx.Component:
     """Fill the window with this pane, or restore the layout.
     assets/panes.js clicks it on Shortcut.FULL_SCREEN.
     """
+    key = ZOOM_KEYS[pane]
     return rx.el.button(
         rx.cond(State.zoomed == pane, ICON_COLLAPSE, ICON_EXPAND),
-        title=rx.cond(
-            State.zoomed == pane, Shortcut.FULL_SCREEN.hint("Restore panes"), Shortcut.FULL_SCREEN.hint("Full screen")
-        ),
+        title=rx.cond(State.zoomed == pane, key.hint("Restore panes"), key.hint("Full screen")),
         on_click=State.toggle_zoom(pane),
         class_name=rx.cond(State.zoomed == pane, "zoom-btn mono is-on", "zoom-btn mono"),
     )
@@ -407,23 +438,60 @@ def agent_progress() -> rx.Component:
 
 
 def context_meter() -> rx.Component:
-    """How full the model's context window is and what
-    the chat cost so far (State.context_label).
+    """How full the model's context window is and what this session's AI cost so far, in the
+    title bar so it shows whichever panels are open: 'context 4% · this session $0.012'.
+    Hovering it unveils the tokens in place of the percent ('43k / 1M tokens'; app.css).
     """
-    return rx.cond(
-        State.context_label != "",
-        rx.el.div(
-            rx.el.span(rx.el.i(style={"width": State.context_pct.to(str) + "%"}), class_name="ctx-bar"),
-            rx.el.span(State.context_label),
-            title=" ".join(
-                [
-                    "Conversation size (sent again with every request) / the model's context window,",
-                    "and what the AI cost so far (chat and inline chats).",
-                    "Past about half, answers get slower and cost more.",
-                ]
-            ),
-            class_name=rx.cond(State.context_pct >= 50, "ctx-meter mono is-full", "ctx-meter mono"),
+    return rx.el.div(
+        rx.el.span(rx.el.i(style={"width": State.context_pct.to(str) + "%"}), class_name="ctx-bar"),
+        rx.el.span(
+            "context ",
+            rx.el.span(State.context_size, class_name="ctx-pct"),
+            rx.el.span(State.context_tokens_text, class_name="ctx-tokens"),
+            " · this session ",
+            rx.cond(State.chat_cost != "", State.chat_cost, "$0"),
         ),
+        title=" ".join(
+            [
+                "Conversation size (sent again with every request) / the model's context window,",
+                "and what the AI cost so far this session (chat and inline chats).",
+                "Past about half, answers get slower and cost more.",
+            ]
+        ),
+        class_name=rx.cond(State.context_pct >= 50, "ctx-meter mono is-full", "ctx-meter mono"),
+    )
+
+
+def spend_meters() -> rx.Component:
+    """The month's spend (State.spend_meters, spend.py), eg 'month $1.91 / $15 (13%)',
+    'month $-- / $-- (--%)' before spend is read. A click opens the Spend tab.
+    """
+    # one thin box around them, ending with when they were read: the numbers are Logfire's as
+    # of then (refreshed by the Spend tab's Refresh), not live
+    meters = rx.foreach(
+        State.spend_meters,
+        lambda m: rx.el.button(
+            rx.el.span(
+                rx.el.i(style={"width": m["meter"]}, custom_attrs={"data-level": m["level"]}), class_name="ctx-bar"
+            ),
+            rx.el.span(m["text"]),
+            title=m["title"],
+            on_click=State.open_spend,
+            type="button",
+            class_name="ctx-meter spend-meter-btn mono",
+            custom_attrs={"data-level": m["level"]},
+        ),
+    )
+    return rx.el.div(
+        meters,
+        # 'as of --' until read, so the box keeps its shape
+        rx.el.span(
+            "as of ",
+            rx.cond(State.spend_as_of != "", State.spend_as_of, "--"),
+            title="When spend was read from Logfire (it isn't live). Refresh it in the Spend tab.",
+            class_name="spend-as-of",
+        ),
+        class_name="spend-box mono",
     )
 
 
@@ -497,8 +565,8 @@ def chat_pane() -> rx.Component:
             # setup is in the debug panel's Agents tab)
             rx.el.span(AGENTS[0].model_name, title=f"Model: {AGENTS[0].model}", class_name="chat-model mono"),
             rx.el.span(class_name="spacer"),
-            context_meter(),
             zoom_button("chat"),
+            close_button("chat"),
             class_name="pane-title",
         ),
         rx.el.div(
@@ -1066,14 +1134,14 @@ def spend_view() -> rx.Component:
             (
                 "setup",
                 rx.el.div(
-                    rx.el.p("Spend needs the Pydantic API key, which this machine doesn't have yet:"),
+                    rx.el.p("Spend needs the Pydantic project API key, which this machine doesn't have yet:"),
                     rx.el.ol(
                         rx.el.li(
                             "Run ",
                             rx.el.code("ds settings sync"),
-                            ". It asks for the Pydantic API key (full access) and shows how to create one.",
+                            ". It asks for the Pydantic keys (project; organization for the limits),",
+                            " shows how to create them, then restarts the app (it reads keys when it starts).",
                         ),
-                        rx.el.li("Restart the app (", rx.el.code("ds ui restart"), "): it reads keys when it starts."),
                     ),
                     class_name="spend-setup",
                 ),
@@ -1137,14 +1205,6 @@ def spend_report() -> rx.Component:
             ),
             rx.el.div(
                 rx.foreach(State.spend_axis, lambda tick: rx.el.b(style={"bottom": tick["bottom"]})),
-                rx.cond(
-                    State.spend_limit_line.contains("bottom"),
-                    rx.el.div(
-                        rx.el.span(State.spend_limit_line["label"]),
-                        class_name="spend-limit-line",
-                        style={"bottom": State.spend_limit_line["bottom"]},
-                    ),
-                ),
                 rx.el.div(
                     rx.foreach(
                         State.spend_bars,
@@ -1591,6 +1651,7 @@ def notebook() -> rx.Component:
             rx.el.span(class_name="spacer"),
             rx.cond(State.running, rx.el.span("running…", class_name="dim")),
             zoom_button("python"),
+            close_button("python"),
             class_name="console-head sans",
         ),
         rx.el.div(rx.foreach(State.cells, cell_view), class_name="notebook-body"),
@@ -1740,6 +1801,7 @@ def variables_pane() -> rx.Component:
                 class_name="act",
             ),
             zoom_button("variables"),
+            close_button("variables"),
             class_name="console-head vars-head sans",
         ),
         rx.el.div(
@@ -1823,6 +1885,7 @@ def tables_pane() -> rx.Component:
                 class_name="tabs",
             ),
             zoom_button("results"),
+            close_button("results"),
             class_name="tabbar sans",
         ),
         rx.el.div(
@@ -1861,7 +1924,7 @@ def pane_toggle(
 def statusbar() -> rx.Component:
     """Bottom bar, as in Zed: one toggle per pane."""
     return rx.el.div(
-        pane_toggle("chat", ICON_CHAT, "chat", State.show_chat),
+        pane_toggle("chat", ICON_CHAT, "chat", State.show_chat, Shortcut.TOGGLE_CHAT),
         pane_toggle("results", ICON_RESULTS, "results", State.show_results, Shortcut.TOGGLE_RESULTS),
         pane_toggle("python", ICON_PY, "Python", State.show_python, Shortcut.TOGGLE_PYTHON),
         pane_toggle("variables", ICON_VARIABLE, "Variables", State.show_variables, Shortcut.TOGGLE_VARIABLES),
@@ -1876,6 +1939,8 @@ def index() -> rx.Component:
     return rx.el.div(
         rx.el.div(
             rx.el.span("delulu-smash", class_name="title"),
+            context_meter(),
+            spend_meters(),
             rx.el.span(class_name="spacer"),
             rx.el.button(
                 ICON_BUG,
@@ -1917,8 +1982,25 @@ def index() -> rx.Component:
         rx.el.button(
             on_click=State.toggle_python_variables, hidden=True, custom_attrs={"data-toggle": "python-variables"}
         ),
+        # ... and on Shortcut.ZOOM_CHAT / ZOOM_RESULTS / ZOOM_PYTHON / ZOOM_VARIABLES
+        *[
+            rx.el.button(on_click=State.toggle_zoom(pane), hidden=True, custom_attrs={"data-toggle": f"zoom-{pane}"})
+            for pane in ZOOM_KEYS
+        ],
+        # a clicked link (assets/panes.js fills it and submits): the page in the `web` Browser,
+        # floated over the app as a glance; Esc / outside closes it, its float button docks it
+        rx.el.form(
+            rx.el.input(name="url", custom_attrs={"data-browse-url": ""}),
+            rx.el.input(name="frameable", custom_attrs={"data-browse-frameable": ""}),
+            on_submit=State.browse,
+            reset_on_submit=True,
+            hidden=True,
+            custom_attrs={"data-browse": "", "data-frameable-url": FRAMEABLE_URL},
+        ),
+        rx.el.button(on_click=State.close_glance, hidden=True, custom_attrs={"data-toggle": "glance-close"}),
+        rx.el.button(on_click=State.dock_glance, hidden=True, custom_attrs={"data-toggle": "glance-dock"}),
         # inline_edit.jsx clicks it after an inline chat,
-        # so the chat title's meter adds its cost
+        # so the title bar's context meter adds its cost
         rx.el.button(on_click=State.refresh_usage, hidden=True, custom_attrs={"data-usage-refresh": ""}),
         class_name="page",
     )

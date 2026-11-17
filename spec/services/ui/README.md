@@ -5,6 +5,22 @@ Design requirements for the delulu-smash app (`services/ui`), kept apart from `s
 which documents what is built. One file per concern. The spec says what must hold, the README says what
 does.
 
+## The spirit of the app
+
+> *The simplicity & efficiency of Omarchy, the exploration of Jupyter, the composability of VS Code, and the
+> extensibility & flexibility of Pi: your desktop hub.*
+
+This is the app's mantra (the user's, Nov 2026), and every rule in this spec serves it. Each new feature and
+design choice gets checked against all five parts. When one is traded off for another, say so.
+
+| Part | What it means here | Already in the app |
+| --- | --- | --- |
+| **Simplicity & efficiency of Omarchy** | Keyboard first, one letter per action, nothing on screen that isn't needed, every list searchable. It looks and behaves like the desktop around it | `Alt` keys, `Alt+K` list, `Alt+P` palette, panels hidden until wanted ([omarchy.md](omarchy.md)) |
+| **Exploration of Jupyter** | Every result is a live value you can keep, poke at and build on, in the AI chat or in code. Asking a question and working on the answer are one flow | results as `r1`, `r2`, … ; Python cells; Variables panel; `@name` mentions ([variables.md](variables.md)) |
+| **Composability of VS Code** | Pieces combine and rearrange instead of each living in one fixed place: panels are shown, hidden, split and zoomed to fit the task; a widget is the same wherever it is put (a Results tab, the chat, under a cell, floating); one value flows between the chat, the cells and the widgets; every action, whatever adds it, sits in the same palette and keys | panels with `Alt` keys and ⤢ / ×; widgets in tabs, chat, cells, Alt+F floating; `r1` used in cells and `@r1` in the chat; the `Alt+P` palette and slash commands |
+| **Extensibility & flexibility of Pi** | As with the Pi coding agent: a small core that grows by adding pieces (widgets, tools, commands) as data, not by editing the core. The user shapes it to their own workflow, and the AI helps build the new pieces | `WIDGETS` rows, the palette / slash commands made from them, inline AI filling any widget's inputs ([inline_ai.md](inline_ai.md)) |
+| **Your desktop hub** | One place for Smash work (data, VODs, AI, code), always running as a desktop app and not a site you visit | `SUPER+SHIFT+I`, `delulu-smash.service` |
+
 ## Words: panel and widget
 
 Two different things, and the design rules differ for each. Use these words (the user's, Nov 2026); older text
@@ -13,7 +29,7 @@ and the code say "pane" for a panel.
 | | Panel | Widget |
 | --- | --- | --- |
 | What it is | a fixed region of the window's layout: a place | a view of one value: a thing shown in a place |
-| Which | Chat, Results, Python, Variables | table, VODs, player usage, fields, SmashDb console |
+| Which | Chat, Results, Python, Variables | table, VODs, player usage, fields, SmashDb console, Browser |
 | How many | one of each; shown or hidden (the bottom bar, `Alt` keys) | any number; the same value can be shown in several places |
 | Where defined | the layout in `ui/ui.py` | a row in `WIDGETS` (`ui/widgets.py`), drawn by `render.py` |
 | Holds | widgets, cells, messages | its own controls and state (filter, sort, inputs) |
@@ -30,7 +46,7 @@ Design rules that follow from the difference:
 
 - [omarchy.md](omarchy.md): navigation, keys and many other parts of the app follow Omarchy, the desktop
   it runs on.
-- [inline_ai.md](inline_ai.md): `Alt+A`, the AI that changes what you are in. A widget with a tool is a
+- [inline_ai.md](inline_ai.md): `Alt+I`, the AI that changes what you are in. A widget with a tool is a
   function; the AI fills its inputs and the user runs them.
 - [variables.md](variables.md): the Variables pane. Cleared means gone: one short undo, then the memory
   is really released. Also `@name` mentions of variables in the chats (experimental) and `/assign`, a variable whose code the AI writes.

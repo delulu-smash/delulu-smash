@@ -16,7 +16,7 @@ from reflex.event import no_args_event_spec, passthrough_event_spec
 _SOURCE = rx.asset("./cell_editor.jsx", shared=True)
 # sql_editor.jsx imports the theme from cell_editor.jsx; both are linked into the same folder.
 _SQL_SOURCE = rx.asset("./sql_editor.jsx", shared=True)
-# Both import the Alt+A inline chat from it; linked into the same folder.
+# Both import the Alt+I inline chat from it; linked into the same folder.
 _INLINE_SOURCE = rx.asset("./inline_edit.jsx", shared=True)
 _INLINE_DEPENDENCIES = ["@codemirror/merge", "@codemirror/commands"]
 
@@ -42,7 +42,7 @@ class CellEditor(rx.NoSSRComponent):
     # Backend URL that returns completions, and the session to complete against.
     complete_url: rx.Var[str]
     token: rx.Var[str]
-    # Backend URL for the Alt+A inline chat (api.py /inline_edit).
+    # Backend URL for the Alt+I inline chat (api.py /inline_edit).
     edit_url: rx.Var[str]
 
     # The keymap, in CodeMirror's spelling: {"run", "runAndAdvance", "complete", "runAll", ...}
@@ -91,9 +91,9 @@ class SqlEditor(rx.NoSSRComponent):
     placeholder: rx.Var[str]
     # {"run", "complete"} in CodeMirror's spelling (shortcuts.sql_keys).
     keys: rx.Var[dict[str, str]]
-    # Backend URL for the Alt+A inline chat (api.py /inline_edit); without it the box has none.
+    # Backend URL for the Alt+I inline chat (api.py /inline_edit); without it the box has none.
     edit_url: rx.Var[str]
-    # The session, so Alt+A can read its chat.
+    # The session, so Alt+I can read its chat.
     token: rx.Var[str]
 
     # (sql): fired by Shortcut.RUN_SQL, with the selection

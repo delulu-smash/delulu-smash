@@ -14,7 +14,9 @@
 # list without asking (all of them, or just the named ones). `pwd-store` saves the 1Password
 # master password in gnome-keyring (via `secret-tool`); `pwd-copy` copies it to the clipboard
 # (wl-copy) and clears it after a timeout. No password file is written; the keyring is
-# per-machine, so `sync` offers `pwd-store` when this machine's keyring has none yet.
+# per-machine, so `sync` offers `pwd-store` when this machine's keyring has none yet. Each
+# machine has a role (desktop / laptop) in the git-ignored .os/local.toml, asked on its first
+# `sync` / `save`; `[packages.desktop]` / `[packages.laptop]` are only for that role.
 #
 # Example CLI Commands (`os` alias comes from .os/rc; new machine: run .os/install.sh first):
 #   1. Sync this machine both ways:          os sync
@@ -24,6 +26,7 @@
 #   5. Save just these, no git (AI agents):  os save --no-commit package:zed
 #   6. Store (hidden prompt, asked twice):   os pwd-store
 #   7. Copy to clipboard (clears after 5s):  os pwd-copy
+#   8. Show / set this machine's role:       os role / os role laptop
 # ---------------------------------------------------------------------------
 
 
@@ -43,6 +46,7 @@ import re
 import shlex
 import shutil
 import subprocess
+import sys
 import time
 import tomllib
 from pathlib import Path
@@ -56,6 +60,9 @@ app = typer.Typer(no_args_is_help=True)
 
 REPO = Path(__file__).resolve().parent.parent
 MACHINE_LIST = REPO / ".os" / "machine.toml"
+# This machine's role (git-ignored): which `[packages.<role>]` and `[files]` "<role>" apply.
+LOCAL = REPO / ".os" / "local.toml"
+ROLES = ("desktop", "laptop")
 FILES = REPO / ".os" / "files"
 HOME = Path.home()
 OMARCHY_PATH = Path(os.environ.get("OMARCHY_PATH", "/usr/share/omarchy"))
@@ -90,7 +97,9 @@ SETTINGS = {
     "theme": (["omarchy", "theme", "current"], ["omarchy", "theme", "set"]),
     "font": (["omarchy", "font", "current"], ["omarchy", "font", "set"]),
     "browser": (["omarchy", "default", "browser"], ["omarchy", "default", "browser"]),
-    "editor": (["omarchy", "default", "editor"], ["omarchy", "default", "editor"]),
+    # --install: a missing editor is installed right here, not in a floating terminal that
+    # `sync` can't wait for (it would report success before anything was installed).
+    "editor": (["omarchy", "default", "editor"], ["omarchy", "default", "editor", "--install"]),
     "terminal": (["omarchy", "default", "terminal"], ["omarchy", "default", "terminal"]),
 }
 # Omarchy's Hyprland toggles (eg window-no-gaps): `... enabled <name>` exits 0 when one is on,
@@ -168,6 +177,7 @@ def sync(
     _check_omarchy()
     if pull:
         _pull(dry_run=dry_run, yes=yes)
+    _ensure_role(dry_run=dry_run, yes=yes)
     base_commit = _last_synced()
     target = tomllib.loads(MACHINE_LIST.read_text())
     base = _base_list(base_commit)
@@ -187,7 +197,7 @@ def sync(
             typer.echo(f"  {_question(item, first=base is None)[0]}")
     elif pending:
         _ask_all(pending, first=base is None)
-    kept = [item for item in pending if item.choice in ("k", "i")]
+    kept = [item for item in pending if item.choice in ("k", "o", "i")]
     if kept:
         _save_all(kept)
 
@@ -233,6 +243,7 @@ def save(
     it (--no-commit: only write .os/ and ask nothing).
     """
     _check_omarchy()
+    _ensure_role(dry_run=dry_run, yes=False)
     target = tomllib.loads(MACHINE_LIST.read_text())
     if things:
         items, problems = _kept_items([_thing(thing, target) for thing in things], target)
@@ -254,6 +265,96 @@ def save(
         return
     if not _commit_and_push("os save: update machine setup", push=True, yes=False):
         raise typer.Exit(1)
+
+
+@app.command()
+def role(
+    new: Annotated[str | None, typer.Argument(help="Set it: desktop or laptop. None: show it.")] = None,
+) -> None:
+    """Show or set this machine's role (.os/local.toml, git-ignored): desktop or laptop.
+
+    `[packages.<role>]` in the list are installed only on machines with that role.
+    """
+    if new is None:
+        typer.echo(_role() or f"No role yet (detected: {_detect_role()}); `os sync` asks for it.")
+        return
+    if new not in ROLES:
+        typer.echo(f'Unknown role "{new}" (use {" or ".join(ROLES)}).', err=True)
+        raise typer.Exit(1)
+    _write_role(new)
+
+
+def _role() -> str | None:
+    """Read the role from .os/local.toml; None when missing or not a known role."""
+    try:
+        value = tomllib.loads(LOCAL.read_text()).get("role") if LOCAL.is_file() else None
+    except tomllib.TOMLDecodeError:
+        return None
+    return value if value in ROLES else None
+
+
+def _detect_role() -> str:
+    """A guess for the first question: a battery means a laptop."""
+    return "laptop" if any(Path("/sys/class/power_supply").glob("BAT*")) else "desktop"
+
+
+def _write_role(role: str) -> None:
+    header = [
+        f"# Written by `os` (.os/cli.py) on {time.strftime('%Y-%m-%d')}: this machine's role for `os sync`.",
+        "# Don't edit by hand: change it with `os role desktop` / `os role laptop`.",
+        "# Git-ignored: each machine has its own.",
+    ]
+    LOCAL.write_text("\n".join([*header, f'role = "{role}"', ""]))
+    typer.echo(f'Saved: role = "{role}" in .os/local.toml (git-ignored, this machine only).')
+
+
+def _ensure_role(*, dry_run: bool, yes: bool) -> None:
+    """Ask for this machine's role if .os/local.toml has none; stop when nobody can answer."""
+    if _role():
+        return
+    detected = _detect_role()
+    if dry_run:
+        typer.echo(f"This machine has no role yet: would ask; previewing as {detected} (detected).")
+        return
+    if yes or not sys.stdin.isatty():
+        typer.echo("This machine has no role yet: run `os sync` once without --yes, or `os role desktop`.", err=True)
+        raise typer.Exit(1)
+    why = "a battery was found" if detected == "laptop" else "no battery found"
+    typer.echo("This machine has no role yet (.os/local.toml). Which is it?")
+    choice = _choose(f"[d]esktop, [l]aptop (detected: {detected}, {why})", "dl", detected[0])
+    _write_role("desktop" if choice == "d" else "laptop")
+
+
+def _current_role() -> str:
+    """The role the list is read with (the detected one only in a dry run before it is set)."""
+    return _role() or _detect_role()
+
+
+def _package_lists(machine_list: dict[str, Any]) -> dict[str, list[str]]:
+    """{"pacman": [...], "aur": [...]} wanted here: the shared lists plus this role's.
+
+    Exits when a package is in both the shared lists and a role's.
+    """
+    packages = machine_list.get("packages", {})
+    shared = {*packages.get("pacman", []), *packages.get("aur", [])}
+    for role in ROLES:
+        section = packages.get(role, {})
+        both = sorted(shared & {*section.get("pacman", []), *section.get("aur", [])})
+        if both:
+            typer.echo(f"In both [packages] and [packages.{role}] in .os/machine.toml: {', '.join(both)}.", err=True)
+            raise typer.Exit(1)
+    mine = packages.get(_current_role(), {})
+    return {repo: [*packages.get(repo, []), *mine.get(repo, [])] for repo in ("pacman", "aur")}
+
+
+def _role_of(machine_list: dict[str, Any], name: str) -> str | None:
+    """The role whose `[packages.<role>]` lists this package, if any."""
+    packages = machine_list.get("packages", {})
+    for role in ROLES:
+        section = packages.get(role, {})
+        if name in [*section.get("pacman", []), *section.get("aur", [])]:
+            return role
+    return None
 
 
 def _all_local_items(target: dict[str, Any]) -> tuple[list[Item], list[str]]:
@@ -419,12 +520,17 @@ def _lspci() -> str:
 
 
 def _applies(when: str) -> bool:
-    """Whether a `[files]` entry is for this machine: "always" or "lspci:<text>"."""
+    """Whether a `[files]` entry is for this machine: "always", a role, or "lspci:<text>"."""
     if when == "always":
         return True
+    if when in ROLES:
+        return when == _current_role()
     if when.startswith("lspci:"):
         return when.removeprefix("lspci:") in _lspci()
-    typer.echo(f'Unknown [files] value "{when}" in .os/machine.toml (use "always" or "lspci:<text>").', err=True)
+    typer.echo(
+        f'Unknown [files] value "{when}" in .os/machine.toml (use "always", "desktop", "laptop" or "lspci:<text>").',
+        err=True,
+    )
     raise typer.Exit(1)
 
 
@@ -452,6 +558,11 @@ def _items(target: dict[str, Any], base: dict[str, Any] | None, base_commit: str
         if kind == "setting" and values[2] is None:
             typer.echo(f"Could not read the current {key} (`{shlex.join(SETTINGS[key][0])}`); leaving it alone.")
             continue
+        if kind == "setting" and key == "editor" and shutil.which(values[2]) is None:
+            # Omarchy keeps the chosen editor even when it isn't installed, and quietly opens
+            # nvim instead. Not a choice made here: the list's value goes in the plan, which
+            # installs it.
+            values[0] = values[2] = f"{values[2]} (not installed)"
         items.append(Item(kind, key, *values))
     return items
 
@@ -459,8 +570,7 @@ def _items(target: dict[str, Any], base: dict[str, Any] | None, base_commit: str
 def _list_values(machine_list: dict[str, Any], read_file: Any) -> dict[tuple[str, str], str]:
     """Flatten a machine list into {(kind, key): value}; `read_file` reads a tracked file."""
     values: dict[tuple[str, str], str] = {}
-    packages = machine_list.get("packages", {})
-    for name in [*packages.get("pacman", []), *packages.get("aur", [])]:
+    for name in [name for names in _package_lists(machine_list).values() for name in names]:
         values["package", name] = "installed"
     for plugin, git in machine_list.get("plugins", {}).items():
         values["plugin", plugin] = git
@@ -569,9 +679,18 @@ def _question(item: Item, *, first: bool) -> tuple[str, dict[str, str]]:
         return f"{label}: listed, but not saved in the repo yet", {"k": "eep (save it to the repo)"}
     if item.target is None:
         options = {"k": "eep (add to the list)", "d": "iscard (remove from this machine)"}
-        if item.kind in ("package", "webapp"):
-            options["i"] = "gnore (never sync it)"
-        return f"{label}: on this machine, not in the list", options
+        if item.kind != "package":
+            if item.kind == "webapp":
+                options["i"] = "gnore (never sync it)"
+            return f"{label}: on this machine, not in the list", options
+        role = _current_role()
+        options = {"k": "eep (every machine)", "o": f"nly {role}s", "d": options["d"]}
+        listed_for = _role_of(tomllib.loads(MACHINE_LIST.read_text()), item.key)
+        if listed_for:
+            # No ignore: [ignore] covers every machine, so the other role would lose it.
+            return f"{label}: on this machine ({role}), listed for {listed_for}s only", options
+        options["i"] = "gnore (never sync it)"
+        return f"{label}: on this machine ({role}), not in the list", options
     if item.machine is None:
         changed = ", changed in the list" if item.status == "conflict" else ""
         options = {"k": "eep (remove from the list)", "d": "iscard (put it back here)"}
@@ -621,12 +740,13 @@ def _ask_all(pending: list[Item], *, first: bool) -> None:
                 [
                     "[e]ach",
                     "[k]eep all (add to the list)",
+                    *([f"[o]nly {_current_role()}s, all"] if kind == "package" else []),
                     "[d]iscard all (remove from this machine)",
                     "[i]gnore all (never sync)",
                     "[s]kip all",
                 ]
             )
-            choice = _choose(menu, "ekdis", "e")
+            choice = _choose(menu, "ekodis" if kind == "package" else "ekdis", "e")
             if choice == "d":
                 names = "\n".join(f"  {item.key}" for item in group)
                 if not typer.confirm(f"Remove these {len(group)} {KINDS[kind]}s from this machine?\n{names}\n"):
@@ -716,11 +836,14 @@ def _save_all(kept: list[Item]) -> None:
             _array_add(_table(doc, "ignore"), "packages" if item.kind == "package" else "webapps", item.key)
         elif item.kind == "package":
             packages = _table(doc, "packages")
-            for repo in ("pacman", "aur"):
-                if item.key in packages.get(repo, []):
-                    packages[repo].remove(item.key)
+            # Out of every list first: keep = the shared list, only = this role's.
+            for section in [packages, *(packages[role] for role in ROLES if role in packages)]:
+                for repo in ("pacman", "aur"):
+                    if item.key in section.get(repo, []):
+                        section[repo].remove(item.key)
             if item.machine:
-                _array_add(packages, "aur" if item.key in foreign else "pacman", item.key)
+                section = _table(packages, _current_role()) if item.choice == "o" else packages
+                _array_add(section, "aur" if item.key in foreign else "pacman", item.key)
         elif item.kind == "file":
             _save_file(_table(doc, "files"), item)
         else:
@@ -746,8 +869,9 @@ def _save_file(files: Any, item: Item) -> None:
 def _plan_line(item: Item, target: dict[str, Any]) -> str:
     """One line of the "will change this machine" plan."""
     if item.kind == "package":
-        aur = " (AUR)" if item.key in target.get("packages", {}).get("aur", []) else ""
-        return f"install package {item.key}{aur}" if item.target else f"remove package {item.key}"
+        aur = " (AUR)" if item.key in _package_lists(target)["aur"] else ""
+        only = f" ({role} only)" if (role := _role_of(target, item.key)) else ""
+        return f"install package {item.key}{aur}{only}" if item.target else f"remove package {item.key}"
     if item.kind in ("plugin", "webapp"):
         action = "remove" if item.target is None else "update" if item.machine else "install"
         return f"{action} {KINDS[item.kind]} {item.key}"
@@ -755,6 +879,8 @@ def _plan_line(item: Item, target: dict[str, Any]) -> str:
         return f"write file ~/{item.key}{' (the current one is backed up)' if item.machine else ''}"
     if item.kind == "toggle":
         return f"turn {item.target} toggle {item.key}"
+    if item.key == "editor" and item.target and shutil.which(item.target) is None:
+        return f"install {item.target} and set it as the editor"
     return f"set {'bar option ' if item.kind == 'bar' else ''}{item.key} to {item.target}"
 
 
@@ -822,7 +948,7 @@ def _apply_confirmed(changes: list[Item], target: dict[str, Any], *, yes: bool) 
 def _apply(changes: list[Item], target: dict[str, Any]) -> list[str]:
     """Make this machine match the list for each change; returns the plan lines that failed."""
     failed = []
-    aur = set(target.get("packages", {}).get("aur", []))
+    aur = set(_package_lists(target)["aur"])
     installs = [item for item in changes if item.kind == "package" and item.target]
     batches = [
         (["omarchy", "pkg", "add"], [item for item in installs if item.key not in aur]),

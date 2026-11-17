@@ -7,13 +7,14 @@
 //          the help or debug panel (a full-screen debug panel first goes back to the side), then a floating view. PALETTE clicks the hidden button that shows or hides the
 //          command palette (a search box over every command: type to filter, arrows, Enter; the ones run last come
 //          first); in a menu, arrows move between its rows. window.smashPress(keys) runs a shortcut as if its key
-//          were pressed where you were (the palette's and the keybindings list's way to run one). TOGGLE_RESULTS / TOGGLE_PYTHON / TOGGLE_VARIABLES / HELP / DEBUG click the
-//          bottom bar's pane toggles and the title bar's ? and bug icon (data-toggle). A view's float button (render.float_button) and
+//          were pressed where you were (the palette's and the keybindings list's way to run one). TOGGLE_CHAT / TOGGLE_RESULTS / TOGGLE_PYTHON / TOGGLE_VARIABLES / HELP / DEBUG click the
+//          bottom bar's pane toggles, ZOOM_CHAT / ZOOM_RESULTS / ZOOM_PYTHON / ZOOM_VARIABLES hidden buttons (data-toggle="zoom-<pane>"), and the title bar's ? and bug icon (data-toggle). A view's float button (render.float_button) and
 //          a click outside a floating view work too. reveal(id) scrolls to a chat row, result tab or
 //          cell and flashes it (State.reveal). INLINE_EDIT outside a code editor, in a view with a tool
 //          form, clicks that view's AI button (render.ai_toggle): the form's "Ask AI" row; CLOSE in
 //          that form closes the row. window.perfSnapshot() gives this window's own numbers (JS heap,
-//          DOM size, long tasks) to the debug panel's System tab.
+//          DOM size, long tasks) to the debug panel's System tab. A clicked link (a widget's or
+//          the AI's) opens as a glance: the `web` Browser floating over the app (see below).
 // ---------------------------------------------------------------------------
 (() => {
   const SHORTCUTS = window.SHORTCUTS || { FULL_SCREEN: "Alt+F", CLOSE: "Escape" };
@@ -37,6 +38,12 @@
     ? (node.closest(".widget") || document.createElement("i")).querySelector("[data-ai-toggle]") : null);
 
   const setFloating = (widget, on) => {
+    // a glance (a clicked link, below) put back without docking it is closed: the server
+    // closes the `web` tab and puts the layout back (State.close_glance)
+    if (!on && widget.dataset.glance) {
+      delete widget.dataset.glance;
+      document.querySelector('[data-toggle="glance-close"]')?.click();
+    }
     widget.classList.toggle("is-floating", on);
     document.body.classList.toggle("has-floating", on);
     // grids size themselves on resize
@@ -132,12 +139,92 @@
     }
   });
 
+  // a glance's float button docks it: it stays as the `web` tab (State.dock_glance)
+  const dock = (widget) => {
+    if (!widget.dataset.glance) return;
+    delete widget.dataset.glance;
+    document.querySelector('[data-toggle="glance-dock"]')?.click();
+  };
   document.addEventListener("click", (event) => {
     const button = event.target instanceof Element && event.target.closest(".float-btn");
     if (!button) return;
     const widget = button.closest(".widget");
-    if (widget) toggleFloat(widget);
+    if (!widget) return;
+    // a view's × (render.close_view_button): the server closes it; a floating one is put back
+    // here first, without the glance's own close (the server's close covers that too)
+    if (button.matches("[data-close-view]")) {
+      if (widget.classList.contains("is-floating")) {
+        delete widget.dataset.glance;
+        setFloating(widget, false);
+      }
+      return;
+    }
+    dock(widget);
+    toggleFloat(widget);
   });
+
+  // Links open in the app, as a glance (as in Zen): a widget's link (render.link, a.link) or
+  // one in the AI's answer (.bubble a) loads in the one `web` Browser tab (State.browse),
+  // which then floats over the app. Ctrl / Shift / middle click still opens a real tab; so do
+  // buttons drawn as links (.act, eg Open ↗) and links outside widgets and the chat.
+  const glanceable = (a) => a.matches("a.link, .bubble a") && !a.matches(".act") && /^https?:/i.test(a.href);
+  const glance = (url, verdict) => {
+    const form = document.querySelector("form[data-browse]");
+    if (!form) return false;
+    form.querySelector("[data-browse-url]").value = url;
+    // the check's answer (true -> no "Blank?" hint; null -> the hint)
+    form.querySelector("[data-browse-frameable]").value = verdict === true ? "true" : "";
+    form.requestSubmit();
+    // float the `web` Browser once it shows this page (the server redraws it first)
+    const until = performance.now() + 8000;
+    const tick = () => {
+      const widget = document.querySelector('[data-pane="results"] .widget[data-slot="tab:web"]');
+      const address = widget && widget.querySelector('input[name="url"]');
+      if (widget && visible(widget) && address && address.value === url) {
+        widget.dataset.glance = "1";
+        if (!widget.classList.contains("is-floating")) {
+          const current = floating();
+          if (current && current !== widget) setFloating(current, false);
+          widget.classList.add("is-floating");
+          document.body.classList.add("has-floating");
+          window.dispatchEvent(new Event("resize"));
+        }
+        return;
+      }
+      if (performance.now() < until) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+    return true;
+  };
+  // First ask the server whether the site lets a frame show it (GET /frameable, web.frameable;
+  // it gives up after 0.5 s): a site that refuses (eg github.com) opens in a real browser tab,
+  // while the click still counts as one (the popup blocker allows it); unknown -> the glance.
+  const ask = async (url) => {
+    const form = document.querySelector("form[data-browse]");
+    const endpoint = form && form.dataset.frameableUrl;
+    if (!endpoint) return null;
+    const stop = new AbortController();
+    const timer = setTimeout(() => stop.abort(), 700);
+    try {
+      const response = await fetch(`${endpoint}?url=${encodeURIComponent(url)}`, { signal: stop.signal });
+      return (await response.json()).frameable;
+    } catch {
+      return null;
+    } finally {
+      clearTimeout(timer);
+    }
+  };
+  document.addEventListener("click", async (event) => {
+    const link = event.target instanceof Element && event.target.closest("a[href]");
+    if (!link || !glanceable(link) || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey) return;
+    if (!document.querySelector("form[data-browse]")) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const url = link.href;
+    const verdict = await ask(url);
+    if (verdict === false) window.open(url, "_blank", "noopener");
+    else glance(url, verdict);
+  }, true);
 
   // a menu with a search box (ui.menu_search): typing keeps the rows that have every
   // word and highlights the first; it starts with all rows, when the box takes focus on opening
@@ -290,7 +377,9 @@
       items[(next + items.length) % items.length].focus();
       return;
     }
-    const toggle = [["TOGGLE_RESULTS", "results"], ["TOGGLE_PYTHON", "python"], ["TOGGLE_VARIABLES", "variables"], ["TOGGLE_PYTHON_VARIABLES", "python-variables"], ["HELP", "help"], ["DEBUG", "debug"], ["PALETTE", "palette"]]
+    const toggle = [["TOGGLE_CHAT", "chat"], ["TOGGLE_RESULTS", "results"], ["TOGGLE_PYTHON", "python"], ["TOGGLE_VARIABLES", "variables"], ["TOGGLE_PYTHON_VARIABLES", "python-variables"],
+      ["ZOOM_CHAT", "zoom-chat"], ["ZOOM_RESULTS", "zoom-results"], ["ZOOM_PYTHON", "zoom-python"], ["ZOOM_VARIABLES", "zoom-variables"],
+      ["HELP", "help"], ["DEBUG", "debug"], ["PALETTE", "palette"]]
       .find(([name]) => SHORTCUTS[name] && matches(event, SHORTCUTS[name]));
     if (toggle) {
       const button = document.querySelector(`[data-toggle="${toggle[1]}"]`);
@@ -320,7 +409,10 @@
     const debugFull = document.querySelector('.debug-panel [data-toggle="debug-full"]');
     if (debugFull) return debugFull.click();
     const current = floating();
-    if (current) return setFloating(current, false);
+    if (current) {
+      dock(current);  // a glance put back by the key is kept, as by its float button
+      return setFloating(current, false);
+    }
     // where you are: the focused element, else the last thing clicked
     const here = [document.activeElement, lastTarget].find((node) => visible(paneOf(node)));
     const widget = here && here.closest(".widget");

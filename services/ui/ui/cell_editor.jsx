@@ -3,7 +3,7 @@
 // Purpose: CodeMirror 6 editor for one delulu-smash notebook cell: Python
 //          highlighting in Everforest, Jupyter run and Tab keys, the console's own keys (run all,
 //          clear outputs, add / delete a cell, go up / down a cell: it has no buttons), and completions fetched
-//          from the backend (jedi against the live session namespace). Alt+A: inline chat (inline_edit.jsx).
+//          from the backend (jedi against the live session namespace). Alt+I: inline chat (inline_edit.jsx).
 // Usage: wrapped for Reflex by ui/editor.py (CellEditor).
 // ---------------------------------------------------------------------------
 import React, { useMemo, useRef } from "react";
@@ -201,7 +201,7 @@ export function CellEditor({ initialCode, completeUrl, editUrl, token, keys, onR
     };
 
     return [
-      // Alt+A inline chat (first, so its Tab / Esc win while a proposal is shown)
+      // Alt+I inline chat (first, so its Tab / Esc win while a proposal is shown)
       inlineEdit(() => ({ url: live.current.editUrl, key: keys?.inlineEdit, language: "python",
         token: live.current.token })),
       python(),

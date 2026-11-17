@@ -23,6 +23,7 @@ from ds.ai.startgg import get_player_usage
 
 from ui.db_console import DbConsole
 from ui.tool_forms import ToolForm, ToolRequest
+from ui.web import WebPage
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -78,6 +79,9 @@ WIDGETS: list[Widget] = [
     Widget("fields", "Fields"),
     # a query console on the session's db (db_console.py): schema tree, SQL editor, result grid
     Widget("smashdb", "SmashDb console", new=lambda session: DbConsole(session.db), addable=True),
+    # a web page in a frame (web.py): what a clicked link opens in; "+" adds a blank one. No
+    # tool, so no inline AI. The VODs player is built on the same component (render.web_frame)
+    Widget("browser", "Browser", new=lambda _session: WebPage(), addable=True),
     # a tool form added with "+", before its first run
     Widget("tool", "Tool form"),
 ]

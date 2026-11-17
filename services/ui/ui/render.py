@@ -42,6 +42,7 @@ from ui.editor import sql_editor
 from ui.shortcuts import Shortcut, sql_keys
 from ui.tool_forms import FormField, ToolForm, ToolRequest
 from ui.typeinfo import NO_TYPE, type_parts, type_text
+from ui.web import WebPage
 from ui.widgets import form_for
 
 MAX_GRID_ROWS = 2000
@@ -63,7 +64,7 @@ DEFAULT_SQL = "select * from self"
 MAX_BAR_ROWS = 6
 # The backend serves the character icons (api.py); the browser loads them from here.
 ICON_URL = rx.config.get_config().api_url + "/"
-# the Alt+A inline chat's backend (api.py), given to the SmashDb console's SQL box
+# the Alt+I inline chat's backend (api.py), given to the SmashDb console's SQL box
 INLINE_EDIT_URL = rx.config.get_config().api_url + "/inline_edit"
 # Longest text shown for one field value or table cell of a generic model view.
 MAX_VALUE_CHARS = 400
@@ -142,7 +143,7 @@ class ViewData:
 
     kind: str = ""
     """"" (nothing to show) | table | vods (match videos) |
-    usage | fields | smashdb (a SmashDb console) | tool
+    usage | fields | smashdb (a SmashDb console) | browser (a web page) | tool
     (a tool form not run yet).
     Each kind's attributes (tool form, "+" menu, unfolded in chat) are in widgets.py."""
     slot: str = ""
@@ -179,6 +180,9 @@ class ViewData:
     pages: int = 1
     paging: bool = False
     playing: dict[str, str] = dataclasses.field(default_factory=dict)
+    web: dict[str, str] = dataclasses.field(default_factory=dict)
+    """A Browser view's page: url (as typed / shown), src (what the frame loads), host,
+    frameable (yes / no / unknown: the site check's verdict), why (its reason when no)."""
     list_hidden: bool = False
     autoplay: bool = False
     # fields: name, value; plus one section per list of models
@@ -468,6 +472,15 @@ class View:
                 data.form, data.ai_proposed = _proposed_fields(form, inputs or {}, ui.proposed), True
         if isinstance(self.value, PlayerUsage):
             _usage_data(self.value, ui, data)
+        if isinstance(self.value, WebPage):
+            verdict = {True: "yes", False: "no", None: "unknown"}[self.value.frameable]
+            data.web = {
+                "url": self.value.url,
+                "src": self.value.src,
+                "host": self.value.host,
+                "frameable": verdict,
+                "why": self.value.why,
+            }
         if isinstance(self.value, DbConsole):
             _console_data(self.value, ui, data)
         if self.frame is None:
@@ -523,6 +536,8 @@ def to_view(value: Any) -> View | None:
                 return _usage_view(value)
             case ToolRequest():
                 return View(kind="tool", value=value, summary="not run yet")
+            case WebPage():
+                return View(kind="browser", value=value, summary=value.host)
             case DbConsole():
                 frame = value.df
                 summary = f"{frame.height} × {frame.width}" if frame is not None else "not run yet"
@@ -917,7 +932,8 @@ def render_component(
             (
                 "tool",
                 rx.fragment(
-                    _bar(view, actions, ai_toggle(view, send)),
+                    # closer: only the close button (send= would add a second AI button)
+                    _bar(view, actions, ai_toggle(view, send), closer=send),
                     form_section(view, send),
                     _error(view),
                     rx.el.div("Fill in the inputs and press Enter to run it.", class_name="empty sans"),
@@ -926,11 +942,30 @@ def render_component(
             ("fields", rx.fragment(_bar(view, actions, send=send), model_fields(view.fields, view.sections))),
             ("table", table_widget(view, send, grid, actions)),
             ("smashdb", db_console_widget(view, send, grid, actions)),
+            ("browser", browser_widget(view, send, actions)),
             rx.fragment(),
         ),
         # a compact table is only as wide as its columns
         style={"width": rx.cond(view.kind == "table", view.width, "auto")} if compact else {},
+        # where it is shown: assets/panes.js finds the glance's Browser by it (tab:web)
+        custom_attrs={"data-slot": view.slot},
         class_name="widget cell-widget" if compact else "widget",
+    )
+
+
+def close_view_button(send: Any) -> rx.Component:
+    """Top right of every view, after its float button: close it, as fits where it is shown
+    (State.view_event "close"): a Results tab closes, a glance closes (the layout goes
+    back), a chat row folds, a cell's output is hidden. assets/panes.js puts a floating
+    view back first.
+    """
+    return rx.el.button(
+        "×",
+        title="Close",
+        aria_label="Close",
+        on_click=send("close"),
+        custom_attrs={"data-close-view": ""},
+        class_name="float-btn close-view-btn mono",
     )
 
 
@@ -980,9 +1015,11 @@ def _bar(
     *controls: rx.Component,
     hidden: Any = False,
     send: Any = None,
+    closer: Any = None,
 ) -> rx.Component:
     """The component's top bar: what the value is, the kind's own controls, the host's actions.
-    With send (the view's event sender), a view that has a tool form gets its Inputs button.
+    With send (the view's event sender), a view that has a tool form gets its Inputs button;
+    send (or closer, for the close alone) also gives the bar its × (close_view_button).
     """
     return rx.el.div(
         rx.el.span(
@@ -1003,6 +1040,7 @@ def _bar(
         else rx.fragment(),
         *actions,
         float_button(),
+        close_view_button(closer or send) if (closer or send) else rx.fragment(),
         class_name=rx.cond(hidden, "viewer-bar sans is-hidden", "viewer-bar sans"),
     )
 
@@ -1701,6 +1739,104 @@ def usage_widget(view: rx.Var[ViewData], send: Any, actions: tuple[rx.Component,
     )
 
 
+def web_frame(
+    title: rx.Component,
+    src: Any,
+    url: Any,
+    key: Any = "",
+    extra: tuple[rx.Component, ...] = (),
+    after: tuple[rx.Component, ...] = (),
+    blocked: Any = False,
+    body: rx.Component | None = None,
+    class_name: Any = "player",
+) -> rx.Component:
+    """A web page in a frame, under a bar: title (or an address box), the caller's extra
+    buttons, Open ↗ (a real browser tab), then `after` (eg close, float). The Browser widget
+    is this alone; the VODs player is this with its list button. One look for both.
+    """
+    frame = rx.el.iframe(
+        src=src,
+        allow="autoplay; encrypted-media; picture-in-picture; fullscreen; clipboard-write",
+        # YouTube refuses to play (error 153) when the embedding page sends no referrer
+        referrer_policy="strict-origin-when-cross-origin",
+        key=key,
+        class_name="player-frame",
+    )
+    return rx.el.div(
+        rx.el.div(
+            title,
+            *extra,
+            rx.el.a("Open ↗", href=url, target="_blank", rel="noreferrer", title=url, class_name="act"),
+            *after,
+            class_name="player-bar sans",
+        ),
+        # while `blocked`, `body` (eg the Browser's refused card) takes the frame's place
+        rx.cond(blocked, body if body is not None else rx.fragment(), frame),
+        class_name=class_name,
+    )
+
+
+def browser_widget(view: rx.Var[ViewData], send: Any, actions: tuple[rx.Component, ...]) -> rx.Component:
+    """The Browser: an address box (Enter loads it) over the page (web_frame). A site the
+    check found refusing (web.frameable) gets an 'Open in new tab' card instead of a blank
+    frame; when the check had no answer the page is framed with a hint, as a refused frame
+    looks blank and the page itself can't tell.
+    """
+    web = view.web
+    address = rx.el.form(
+        rx.el.input(
+            key=web["url"],
+            name="url",
+            default_value=web["url"],
+            placeholder="Type a web address, Enter to load",
+            auto_complete="off",
+            spell_check=False,
+            class_name="viewer-filter mono browser-url",
+        ),
+        on_submit=lambda form: send("navigate", form),
+        reset_on_submit=False,
+        class_name="browser-address",
+    )
+    refused = rx.el.div(
+        rx.el.div(web["host"], " can't be shown here", class_name="browser-refused-title"),
+        rx.el.div(
+            "The site doesn't allow other pages to show it (",
+            web["why"],
+            "), against clickjacking.",
+            class_name="dim",
+        ),
+        rx.el.a("Open in new tab ↗", href=web["url"], target="_blank", rel="noreferrer", class_name="act browser-open"),
+        class_name="browser-refused sans",
+    )
+    # Back / Forward are the browser's own keys (Chromium's Alt+Left / Alt+Right): they step
+    # through the pages followed by clicking inside the page, as in any browser tab
+    keys = rx.el.span(
+        "Alt+← Back · Alt+→ Forward",
+        title="Go back or forward through pages you opened by clicking links inside this page",
+        class_name="browser-keys dim mono",
+    )
+    frame = web_frame(
+        address,
+        src=web["src"],
+        url=web["url"],
+        key=web["src"],
+        extra=(keys,),
+        after=(*actions, float_button(), close_view_button(send)),
+        blocked=web["frameable"] == "no",
+        body=refused,
+        class_name="player is-full browser",
+    )
+    return rx.fragment(
+        frame,
+        rx.cond(
+            (web["url"] != "") & (web["frameable"] == "unknown"),
+            rx.el.div(
+                "Blank? This site may not allow being shown here: use Open ↗.", class_name="browser-hint dim sans"
+            ),
+        ),
+    )
+
+
 def video_widget(view: rx.Var[ViewData], send: Any, actions: tuple[rx.Component, ...]) -> rx.Component:
     """VODs (match videos): the list, and the video picked from it playing above the list.
 
@@ -1709,31 +1845,26 @@ def video_widget(view: rx.Var[ViewData], send: Any, actions: tuple[rx.Component,
     """
     playing = view.playing
     hidden = view.list_hidden
+    # the Browser widget's frame (web_frame), with the list's own button and close
     player = rx.cond(
         playing["id"],
-        rx.el.div(
-            rx.el.div(
-                rx.el.span(playing["title"], class_name="player-title"),
+        web_frame(
+            rx.el.span(playing["title"], class_name="player-title"),
+            src=rx.cond(view.autoplay, f"{playing['embed']}?autoplay=1", playing["embed"]),
+            url=playing["url"],
+            key=playing["id"],
+            extra=(
                 rx.el.button(
                     rx.cond(hidden, "Show list ▾", "Hide list ▴"),
                     title="Show or hide the video list under the player",
                     on_click=send("toggle_list"),
                     class_name="act",
                 ),
-                rx.el.a("YouTube ↗", href=playing["url"], target="_blank", rel="noreferrer", class_name="act"),
-                rx.el.button("×", title="Close the player", on_click=send("stop"), class_name="act"),
-                # the list's bar (with its float button) is
-                # hidden while the video fills the view
-                rx.cond(hidden, float_button()),
-                class_name="player-bar sans",
             ),
-            rx.el.iframe(
-                src=rx.cond(view.autoplay, f"{playing['embed']}?autoplay=1", playing["embed"]),
-                allow="autoplay; encrypted-media; picture-in-picture; fullscreen",
-                # YouTube refuses to play (error 153) when the embedding page sends no referrer
-                referrer_policy="strict-origin-when-cross-origin",
-                key=playing["id"],
-                class_name="player-frame",
+            # the list's bar (with its float button) is hidden while the video fills the view
+            after=(
+                rx.el.button("×", title="Close the player", on_click=send("stop"), class_name="act"),
+                rx.cond(hidden, rx.fragment(float_button(), close_view_button(send))),
             ),
             class_name=rx.cond(hidden, "player is-full", "player"),
         ),

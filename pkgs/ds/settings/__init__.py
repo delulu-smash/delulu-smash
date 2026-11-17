@@ -31,33 +31,40 @@ class ApiKey(SecretStr):
 class Settings(BaseModel):
     """Application settings."""
 
-    # Pydantic API key (`pylf_...`, full access) in keyring; used by all ds.ai model calls (the
-    # Gateway) and by ds.data.raw.logfire (AI spend queries)
-    pydantic_gateway_api_key: ApiKey | None = None
+    # Two Pydantic (Logfire) keys in keyring:
+    # project key: all ds.ai model calls (the Gateway, as PYDANTIC_AI_GATEWAY_API_KEY) and
+    # ds.data.raw.logfire (AI spend queries over the project's traces)
+    pydantic_project_api_key: ApiKey | None = None
+    # organization key: ds.data.raw.gateway only (spending limits; the Gateway refuses it)
+    pydantic_org_api_key: ApiKey | None = None
     # start.gg personal API token in keyring; used by ds.data.raw.startgg (create one at
     # https://start.gg/admin/profile/developer)
     startgg_api_token: ApiKey | None = None
 
 
 def set_settings(
-    pydantic_gateway_api_key: str | None = None,
+    pydantic_org_api_key: str | None = None,
+    pydantic_project_api_key: str | None = None,
     startgg_api_token: str | None = None,
 ) -> None:
     """Set application settings. Secrets (eg api keys) go in keyring; None keeps a value"""
     global SETTINGS  # noqa: PLW0603  # module-level settings by design, read through get_settings()
-    if pydantic_gateway_api_key is not None:
-        keyring.set_password(KEYRING_SERVICE_NAME, "PYDANTIC_AI_GATEWAY_API_KEY", pydantic_gateway_api_key)
     if startgg_api_token is not None:
         keyring.set_password(KEYRING_SERVICE_NAME, "STARTGG_API_TOKEN", startgg_api_token)
+    if pydantic_project_api_key is not None:
+        keyring.set_password(KEYRING_SERVICE_NAME, "PYDANTIC_PROJECT_API_KEY", pydantic_project_api_key)
+    if pydantic_org_api_key is not None:
+        keyring.set_password(KEYRING_SERVICE_NAME, "PYDANTIC_ORG_API_KEY", pydantic_org_api_key)
     # ensures global setting variable has updates
     SETTINGS = init_settings()
 
 
 def init_settings() -> Settings:
     """Getting & Initializing settings  (eg setting ones to proper cli env variables)"""
-    pydantic_gateway_api_key = keyring.get_password(KEYRING_SERVICE_NAME, "PYDANTIC_AI_GATEWAY_API_KEY")
-    if pydantic_gateway_api_key:
-        os.environ["PYDANTIC_AI_GATEWAY_API_KEY"] = pydantic_gateway_api_key
+    pydantic_project_api_key = keyring.get_password(KEYRING_SERVICE_NAME, "PYDANTIC_PROJECT_API_KEY")
+    if pydantic_project_api_key:
+        # pydantic-ai's `gateway/...` models read the key from this variable
+        os.environ["PYDANTIC_AI_GATEWAY_API_KEY"] = pydantic_project_api_key
     # setdefault so an explicitly exported URL (eg another region) still wins
     os.environ.setdefault("PYDANTIC_AI_GATEWAY_BASE_URL", GATEWAY_BASE_URL)
     # an exported STARTGG_API_TOKEN wins over the keyring (eg CI, a one-off shell)
@@ -65,7 +72,8 @@ def init_settings() -> Settings:
         KEYRING_SERVICE_NAME, "STARTGG_API_TOKEN"
     )
     return Settings(
-        pydantic_gateway_api_key=pydantic_gateway_api_key,
+        pydantic_project_api_key=pydantic_project_api_key or None,
+        pydantic_org_api_key=keyring.get_password(KEYRING_SERVICE_NAME, "PYDANTIC_ORG_API_KEY") or None,
         startgg_api_token=startgg_api_token or None,
     )
 

@@ -7,7 +7,7 @@
 #
 # Example CLI Commands:
 #   1. The server in the foreground (what the service runs):  ds ui run
-#   2. Restart, eg after `ds settings sync`:                  ds ui restart
+#   2. Restart, eg after changing dependencies:              ds ui restart
 #   3. Is it up?                                              ds ui status
 # ---------------------------------------------------------------------------
 from __future__ import annotations
@@ -62,7 +62,7 @@ def run() -> None:
 def restart() -> None:
     """Restart delulu-smash (its service; starts it when stopped) and wait until it answers
 
-    Its server reads stored keys once at start, so run this after `ds settings sync`.
+    Its server reads stored keys once at start; `ds settings sync` runs this itself.
     """
     run_cmd(["systemctl", "--user", "restart", APP_SERVICE])
     typer.echo(f"Waiting for {APP_NAME} to answer (up to about a minute)...")

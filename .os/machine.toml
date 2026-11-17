@@ -53,6 +53,7 @@ pacman = [
     "gnome-keyring",
     "wl-clipboard",
     "libnotify",
+    "owe-lockfeed",
 ]
 aur = [
     "eden-bin",
@@ -69,6 +70,17 @@ aur = [
     "min",
     "vieb-bin",
 ]
+
+[packages.desktop]
+# Only on machines whose role is desktop (.os/local.toml, set on the first `os sync`).
+pacman = [
+    "kdenlive",
+    "obs-studio",
+]
+
+[packages.laptop]
+# Only on laptops.
+pacman = []
 
 [ignore]
 # Never synced: `os sync` leaves these alone on every machine and never asks about them.

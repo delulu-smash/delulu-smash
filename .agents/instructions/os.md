@@ -25,6 +25,11 @@
   Don't run `os sync` for the user without `--dry-run`: it asks questions and changes the machine.
 - `save file:<path under $HOME>` on a path not yet under `[files]` starts tracking it. For something wanted
   on this machine only, add it to `[ignore]` (packages, web apps) instead of saving it.
+- Each machine has a role, `desktop` or `laptop`, in the git-ignored `.os/local.toml` (`os role` shows or
+  sets it; `sync` / `save` ask for it once). Packages for one role go under `[packages.desktop]` /
+  `[packages.laptop]`, files for one role use `"desktop"` / `"laptop"` under `[files]`. `save` saves a
+  package to the shared list; move it to a role's section by hand when the user wants it on one role only.
+  Without a role, `save` stops (it can't ask from an agent's shell): tell the user to run `os role <role>`.
 - `os sync` applies through the Omarchy CLI (`omarchy pkg add`, `omarchy webapp install`, `omarchy theme set`,
   ...) and only copies plain files for the user-owned ones listed under `[files]`. Keep it that way: don't
   write Omarchy's own state files directly, and never edit `/usr/share/omarchy/`.

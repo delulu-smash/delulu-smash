@@ -83,7 +83,7 @@ about a SQL table (primary key, foreign keys, grain), not as an arbitrary data d
   - **Tag what comes from its docs** with `# ds::external-source:` (see
     `.agents/skills/external-review/SKILL.md`), so the review skill can re-check it.
 - New secrets (API keys, tokens) are a `Settings` field stored in the keyring and prompted for by
-  `ds settings sync`, like `pydantic_gateway_api_key`. Never a committed value or a loose `.env`.
+  `ds settings sync`, like `pydantic_project_api_key`. Never a committed value or a loose `.env`.
 - smash-tube.com (YouTube match video search, `pkgs/ds/data/raw/smashtube.py`, agent tool in
   `pkgs/ds/ai/smashtube.py`) is server-rendered PHP: plain HTML per video, characters sent as Japanese names
   (`SITE_CHARACTER` maps `char.id` to them), and the result page answers 403 without browser-like headers. Read

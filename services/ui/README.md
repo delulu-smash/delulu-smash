@@ -2,6 +2,11 @@
 
 # delulu-smash
 
+> *The simplicity & efficiency of Omarchy, the exploration of Jupyter, the composability of VS Code, and the
+> extensibility & flexibility of Pi: your desktop hub.*
+>
+> The design rules that follow from this: `spec/services/ui/README.md` ("The spirit of the app").
+
 A browser workbench built with [Reflex](https://reflex.dev), in the spirit of
 `experimental/textual-kernel`: chat with the Smash agent (`ds.ai.agent`) across the top; below
 it, everything its tools return shows up as a tab named `r1`, `r2`, … (tables as sortable, filterable
@@ -27,7 +32,7 @@ if it isn't up, the shortcut starts it and opens the window once it answers (col
 a minute). It's also in the app launcher as the delulu-smash web app. All of this is tracked by `os sync`.
 
 ```sh
-ds ui restart                              # eg after changing dependencies or `ds settings sync`
+ds ui restart                              # eg after changing dependencies (`ds settings sync` runs it itself)
 ds ui status                               # up / down
 journalctl --user -u delulu-smash -f       # server logs
 ```
@@ -56,9 +61,17 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   Requests tab. The cost is what the Pydantic AI Gateway reported
   (pydantic-ai falls back to its bundled genai-prices data; `$?` when neither knows). Input counts each request's
   whole prompt, so a turn with tool calls counts the history once per request.
-  The chat title has a context meter: the conversation's size (the last request's input + output, what the next
+  The window's title bar (beside `delulu-smash`, so it shows whichever panels are open) has a context
+  meter, eg `context 4% · this session $0.0001` (hovering it shows the tokens in place of the percent, eg `43k / 1M tokens`): the conversation's size (the last request's input + output, what the next
   turn sends again) against the model's context window (from pydantic-ai's model profile), as tokens and a whole
   percent, and what the AI cost so far (chat turns and inline chats). It turns yellow past half full: answers there are slower and dearer, and a new chat starts small.
+  Both are always there: the context meter starts at `context 0% · this session $0`,
+  and next to it this month's spend: `month $-- / $-- (--%)` and `as of --` until read, then eg `month $1.91 / $15 (13%)` (or
+  `· no limit` / `· limit unknown`, the tooltip says why; colours as the Spend tab's). Monthly only (see the
+  Spend tab below),
+  in a thin box ending with when they were read, eg `as of 11/17 15:42`: they aren't live. Read once when the app
+  opens (1 Logfire query, its project info, 3 limit lookups) and again on the Spend tab's Refresh;
+  a click opens that tab. A failed read keeps the last numbers and says so in the tooltip.
 - **Debug log** (bug icon in the title bar, `Alt+D`): every outside call the app made, newest first:
   start.gg GraphQL requests (operation, page, status, time, start.gg's object count), other HTTP fetches
   (supermajor search, smash-tube), agent turns (time, tool calls, tokens, cost; a `model requests` section lists each model request's tokens, cost, why it stopped and the tools it called) and tool steps (a tool step has a `tool response` section, folded
@@ -119,23 +132,27 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   - **Spend** (`ui/spend.py`, `ds.data.raw.logfire`, `ds.data.raw.gateway`): AI spend from Logfire, so
     every machine and app that traces there (chat, inline chats, evals), not only this session, next to
     the Gateway's spending limits:
-    - **Tiles**: Today / This week / This month in UTC (the limit windows; assumed, the Gateway's docs
-      don't say), each against the tighter of the project's and the organization's limit, with a meter
-      (green, yellow from 75%, red from 90%; the share is written beside it). One "Limits:" line names
-      both levels' limits.
-    - **Chart**: a bar per day (local days, last 30) on a $ scale with a y axis (top, half, 0); a daily
-      limit, when one is set, is a dashed labelled line (pinned to the top when it's above the scale).
+    - **This month** (UTC; the cap's window, assumed, the Gateway's docs don't say), against the tighter
+      of the project's and the organization's monthly cap, written as the Gateway's own page does:
+      `$1.44 of $15.00`, a meter (green, yellow from 75%, red from 90%), then `$13.56 remaining · 9% used`;
+      `· No limit` when none is set, `· limit unknown` when they can't be read. One "Limits:" line names
+      both levels' monthly caps. **Monthly only**: no today / this week figures or daily / weekly caps
+      (the Gateway has them; they aren't read), since the traced daily figure didn't match the Gateway's
+      billed one (haiku traces carry no cost) and the monthly cap is the one in use.
+    - **Chart**: a bar per day (local days, last 30) on a $ scale with a y axis (top, half, 0): the
+      history, not a limit.
     - A split by agent and model, the priciest requests (copy a trace id to find it in Logfire).
     - Asked only when you click the Spend tab or its Refresh (the panel always opens on Requests): Logfire's
       query API (three requests) and its management API for the limits (three more), each logged in the
       Requests tab; nothing stored.
-    - Needs the Pydantic API key (`ds settings sync`, then restart the app); reading the limits needs it to
-      have `organization:read_gateway`. Without the key the tab says how to get it; without that scope it
-      shows spend and says why the limits are missing. Only priced, traced calls count (a model the Gateway
+    - Needs both Pydantic keys `ds settings sync` stores (it then restarts the app): the project key
+      for the spend (the chat's key too), the organization key (with `organization:read_gateway`)
+      for the limits; the Gateway refuses the organization key for model calls. Without the project key the tab says how to get it;
+      without a working organization key it shows spend and says why the limits are missing. Only priced, traced calls count (a model the Gateway
       has no price for counts as $0, and the note says how many).
     The agents' info needs no request (read from the Agent objects; prices from genai-prices' bundled data).
   - **Agents** (`ui/agents.py`): each agent the app runs (`smash-agent` for the chat and `ds ai eval`,
-    `inline-edit` for Alt+A in an editor, `inline-fill` for Alt+A in a widget's form) with its model, provider, context window, list price per 1M tokens (genai-prices),
+    `inline-edit` for Alt+I in an editor, `inline-fill` for Alt+I in a widget's form) with its model, provider, context window, list price per 1M tokens (genai-prices),
     model settings, output type and retries, then what the model is actually given, named as pydantic-ai
     names it: the agent's `instructions` (its prompt), and each capability with whether it is deferred
     (`defer_loading=True`) or always-on, its `description`, its own `instructions` and its `tools` (each
@@ -264,6 +281,9 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   -> grid; `MatchVideos` (the agent's `find_match_videos`, smash-tube.com) -> thumbnail gallery; any other
   pydantic model -> its fields, with lists of models as small tables; `DbConsole` -> the SmashDb console;
   everything else -> its repr.
+  Every widget's bar ends with its float button (⤢, Alt+F) and a × (`render.close_view_button`), which
+  closes it as fits where it is shown (`State._close_view`): a Results tab closes, a glance closes (the
+  layout goes back), a chat row folds (the row stays), a cell's output is hidden.
   It is two matches, because Reflex compiles components ahead of time and the browser never sees the
   Python object: `to_view(value)` is a Python `match` on the value's type (run when a cell or tool
   returns), and `render_component(view)` picks the component for the view's kind. To add a type, add a
@@ -344,7 +364,7 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   - **One method call, at the end** (`mentions.CALLS`): `@big.describe()`, `@q1.head(5)`,
     `@sets.char.value_counts()`, `@q1.sort("wins", descending=True)`,
     `@big.sql("select char, count(*) n from self group by 1")`. So you pick what the AI sees of a big table
-    (also where the AI has no tools: a form's Ask AI row, `Alt+A`). The rules:
+    (also where the AI has no tools: a form's Ask AI row, `Alt+I`). The rules:
     - Only read-only methods on the list. A table (DataFrame): `head`, `tail`, `sample`, `slice`, `describe`,
       `sort`, `unique`, `drop_nulls`, `null_count`, `top_k`, `bottom_k`, `sum`, `mean`, `median`, `min`, `max`,
       `select`, `drop`, `sql`. A column (Series): the same without the last three, plus `value_counts`,
@@ -417,13 +437,13 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
       irregular data it copies. About 30 to 60 s and a few cents; at most 15 model requests.
     - A folded `from_url` row under the code says what was done (page text or browser, clicks, copied or
       parsed, rows, time, cost); unfold it for every browser step and every parser tried, with its result.
-      The downloads and AI calls are in the debug log (`from_url`), the cost on the chat title's meter.
+      The downloads and AI calls are in the debug log (`from_url`), the cost on the title bar's context meter.
     - What isn't on the page is `Not assigned: from_url didn't find it: <why>`; nothing is bound. Only
       public http(s) pages are read. Runs differ: the AI decides what to click, so check the row count.
   - **The AI**: one request, no tools; it reads the chat so far, your variables (and what `@` mentions hold)
     and the SmashDb tables. A proposal that isn't an assignment, or misses the name you gave, goes back to the
     model up to twice. Logged as `inline-assign` in the debug log, with its own card in the Agents tab; its
-    cost is on the chat title's meter.
+    cost is on the title bar's context meter.
 - **`/script`: scripts the AI saves for itself** (`pkgs/ds/ai/scripts.py`; what must hold is in
   `spec/pkgs/ds/ai/scripts.md`). A `from_url` run that used the browser can be kept as a small Python file
   that gets the same data later with no AI (about 5 s, free, instead of 30 s and a few cents).
@@ -455,7 +475,8 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
 - **Keyboard shortcuts** are all defined once, in `ui/shortcuts.py`, as the `Shortcut` enum named
   by what they do (`Shortcut.FULL_SCREEN`, `Shortcut.RUN`, …). The help panel, tooltips, the cell editor's
   keymap (`codemirror_keys`) and `assets/panes.js` (`window.SHORTCUTS`) all read it: change a key there only.
-- **Panes**: the bottom bar toggles Chat, Results (Alt+R), Python (Alt+J, J for Jupyter; Alt+P is the command palette) and Variables (Alt+V), as in Zed. `Alt+Shift+J` works the Python and Variables panes as a pair: it shows both (so with one open it opens the other), and hides both only when both are open. (Neither letter follows
+- **Panes**: each pane's title has an expand arrow (full screen) and a × that closes it (as its toggle; closing a
+  full-screen pane goes back to the layout without it). The bottom bar toggles Chat (Alt+A, A for AI), Results (Alt+R), Python (Alt+J, J for Jupyter; Alt+P is the command palette) and Variables (Alt+V), as in Zed. Add Shift to make that pane full screen, from anywhere and even when it is hidden (`Alt+Shift+A` / `R` / `J` / `V`; the same key again restores the panes; `Alt+F` does it for the pane you are in). `Alt+Ctrl+J` works the Python and Variables panes as a pair: it shows both (so with one open it opens the other), and hides both only when both are open. (Neither letter follows
   Omarchy, where `SUPER+P` / `SUPER+J` are window layout actions with nothing comparable here.) Only the chat
   shows at first (results also unfold inline in it, and `open →` brings up Results); a pane
   whose neighbour is hidden takes the freed space. Hidden cells keep their text.
@@ -505,7 +526,24 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   the list folds away so the video fills the component, and "Show list" in the player's bar brings it
   back under the player. It works the same in a tab and in a cell's result, each with its own picked
   video. Leaving a tab stops its video; it is back, paused, when you return. Prev / Next fetch the search's other
-  pages. Videos whose uploader disabled embedding show YouTube's own message; use the "YouTube ↗" button.
+  pages. Videos whose uploader disabled embedding show YouTube's own message; use the "Open ↗" button.
+  The player is the Browser widget's frame (`render.web_frame`) with the list's own button added.
+- **Browser** (kind `browser`, `ui/web.py`; `+` → Browser): a web page in a frame, under an address box
+  (Enter loads what you type; `https://` is added when missing), `Alt+← Back · Alt+→ Forward` (the browser's own keys:
+  they step through pages followed by clicking inside the page) and "Open ↗" (a real browser tab). A link
+  clicked in a widget (`render.link`) or in the AI's answer opens here, **as a glance** (as in Zen): the one
+  `web` tab's Browser floats over the app; Esc or a click outside closes it and puts the layout back as it
+  was, its float button (or Alt+F) docks it into Results as the `web` tab. The next link loads into the same
+  tab. Ctrl / Shift / middle click still opens a real browser tab. Some links are rewritten to a form a frame
+  can show (`web.EMBED_RULES`, eg a YouTube watch link to its embed player). Many sites (GitHub, SmashWiki,
+  start.gg, X) refuse to be framed (`X-Frame-Options` / CSP `frame-ancestors`, against clickjacking), which
+  the page itself can't detect. So a clicked link's site is checked first (`web.frameable`, `GET /frameable`:
+  one logged HEAD request, given up after 0.5 s, not cached): a site that refuses opens in a real browser
+  tab instead; a slow or failed check opens the glance anyway, and the hint under it says to use Open ↗.
+  An address typed in the Browser is checked the same way: a refusing site shows a card in the frame's place
+  (`github.com can't be shown here (x-frame-options: deny)` and a big "Open in new tab ↗"), not a blank
+  frame. The hint only shows when the check had no answer. GitHub can take ~0.6 s the first time a page is
+  asked for (then ~60 ms), so a first check may miss the 0.5 s limit and fall back to the hint.
 - **Python cells**: Jupyter-style, each a CodeMirror editor with Everforest syntax colors.
   Shift+Enter runs a cell and moves to the next (adding one after the last), Ctrl+Enter runs in
   place, Tab indents. **The console has no buttons of its own: it is worked from the keyboard**, from the
@@ -525,7 +563,7 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   against the live variables, so `r1.` lists real DataFrame methods. `jedi` is present in the root
   venv only as a dependency of IPython; add it to the root `pyproject.toml` if that changes.
 - **Inline chat** (as Copilot's Ctrl+I; `ui/inline_edit.jsx` + `inline_edit.py`): in a Python
-  cell or a SmashDb console's SQL box, `Alt+A` opens a prompt box under the editor. The AI also reads the
+  cell or a SmashDb console's SQL box, `Alt+I` opens a prompt box under the editor. The AI also reads the
   chat so far (its answers and tool results), so "a query for the move we just talked about" works; slower
   and costlier the longer the chat is. (A second key that left the chat out was dropped, Nov 2026.)
 
@@ -540,12 +578,12 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   model with the error, up to twice. It only reads the chat: an inline call is not added to it, and it has
   none of the chat agent's tools. Each call is one record in the debug log, with the same usage as a chat
   turn (tokens, cost, `model requests`), and the box's status line ends with what the call used
-  (`$0.0004 · 9.2k in · 120 out · 1 request`). Its cost is added to the chat title's meter; the meter's size
+  (`$0.0004 · 9.2k in · 120 out · 1 request`). Its cost is added to the title bar's context meter; the meter's size
   stays the chat's, since the call isn't added to the chat. Another editor gets it by
   passing `edit_url` (`editor.py`).
 - **Inline chat in a widget** (`ui/inline_fill.py`; what must hold is in
   `spec/services/ui/inline_ai.md`): a widget with a tool form works like a function, inputs in
-  and a result out, so there the same `Alt+A` (or the robot button next to `Inputs`) asks the AI for the
+  and a result out, so there the same `Alt+I` (or the robot button next to `Inputs`) asks the AI for the
   **inputs**. The form unfolds with an Ask AI row on top: type `sparg0 vs steve, offline, last 90 sets`, Enter.
   The form then shows the AI's inputs, the changed ones outlined (hover one for its old value), and a line with
   what the call used (`2 changed · $0.0003 · 2.4k in · 40 out · 1 request`).
@@ -561,8 +599,8 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   - Generic: nothing is written per widget. A widget gets it by having a `tool` in `widgets.py`. Today that is
     VODs and Player usage; a not-yet-run form (`+`) works too.
   - Logged and counted like the editor's inline chat: one `inline-fill` record in the debug log (its `↖` goes
-    to the result), its cost on the chat title's meter, its own row in the debug panel's Agents and Spend tabs.
-  - Inside the SmashDb console's SQL box, `Alt+A` is still the code inline chat.
+    to the result), its cost on the title bar's context meter, its own row in the debug panel's Agents and Spend tabs.
+  - Inside the SmashDb console's SQL box, `Alt+I` is still the code inline chat.
   - Not covered: the things a view changes without its tool (a table's filter, sort and `SQL ▸`, the usage
     view's window, the videos page), and table results (head to head, tournaments, frame data), which have no
     tool form yet (the spec says why).

@@ -14,6 +14,7 @@ import io
 import itertools
 import keyword
 import linecache
+import math
 import sys
 import time
 import traceback
@@ -124,8 +125,18 @@ def tokens_text(count: int) -> str:
 
 
 def cost_text(cost: float | None) -> str:
-    """US dollars, enough digits for a fraction of a cent ($0.0011); '$?' when unknown."""
-    return "$?" if cost is None else f"${cost:.2g}" if cost < 0.1 else f"${cost:.2f}"
+    """US dollars, enough digits for a fraction of a cent ($0.0011, $0.000025, never
+    scientific notation); '$?' when unknown.
+    """
+    if cost is None:
+        return "$?"
+    if cost >= 0.1:
+        return f"${cost:.2f}"
+    if cost <= 0:
+        return "$0"
+    # two significant digits: as many decimals as the first non-zero one needs, plus one
+    # (a trailing zero dropped: $0.0001, not $0.00010)
+    return f"${cost:.{1 - math.floor(math.log10(cost))}f}".rstrip("0")
 
 
 @dataclass

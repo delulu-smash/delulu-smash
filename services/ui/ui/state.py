@@ -35,6 +35,7 @@ from ui.session import (
 )
 from ui.tool_forms import ToolRequest
 from ui.typeinfo import NO_TYPE, type_parts
+from ui.web import WebPage, frameable, normalize
 from ui.widgets import form_for, widget_of
 
 logs.install()
@@ -199,12 +200,17 @@ def _json_size(value: Any) -> int:
         return 0
 
 
+# the name of the one Browser tab a clicked link opens in (State.browse)
+WEB_TAB = "web"
+
+
 class State(rx.State):
     # Chat is a flat list so it renders with one foreach.
     chat: list[ChatItem] = []
     streaming: str = ""
     busy: bool = False
-    # the chat title's meter: the conversation's size (the last model request's input + output)
+    # the title bar's context meter: the conversation's size (the last model request's
+    # input + output)
     # against the model's context window, and what the
     # agent turns cost so far (session.TurnUsage)
     context_tokens: int = 0
@@ -281,7 +287,6 @@ class State(rx.State):
     spend_tiles: list[dict[str, str]] = []
     spend_bars: list[dict[str, str]] = []
     spend_axis: list[dict[str, str]] = []
-    spend_limit_line: dict[str, str] = {}
     spend_limits: str = ""
     spend_rows: list[dict[str, str]] = []
     spend_top: list[dict[str, str]] = []
@@ -289,6 +294,13 @@ class State(rx.State):
     spend_project_url: str = ""
     spend_gateway_url: str = ""
     spend_balance_url: str = ""
+    # the title bar's spend meters (spend.SpendView.meters): read once when the app opens,
+    # and again whenever the Spend tab loads (its Refresh); a failed read keeps the last ones
+    # a link opened as a glance (browse): the layout before it, so closing it puts that back;
+    # {} when no glance is open
+    glance_from: dict[str, str] = {}
+    spend_meters: list[dict[str, str]] = spend.placeholder_meters()
+    spend_as_of: str = ""  # when they were read, eg '11/17 15:42'; '' until then
     # the System tab (perf.py): read when the tab opens or on Refresh; tables are rows of text
     perf_tiles: list[dict[str, str]] = []
     perf_memory: list[dict[str, str]] = []
@@ -468,18 +480,16 @@ class State(rx.State):
         return min(100, round(100 * self.context_tokens / self.context_max)) if self.context_max else 0
 
     @rx.var
-    def context_label(self) -> str:
-        """The meter's text, eg '43k / 1M (4%) · $0.012'; ''
-        before the first AI call (chat or inline).
-        """
-        if not self.context_tokens and not self.chat_cost:
-            return ""
-        size = (
-            f"{tokens_text(self.context_tokens)} / {tokens_text(self.context_max)} ({self.context_pct}%)"
-            if self.context_max
-            else tokens_text(self.context_tokens)
-        )
-        return f"{size} · {self.chat_cost}"
+    def context_size(self) -> str:
+        """The meter's size, shown: '4%' (the token count when the window is unknown)."""
+        return f"{self.context_pct}%" if self.context_max else tokens_text(self.context_tokens)
+
+    @rx.var
+    def context_tokens_text(self) -> str:
+        """The meter's size, on hover (it replaces context_size): '43k / 1M tokens'."""
+        if not self.context_max:
+            return f"{tokens_text(self.context_tokens)} tokens"
+        return f"{tokens_text(self.context_tokens)} / {tokens_text(self.context_max)} tokens"
 
     @rx.var
     def chat_on(self) -> bool:
@@ -563,6 +573,8 @@ class State(rx.State):
         if any(isinstance(item, dict) for item in self.chat):
             self.chat = [ChatItem(**item) if isinstance(item, dict) else item for item in self.chat]
         self._sync()
+        self._sync_usage()  # the context meter shows from the start (0 tokens)
+        return State.load_spend_meters
 
     @event
     def select_object(self, name: str):
@@ -832,7 +844,7 @@ class State(rx.State):
         self._load_debug()
 
     def _sync_usage(self) -> None:
-        """The chat title's meter from the session: the
+        """The title bar's context meter from the session: the
         chat's size and what the AI cost so far.
         """
         session = self._session()
@@ -909,11 +921,42 @@ class State(rx.State):
             self.spend_loading = False
             self.spend_status, self.spend_error, self.spend_note = view.status, view.error, view.note
             self.spend_tiles, self.spend_bars = view.tiles, view.bars
-            self.spend_axis, self.spend_limit_line, self.spend_limits = view.axis, view.limit_line, view.limits
+            self.spend_axis, self.spend_limits = view.axis, view.limits
             self.spend_rows, self.spend_top = view.rows, view.top
             self.spend_project_url = view.project_url
             self.spend_gateway_url = view.gateway_url
             self.spend_balance_url = view.balance_url
+            self._set_meters(view)
+
+    def _set_meters(self, view: spend.SpendView) -> None:
+        """The title bar's spend meters from a load; a failed one keeps the last meters."""
+        if view.status == "ok":
+            self.spend_meters, self.spend_as_of = view.meters, view.as_of
+            return
+        problem = view.error or "see the Spend tab"
+        self.spend_meters = [
+            m | {"title": f"{m['title'].split(' Last read failed:')[0]} Last read failed: {problem}"}
+            for m in self.spend_meters
+        ]
+
+    @rx.event(background=True)
+    async def load_spend_meters(self):
+        """The title bar's spend meters, when the app opens: 1 Logfire query, its project
+        info and the 3 limit lookups, off the event loop.
+        """
+        async with self:
+            log_context = self._log_context("title bar")
+        with log_context:
+            view = await asyncio.to_thread(spend.load, spend.DAYS, top=False)
+        async with self:
+            self._set_meters(view)
+
+    @event
+    def open_spend(self):
+        """A title-bar spend meter: the debug panel on its Spend tab (which loads it)."""
+        self.menu_tab, self.add_menu, self.show_help = "", False, False
+        self.show_debug, self.debug_tab = True, "spend"
+        return State.load_spend
 
     @event
     def refresh_debug(self):
@@ -977,6 +1020,23 @@ class State(rx.State):
         if (inputs := rerun_inputs(view, action, arg)) is not None:
             async for update in self._run_form(slot, view, ui, inputs):
                 yield update
+            return
+        if action == "close":
+            self._close_view(slot)
+            return
+        if action == "navigate":
+            # the Browser's address box: the same slot shows the new page, checked first (one
+            # logged request, 0.5 s at most) so a site that refuses framing gets its card
+            url = normalize(str(arg.get("url", "") if isinstance(arg, dict) else arg))
+            ok, why = (None, "")
+            if url:
+                with self._log_context("view", slot=slot):
+                    ok, why = await frameable(url)
+            session.put(slot, WebPage(url=url, frameable=ok, why=why))
+            if slot.startswith(("tab:", "chat:")):
+                self._sync()  # the tab's label is the page's host
+            else:
+                self._show(slot)
             return
         if action == "db_save":
             name = arg.get("var_name", "") if isinstance(arg, dict) else arg  # the Save as form
@@ -1213,6 +1273,71 @@ class State(rx.State):
         async for update in self._ask_ai(slot, view, session.ui.setdefault(slot, Ui()), {}, ask):
             yield update
 
+    @event
+    def browse(self, form: dict[str, Any]):
+        """A link clicked anywhere (assets/panes.js submits the hidden browse form): the page
+        in the one `web` Browser tab, which panes.js then floats over the app (a glance, as in
+        Zen). The layout before it is kept, so closing the glance (close_glance) puts it back.
+        """
+        url = normalize(str(form.get("url", "")))
+        if not url:
+            return
+        session = self._session()
+        if not self.glance_from:
+            self.glance_from = {
+                "show_results": "1" if self.show_results else "",
+                "zoomed": self.zoomed,
+                "selected": self.selected,
+            }
+        session.closed.pop(WEB_TAB, None)  # a closed `web` tab opens again
+        # panes.js already asked (a refused link opened in a real tab): "true", or "" (unknown)
+        session.namespace[WEB_TAB] = WebPage(url=url, frameable=True if form.get("frameable") == "true" else None)
+        session.sources[WEB_TAB] = "browser"
+        session.ui.setdefault(f"tab:{WEB_TAB}", Ui())
+        self._reveal_results()
+        self._sync(prefer=WEB_TAB)
+
+    def _close_view(self, slot: str) -> None:
+        """A view's × (render.close_view_button), as fits where it is shown: a Results tab
+        closes (a glance closes as Esc would), a chat row folds, a cell's output is hidden.
+        """
+        kind, _, key = slot.partition(":")
+        if kind == "tab" and key == WEB_TAB and self.glance_from:
+            self._close_glance()
+        elif kind == "tab":
+            self._close([key])
+        elif kind == "chat":
+            for index, item in enumerate(self.chat):
+                if item.kind == "ref" and item.name == key and item.open:
+                    self.chat[index] = dataclasses.replace(item, open=False, view=ViewData())
+        elif kind == "cell":
+            session = self._session()
+            session.outputs.pop(key, None)
+            session.ui.pop(slot, None)
+            if (index := self._cell_index(key)) >= 0:
+                self._update(index, view=ViewData())
+
+    @event
+    def close_glance(self):
+        """Esc or a click outside a glance (panes.js): close the `web` tab and put the layout
+        back as it was before the link was clicked. Its dock button keeps it instead
+        (dock_glance).
+        """
+        self._close_glance()
+
+    def _close_glance(self) -> None:
+        before, self.glance_from = self.glance_from, {}
+        if not before:
+            return
+        self._session().close_tabs([WEB_TAB])
+        self.show_results, self.zoomed = bool(before["show_results"]), before["zoomed"]
+        self._sync(prefer=before["selected"])
+
+    @event
+    def dock_glance(self):
+        """The glance's dock (float) button: it stays as the `web` tab in Results."""
+        self.glance_from = {}
+
     def _reveal_results(self) -> None:
         """Make sure the results pane is on screen (eg
         a video was opened from a zoomed cell).
@@ -1245,6 +1370,19 @@ class State(rx.State):
             setattr(self, name, not getattr(self, name))
         if self._vars_on():
             self._sync_vars()  # not kept current while hidden
+
+    @event
+    def hide_pane(self, pane: str):
+        """A panel's close button: hide it, as its bottom-bar toggle does. Closing the panel
+        that fills the window (zoomed) also goes back to the normal layout, without it.
+        """
+        if pane not in ("chat", "results", "python", "variables"):
+            return
+        setattr(self, f"show_{pane}", False)
+        if self.zoomed == pane:
+            self.zoomed = ""
+        if self._vars_on():
+            self._sync_vars()
 
     @event
     def toggle_python_variables(self):

@@ -106,12 +106,25 @@ def _request_fields(method: str, url: str, kwargs: dict[str, Any]) -> dict[str, 
     return {"method": method.upper(), "url": str(full), "params": dict(full.params) or None}
 
 
+def _sent_body(request: httpx2.Request) -> Any:
+    """The body as logged; None when httpx2 never read it into memory (eg a request it built
+    itself to follow a redirect, whose content is a stream: reading it raises RequestNotRead).
+    """
+    try:
+        content = request.content
+    except httpx2.RequestNotRead:
+        return None
+    return _body(content, request.headers.get("content-type", ""))
+
+
 def _response_fields(resp: httpx2.Response) -> dict[str, Any]:
     request = resp.request
+    # the request as the caller sent it: the first one, before any redirect
+    sent = resp.history[0].request if resp.history else request
     fields: dict[str, Any] = {
-        "url": str(request.url) if not resp.history else str(resp.history[0].request.url),
+        "url": str(sent.url),
         "request_headers": filter_headers(request.headers),
-        "request_body": _body(request.content, request.headers.get("content-type", "")),
+        "request_body": _sent_body(sent),
         "status": resp.status_code,
         "content_type": resp.headers.get("content-type", "").split(";")[0] or None,
         "bytes": len(resp.content),

@@ -310,12 +310,12 @@ AGENTS: list[AgentInfo] = [
     _info(ds.ai.agent, "The chat (and `ds ai eval`, which runs it)", "pkgs/ds/ai/agent.py"),
     _info(
         edit_agent,
-        "Inline chat in a cell or SQL box (Alt+A)",
+        "Inline chat in a cell or SQL box (Alt+I)",
         "services/ui/ui/inline_edit.py",
     ),
     _info(
         fill_agent,
-        "Inline chat in a widget's tool form: fills its inputs (Alt+A)",
+        "Inline chat in a widget's tool form: fills its inputs (Alt+I)",
         "services/ui/ui/inline_fill.py",
     ),
     _info(

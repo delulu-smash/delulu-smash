@@ -114,7 +114,14 @@ COMMANDS: list[Command] = [
         for w in ADDABLE
     ],
     Command(
-        "view.chat", "View", "Chat", ICON_AI, event=("toggle_pane", "chat"), shown="show_chat", words="toggle agent"
+        "view.chat",
+        "View",
+        "Chat",
+        ICON_AI,
+        event=("toggle_pane", "chat"),
+        shown="show_chat",
+        shortcut=Shortcut.TOGGLE_CHAT,
+        words="toggle agent",
     ),
     Command(
         "view.results",
@@ -158,6 +165,23 @@ COMMANDS: list[Command] = [
         shortcut=Shortcut.TOGGLE_PYTHON_VARIABLES,
         words="toggle both jupyter notebook cells names memory",
     ),  # fmt: skip
+    *[
+        Command(
+            f"view.zoom_{pane}",
+            "View",
+            f"Full screen: {title} (again: restore panes)",
+            ICON_FULL_SCREEN,
+            event=("toggle_zoom", pane),
+            shortcut=shortcut,
+            words="zoom maximize pane",
+        )
+        for pane, title, shortcut in (
+            ("chat", "AI chat", Shortcut.ZOOM_CHAT),
+            ("results", "Results", Shortcut.ZOOM_RESULTS),
+            ("python", "Python", Shortcut.ZOOM_PYTHON),
+            ("variables", "Variables", Shortcut.ZOOM_VARIABLES),
+        )
+    ],
     Command(
         "view.full_screen",
         "View",
@@ -253,10 +277,15 @@ COMMANDS: list[Command] = [
 # that act on what is being typed (Enter in the chat, Tab in a cell).
 RUNNABLE: tuple[Shortcut, ...] = (
     Shortcut.FULL_SCREEN,
+    Shortcut.TOGGLE_CHAT,
     Shortcut.TOGGLE_RESULTS,
     Shortcut.TOGGLE_PYTHON,
     Shortcut.TOGGLE_VARIABLES,
     Shortcut.TOGGLE_PYTHON_VARIABLES,
+    Shortcut.ZOOM_CHAT,
+    Shortcut.ZOOM_RESULTS,
+    Shortcut.ZOOM_PYTHON,
+    Shortcut.ZOOM_VARIABLES,
     Shortcut.HELP,
     Shortcut.PALETTE,
     Shortcut.DEBUG,

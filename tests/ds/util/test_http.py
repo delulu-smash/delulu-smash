@@ -129,6 +129,37 @@ def test_redirects_are_recorded(records):
     assert (r["url"], r["final_url"], r["redirects"]) == ("https://example.com/old", "https://example.com/new", 1)
 
 
+def test_an_async_redirect_is_recorded_too(records):
+    # a request httpx2 builds to follow a redirect is never read into memory by the real
+    # transport, so reading its body for the record used to raise RequestNotRead (eg a HEAD to
+    # google.com, which redirects to www.google.com). MockTransport reads every request first,
+    # hiding it: this transport answers without reading, as the real one does.
+    class Unread(httpx2.AsyncBaseTransport):
+        async def handle_async_request(self, request):
+            if request.url.host == "google.com":
+                return httpx2.Response(301, headers={"location": "https://www.google.com/"})
+            return httpx2.Response(200, headers={"x-frame-options": "SAMEORIGIN"})
+
+    async def run():
+        async with (
+            httpx2.AsyncClient(transport=Unread()) as client,
+            http.arequest("HEAD", "https://google.com", source="browser", client=client, follow_redirects=True) as (
+                resp,
+                _,
+            ),
+        ):
+            return resp.headers["x-frame-options"]
+
+    assert asyncio.run(run()) == "SAMEORIGIN"
+    (r,) = records
+    assert (r["url"], r["final_url"], r["redirects"], r["request_body"]) == (
+        "https://google.com",
+        "https://www.google.com/",
+        1,
+        None,
+    )
+
+
 def test_a_request_that_never_got_an_answer_is_still_logged(records):
     def handler(request):
         raise httpx2.ConnectError("refused", request=request)

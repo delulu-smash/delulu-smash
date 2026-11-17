@@ -6,7 +6,7 @@
 //          as in a cell), and the run key from shortcuts.py (Shortcut.RUN_SQL). Usually one line; grows if you add more.
 //          Also a SmashDb console's query editor (render.db_console_widget): given `schema`
 //          ({table: columns}) instead of `columns`, it completes every table. Run sends the
-//          selection when there is one, else the whole text. With editUrl: Alt+A inline chat (inline_edit.jsx).
+//          selection when there is one, else the whole text. With editUrl: Alt+I inline chat (inline_edit.jsx).
 // Usage: wrapped for Reflex by ui/editor.py (SqlEditor).
 // ---------------------------------------------------------------------------
 import React, { useMemo, useRef } from "react";
@@ -69,7 +69,7 @@ export function SqlEditor({ initialSql, columns, schema, placeholder, keys, edit
   const tablesKey = JSON.stringify(tables);
   const save = () => { if (live.current.onSave) live.current.onSave(text.current); };
 
-  // Alt+A inline chat, where editUrl is given (a SmashDb console). Built once: the extensions below
+  // Alt+I inline chat, where editUrl is given (a SmashDb console). Built once: the extensions below
   // are rebuilt when the tables change, which would drop an open box.
   const chat = useMemo(() => inlineEdit(() => (
     { url: live.current.editUrl, key: keys?.inlineEdit, language: "sql",

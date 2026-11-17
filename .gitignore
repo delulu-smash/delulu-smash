@@ -9,6 +9,9 @@
 local/
 *.secret
 
+# this machine's role for `os sync` (desktop / laptop)
+.os/local.toml
+
 
 ########################
 # Basic Python Gitignore
@@ -235,3 +238,8 @@ _build
 
 # Reflex copies the app's .jsx files here when tests import it from the repo root
 /assets/external/
+
+# Reflex build output, for any Reflex app in the repo (as services/ui/.gitignore has)
+.web/
+.states/
+**/assets/external/
