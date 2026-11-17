@@ -200,6 +200,11 @@ def _json_size(value: Any) -> int:
         return 0
 
 
+# The panes, in layout order: what toggle_pane / hide_pane accept (spec/services/ui/README.md,
+# "Panels": each has its show / hide key, Shift for full screen, full screen and close
+# buttons in its title strip)
+PANES = ("chat", "results", "python", "variables", "terminal")
+
 # the name of the one Browser tab a clicked link opens in (State.browse)
 WEB_TAB = "web"
 
@@ -238,6 +243,10 @@ class State(rx.State):
     show_results: bool = False
     show_python: bool = False
     show_variables: bool = False
+    show_terminal: bool = False
+    # the Terminal pane's shell starts the first time the pane shows, then stays (hiding the
+    # pane only hides it); a reload of the page starts a new one
+    terminal_started: bool = False
     # The pane filling the window ("" = none): chat | results
     # | python. Leaves the toggles as they were.
     zoomed: str = ""
@@ -515,6 +524,19 @@ class State(rx.State):
         return self._vars_on()
 
     @rx.var
+    def terminal_on(self) -> bool:
+        return self.zoomed == "terminal" or (self.zoomed == "" and self.show_terminal)
+
+    @rx.var
+    def terminal_layout(self) -> str:
+        """The Terminal pane, a strip under the bottom row (as VS Code's): hidden, alone (no
+        bottom row, so it takes the height under the chat) or split (under the bottom row).
+        """
+        if not self.terminal_on:
+            return "hidden"
+        return "split" if self.bottom_on else "alone"
+
+    @rx.var
     def pane_layout(self) -> str:
         """The results pane: hidden, alone (Python hidden,
         so it takes the width left) or split.
@@ -556,7 +578,7 @@ class State(rx.State):
         """
         if not self.chat_on:
             return "hidden"
-        return "split" if self.bottom_on else "alone"
+        return "split" if self.bottom_on or self.terminal_on else "alone"
 
     @rx.var
     def chat_refs(self) -> list[str]:
@@ -1352,14 +1374,20 @@ class State(rx.State):
         normal layout (button, Shortcut.FULL_SCREEN).
         """
         self.zoomed = "" if self.zoomed == pane else pane
+        self._start_terminal()
         if self._vars_on():
             self._sync_vars()
 
+    def _start_terminal(self) -> None:
+        """The Terminal pane's shell starts the first time it shows (terminal_started)."""
+        if self.zoomed == "terminal" or (self.zoomed == "" and self.show_terminal):
+            self.terminal_started = True
+
     @event
     def toggle_pane(self, pane: str):
-        """Bottom bar: show or hide the chat, results, Python or Variables pane."""
+        """Bottom bar: show or hide a pane (PANES)."""
         name = f"show_{pane}"
-        if pane not in ("chat", "results", "python", "variables"):
+        if pane not in PANES:
             return
         if self.zoomed:
             # leaving full screen: the clicked pane is the
@@ -1368,6 +1396,7 @@ class State(rx.State):
             setattr(self, name, True)
         else:
             setattr(self, name, not getattr(self, name))
+        self._start_terminal()
         if self._vars_on():
             self._sync_vars()  # not kept current while hidden
 
@@ -1376,7 +1405,7 @@ class State(rx.State):
         """A panel's close button: hide it, as its bottom-bar toggle does. Closing the panel
         that fills the window (zoomed) also goes back to the normal layout, without it.
         """
-        if pane not in ("chat", "results", "python", "variables"):
+        if pane not in PANES:
             return
         setattr(self, f"show_{pane}", False)
         if self.zoomed == pane:

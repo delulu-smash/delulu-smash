@@ -476,7 +476,7 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   by what they do (`Shortcut.FULL_SCREEN`, `Shortcut.RUN`, …). The help panel, tooltips, the cell editor's
   keymap (`codemirror_keys`) and `assets/panes.js` (`window.SHORTCUTS`) all read it: change a key there only.
 - **Panes**: each pane's title has an expand arrow (full screen) and a × that closes it (as its toggle; closing a
-  full-screen pane goes back to the layout without it). The bottom bar toggles Chat (Alt+A, A for AI), Results (Alt+R), Python (Alt+J, J for Jupyter; Alt+P is the command palette) and Variables (Alt+V), as in Zed. Add Shift to make that pane full screen, from anywhere and even when it is hidden (`Alt+Shift+A` / `R` / `J` / `V`; the same key again restores the panes; `Alt+F` does it for the pane you are in). `Alt+Ctrl+J` works the Python and Variables panes as a pair: it shows both (so with one open it opens the other), and hides both only when both are open. (Neither letter follows
+  full-screen pane goes back to the layout without it). The bottom bar toggles Chat (Alt+A, A for AI), Results (Alt+R), Python (Alt+J, J for Jupyter; Alt+P is the command palette), Variables (Alt+V) and the Terminal (``Alt+` ``, as VS Code's Ctrl+\`; an experiment), as in Zed. What every panel has is in `spec/services/ui/README.md` ("Panels"). Add Shift to make that pane full screen, from anywhere and even when it is hidden (`Alt+Shift+A` / `R` / `J` / `V`; the same key again restores the panes; `Alt+F` does it for the pane you are in). `Alt+Ctrl+J` works the Python and Variables panes as a pair: it shows both (so with one open it opens the other), and hides both only when both are open. (Neither letter follows
   Omarchy, where `SUPER+P` / `SUPER+J` are window layout actions with nothing comparable here.) Only the chat
   shows at first (results also unfold inline in it, and `open →` brings up Results); a pane
   whose neighbour is hidden takes the freed space. Hidden cells keep their text.
@@ -528,6 +528,13 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   video. Leaving a tab stops its video; it is back, paused, when you return. Prev / Next fetch the search's other
   pages. Videos whose uploader disabled embedding show YouTube's own message; use the "Open ↗" button.
   The player is the Browser widget's frame (`render.web_frame`) with the list's own button added.
+- **Terminal** (EXPERIMENT, branch `exp/ghostty-terminal`; a **panel**, ``Alt+` ``, full screen ``Alt+Shift+` ``; `ui/terminal.py`):
+  a shell on this machine in [ghostty-web](https://github.com/coder/ghostty-web) (Ghostty's terminal in the
+  browser, 0.4.0 from jsdelivr), in a strip under the bottom row as VS Code's (alone, it takes the height under
+  the chat). The panel frames the backend's `GET /terminal` page, which talks to `/terminal/ws`: `$SHELL -l` in
+  a pseudo-terminal, started through util-linux's `setsid --ctty` (no fork of the threaded server). Only this
+  machine's pages may connect (localhost client and origin). One shell, started the first time the panel shows
+  and kept while it is hidden; a page reload starts a new one.
 - **Browser** (kind `browser`, `ui/web.py`; `+` → Browser): a web page in a frame, under an address box
   (Enter loads what you type; `https://` is added when missing), `Alt+← Back · Alt+→ Forward` (the browser's own keys:
   they step through pages followed by clicking inside the page) and "Open ↗" (a real browser tab). A link

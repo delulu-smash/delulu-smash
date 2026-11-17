@@ -29,7 +29,7 @@ and the code say "pane" for a panel.
 | | Panel | Widget |
 | --- | --- | --- |
 | What it is | a fixed region of the window's layout: a place | a view of one value: a thing shown in a place |
-| Which | Chat, Results, Python, Variables | table, VODs, player usage, fields, SmashDb console, Browser |
+| Which | Chat, Results, Python, Variables, Terminal (experiment) | table, VODs, player usage, fields, SmashDb console, Browser |
 | How many | one of each; shown or hidden (the bottom bar, `Alt` keys) | any number; the same value can be shown in several places |
 | Where defined | the layout in `ui/ui.py` | a row in `WIDGETS` (`ui/widgets.py`), drawn by `render.py` |
 | Holds | widgets, cells, messages | its own controls and state (filter, sort, inputs) |
@@ -43,6 +43,26 @@ Design rules that follow from the difference:
   it keeps its own frame and brings its controls with it. See the README's "Rendering" design rule.
 - A new region of the window is a panel; a new way to show a value is a widget. Don't give a panel a widget's
   frame, or build a widget that only works in one panel.
+
+## Panels: what every panel has
+
+The same controls on every panel, so learning one teaches all of them (Omarchy's "one pattern everywhere").
+A new panel gets all of these; a panel missing one is a bug.
+
+| | Rule | Today |
+| --- | --- | --- |
+| **Key** | `Alt+<letter>` shows or hides it, from anywhere, **including from inside it**: a panel whose content takes the keyboard (the Terminal's shell) hands its own keys back to the app. Showing it by its key puts the cursor in it | `Alt+A` chat (AI), `Alt+R` Results, `Alt+J` Python (Jupyter), `Alt+V` Variables, ``Alt+` `` Terminal (VS Code's terminal key, Ctrl+\`, with the app's Alt) |
+| **Full screen** | `Alt+Shift+<the same letter>` fills the window with it, from anywhere, even when hidden; the same key again puts the layout back. `Alt+F` does it for the panel you are in | `Alt+Shift+A` / `R` / `J` / `V` / `` ` `` |
+| **Title strip** | the same height on every panel (`--panel-head`), flush with its neighbours; it ends with ⤢ (full screen) and × (close: the same as its key). Its title may be left out to keep the panel bare (the chat has none; its model is in the window's title bar) | `zoom_button`, `close_button` in `ui/ui.py` |
+| **Bottom bar** | one toggle per panel, lit while it is shown, in panel order | 🤖 ▦ 🐍 ⚙ >_ |
+| **Palette** | a "Show / Hide <panel>" row and a "Full screen: <panel>" row in `Alt+P` | `commands.py` |
+| **Closing keeps it** | hiding a panel (key, ×, bottom bar) only hides it: what is in it stays (cells, variables, the shell). Only a page reload starts it over | `.is-hidden` (CSS), not unmounted |
+| **Takes the space** | a panel whose neighbour is hidden takes the freed space; nothing leaves a gap | `*_layout` in `state.py` (hidden / alone / split) |
+| **Defined once** | its keys in `ui/shortcuts.py` (so they show in `Alt+K` and the help), its name in `state.PANES` | |
+
+Choosing a letter: Omarchy's own letter for the same action first (see [omarchy.md](omarchy.md)), else the
+first letter that says what it is and is free (`J` for Jupyter because `P` is the palette), or the key
+another tool the user knows uses for it (``Alt+` `` for the Terminal, from VS Code's Ctrl+\`).
 
 - [omarchy.md](omarchy.md): navigation, keys and many other parts of the app follow Omarchy, the desktop
   it runs on.

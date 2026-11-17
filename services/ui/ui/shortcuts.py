@@ -32,6 +32,8 @@ class Shortcut(Enum):
     TOGGLE_CHAT = Binding("Alt+A", "anywhere", "Show or hide the AI chat pane")
     TOGGLE_RESULTS = Binding("Alt+R", "anywhere", "Show or hide the Results pane")
     TOGGLE_PYTHON = Binding("Alt+J", "anywhere", "Show or hide the Python (Jupyter) pane")
+    # Alt+` as VS Code's Ctrl+` (the app's keys are Alt); matched by position: Shift makes it ~
+    TOGGLE_TERMINAL = Binding("Alt+`", "anywhere", "Show or hide the Terminal pane: a shell on this machine")
     TOGGLE_VARIABLES = Binding(
         "Alt+V",
         "anywhere",
@@ -48,6 +50,7 @@ class Shortcut(Enum):
     ZOOM_RESULTS = Binding("Alt+Shift+R", "anywhere", "Full screen the Results pane (again: restore panes)")
     ZOOM_PYTHON = Binding("Alt+Shift+J", "anywhere", "Full screen the Python pane (again: restore panes)")
     ZOOM_VARIABLES = Binding("Alt+Shift+V", "anywhere", "Full screen the Variables pane (again: restore panes)")
+    ZOOM_TERMINAL = Binding("Alt+Shift+`", "anywhere", "Full screen the Terminal pane (again: restore panes)")
     HELP = Binding("Alt+H", "anywhere", "Show or hide this help")
     PALETTE = Binding(
         "Alt+P", "anywhere", "Command palette: run anything by name, eg add a widget (type to filter, arrows, Enter)"
@@ -117,11 +120,13 @@ BROWSER_SHORTCUTS = (
     Shortcut.TOGGLE_RESULTS,
     Shortcut.TOGGLE_PYTHON,
     Shortcut.TOGGLE_VARIABLES,
+    Shortcut.TOGGLE_TERMINAL,
     Shortcut.TOGGLE_PYTHON_VARIABLES,
     Shortcut.ZOOM_CHAT,
     Shortcut.ZOOM_RESULTS,
     Shortcut.ZOOM_PYTHON,
     Shortcut.ZOOM_VARIABLES,
+    Shortcut.ZOOM_TERMINAL,
     Shortcut.HELP,
     Shortcut.PALETTE,
     Shortcut.KEYS,

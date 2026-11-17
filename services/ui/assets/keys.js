@@ -9,6 +9,7 @@
 // ---------------------------------------------------------------------------
 (() => {
   const KEYS = (window.SHORTCUTS && window.SHORTCUTS.KEYS) || "Alt+K";
+  const KEY_CODES = { "`": "Backquote" };  // matched by position, as in panes.js
 
   // same matching as panes.js: exact modifiers, a letter by key position
   const matches = (event, combo) => {
@@ -17,7 +18,9 @@
     const mods = new Set(parts);
     if (event.altKey !== mods.has("Alt") || event.ctrlKey !== mods.has("Ctrl")
       || event.shiftKey !== mods.has("Shift") || event.metaKey !== mods.has("Meta")) return false;
-    return /^[A-Z]$/.test(key) ? event.code === `Key${key}` : event.key === key;
+    // a letter, or a key in KEY_CODES, matches by its position (Shift changes what it types)
+    if (/^[A-Z]$/.test(key)) return event.code === `Key${key}`;
+    return KEY_CODES[key] ? event.code === KEY_CODES[key] : event.key === key;
   };
 
   const palette = () => document.querySelector("[data-keys]");

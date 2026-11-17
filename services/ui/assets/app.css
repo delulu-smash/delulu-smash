@@ -412,6 +412,12 @@ a.act { text-decoration: none; color: var(--fg); }
 /* !important: a pane resized by dragging has an inline size, which would otherwise win */
 .ws-pane.is-alone { width: auto !important; max-width: none; flex: 1; resize: none; border-right: 0; }
 .chat-pane.is-alone { height: auto !important; max-height: none; flex: 1; resize: none; border-bottom: 0; }
+/* EXPERIMENT: the Terminal pane, a strip under the bottom row (as VS Code's); alone (no bottom
+   row) it takes the height under the chat */
+.terminal-pane { flex: none; height: 32%; min-height: 120px; display: flex; flex-direction: column;
+  border-top: 1px solid var(--bg2); }
+.terminal-pane.is-alone { flex: 1; height: auto; }
+.terminal-frame { flex: 1; min-height: 0; width: 100%; border: 0; background: var(--bg0); }
 /* the video picked from a video list, inside that list's component; drag its corner to resize */
 .player { flex: none; display: flex; flex-direction: column; border-bottom: 1px solid var(--bg3);
   overflow: hidden; background: #000; height: 46%; min-height: 160px; max-height: 80%; resize: vertical; }
@@ -881,7 +887,7 @@ input, textarea { caret-color: var(--blue); }
 .spend-setup { font-size: 12.5px; }
 .spend-setup code { font-family: var(--mono); background: var(--bg0); padding: 0 4px; border-radius: 3px; }
 .spend-error { font-size: 12px; color: var(--red); white-space: pre-wrap; }
-.chat-model { margin-left: 8px; text-transform: none; letter-spacing: 0; font-size: 11px; color: var(--grey1); }
+.chat-model { font-size: 11px; color: var(--grey1); }  /* the chat model, in the title bar */
 
 /* a pydantic model's name in a type (render.type_label): hovered, its class as code (assets/typehover.js) */
 .type-model { text-decoration: underline dotted; text-underline-offset: 3px; cursor: help; }

@@ -18,6 +18,8 @@
 // ---------------------------------------------------------------------------
 (() => {
   const SHORTCUTS = window.SHORTCUTS || { FULL_SCREEN: "Alt+F", CLOSE: "Escape" };
+  // keys matched by position, not by what they type: Shift+` types ~ (Shortcut.ZOOM_TERMINAL)
+  const KEY_CODES = { "`": "Backquote" };
 
   // "Alt+F" -> does this keydown match? Modifiers must match exactly; a letter matches by key position.
   const matches = (event, combo) => {
@@ -26,7 +28,9 @@
     const mods = new Set(parts);
     if (event.altKey !== mods.has("Alt") || event.ctrlKey !== mods.has("Ctrl")
       || event.shiftKey !== mods.has("Shift") || event.metaKey !== mods.has("Meta")) return false;
-    return /^[A-Z]$/.test(key) ? event.code === `Key${key}` : event.key === key;
+    // a letter, or a key in KEY_CODES, matches by its position (Shift changes what it types)
+    if (/^[A-Z]$/.test(key)) return event.code === `Key${key}`;
+    return KEY_CODES[key] ? event.code === KEY_CODES[key] : event.key === key;
   };
 
   let lastTarget = null;
@@ -303,7 +307,7 @@
     const shift = parts.includes("Shift");
     target.dispatchEvent(new KeyboardEvent("keydown", {
       key: letter ? (shift ? key : key.toLowerCase()) : key,
-      code: letter ? `Key${key}` : key,
+      code: letter ? `Key${key}` : KEY_CODES[key] || key,
       keyCode: letter ? key.charCodeAt(0) : 0,
       altKey: parts.includes("Alt"), ctrlKey: parts.includes("Ctrl"), shiftKey: shift, metaKey: parts.includes("Meta"),
       bubbles: true, cancelable: true,
@@ -315,6 +319,27 @@
   document.addEventListener("focusin", (event) => {
     if (event.target.matches?.("[data-menu-search]")) filterMenu(event.target);
   });
+
+  // The Terminal pane (terminal.py) frames a page on the backend's origin, so its keys don't
+  // reach this page: it sends its own pane keys here instead, to run as if pressed here.
+  const TERMINAL_KEYS = new Set([SHORTCUTS.TOGGLE_TERMINAL, SHORTCUTS.ZOOM_TERMINAL].filter(Boolean));
+  window.addEventListener("message", (event) => {
+    const data = event.data;
+    if (!data || data.type !== "delulu-press" || !TERMINAL_KEYS.has(data.keys)) return;
+    const name = data.keys === SHORTCUTS.ZOOM_TERMINAL ? "zoom-terminal" : "terminal";
+    document.querySelector(`[data-toggle="${name}"]`)?.click();
+    focusTerminalSoon(name === "terminal" ? "TOGGLE_TERMINAL" : "ZOOM_TERMINAL");
+  });
+  // after a key shows the Terminal: put the cursor in it (its page focuses the shell); after one
+  // hides it: back to the page, so the app's keys work again
+  function focusTerminalSoon(name) {
+    if (name !== "TOGGLE_TERMINAL" && name !== "ZOOM_TERMINAL") return;
+    setTimeout(() => {
+      const frame = document.querySelector('[data-pane="terminal"] iframe');
+      if (frame && visible(frame)) frame.focus();
+      else if (document.activeElement && document.activeElement.tagName === "IFRAME") document.activeElement.blur();
+    }, 400);
+  }
 
   // capture phase, so it also works while typing in a code cell or the chat box
   document.addEventListener("keydown", (event) => {
@@ -377,8 +402,8 @@
       items[(next + items.length) % items.length].focus();
       return;
     }
-    const toggle = [["TOGGLE_CHAT", "chat"], ["TOGGLE_RESULTS", "results"], ["TOGGLE_PYTHON", "python"], ["TOGGLE_VARIABLES", "variables"], ["TOGGLE_PYTHON_VARIABLES", "python-variables"],
-      ["ZOOM_CHAT", "zoom-chat"], ["ZOOM_RESULTS", "zoom-results"], ["ZOOM_PYTHON", "zoom-python"], ["ZOOM_VARIABLES", "zoom-variables"],
+    const toggle = [["TOGGLE_CHAT", "chat"], ["TOGGLE_RESULTS", "results"], ["TOGGLE_PYTHON", "python"], ["TOGGLE_VARIABLES", "variables"], ["TOGGLE_TERMINAL", "terminal"], ["TOGGLE_PYTHON_VARIABLES", "python-variables"],
+      ["ZOOM_CHAT", "zoom-chat"], ["ZOOM_RESULTS", "zoom-results"], ["ZOOM_PYTHON", "zoom-python"], ["ZOOM_VARIABLES", "zoom-variables"], ["ZOOM_TERMINAL", "zoom-terminal"],
       ["HELP", "help"], ["DEBUG", "debug"], ["PALETTE", "palette"]]
       .find(([name]) => SHORTCUTS[name] && matches(event, SHORTCUTS[name]));
     if (toggle) {
@@ -387,6 +412,7 @@
         event.preventDefault();
         event.stopPropagation();
         button.click();
+        focusTerminalSoon(toggle[0]);
       }
       return;
     }

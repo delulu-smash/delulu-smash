@@ -16,7 +16,18 @@ import reflex as rx
 
 from ui.agents import AGENTS, DEFERRED, LOAD_TOOL, AgentInfo, CapabilityInfo, ToolInfo
 from ui.api import api
-from ui.commands import COMMANDS, ICON_BUG, ICON_CLOSE, ICON_PY, ICON_VARIABLE, RUNNABLE, SLASH, Command, slash_about
+from ui.commands import (
+    COMMANDS,
+    ICON_BUG,
+    ICON_CLOSE,
+    ICON_PY,
+    ICON_TERMINAL,
+    ICON_VARIABLE,
+    RUNNABLE,
+    SLASH,
+    Command,
+    slash_about,
+)
 from ui.commands import ICON_AI as ICON_CHAT
 from ui.commands import ICON_TABLE as ICON_RESULTS
 from ui.editor import cell_editor
@@ -83,6 +94,8 @@ COMPLETE_URL = rx.config.get_config().api_url + "/complete"
 # assets/mentions.js asks it what can follow the dot
 # in an "@" mention (api.py, mentions.complete)
 MENTION_COMPLETE_URL = rx.config.get_config().api_url + "/mention_complete"
+# EXPERIMENT: the Terminal pane's page (terminal.py, served by the backend)
+TERMINAL_URL = rx.config.get_config().api_url + "/terminal"
 # assets/panes.js asks it whether a clicked link's site can be framed (api.py, web.frameable)
 FRAMEABLE_URL = rx.config.get_config().api_url + "/frameable"
 
@@ -98,6 +111,7 @@ ZOOM_KEYS = {
     "results": Shortcut.ZOOM_RESULTS,
     "python": Shortcut.ZOOM_PYTHON,
     "variables": Shortcut.ZOOM_VARIABLES,
+    "terminal": Shortcut.ZOOM_TERMINAL,
 }
 
 
@@ -107,6 +121,7 @@ TOGGLE_KEYS = {
     "results": Shortcut.TOGGLE_RESULTS,
     "python": Shortcut.TOGGLE_PYTHON,
     "variables": Shortcut.TOGGLE_VARIABLES,
+    "terminal": Shortcut.TOGGLE_TERMINAL,
 }
 
 
@@ -560,10 +575,7 @@ def mention_data() -> rx.Component:
 def chat_pane() -> rx.Component:
     return rx.el.div(
         rx.el.div(
-            rx.el.span("Chat"),
-            # the chat agent's model (agents.py; every agent's
-            # setup is in the debug panel's Agents tab)
-            rx.el.span(AGENTS[0].model_name, title=f"Model: {AGENTS[0].model}", class_name="chat-model mono"),
+            # no title: the chat is the main panel, kept bare (its model is in the title bar)
             rx.el.span(class_name="spacer"),
             zoom_button("chat"),
             close_button("chat"),
@@ -1626,6 +1638,33 @@ def cell_view(cell: rx.Var) -> rx.Component:
     )
 
 
+def terminal_pane() -> rx.Component:
+    """EXPERIMENT: the Terminal pane, a strip under the bottom row (as VS Code's): a shell on
+    this machine in ghostty-web (terminal.py). Its frame mounts the first time the pane shows
+    (State.terminal_started) and stays: hiding the pane keeps the same shell.
+    """
+    return rx.el.div(
+        rx.el.div(
+            rx.el.span(rx.el.span(ICON_TERMINAL, class_name="mono accent-green icon"), "Terminal"),
+            rx.el.span(class_name="spacer"),
+            zoom_button("terminal"),
+            close_button("terminal"),
+            class_name="console-head sans",
+        ),
+        rx.cond(
+            State.terminal_started,
+            rx.el.iframe(src=TERMINAL_URL, title="Terminal", class_name="terminal-frame"),
+        ),
+        class_name=rx.match(
+            State.terminal_layout,
+            ("hidden", "console terminal-pane is-hidden"),
+            ("alone", "console terminal-pane is-alone"),
+            "console terminal-pane",
+        ),
+        custom_attrs={"data-pane": "terminal"},
+    )
+
+
 def notebook() -> rx.Component:
     return rx.el.div(
         rx.el.div(
@@ -1928,6 +1967,7 @@ def statusbar() -> rx.Component:
         pane_toggle("results", ICON_RESULTS, "results", State.show_results, Shortcut.TOGGLE_RESULTS),
         pane_toggle("python", ICON_PY, "Python", State.show_python, Shortcut.TOGGLE_PYTHON),
         pane_toggle("variables", ICON_VARIABLE, "Variables", State.show_variables, Shortcut.TOGGLE_VARIABLES),
+        pane_toggle("terminal", ICON_TERMINAL, "Terminal", State.show_terminal, Shortcut.TOGGLE_TERMINAL),
         rx.el.span(class_name="spacer"),
         rx.cond(State.busy, rx.el.span("agent working…", class_name="dim")),
         rx.cond(State.running, rx.el.span("python running…", class_name="dim")),
@@ -1939,6 +1979,9 @@ def index() -> rx.Component:
     return rx.el.div(
         rx.el.div(
             rx.el.span("delulu-smash", class_name="title"),
+            # the chat agent's model (agents.py; every agent's
+            # setup is in the debug panel's Agents tab)
+            rx.el.span(AGENTS[0].model_name, title=f"Chat model: {AGENTS[0].model}", class_name="chat-model mono"),
             context_meter(),
             spend_meters(),
             rx.el.span(class_name="spacer"),
@@ -1970,6 +2013,7 @@ def index() -> rx.Component:
                 variables_pane(),
                 class_name=rx.cond(State.bottom_on, "bottom-split", "bottom-split is-hidden"),
             ),
+            terminal_pane(),
             class_name="split-main",
         ),
         statusbar(),

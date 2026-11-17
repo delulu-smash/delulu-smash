@@ -22,6 +22,7 @@ from ui.widgets import ADDABLE
 # results, python = the Python console.
 ICON_PY = ""
 ICON_AI, ICON_TABLE = "\U000f06a9", "\U000f04eb"
+ICON_TERMINAL = "\U000f018d"  # nf-md-console
 ICON_BUG, ICON_HELP, ICON_KEYBOARD = "\U000f00e4", "\U000f02d7", "\U000f030c"
 ICON_FULL_SCREEN, ICON_PLUS, ICON_PLAY, ICON_ERASER, ICON_CLOSE = (
     "\U000f0293",
@@ -157,6 +158,17 @@ COMMANDS: list[Command] = [
         slash="variables",
     ),  # fmt: skip
     Command(
+        "view.terminal",
+        "View",
+        "Terminal",
+        ICON_TERMINAL,
+        event=("toggle_pane", "terminal"),
+        shown="show_terminal",
+        shortcut=Shortcut.TOGGLE_TERMINAL,
+        words="toggle shell ghostty console bash",
+        slash="terminal",
+    ),  # fmt: skip
+    Command(
         "view.python_variables",
         "View",
         "Python and Variables together (hides both when both are open)",
@@ -180,6 +192,7 @@ COMMANDS: list[Command] = [
             ("results", "Results", Shortcut.ZOOM_RESULTS),
             ("python", "Python", Shortcut.ZOOM_PYTHON),
             ("variables", "Variables", Shortcut.ZOOM_VARIABLES),
+            ("terminal", "Terminal", Shortcut.ZOOM_TERMINAL),
         )
     ],
     Command(
@@ -281,11 +294,13 @@ RUNNABLE: tuple[Shortcut, ...] = (
     Shortcut.TOGGLE_RESULTS,
     Shortcut.TOGGLE_PYTHON,
     Shortcut.TOGGLE_VARIABLES,
+    Shortcut.TOGGLE_TERMINAL,
     Shortcut.TOGGLE_PYTHON_VARIABLES,
     Shortcut.ZOOM_CHAT,
     Shortcut.ZOOM_RESULTS,
     Shortcut.ZOOM_PYTHON,
     Shortcut.ZOOM_VARIABLES,
+    Shortcut.ZOOM_TERMINAL,
     Shortcut.HELP,
     Shortcut.PALETTE,
     Shortcut.DEBUG,

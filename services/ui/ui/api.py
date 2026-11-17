@@ -7,7 +7,8 @@
 #          (mentions.py). GET /char_icons/<file>.png serves the character stock icons
 #          (ds.data.CHAR_ICON_DIR) for views that show them (render.ICON_URL).
 #          GET /frameable: whether a clicked link's site lets our frame show it
-#          (web.frameable; assets/panes.js).
+#          (web.frameable; assets/panes.js). EXPERIMENT: GET /terminal + /terminal/ws, the
+#          Terminal widget's page and the shell it runs (terminal.py).
 # Usage: mounted by ui.py via rx.App(api_transformer=api).
 # ---------------------------------------------------------------------------
 from __future__ import annotations
@@ -20,10 +21,10 @@ from starlette.applications import Starlette
 from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
-from starlette.routing import Mount, Route
+from starlette.routing import Mount, Route, WebSocketRoute
 from starlette.staticfiles import StaticFiles
 
-from ui import mentions
+from ui import mentions, terminal
 from ui.inline_edit import edit
 from ui.session import complete as complete_code
 from ui.session import find_session
@@ -75,6 +76,9 @@ api = Starlette(
         Route("/inline_edit", inline_edit, methods=["POST"]),
         Route("/mention_complete", mention_complete, methods=["POST"]),
         Route("/frameable", frameable, methods=["GET"]),
+        # EXPERIMENT: the Terminal widget's page and its shell (terminal.py; this machine only)
+        Route("/terminal", terminal.page, methods=["GET"]),
+        WebSocketRoute("/terminal/ws", terminal.shell_socket),
         # the folder's name is the url prefix, so ds.data.char_icon's value is the path
         Mount(f"/{CHAR_ICON_DIR.name}", StaticFiles(directory=CHAR_ICON_DIR), name="char_icons"),
     ],
