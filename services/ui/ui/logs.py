@@ -22,13 +22,12 @@ from pathlib import Path
 from typing import Any
 
 import polars as pl
-from pydantic import BaseModel
-
 from ds.data.raw.startgg.client import MAX_REQUESTS_PER_MINUTE
 from ds.util.http import curl_command
 from ds.util.logging import enable_call_logs, logger
+from pydantic import BaseModel
 
-from .session import cost_text
+from ui.session import cost_text
 
 # ~2.5 KB a record (measured Nov 2026; mostly the request headers, a GraphQL query text is
 # shared with queries.py, not copied): 2000 is about 5 MB, bounded however long it runs
@@ -105,7 +104,7 @@ def _json(value: Any) -> str:
 def _size(n: Any) -> str:
     if not isinstance(n, int):
         return "?"
-    return f"{n / 1024:.1f} KB" if n >= 1024 else f"{n} B"  # noqa: PLR2004  # 1 KB
+    return f"{n / 1024:.1f} KB" if n >= 1024 else f"{n} B"  # 1 KB
 
 
 def _common(record: dict[str, Any]) -> list[tuple[str, str]]:
@@ -212,10 +211,12 @@ def _agent(record: dict[str, Any]) -> LogView:
     if record.get("cost") is not None:
         parts.append(cost_text(record["cost"]))
     details = [("prompt", str(record.get("prompt", "")))]
-    # what the app added to the prompt for the model: the variables it mentions with "@" (mentions.py)
+    # what the app added to the prompt for the model: the
+    # variables it mentions with "@" (mentions.py)
     if record.get("added"):
         details.append(("added to the prompt (@ mentions)", str(record["added"])))
-    # one line per model request (session.TurnUsage): which one grew the input, and why it stopped
+    # one line per model request (session.TurnUsage):
+    # which one grew the input, and why it stopped
     if record.get("model_requests"):
         details.append(("model requests", "\n".join(record["model_requests"])))
     return LogView(" · ".join(parts), _badges(record), details + _common(record))
@@ -224,8 +225,8 @@ def _agent(record: dict[str, Any]) -> LogView:
 def _tool(record: dict[str, Any]) -> LogView:
     parts = [str(record.get("name", "tool")), f"{record.get('ms', '?')} ms", str(record.get("args", ""))]
     details = [("args", str(record.get("args", "")))]
-    # what the tool gave back to the AI (ds.ai.call_log): seen nowhere else, unlike an AI answer
-    # (the chat shows it) or an inline edit (the editor does)
+    # what the tool gave back to the AI (ds.ai.call_log): seen nowhere else, unlike an AI
+    # answer (the chat shows it) or an inline edit (the editor does)
     if record.get("response"):
         details.append(("tool response", str(record["response"])))
     return LogView(" · ".join(parts), _badges(record), details + _common(record))
@@ -334,7 +335,8 @@ def rows(
     kinds_shown: list[str], session: str = "", focus: str = "", tool_call_id: str = ""
 ) -> tuple[list[dict[str, Any]], int]:
     """(newest MAX_ROWS matching rows, how many match): only `kinds_shown` (all when empty),
-    only one session's when `session` is set, only those `in_focus` when `focus` is set."""
+    only one session's when `session` is set, only those `in_focus` when `focus` is set.
+    """
     with _lock:
         records = list(_records)
     matching = [
@@ -362,7 +364,9 @@ def _rss_bytes() -> tuple[int, str]:
 
 
 def _rough_size(value: Any) -> int:
-    """About how much memory a session variable holds (cheap; for spotting growth, not exact)."""
+    """About how much memory a session variable holds
+    (cheap; for spotting growth, not exact).
+    """
     if isinstance(value, pl.DataFrame):
         return int(value.estimated_size())
     if isinstance(value, BaseModel):
@@ -376,8 +380,10 @@ def _mb(n: float) -> str:
 
 
 def stats(namespace: dict[str, Any], skip: tuple[str, ...]) -> str:
-    """One line: start.gg requests in the last 60 s against the limit, the backend's memory, and
-    this session's variables (count, rough size). skip: names that aren't the user's (pl, db)."""
+    """One line: start.gg requests in the last 60 s against the limit, the backend's memory,
+    and this session's variables (count, rough size).
+    skip: names that aren't the user's (pl, db).
+    """
     now = time.time()
     with _lock:
         recent = sum(

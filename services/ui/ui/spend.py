@@ -15,13 +15,15 @@ from zoneinfo import ZoneInfo
 import polars as pl
 from ds.data.raw.logfire import LogfireReadTokenMissingError, ai_spend
 
-from .session import cost_text, tokens_text
+from ui.session import cost_text, tokens_text
 
 DAYS = 30
 
 
 def _local_zone() -> str:
-    """This machine's IANA time zone (from /etc/localtime), so days start at local midnight."""
+    """The IANA time zone of this machine (from /etc/localtime),
+    so days start at local midnight.
+    """
     try:
         return str(Path("/etc/localtime").resolve().relative_to("/usr/share/zoneinfo"))
     except ValueError:

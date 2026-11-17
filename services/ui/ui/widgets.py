@@ -21,13 +21,13 @@ from typing import TYPE_CHECKING, Any
 from ds.ai.smashtube import find_match_videos
 from ds.ai.startgg import get_player_usage
 
-from .db_console import DbConsole
-from .tool_forms import ToolForm, ToolRequest
+from ui.db_console import DbConsole
+from ui.tool_forms import ToolForm, ToolRequest
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from .session import Session
+    from ui.session import Session
 
 
 @dataclasses.dataclass(frozen=True)
@@ -37,8 +37,10 @@ class Widget:
     title: str
     """Its name for people, eg in the "+" menu."""
     tool: Callable[..., Any] | None = None
-    """The agent tool whose result this shows. Gives the widget a tool form (tool_forms.py): its
-    inputs under `Inputs`, to change and run again. The tool's return type is what it matches."""
+    """The agent tool whose result this shows. Gives
+    the widget a tool form (tool_forms.py): its
+    inputs under `Inputs`, to change and run again.
+    The tool's return type is what it matches."""
     hide: tuple[str, ...] = ()
     """Tool parameters not on the form, eg paging the widget does itself."""
     new: Callable[[Session], Any] | None = None
@@ -59,7 +61,9 @@ class Widget:
         return ToolForm(self.title, self.tool, self.hide) if self.tool else None
 
     def blank(self, session: Session) -> Any:
-        """What "+" binds for this widget: its own `new` value, else its tool form, not run yet."""
+        """What "+" binds for this widget: its own `new`
+        value, else its tool form, not run yet.
+        """
         if self.new is not None:
             return self.new(session)
         return ToolRequest(self.form.key) if self.form else None

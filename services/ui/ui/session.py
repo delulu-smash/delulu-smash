@@ -10,9 +10,9 @@ from __future__ import annotations
 import ast
 import contextlib
 import gc
-import keyword
 import io
 import itertools
+import keyword
 import linecache
 import sys
 import time
@@ -25,20 +25,20 @@ import ds.ai
 import ds.data
 import jedi
 import polars as pl
+from ds.util.logging import log_call
 from pydantic_ai import capture_run_messages
 from pydantic_ai.messages import ModelResponse, ToolCallPart, ToolReturnPart
 from pydantic_ai.models import infer_model
 
-from ds.util.logging import log_call
-
-from . import perf
-from .render import Ui, View, ViewData, to_view
+from ui import perf
+from ui.render import Ui, View, ViewData, to_view
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable, Iterable
 
 MAX_COMPLETIONS = 60
-# A recursion error repeats one frame ~1000 times; show this many, then "repeated N more times".
+# A recursion error repeats one frame ~1000 times;
+# show this many, then "repeated N more times".
 MAX_REPEATED_FRAMES = 3
 REPO_DIR = Path(__file__).resolve().parents[3]
 MAX_ARGS_CHARS = 160
@@ -54,7 +54,8 @@ class PyResult:
     trace: list[dict[str, str]] = field(default_factory=list)
     """The error as styled parts (see trace_parts); error keeps the plain text."""
     view: View | None = None
-    """Set instead of result_repr when the cell's value has a view (render.py): a grid, videos, ..."""
+    """Set instead of result_repr when the cell's value
+    has a view (render.py): a grid, videos, ..."""
 
 
 @dataclass
@@ -64,11 +65,13 @@ class ToolStep:
     call_id: str = ""
     """pydantic-ai's tool_call_id: log records made during the call carry it (ToolCallLog)."""
     result_name: str = ""
-    """Name the result was bound to (eg 'r1'), '' when the tool's result has no view (eg plain text)."""
+    """Name the result was bound to (eg 'r1'), '' when the
+    tool's result has no view (eg plain text)."""
     result_label: str = ""
     """The result's short summary, eg '12 × 8' or '10 VODs'."""
     result_kind: str = ""
-    """The result's view kind (render.py), eg 'table', 'vods'; its attributes are in widgets.py."""
+    """The result's view kind (render.py), eg 'table',
+    'vods'; its attributes are in widgets.py."""
 
 
 @dataclass
@@ -79,7 +82,8 @@ class Call:
     value: Any
     """The value they made; the record only counts while this is still what is shown."""
     original: tuple[dict[str, Any], Any] | None = None
-    """The agent's own call (inputs, result), kept while the form is re-run so it can be put back.
+    """The agent's own call (inputs, result), kept while
+    the form is re-run so it can be put back.
     None for a form added by hand."""
     changed: bool = False
     """The form was run since the agent's call (the view offers to put the original back)."""
@@ -88,7 +92,8 @@ class Call:
 @dataclass
 class Trashed:
     """A variable cleared from the Variables pane, held for a moment so the clear can be undone
-    (Session.clear / restore / purge). Not a cache: nothing reads it but restore."""
+    (Session.clear / restore / purge). Not a cache: nothing reads it but restore.
+    """
 
     value: Any
     size: int
@@ -124,11 +129,13 @@ def cost_text(cost: float | None) -> str:
 @dataclass
 class TurnUsage:
     """What one agent turn used, summed from each model request's usage (pydantic-ai's
-    ModelResponse.usage; cost is what the Gateway reported, or genai-prices' estimate)."""
+    ModelResponse.usage; cost is what the Gateway reported, or genai-prices' estimate).
+    """
 
     requests: int = 0
     input_tokens: int = 0
-    """Every request's whole input, cache reads included, so a 3-request turn counts the history 3 times."""
+    """Every request's whole input, cache reads included,
+    so a 3-request turn counts the history 3 times."""
     cache_read_tokens: int = 0
     output_tokens: int = 0
     cost: float | None = None
@@ -136,9 +143,11 @@ class TurnUsage:
     unpriced: int = 0
     """Requests with no cost (cost then leaves them out)."""
     context_tokens: int = 0
-    """The last request's input + output: how big the conversation is now (what the next turn sends)."""
+    """The last request's input + output: how big the conversation
+    is now (what the next turn sends)."""
     lines: list[str] = field(default_factory=list)
-    """One line per request for the debug log: tokens, cost, why it stopped, the tools it called."""
+    """One line per request for the debug log: tokens,
+    cost, why it stopped, the tools it called."""
 
     @classmethod
     def of(cls, messages: Iterable[Any]) -> TurnUsage:
@@ -176,7 +185,9 @@ class TurnUsage:
         call["model_requests"] = self.lines
 
     def summary(self) -> str:
-        """The line under an answer, eg '$0.0011 · 21.3k in (71% cached) · 812 out · 3 requests'."""
+        """The line under an answer, eg '$0.0011 · 21.3k
+        in (71% cached) · 812 out · 3 requests'.
+        """
         if not self.requests:
             return ""
         cost = cost_text(self.cost) + ("+?" if self.unpriced and self.cost is not None else "")
@@ -188,7 +199,8 @@ class TurnUsage:
 
 def log_usage(call: dict[str, Any], session: Any, messages: Iterable[Any]) -> TurnUsage:
     """What an inline chat's model requests used: put on its "agent" debug-log record and added
-    to the session's AI cost (as a chat turn does in Session.ask). session may be None."""
+    to the session's AI cost (as a chat turn does in Session.ask). session may be None.
+    """
     usage = TurnUsage.of(messages)
     usage.log_to(call)
     if session is not None:
@@ -197,8 +209,9 @@ def log_usage(call: dict[str, Any], session: Any, messages: Iterable[Any]) -> Tu
 
 
 def context_window() -> int | None:
-    """The agent's model's context window in tokens (pydantic-ai's model profile, from genai-prices'
-    bundled data; offline), None when unknown."""
+    """The agent's model's context window in tokens (pydantic-ai's model profile, from
+    genai-prices' bundled data; offline), None when unknown.
+    """
     try:
         return infer_model(ds.ai.agent.model).context_window
     except Exception:  # noqa: BLE001  # a meter without its maximum is fine; never fail the turn
@@ -220,7 +233,9 @@ def _short_path(filename: str) -> tuple[str, str]:
 
 
 def _code_parts(frame: traceback.FrameSummary) -> dict[str, str]:
-    """The frame's source line split around the failing expression: pre, mark (underlined), post."""
+    """The frame's source line split around the failing
+    expression: pre, mark (underlined), post.
+    """
     line = linecache.getline(frame.filename, frame.lineno or 0).rstrip("\n")
     if not line.strip():
         return {"pre": "", "mark": "", "post": ""}
@@ -237,7 +252,8 @@ def _code_parts(frame: traceback.FrameSummary) -> dict[str, str]:
 def _frame_parts(stack: traceback.StackSummary) -> list[dict[str, str]]:
     parts: list[dict[str, str]] = []
 
-    # the column range too: the last call of a recursion is on the same line but fails elsewhere (eg `1 / 0`)
+    # the column range too: the last call of a recursion is
+    # on the same line but fails elsewhere (eg `1 / 0`)
     def key(frame: traceback.FrameSummary) -> tuple[Any, ...]:
         return frame.filename, frame.lineno, frame.name, frame.colno, frame.end_colno
 
@@ -260,8 +276,9 @@ def trace_parts(error: BaseException, tb: Any) -> list[dict[str, str]]:
     """Everything in the standard traceback, split into parts the UI styles separately.
 
     Parts, in order: chained earlier exceptions first ("chain" separators), then per exception
-    a "head" line, its "frame"s (where = cell | repo | lib; path, line, func; the code as pre/mark/post),
-    "note"s, and the "error" (name + message, including notes such as polars' "Did you mean").
+    a "head" line, its "frame"s (where = cell | repo | lib; path, line, func; the code as
+    pre/mark/post), "note"s, and the "error" (name + message,
+    including notes such as polars' "Did you mean").
     """
     parts: list[dict[str, str]] = []
     cause, context = error.__cause__, error.__context__
@@ -312,8 +329,10 @@ def trace_parts(error: BaseException, tb: Any) -> list[dict[str, str]]:
 
 
 def split_trace(parts: list[dict[str, str]]) -> tuple[list[dict[str, str]], list[dict[str, str]]]:
-    """(hidden, shown): shown is the bottom of the traceback, the frame that raised plus the error;
-    hidden is everything above it (earlier frames, chained exceptions), collapsed by default."""
+    """(hidden, shown): shown is the bottom of the traceback, the frame that raised plus the
+    error; hidden is everything above it (earlier frames,
+    chained exceptions), collapsed by default.
+    """
     frames = [i for i, part in enumerate(parts) if part["kind"] == "frame"]
     if len(frames) <= 1 and not any(part["kind"] == "chain" for part in parts):
         return [], [part for part in parts if part["kind"] != "head"]
@@ -332,17 +351,19 @@ class Session:
         # what the AI cost so far, chat turns and inline chats, in US dollars (TurnUsage.cost;
         # unpriced requests left out)
         self.ai_cost: float = 0.0
-        # the chat's size: its last model request's input + output (TurnUsage.context_tokens), what
-        # the next turn sends again. An inline chat reads the chat but doesn't add to it.
+        # the chat's size: its last model request's input + output (TurnUsage.context_tokens),
+        # what the next turn sends again. An inline chat reads the chat but doesn't add to it.
         self.chat_tokens: int = 0
         self.sources: dict[str, str] = {}
-        # Views of notebook cell results, by cell id, so grids can be re-sorted and results opened as tabs.
+        # Views of notebook cell results, by cell id, so grids
+        # can be re-sorted and results opened as tabs.
         self.outputs: dict[str, View] = {}
-        # What the user did to each shown view (filter, sort, picked video), by slot: "tab:<name>"
-        # for a named value's tab, "chat:<name>" for the same value shown inline in the chat,
-        # "cell:<id>" for a cell's result.
+        # What the user did to each shown view (filter, sort, picked video), by slot:
+        # "tab:<name>" for a named value's tab, "chat:<name>" for the same value shown inline
+        # in the chat, "cell:<id>" for a cell's result.
         self.ui: dict[str, Ui] = {}
-        # Tabs the user closed: name -> the value it held (compared by identity). Only the tab goes; the name stays
+        # Tabs the user closed: name -> the value it held (compared
+        #                       by identity). Only the tab goes; the name stays
         # in Python. It comes back when the name is bound to something new, or is opened again.
         self.closed: dict[str, Any] = {}
         # The tool call behind a value, by the name it is bound to (r1, ...) or a cell's slot
@@ -354,21 +375,24 @@ class Session:
         self._table_count = 0
         # The last batch cleared from the Variables pane (name -> what it was), until it is put
         # back (restore) or dropped for good (purge: a timer in state.py, "Free now", the next
-        # clear). trash_seq numbers the batches, so a timer only drops the batch it was set for.
+        # clear). trash_seq numbers the batches, so a
+        # timer only drops the batch it was set for.
         self.trash: dict[str, Trashed] = {}
         self.trash_seq = 0
-        # what the last purge dropped: rough bytes and how many variables (the pane's "freed ..." line)
+        # what the last purge dropped: rough bytes and how
+        # many variables (the pane's "freed ..." line)
         self.freed = 0
         self.freed_names = 0
 
     # -- python ---------------------------------------------------------------
 
     def run_python(self, code: str, label: str = "cell") -> PyResult:
-        """Run code in the persistent namespace; a trailing bare expression is the result, as in Jupyter.
+        """Run code in the persistent namespace; a trailing
+        bare expression is the result, as in Jupyter.
 
-        label (eg "In [3]") names the cell in tracebacks. Its source is registered with linecache under that
-        name, so traceback lines from this cell show their code, even when a function defined here fails
-        in a later cell.
+        label (eg "In [3]") names the cell in tracebacks. Its source is registered with
+        linecache under that name, so traceback lines from this cell show their code, even when
+        a function defined here fails in a later cell.
         """
         result = PyResult()
         filename = f"<{label}>"
@@ -403,8 +427,9 @@ class Session:
     # -- data objects -----------------------------------------------------------
 
     def views(self) -> dict[str, View]:
-        """A View for every public name bound to something render.py can show (DataFrames, pydantic
-        models, ...), whether the agent or the user made it."""
+        """A View for every public name bound to something render.py can show (DataFrames,
+        pydantic models, ...), whether the agent or the user made it.
+        """
         views: dict[str, View] = {}
         for name, value in self.namespace.items():
             if name.startswith("_") or name in BUILTIN_NAMES or isinstance(value, type):
@@ -415,7 +440,9 @@ class Session:
         return views
 
     def tabs(self) -> dict[str, View]:
-        """The views that have a tab: views() minus the closed ones still holding the value they were closed with."""
+        """The views that have a tab: views() minus the closed ones
+        still holding the value they were closed with.
+        """
         views = self.views()
         self.closed = {
             name: value for name, value in self.closed.items() if name in views and self.namespace[name] is value
@@ -430,9 +457,11 @@ class Session:
                 self.ui.pop(f"tab:{name}", None)
 
     def view_at(self, slot: str) -> View | None:
-        """The View shown at a slot ('tab:<name>', 'chat:<name>' or 'cell:<id>'), if it still exists.
+        """The View shown at a slot ('tab:<name>', 'chat:<name>'
+        or 'cell:<id>'), if it still exists.
 
-        A chat slot shows the same named value as its tab (with its own Ui)."""
+        A chat slot shows the same named value as its tab (with its own Ui).
+        """
         kind, _, key = slot.partition(":")
         if kind in ("tab", "chat"):
             return to_view(self.namespace.get(key)) if key in self.views() else None
@@ -441,8 +470,9 @@ class Session:
     def put(self, slot: str, value: Any, inputs: dict[str, Any] | None = None) -> None:
         """Replace the value shown at a slot (eg another page of a video search).
 
-        inputs: the tool inputs that made it (a tool form was run). Without them the value is taken
-        as the same call's (another page), so the inputs recorded for the old value carry over.
+        inputs: the tool inputs that made it (a tool form was run). Without them the value is
+        taken as the same call's (another page), so the
+        inputs recorded for the old value carry over.
         """
         kind, _, key = slot.partition(":")
         call_key = key if kind in ("tab", "chat") else slot
@@ -460,8 +490,9 @@ class Session:
             self.outputs[key] = view
 
     def call_at(self, slot: str, value: Any) -> Call | None:
-        """The tool call that made the value shown at a slot; None when none is known (eg it was
-        made in Python). A cell showing a named result (eg `r1`) finds that name's call."""
+        """The tool call that made the value shown at a slot; None when none is known (eg it
+        was made in Python). A cell showing a named result (eg `r1`) finds that name's call.
+        """
         kind, _, key = slot.partition(":")
         call = self.calls.get(key if kind in ("tab", "chat") else slot)
         if call is None or call.value is not value:
@@ -481,8 +512,11 @@ class Session:
         return True
 
     def show(self, slot: str, compact: bool = False) -> ViewData:
-        """What the browser gets for a slot: its view with the user's Ui (an empty one when gone)."""
-        # timed (the System tab): to_view on the value, then filter / sort / rows for the browser
+        """What the browser gets for a slot: its view with
+        the user's Ui (an empty one when gone).
+        """
+        # timed (the System tab): to_view on the value,
+        # then filter / sort / rows for the browser
         with perf.span("build view"):
             view = self.view_at(slot)
             if view is None:
@@ -500,13 +534,16 @@ class Session:
         return data
 
     def next_free_name(self, prefix: str) -> str:
-        """The first of prefix1, prefix2, ... not bound in Python (eg a SmashDb console's Save as)."""
+        """The first of prefix1, prefix2, ... not bound in
+        Python (eg a SmashDb console's Save as).
+        """
         return next(f"{prefix}{n}" for n in itertools.count(1) if f"{prefix}{n}" not in self.namespace)
 
     def name_problem(self, name: str, keep: str = "") -> str:
         """Why a name can't be bound by hand ("" if it can): a Python identifier, not private,
         not a keyword, not one of the names put in up front (pl, db), not `keep` (eg the
-        console being saved from). An existing name is fine: it is replaced, as in Python."""
+        console being saved from). An existing name is fine: it is replaced, as in Python.
+        """
         if not name.isidentifier() or keyword.iskeyword(name):
             return f"{name!r} isn't a Python name"
         if name.startswith("_"):
@@ -518,8 +555,9 @@ class Session:
         return ""
 
     def bind_result(self, value: Any, source: str, inputs: dict[str, Any] | None = None, tool_call_id: str = "") -> str:
-        """Bind a tool result to the next r<n> name. inputs: the arguments the tool was called with;
-        tool_call_id: the agent's call that returned it ("" for a form added by hand)."""
+        """Bind a tool result to the next r<n> name. inputs: the arguments the tool was called
+        with; tool_call_id: the agent's call that returned it ("" for a form added by hand).
+        """
         self._table_count += 1
         name = f"r{self._table_count}"
         self.namespace[name] = value
@@ -533,11 +571,12 @@ class Session:
     # -- clearing variables (the Variables pane) ----------------------------------
 
     def clear(self, names: Iterable[str]) -> list[str]:
-        """Remove names from Python (as `del`), holding them as one batch that restore() can put
-        back until purge() drops it. An earlier batch is purged first. Returns the names cleared.
+        """Remove names from Python (as `del`), holding them as one batch that restore() can
+        put back until purge() drops it. An earlier batch
+        is purged first. Returns the names cleared.
 
-        r<n> numbers are not given out again (_table_count stays), so "r2" in the chat never comes
-        to mean another result.
+        r<n> numbers are not given out again (_table_count stays), so "r2" in the chat never
+        comes to mean another result.
         """
         wanted = [
             name for name in names if name in self.namespace and not name.startswith("_") and name not in BUILTIN_NAMES
@@ -563,7 +602,8 @@ class Session:
 
     def restore(self) -> list[str]:
         """Undo the last clear. A name bound to something new since is left as it is now: those
-        names are returned, and what they held before is dropped for good."""
+        names are returned, and what they held before is dropped for good.
+        """
         skipped = []
         for name, item in self.trash.items():
             if name in self.namespace:
@@ -584,11 +624,11 @@ class Session:
 
     def purge(self) -> list[str]:
         """Drop the cleared batch for good, with everything else here that holds one of its
-        objects: `_`, a cell's result showing it, a tool call's record of it. Then collect, so the
-        memory goes back now. Returns the ids of the cells whose result was dropped.
+        objects: `_`, a cell's result showing it, a tool call's record of it. Then collect, so
+        the memory goes back now. Returns the ids of the cells whose result was dropped.
 
-        An object still bound to another name (`a = r1`) is the user's to keep: nothing of it is
-        dropped and it doesn't count as freed.
+        An object still bound to another name (`a = r1`) is the user's to keep: nothing of it
+        is dropped and it doesn't count as freed.
         """
         if not self.trash:
             return []
@@ -617,17 +657,20 @@ class Session:
     async def ask(
         self, prompt: str, on_delta: Callable[[str], Awaitable[None]], sent: str = "", toolsets: Any = None
     ) -> AiResult:
-        """One agent turn. Text streams through on_delta; tool results with a view (tables, videos, models) become r1, r2, ...
+        """One agent turn. Text streams through on_delta; tool results
+        with a view (tables, videos, models) become r1, r2, ...
 
         sent: the message as the model gets it, when that is more than what the user typed (the
-        variables it mentions, mentions.with_context). toolsets: tools the app adds for this run
-        (mentions.toolset), on top of the agent's own."""
+        variables it mentions, mentions.with_context). toolsets: tools the app adds for this
+        run (mentions.toolset), on top of the agent's own.
+        """
         result = AiResult()
         # one "agent" record per turn (the debug panel, logs.py); each tool call logs its own
         # "tool" record, tagged with its tool_call_id (ds.ai.call_log.ToolCallLog)
         with log_call("agent", "smash-agent", name="turn", prompt=prompt) as call, capture_run_messages() as captured:
             if sent and sent != prompt:
-                # what the model got on top of the typed prompt (the debug log shows it, logs._agent)
+                # what the model got on top of the typed prompt
+                # (the debug log shows it, logs._agent)
                 call["added"] = sent.removeprefix(prompt).strip()
             try:
                 async with ds.ai.agent.run_stream(
@@ -645,7 +688,8 @@ class Session:
                 call["error"] = f"{type(error).__name__}: {error}"
             result.steps = self._steps(new_messages)
             call["steps"] = len(result.steps)
-            # from the messages rather than stream.usage(), so a failed turn still shows what it spent
+            # from the messages rather than stream.usage(),
+            # so a failed turn still shows what it spent
             result.usage = usage = TurnUsage.of(new_messages)
             self.ai_cost += usage.cost or 0
             if usage.requests:
@@ -669,7 +713,8 @@ class Session:
                     view = to_view(part.content)
                     if view is None:
                         continue
-                    # a table is bound as its DataFrame; anything else as the object the tool returned
+                    # a table is bound as its DataFrame; anything
+                    # else as the object the tool returned
                     value = view.frame if isinstance(part.content, ds.ai.TableResult) else part.content
                     name = self.bind_result(value, part.tool_name, inputs.get(part.tool_call_id), part.tool_call_id)
                     if part.tool_call_id in steps:
@@ -683,7 +728,9 @@ _SESSIONS: dict[str, Session] = {}
 
 
 def find_session(token: str) -> Session | None:
-    """The session for a browser tab if it has one; never creates it (completion, inline edit)."""
+    """The session for a browser tab if it has one; never
+    creates it (completion, inline edit).
+    """
     return _SESSIONS.get(token)
 
 
@@ -698,15 +745,18 @@ def get_session(token: str) -> Session:
 
 def all_sessions() -> dict[str, Session]:
     """Every session the backend holds, by token (the debug panel's System tab). They are never
-    dropped: a browser tab that is gone keeps its variables until the backend restarts."""
+    dropped: a browser tab that is gone keeps its variables until the backend restarts.
+    """
     return dict(_SESSIONS)
 
 
 def complete(token: str, code: str, line: int, column: int) -> list[dict[str, str]]:
-    """Completions at (1-based line, 0-based column) of code, resolved against the session's live variables.
+    """Completions at (1-based line, 0-based column) of code,
+    resolved against the session's live variables.
 
-    Uses jedi's Interpreter mode, like IPython: `r1.` completes with real DataFrame methods because
-    r1 exists. An unknown token completes against an empty namespace instead of creating a session.
+    Uses jedi's Interpreter mode, like IPython: `r1.` completes with real DataFrame methods
+    because r1 exists. An unknown token completes against an
+    empty namespace instead of creating a session.
     """
     session = find_session(token)
     namespace = session.namespace if session else {}

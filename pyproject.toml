@@ -108,7 +108,7 @@ docstring-code-format = true
 [tool.ruff.lint]
 # TEMPORARY: skip linting (not formatting) for experimental/ prototypes while they're in flux --
 # remove to lint them again
-exclude = ["experimental/**", "services/ui/**"]  # services/ui: until its lint cleanup lands
+exclude = ["experimental/**"]
 # TODO: remove auto fix of return None to just return (feels awkward)
 # definitions of rules can be found in: https://docs.astral.sh/ruff/rules/
 # we use extend-select so that we get defaults from ruff
@@ -384,6 +384,12 @@ extend-unfixable = [
     # so docstrings/annotations are optional here (same as scripts/ and tests/)
     "D100", "D101", "D102", "D103", "D105", "D106",
     "ANN",
+    # purpose headers' "Usage:" lines (eg `find(text, session) / ...`) read as code, as in scripts/
+    "ERA001",
+    # UI text uses typographic characters on purpose (…, ×, –)
+    "RUF001", "RUF002",
+    # dispatchers on a value's kind (render, mentions, state events) return once per case
+    "PLR0911",
 ]
 "pkgs/**/typing.py" = [
     # allowing unused imports for typing modules

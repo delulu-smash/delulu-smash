@@ -8,28 +8,28 @@
 # ---------------------------------------------------------------------------
 from __future__ import annotations
 
-import re
 import json
+import re
 from typing import Any
 
 import reflex as rx
 
-from .api import api
-from .commands import COMMANDS, ICON_BUG, ICON_PY, ICON_VARIABLE, RUNNABLE, SLASH, Command, slash_about
-from .commands import ICON_AI as ICON_CHAT
-from .commands import ICON_TABLE as ICON_RESULTS
-from .editor import cell_editor
-from .render import ICON_COLLAPSE, ICON_EXPAND, INLINE_EDIT_URL, copy_button, render_component, traceback_view
-from .widgets import ADDABLE
-from .shortcuts import Shortcut, codemirror_keys, shortcuts_script
-from .agents import AGENTS, DEFERRED, LOAD_TOOL, AgentInfo, CapabilityInfo, ToolInfo
-from .state import State
-from .variables import UNDO_SECONDS
+from ui.agents import AGENTS, DEFERRED, LOAD_TOOL, AgentInfo, CapabilityInfo, ToolInfo
+from ui.api import api
+from ui.commands import COMMANDS, ICON_BUG, ICON_PY, ICON_VARIABLE, RUNNABLE, SLASH, Command, slash_about
+from ui.commands import ICON_AI as ICON_CHAT
+from ui.commands import ICON_TABLE as ICON_RESULTS
+from ui.editor import cell_editor
+from ui.render import ICON_COLLAPSE, ICON_EXPAND, INLINE_EDIT_URL, copy_button, render_component, traceback_view
+from ui.shortcuts import Shortcut, codemirror_keys, shortcuts_script
+from ui.state import State
+from ui.variables import UNDO_SECONDS
+from ui.widgets import ADDABLE
 
-# Nerd Font glyphs come from commands.py (the palette draws the same ones). ICON_CHAT (the robot) is
-# also the inline chat's icon: inline_edit.jsx ICON_AI.
-# The help panel's FAQ: (question, answer, commands to run in a terminal). How the app works is in
-# the README (services/ui/README.md); the panel keeps to keys and fixes.
+# Nerd Font glyphs come from commands.py (the palette draws the same ones). ICON_CHAT (the
+# robot) is also the inline chat's icon: inline_edit.jsx ICON_AI.
+# The help panel's FAQ: (question, answer, commands to run in a terminal). How the app works is
+# in the README (services/ui/README.md); the panel keeps to keys and fixes.
 FAQ = [
     (
         'An answer says a key or token isn\'t stored (eg "no start.gg API token stored"), but you stored it',
@@ -37,8 +37,9 @@ FAQ = [
         "ds settings sync\nds ui restart",
     ),
 ]
-# The help panel's examples: (section, [(what to type in the chat box, what it does)]). Short on
-# purpose: a few lines that show the interesting uses, drawn as a code snippet (help_examples).
+# The help panel's examples: (section, [(what to type in the chat box, what it does)]). Short
+# on purpose: a few lines that show the interesting
+# uses, drawn as a code snippet (help_examples).
 HELP_EXAMPLES: list[tuple[str, list[tuple[str, str]]]] = [
     (
         "Slash commands: type / in the chat",
@@ -64,11 +65,13 @@ HELP_EXAMPLES: list[tuple[str, list[tuple[str, str]]]] = [
         ],
     ),
 ]
-# a slash command or a mention of a variable in an example line, to colour it as the chat box does
+# a slash command or a mention of a variable in an
+# example line, to colour it as the chat box does
 _EXAMPLE_TOKEN = re.compile(r"(^/[a-z0-9-]+|@[A-Za-z_][\w.]*)")
 # The editor fetches completions straight from the backend (see api.py).
 COMPLETE_URL = rx.config.get_config().api_url + "/complete"
-# assets/mentions.js asks it what can follow the dot in an "@" mention (api.py, mentions.complete)
+# assets/mentions.js asks it what can follow the dot
+# in an "@" mention (api.py, mentions.complete)
 MENTION_COMPLETE_URL = rx.config.get_config().api_url + "/mention_complete"
 
 
@@ -78,7 +81,9 @@ def handle(name: rx.Var | str) -> rx.Component:
 
 
 def zoom_button(pane: str) -> rx.Component:
-    """Fill the window with this pane, or restore the layout. assets/panes.js clicks it on Shortcut.FULL_SCREEN."""
+    """Fill the window with this pane, or restore the layout.
+    assets/panes.js clicks it on Shortcut.FULL_SCREEN.
+    """
     return rx.el.button(
         rx.cond(State.zoomed == pane, ICON_COLLAPSE, ICON_EXPAND),
         title=rx.cond(
@@ -91,7 +96,8 @@ def zoom_button(pane: str) -> rx.Component:
 
 def logs_button(target: rx.Var | str, what: str) -> rx.Component:
     """The small bug button that opens the debug log on one thing's requests (State.show_logs),
-    the reverse of a log row's ↖ link. Shown on hover of its row (.log-btn in app.css)."""
+    the reverse of a log row's ↖ link. Shown on hover of its row (.log-btn in app.css).
+    """
     return rx.el.button(
         ICON_BUG,
         title=f"Requests {what} made (debug log)",
@@ -108,7 +114,8 @@ def chat_item(item: rx.Var) -> rx.Component:
         (
             "user",
             rx.el.div(
-                # an "@" mention in it stays coloured, as it was in the chat box (mentions.pieces)
+                # an "@" mention in it stays coloured, as it
+                # was in the chat box (mentions.pieces)
                 rx.cond(
                     item.pieces.length() > 0,
                     rx.foreach(
@@ -160,8 +167,8 @@ def chat_item(item: rx.Var) -> rx.Component:
             ),
         ),
         # the app's own line, eg a slash command that was run (State.submit_chat)
-        # a slash command that ran (State.submit_chat): a row as a tool call's, the command coloured
-        # as in the chat box; a widget it added is the ref row after it
+        # a slash command that ran (State.submit_chat): a row as a tool call's, the command
+        # coloured as in the chat box; a widget it added is the ref row after it
         (
             "slash",
             rx.el.div(
@@ -172,8 +179,8 @@ def chat_item(item: rx.Var) -> rx.Component:
                 class_name="tool-step mono",
             ),
         ),
-        # variables mentioned with "@" (mentions.py): under the message that sent them to the AI,
-        # or printed by a message that was only mentions. Coloured as in the chat box
+        # variables mentioned with "@" (mentions.py): under the message that sent them to the
+        # AI, or printed by a message that was only mentions. Coloured as in the chat box
         (
             "mention",
             mention_item(item),
@@ -197,9 +204,11 @@ def chat_item(item: rx.Var) -> rx.Component:
 
 @rx.memo
 def markdown_bubble(text: rx.Var[str]) -> rx.Component:
-    """An agent message. A memo component, so each bubble is its own React component: rx.markdown
-    calls a hook (the color mode, for its component map), and inside the chat loop that hook ran
-    once per message, so the number of hooks changed with every answer (React's hook-order warning)."""
+    """An agent message. A memo component, so each bubble is its own React component:
+    rx.markdown calls a hook (the color mode, for its component map), and inside the chat loop
+    that hook ran once per message, so the number of hooks changed
+    with every answer (React's hook-order warning).
+    """
     return rx.el.div(
         rx.markdown(text),
         # top-right, on hover: copy the reply as written (its markdown)
@@ -209,7 +218,9 @@ def markdown_bubble(text: rx.Var[str]) -> rx.Component:
 
 
 def ref_item(item: rx.Var) -> rx.Component:
-    """A tool result: a row that folds its view open inline (collapsed by default), and opens it as a tab."""
+    """A tool result: a row that folds its view open inline
+    (collapsed by default), and opens it as a tab.
+    """
     open_tab = State.select_object(item.name).stop_propagation
     return rx.el.div(
         rx.el.div(
@@ -239,10 +250,11 @@ def ref_item(item: rx.Var) -> rx.Component:
 
 
 def mention_item(item: rx.Var) -> rx.Component:
-    """Variables mentioned with "@" (mentions.py): the mentions, coloured as in the chat box, and
-    what happened to them. With a detail (a value printed as text, or what the AI was given) the
-    row is a fold: its caret shows or hides that text. Without one it has no caret (the result's
-    own row, under it, is what folds)."""
+    """Variables mentioned with "@" (mentions.py): the mentions, coloured as in the chat box,
+    and what happened to them. With a detail (a value printed as text, or what the AI was
+    given) the row is a fold: its caret shows or hides that text. Without one it has no caret
+    (the result's own row, under it, is what folds).
+    """
     return rx.el.div(
         rx.cond(
             item.detail != "",
@@ -266,8 +278,10 @@ def mention_item(item: rx.Var) -> rx.Component:
 
 
 def output_item(item: rx.Var) -> rx.Component:
-    """The result of a message that was only an "@" mention and names no variable ("@q1.describe()",
-    "@q1.wins"), shown as a cell shows its result: the same component, compact, with "open as tab"."""
+    """The result of a message that was only an "@" mention and names no variable
+    ("@q1.describe()", "@q1.wins"), shown as a cell shows its result: the
+    same component, compact, with "open as tab".
+    """
     return rx.el.div(
         rx.cond(
             item.view.kind != "",
@@ -291,10 +305,11 @@ def output_item(item: rx.Var) -> rx.Component:
 
 
 def assign_item(item: rx.Var) -> rx.Component:
-    """A "/assign" proposal (assign.py), under its slash command's row: the code that makes the new
-    variable, in a box to review and change. Enter (or Run) runs it, Esc (or Drop) doesn't
+    """A "/assign" proposal (assign.py), under its slash command's row: the code that makes the
+    new variable, in a box to review and change. Enter (or Run) runs it, Esc (or Drop) doesn't
     (assets/assign.js); a run that fails shows why under the code and the box stays. Once run,
-    the code stays as text, with the variable printed under it."""
+    the code stays as text, with the variable printed under it.
+    """
     note = rx.el.span(item.detail, class_name="assign-note dim")
     return rx.match(
         item.status,
@@ -352,7 +367,9 @@ def assign_item(item: rx.Var) -> rx.Component:
 
 
 def agent_progress() -> rx.Component:
-    """The one "agent is working" status, at the end of the chat: a pulsing 3x3 dot square, as in Zed's agent panel."""
+    """The one "agent is working" status, at the end of the chat:
+    a pulsing 3x3 dot square, as in Zed's agent panel.
+    """
     return rx.el.div(
         rx.el.span(*[rx.el.i() for _ in range(9)], class_name="dot-square"),
         rx.el.span(rx.cond(State.streaming == "", "Thinking…", "Generating…")),
@@ -361,7 +378,9 @@ def agent_progress() -> rx.Component:
 
 
 def context_meter() -> rx.Component:
-    """How full the model's context window is and what the chat cost so far (State.context_label)."""
+    """How full the model's context window is and what
+    the chat cost so far (State.context_label).
+    """
     return rx.cond(
         State.context_label != "",
         rx.el.div(
@@ -370,7 +389,8 @@ def context_meter() -> rx.Component:
             title=" ".join(
                 [
                     "Conversation size (sent again with every request) / the model's context window,",
-                    "and what the AI cost so far (chat and inline chats). Past about half, answers get slower and cost more.",
+                    "and what the AI cost so far (chat and inline chats).",
+                    "Past about half, answers get slower and cost more.",
                 ]
             ),
             class_name=rx.cond(State.context_pct >= 50, "ctx-meter mono is-full", "ctx-meter mono"),
@@ -380,9 +400,11 @@ def context_meter() -> rx.Component:
 
 def slash_menu() -> rx.Component:
     """The slash commands (commands.SLASH), listed over the chat box while it holds "/" and the
-    start of a name: type to filter, arrows move, Tab completes (with a space after, for one that
-    takes text), Enter runs. All in the browser
-    (assets/slash.js): picking one sends "/<name>" as the message, which State.submit_chat runs."""
+    start of a name: type to filter, arrows move, Tab completes (with a space after, for one
+    that takes text), Enter runs. All in the browser
+    (assets/slash.js): picking one sends "/<name>"
+    as the message, which State.submit_chat runs.
+    """
     return rx.el.div(
         *[
             rx.el.button(
@@ -395,8 +417,8 @@ def slash_menu() -> rx.Component:
                 rx.el.span(slash_about(command), class_name="dim palette-title"),
                 rx.el.span(command.keys, class_name="palette-keys mono dim"),
                 type="button",
-                # data-takes: Tab completes with a space after, ready for the text (assets/slash.js)
-                # data-about: the hover text of the command where it is typed
+                # data-takes: Tab completes with a space after, ready for the text
+                # (assets/slash.js) data-about: the hover text of the command where it is typed
                 custom_attrs={
                     "data-slash": name,
                     "data-words": command.words,
@@ -414,9 +436,11 @@ def slash_menu() -> rx.Component:
 
 
 def mention_data() -> rx.Component:
-    """The variables "@" can mention (State.mention_rows, mentions.py), on the page but not shown:
-    assets/mentions.js reads them to list them at the caret when "@" is typed in a chat box (the
-    chat, a form's Ask AI row, an editor's inline chat) and to colour a mention in the chat box."""
+    """The variables "@" can mention (State.mention_rows, mentions.py), on the page but not
+    shown: assets/mentions.js reads them to list them at the caret when "@" is typed in a chat
+    box (the chat, a form's Ask AI row, an editor's inline chat)
+    and to colour a mention in the chat box.
+    """
     return rx.el.div(
         rx.foreach(
             State.mention_rows,
@@ -440,7 +464,8 @@ def chat_pane() -> rx.Component:
     return rx.el.div(
         rx.el.div(
             rx.el.span("Chat"),
-            # the chat agent's model (agents.py; every agent's setup is in the debug panel's Agents tab)
+            # the chat agent's model (agents.py; every agent's
+            # setup is in the debug panel's Agents tab)
             rx.el.span(AGENTS[0].model_name, title=f"Model: {AGENTS[0].model}", class_name="chat-model mono"),
             rx.el.span(class_name="spacer"),
             context_meter(),
@@ -454,7 +479,12 @@ def chat_pane() -> rx.Component:
                     rx.cond(
                         State.chat.length() == 0,
                         rx.el.div(
-                            "Ask about Smash Ultimate. What the agent pulls (tables, VODs, …) shows up below as r1, r2, … ",
+                            " ".join(
+                                [
+                                    "Ask about Smash Ultimate. What the agent pulls (tables, VODs, …)",
+                                    "shows up below as r1, r2, … ",
+                                ]
+                            ),
                             "and is a plain Python object in the cells (tables are polars DataFrames).",
                             class_name="empty",
                         ),
@@ -469,7 +499,8 @@ def chat_pane() -> rx.Component:
                 ),
                 class_name="chat-scroll",
             ),
-            # shown once you scroll up (assets/panes.js adds .is-scrolled): back to the newest message
+            # shown once you scroll up (assets/panes.js adds
+            # .is-scrolled): back to the newest message
             rx.el.button(
                 "↓",
                 title="Jump to the newest message",
@@ -487,7 +518,12 @@ def chat_pane() -> rx.Component:
             rx.el.div(aria_hidden="true", custom_attrs={"data-slash-mirror": ""}, class_name="slash-mirror"),
             rx.el.textarea(
                 name="prompt",
-                placeholder=f"Ask the agent…  ({Shortcut.SEND.keys} to send, {Shortcut.NEW_LINE.keys} for a new line, / for commands, @ for variables)",
+                placeholder=" ".join(
+                    [
+                        f"Ask the agent…  ({Shortcut.SEND.keys} to send,",
+                        f"{Shortcut.NEW_LINE.keys} for a new line, / for commands, @ for variables)",
+                    ]
+                ),
                 enter_key_submit=True,
                 # the cursor starts here when the app opens
                 auto_focus=True,
@@ -511,7 +547,8 @@ def chat_pane() -> rx.Component:
 
 def object_tab(obj: rx.Var) -> rx.Component:
     """A result tab: click selects, x closes, right-click opens the close menu (as in VS Code).
-    Closing only hides the tab; the name stays in Python."""
+    Closing only hides the tab; the name stays in Python.
+    """
     name = obj["name"]
     return rx.el.div(
         handle(name),
@@ -539,7 +576,8 @@ def menu_item(label: str, event: Any) -> rx.Component:
 def menu_search(placeholder: str) -> rx.Component:
     """A menu's search box, as in Omarchy's menus: it has the focus when the menu opens; typing
     filters the rows, arrows move, Enter picks. All in the browser (assets/panes.js,
-    data-menu-search), so it is instant."""
+    data-menu-search), so it is instant.
+    """
     return rx.el.input(
         placeholder=placeholder,
         auto_focus=True,
@@ -552,7 +590,8 @@ def menu_search(placeholder: str) -> rx.Component:
 
 def palette_row(command: Command) -> rx.Component:
     """One command of the palette: icon, "Group: title", its shortcut. Running it closes the
-    palette first; a `press` command is then run in the browser as its key (assets/panes.js)."""
+    palette first; a `press` command is then run in the browser as its key (assets/panes.js).
+    """
     if command.event:
         name, *args = command.event
         run = getattr(State, name)(*args) if args else getattr(State, name)
@@ -566,18 +605,20 @@ def palette_row(command: Command) -> rx.Component:
         rx.el.span(rx.el.span(command.group + ": ", class_name="dim"), title, class_name="palette-title"),
         rx.el.span(command.keys, class_name="palette-keys mono dim"),
         on_click=[State.close_palette, run],
-        # data-command: what "recently used" remembers; data-words: found by these too (panes.js)
+        # data-command: what "recently used" remembers;
+        # data-words: found by these too (panes.js)
         custom_attrs={"data-command": command.id, "data-words": command.words},
         class_name="menu-item palette-item",
     )
 
 
 def palette() -> rx.Component:
-    """The command palette (Shortcut.PALETTE), as VS Code's and Omarchy's menu: a search box over
-    every command (commands.py) and every open result ("Go to"). Typing filters, arrows move, Enter
-    runs; the ones you ran last come first (assets/panes.js). Always on top, as Omarchy's launcher
-    is: over the debug log, help, the keybindings list and a floating view, with its own backdrop,
-    so closing it leaves what is under it open."""
+    """The command palette (Shortcut.PALETTE), as VS Code's and Omarchy's menu: a search box
+    over every command (commands.py) and every open result ("Go to"). Typing filters, arrows
+    move, Enter runs; the ones you ran last come first (assets/panes.js). Always on top, as
+    Omarchy's launcher is: over the debug log, help, the keybindings list and a floating view,
+    with its own backdrop, so closing it leaves what is under it open.
+    """
     menu = rx.el.div(
         menu_search("Run a command…"),
         *[palette_row(command) for command in COMMANDS],
@@ -602,7 +643,8 @@ def palette() -> rx.Component:
 
 def overlays() -> rx.Component:
     """What floats over the page: a tab's right-click menu and the help panel. Clicking outside
-    (or Esc, assets/panes.js) closes them."""
+    (or Esc, assets/panes.js) closes them.
+    """
     return rx.cond(
         (State.menu_tab != "") | State.show_help | State.add_menu | State.show_debug,
         rx.fragment(
@@ -639,7 +681,8 @@ def overlays() -> rx.Component:
                     menu_search("Search widgets…"),
                     *[menu_item(widget.title, State.add_widget(widget.kind)) for widget in ADDABLE],
                     rx.el.div("No matching widget", class_name="menu-empty dim"),
-                    # the "+" on the Results tab bar, at the pointer (the palette has these too)
+                    # the "+" on the Results tab bar, at the
+                    # pointer (the palette has these too)
                     style={"left": State.menu_x.to(str) + "px", "top": State.menu_y.to(str) + "px"},
                     class_name="menu sans",
                 ),
@@ -680,7 +723,8 @@ def debug_row(row: rx.Var) -> rx.Component:
                 row.details,
                 lambda detail: rx.cond(
                     detail["fold"] != "",
-                    # long text you only sometimes want (a tool call's response): folded until clicked
+                    # long text you only sometimes want (a tool
+                    # call's response): folded until clicked
                     rx.el.details(
                         rx.el.summary(detail["label"], class_name="dbg-label dim"),
                         rx.el.pre(detail["text"], class_name="dbg-text mono"),
@@ -700,7 +744,9 @@ def debug_row(row: rx.Var) -> rx.Component:
 
 
 def debug_panel() -> rx.Component:
-    """The debug log (bug icon, Shortcut.DEBUG): what the app asked of outside services, newest first."""
+    """The debug log (bug icon, Shortcut.DEBUG): what the
+    app asked of outside services, newest first.
+    """
     return rx.el.div(
         rx.el.div(
             rx.el.span("Debug", class_name="help-title"),
@@ -817,7 +863,8 @@ def prompt_block(label: str, text: str) -> rx.Component:
 
 def capability_card(cap: CapabilityInfo, chat: bool) -> rx.Component:
     """One capability of an agent: when it loads, what the model sees of it, its own prompt and
-    tools. chat: the chat agent's, so it is marked once this chat's model has loaded it."""
+    tools. chat: the chat agent's, so it is marked once this chat's model has loaded it.
+    """
     on_demand = cap.loads == DEFERRED
     count = f"{len(cap.tools)} tool{'s' if len(cap.tools) != 1 else ''}" if cap.tools else "no tools"
     status: Any = ""
@@ -840,7 +887,12 @@ def capability_card(cap: CapabilityInfo, chat: bool) -> rx.Component:
             rx.el.span("pydantic-ai built-in" if cap.builtin else cap.about, class_name="dim cap-about"),
         ),
         rx.el.div(
-            f"defer_loading=True: before the model calls {LOAD_TOOL}, it gets only this capability's id and description."
+            " ".join(
+                [
+                    f"defer_loading=True: before the model calls {LOAD_TOOL},",
+                    "it gets only this capability's id and description.",
+                ]
+            )
             if on_demand
             else "Always-on (defer_loading not set): active on every request.",
             class_name="dim cap-note",
@@ -910,8 +962,9 @@ def agent_card(info: AgentInfo) -> rx.Component:
 
 
 def agents_view() -> rx.Component:
-    """The Agents tab (agents.py): how each agent is set up, and what this chat did with the chat
-    agent's setup so far. No request is made: it is read from the Agent objects."""
+    """The Agents tab (agents.py): how each agent is set up, and what this chat did with the
+    chat agent's setup so far. No request is made: it is read from the Agent objects.
+    """
     return rx.el.div(
         rx.el.div(
             "This chat",
@@ -984,7 +1037,9 @@ def spend_view() -> rx.Component:
 
 
 def spend_report() -> rx.Component:
-    """Totals, a bar per day, the split by agent and model, the priciest requests (spend.py)."""
+    """Totals, a bar per day, the split by agent and
+    model, the priciest requests (spend.py).
+    """
     columns = ("agent", "model", "requests", "tokens", "cost", "share")
     return rx.fragment(
         rx.el.div(
@@ -999,7 +1054,8 @@ def spend_report() -> rx.Component:
             ),
             class_name="spend-tiles",
         ),
-        # one series: one theme hue, no legend; each bar's tooltip has its day, cost and requests
+        # one series: one theme hue, no legend; each bar's
+        # tooltip has its day, cost and requests
         rx.el.div(
             rx.foreach(
                 State.spend_bars,
@@ -1046,7 +1102,8 @@ def _perf_table(
     rows: rx.Var, columns: tuple[str, ...], titles: tuple[str, ...] = (), slow: bool = False
 ) -> rx.Component:
     """One of the System tab's tables (perf.py makes the rows as text). The first column is the
-    name (left), the rest are numbers; slow: a row whose `slow` is set is marked."""
+    name (left), the rest are numbers; slow: a row whose `slow` is set is marked.
+    """
 
     def cell(row: rx.Var, name: str) -> rx.Component:
         return rx.el.td(row[name], class_name="perf-name" if name == columns[0] else "")
@@ -1063,8 +1120,10 @@ def _perf_table(
 
 
 def system_view() -> rx.Component:
-    """The System tab (perf.py): where the memory is, what was slow, what the app holds. Read when
-    the tab opens and on Refresh; the browser adds its own numbers (assets/panes.js perfSnapshot)."""
+    """The System tab (perf.py): where the memory is, what was slow, what the app holds. Read
+    when the tab opens and on Refresh; the browser adds its
+    own numbers (assets/panes.js perfSnapshot).
+    """
 
     def section(title: str, hint: str, body: rx.Component, rows: rx.Var, empty: str = "") -> rx.Component:
         return rx.fragment(
@@ -1217,8 +1276,9 @@ def requests_view() -> rx.Component:
 
 
 def help_examples(title: str, lines: list[tuple[str, str]]) -> rx.Component:
-    """One section of examples in the help panel: a code snippet, a line per example with what it
-    does beside it. Slash commands and mentions are coloured as in the chat box."""
+    """One section of examples in the help panel: a code snippet, a line per example with what
+    it does beside it. Slash commands and mentions are coloured as in the chat box.
+    """
 
     def typed(text: str) -> list[rx.Component | str]:
         parts = []
@@ -1244,8 +1304,9 @@ def help_examples(title: str, lines: list[tuple[str, str]]) -> rx.Component:
 
 
 def help_panel() -> rx.Component:
-    """Short on purpose: examples first, then the keys in a box that scrolls (Shortcut.KEYS is the
-    searchable list of them), then fixes. How the app works is in the README."""
+    """Short on purpose: examples first, then the keys in a box that scrolls (Shortcut.KEYS is
+    the searchable list of them), then fixes. How the app works is in the README.
+    """
     return rx.el.div(
         *[help_examples(title, lines) for title, lines in HELP_EXAMPLES],
         rx.el.div(
@@ -1291,7 +1352,8 @@ def keys_palette() -> rx.Component:
     """The keybindings list (Shortcut.KEYS), like Omarchy's: a search box over one row per
     shortcut, "keys -> what it does" and where it works; Enter runs the picked one when a key
     press alone can (commands.RUNNABLE). Static markup, always in the page;
-    assets/keys.js opens it (.is-open), filters the rows and closes it."""
+    assets/keys.js opens it (.is-open), filters the rows and closes it.
+    """
     return rx.el.div(
         rx.el.div(class_name="keys-backdrop", custom_attrs={"data-keys-close": ""}),
         rx.el.div(
@@ -1312,7 +1374,8 @@ def keys_palette() -> rx.Component:
                         class_name="keys-row",
                         custom_attrs={
                             "data-keys-row": f"{shortcut.keys} {shortcut.value.what} {shortcut.value.where}".lower(),
-                            # Enter runs it, as in Omarchy's list ("" = not one a key press alone can run)
+                            # Enter runs it, as in Omarchy's list (""
+                            # = not one a key press alone can run)
                             "data-keys-run": shortcut.keys if shortcut in RUNNABLE else "",
                         },
                     )
@@ -1329,8 +1392,9 @@ def keys_palette() -> rx.Component:
 
 
 def viewer() -> rx.Component:
-    """The selected tab: the value's own component (render.py), plus a jump to the chat row of the
-    tool call that returned it."""
+    """The selected tab: the value's own component (render.py), plus a jump to the chat row of
+    the tool call that returned it.
+    """
     return render_component(
         State.view,
         State.view_event,
@@ -1413,8 +1477,8 @@ def notebook() -> rx.Component:
     return rx.el.div(
         rx.el.div(
             rx.el.span(rx.el.span(ICON_PY, class_name="mono accent-green icon"), "Python"),
-            # no buttons: the console is worked from the keyboard, in a cell (shortcuts.py). The
-            # line names the keys used most; hover it, or Alt+K, for all of them
+            # no buttons: the console is worked from the keyboard, in a cell (shortcuts.py).
+            # The line names the keys used most; hover it, or Alt+K, for all of them
             rx.el.span(
                 " · ".join(
                     [
@@ -1444,8 +1508,9 @@ def notebook() -> rx.Component:
 
 
 def variable_row(row: rx.Var) -> rx.Component:
-    """One variable: checkbox, name (click: its Results tab, else its details), type, shape, size,
-    where it came from, and its own clear. Its details unfold in a row below."""
+    """One variable: checkbox, name (click: its Results tab, else its details), type, shape,
+    size, where it came from, and its own clear. Its details unfold in a row below.
+    """
     name = row["name"]
     is_open = State.var_open == name
     return rx.fragment(
@@ -1510,8 +1575,10 @@ def variable_row(row: rx.Var) -> rx.Component:
 
 
 def variables_pane() -> rx.Component:
-    """The Variables pane (variables.py): every Python name of the session that is data (r1, q1,
-    your own), to see and to clear. A clear can be undone for UNDO_SECONDS; then it is freed."""
+    """The Variables pane (variables.py): every Python name of the session that is data (r1,
+    q1, your own), to see and to clear. A clear can
+    be undone for UNDO_SECONDS; then it is freed.
+    """
     count = State.var_selected.length()
     table = rx.el.table(
         rx.el.thead(
@@ -1541,8 +1608,9 @@ def variables_pane() -> rx.Component:
             rx.el.span(
                 rx.el.span(ICON_VARIABLE, class_name="mono accent-green icon"), "Variables", class_name="head-name"
             ),
-            # the part that gives way in a narrow panel (an ellipsis); the name, the buttons and the
-            # full screen button always show. With rows ticked it says what they hold together
+            # the part that gives way in a narrow panel (an ellipsis); the name, the buttons
+            # and the full screen button always show. With
+            # rows ticked it says what they hold together
             rx.cond(
                 State.var_selected_summary != "",
                 rx.el.span(
@@ -1557,8 +1625,9 @@ def variables_pane() -> rx.Component:
                 class_name=rx.cond(State.var_show_all, "act is-on", "act"),
             ),
             rx.el.span(class_name="spacer"),
-            # one Clear: the ticked rows (the table's header box ticks all). Clearing everything in
-            # one go is also /clear-variables and the palette's "Variables: Clear all"
+            # one Clear: the ticked rows (the table's header box ticks all). Clearing
+            # everything in one go is also /clear-variables
+            # and the palette's "Variables: Clear all"
             rx.el.button(
                 "Clear",
                 rx.cond(count > 0, rx.fragment(" (", count, ")"), ""),
@@ -1575,16 +1644,21 @@ def variables_pane() -> rx.Component:
                 State.var_rows.length() > 0,
                 table,
                 rx.el.div(
-                    "No variables yet. What the agent returns (r1, …), what a SmashDb console saves (q1, …) "
-                    "and what your cells assign is listed here.",
+                    " ".join(
+                        [
+                            "No variables yet. What the agent returns (r1, …), what a SmashDb console saves (q1, …)",
+                            "and what your cells assign is listed here.",
+                        ]
+                    ),
                     class_name="empty sans",
                 ),
             ),
             class_name="vars-body",
         ),
-        # the last clear, at the pane's bottom: while it can be undone, what was cleared with Undo
-        # (a bar along the button's bottom runs down over UNDO_SECONDS, then it is freed for good,
-        # State.expire_trash); after that, what was freed, or the names an undo didn't put back
+        # the last clear, at the pane's bottom: while it can be undone, what was cleared with
+        # Undo (a bar along the button's bottom runs down over UNDO_SECONDS, then it is freed
+        # for good, State.expire_trash); after that, what was
+        # freed, or the names an undo didn't put back
         rx.cond(
             (State.var_trash != "") | (State.var_note != ""),
             rx.el.div(
@@ -1595,7 +1669,8 @@ def variables_pane() -> rx.Component:
                     rx.fragment(
                         rx.el.button(
                             "Undo",
-                            # the time left to undo, running down along the button's bottom edge
+                            # the time left to undo, running down
+                            # along the button's bottom edge
                             rx.el.i(class_name="undo-left"),
                             title=f"Put them back (for {UNDO_SECONDS} s after the clear)",
                             on_click=State.undo_clear_vars,
@@ -1613,8 +1688,9 @@ def variables_pane() -> rx.Component:
                 # a new clear is a new strip: its bar starts full again
                 key=State.var_trash_seq,
                 role="status",
-                # read by app.css (.undo-left). A custom property, since a duration set here directly
-                # loses to the stylesheet's `animation` shorthand and the bar would be empty at once.
+                # read by app.css (.undo-left). A custom property, since a duration set here
+                # directly loses to the stylesheet's `animation` shorthand
+                # and the bar would be empty at once.
                 style={"--undo-seconds": f"{UNDO_SECONDS}s"},
                 class_name="vars-strip sans",
             ),
@@ -1738,7 +1814,8 @@ def index() -> rx.Component:
         rx.el.button(
             on_click=State.toggle_python_variables, hidden=True, custom_attrs={"data-toggle": "python-variables"}
         ),
-        # inline_edit.jsx clicks it after an inline chat, so the chat title's meter adds its cost
+        # inline_edit.jsx clicks it after an inline chat,
+        # so the chat title's meter adds its cost
         rx.el.button(on_click=State.refresh_usage, hidden=True, custom_attrs={"data-usage-refresh": ""}),
         class_name="page",
     )
@@ -1752,7 +1829,8 @@ app = rx.App(
     head_components=[
         rx.el.link(rel="icon", href="/favicon.png", type="image/png"),
         rx.el.link(rel="apple-touch-icon", href="/apple-touch-icon.png"),
-        # window.SHORTCUTS (shortcuts.py), then panes.js: full screen, float a view, close menus
+        # window.SHORTCUTS (shortcuts.py), then panes.js:
+        # full screen, float a view, close menus
         rx.el.script(shortcuts_script()),
         rx.el.script(src="/panes.js", defer=True),
         # the keybindings list, Alt+K (keys_palette)
@@ -1765,11 +1843,14 @@ app = rx.App(
         rx.el.script(src="/history.js", defer=True),
         # Esc on a "/assign" proposal drops it (assign_item)
         rx.el.script(src="/assign.js", defer=True),
-        # pick-from-a-list inputs in tool forms: characters, list[<choices>] (render._choice_input)
+        # pick-from-a-list inputs in tool forms: characters,
+        # list[<choices>] (render._choice_input)
         rx.el.script(src="/choice.js", defer=True),
-        # no password-manager or browser autofill on any input (data-allow-autofill opts one back in)
+        # no password-manager or browser autofill on any
+        # input (data-allow-autofill opts one back in)
         rx.el.script(src="/no_autofill.js", defer=True),
     ],
 )
-# The page title is the web app window's title (delulu-smash); see .os/scripts/keybindings/delulu-smash.py.
+# The page title is the web app window's title (delulu-smash);
+# see .os/scripts/keybindings/delulu-smash.py.
 app.add_page(index, route="/", title="delulu-smash", on_load=State.on_load)
