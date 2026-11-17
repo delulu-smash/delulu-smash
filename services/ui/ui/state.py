@@ -13,6 +13,7 @@ import traceback
 from typing import Any
 
 import reflex as rx
+from ds.ai import scripts
 from ds.data.raw.smashtube import MatchVideos, search_videos
 from ds.util.logging import logger
 
@@ -33,6 +34,7 @@ from ui.session import (
     trace_parts,
 )
 from ui.tool_forms import ToolRequest
+from ui.typeinfo import NO_TYPE, type_parts
 from ui.widgets import form_for, widget_of
 
 logs.install()
@@ -64,6 +66,10 @@ class Cell:
 
     def __setstate__(self, state: dict[str, Any]) -> None:
         fill_defaults(self, state)
+
+
+# an "assign" chat item whose name starts with this is a "/script" proposal (its id follows)
+SCRIPT_PREFIX = "script:"
 
 
 @dataclasses.dataclass
@@ -98,10 +104,14 @@ class ChatItem:
     line under the code (how the value is made, what the call used, what was bound)."""
     status: str = ""
     """assign only: asking (the AI is writing the code) | proposed (code to review and run) |
-    done (run, the variable is bound) | dropped | failed (no code came back)."""
+    running (its code is being run) | done (run, the variable is bound) | dropped |
+    failed (no code came back)."""
     error: str = ""
     """assign only: why the last run bound nothing, as
     plain text (its traceback is in trace)."""
+    type_parts: dict[str, str] = dataclasses.field(default_factory=lambda: dict(NO_TYPE))
+    """mention and ref: the variable's type (typeinfo.type_parts), shown before the text, its
+    model's name hovered for its class; all "" when the row names no variable."""
     pieces: list[dict[str, str]] = dataclasses.field(default_factory=list)
     """user only: its text cut at the "@" mentions in
     it (mentions.pieces), to colour them as the
@@ -277,6 +287,8 @@ class State(rx.State):
     spend_top: list[dict[str, str]] = []
     spend_note: str = ""
     spend_project_url: str = ""
+    spend_gateway_url: str = ""
+    spend_balance_url: str = ""
     # the System tab (perf.py): read when the tab opens or on Refresh; tables are rows of text
     perf_tiles: list[dict[str, str]] = []
     perf_memory: list[dict[str, str]] = []
@@ -900,6 +912,8 @@ class State(rx.State):
             self.spend_axis, self.spend_limit_line, self.spend_limits = view.axis, view.limit_line, view.limits
             self.spend_rows, self.spend_top = view.rows, view.top
             self.spend_project_url = view.project_url
+            self.spend_gateway_url = view.gateway_url
+            self.spend_balance_url = view.balance_url
 
     @event
     def refresh_debug(self):
@@ -1471,12 +1485,17 @@ class State(rx.State):
         """
         session = self._session()
         views = session.views()
-        about = " · ".join(filter(None, [type(mention.value).__name__, perf.shape_text(mention.value), note]))
-        row = ChatItem(kind="mention", name=f"@{mention.path}", text=about, key=f"mention-{len(self.chat)}")
+        # its type is shown first (type_parts), then this
+        about = " · ".join(filter(None, [perf.shape_text(mention.value), note]))
+        typed = type_parts(mention.value)
+        row = ChatItem(
+            kind="mention", name=f"@{mention.path}", text=about, type_parts=typed, key=f"mention-{len(self.chat)}"
+        )
         if mention.path in views:
             session.ui.setdefault(f"chat:{mention.path}", Ui())
+            # the block's line: its type (type_parts), where it came from, its size
             label = " · ".join(filter(None, [session.sources.get(mention.path, ""), views[mention.path].summary]))
-            return [row, ChatItem(kind="ref", name=mention.path, text=label, open=True)]
+            return [row, ChatItem(kind="ref", name=mention.path, text=label, type_parts=typed, open=True)]
         view = to_view(mention.value)
         if view is None:
             # no view: its repr, as under a cell
@@ -1552,11 +1571,49 @@ class State(rx.State):
         code = str(form.get("code", "")).strip()
         if index < 0 or self.chat[index].status != "proposed" or not code:
             return
+        if self.chat[index].name.startswith(SCRIPT_PREFIX):  # a "/script" proposal: Enter saves it
+            self._script_save(index, code)
+            return
         session = self._session()
+        # shown as running before the run (from_url's browser can take 30 s): the box is
+        # replaced by the code and a progress line, so a second Enter or click runs nothing
+        self.chat[index] = dataclasses.replace(
+            self.chat[index], status="running", text=code, error="", **_trace_fields([])
+        )
+        yield
         ran = await asyncio.to_thread(assign.run, session, code)
-        item = self.chat[index]
+        item = dataclasses.replace(self.chat[index], status="proposed")
+        # what each from_url in the code did, as a folded row: its summary, then (unfolded)
+        # every browser step and parser the AI ran. The
+        # requests themselves are in the debug log.
+        fetched = [
+            ChatItem(
+                kind="mention",
+                name="from_url",
+                text=report.summary() + (" · /script saves it as a script" if report.savable else ""),
+                detail=report.detail(),
+                key=f"fetch-{len(self.chat)}-{n}",
+            )
+            for n, report in enumerate(ran.fetched)
+        ]
+        # each saved script the code called (ds.ai.scripts),
+        # before what a failed one fell back to
+        called = [
+            ChatItem(kind="mention", name="script", text=made.summary(), key=f"script-{len(self.chat)}-{n}")
+            for n, made in enumerate(ran.script_runs)
+        ]
+        fetched = [*called, *fetched]
+        # a run again replaces the rows of the run before, instead of piling up under the box
+        while index + 1 < len(self.chat) and self.chat[index + 1].key.startswith(("fetch-", "script-")):
+            del self.chat[index + 1]
+        # the last browser run that can become a script, for "/script" (with the code that
+        # defined its model class, and the variable holding its rows)
+        if savable := [report for report in ran.fetched if report.savable]:
+            session.last_fetch = (savable[-1], code, ran.name)
         if not ran.name:
             self.chat[index] = dataclasses.replace(item, text=code, error=ran.error, **_trace_fields(ran.trace))
+            self.chat[index + 1 : index + 1] = fetched
+            self._refresh_debug()
             return
         mention = mentions.Mention(ran.name, session.namespace[ran.name])
         notes = [
@@ -1566,8 +1623,82 @@ class State(rx.State):
         self.chat[index] = dataclasses.replace(
             item, status="done", name=ran.name, text=code, error="", **_trace_fields([])
         )
-        self.chat[index + 1 : index + 1] = self._printed(mention, " · ".join(filter(None, ["assigned", *notes])))
+        printed = self._printed(mention, " · ".join(filter(None, ["assigned", *notes])))
+        self.chat[index + 1 : index + 1] = [*fetched, *printed]
         self._sync()
+        if fetched:
+            self._refresh_debug()
+
+    @event
+    async def script_ask(self, text: str):
+        """Run `/script [name]`: the AI writes a saved script (ds.ai.scripts) from the last
+        from_url browser run, checked by running it with no AI, and shown as code to review;
+        Enter saves it (assign_run). `/script list` lists the saved ones, `/script delete <id>`
+        deletes one.
+        """
+        words = text.split()
+        if words[:1] == ["list"]:
+            rows = [f"{info.id}: {info.description or 'BROKEN: ' + info.problem}" for info in scripts.registry()]
+            self.chat.append(ChatItem(kind="note", name="/script", text="; ".join(rows) or "no saved scripts yet"))
+            return
+        if words[:1] == ["delete"]:
+            done = len(words) > 1 and scripts.delete(words[1])
+            what = f"deleted {words[1]}" if done else "no such script: /script list shows them"
+            self.chat.append(ChatItem(kind="note", name="/script", text=what))
+            return
+        session = self._session()
+        if session.last_fetch is None:
+            usage = "saves the last from_url run that used the browser as a script: there is none in this session"
+            self.chat.append(ChatItem(kind="note", name="/script", text=usage))
+            return
+        report, code, name = session.last_fetch
+        key = f"assign-{len(self.chat)}"
+        self.chat.append(ChatItem(kind="assign", key=key, status="asking"))
+        yield
+        held = session.namespace.get(name)
+        with self._log_context("script draft"):
+            drafted = await scripts.draft(report, code, held if isinstance(held, list) else None, " ".join(words))
+        session.ai_cost += drafted.cost
+        index = self._chat_index(key)
+        if index < 0:  # the chat was cleared meanwhile
+            return
+        if drafted.error:
+            detail = " · ".join([drafted.error, *drafted.tried])
+            self.chat[index] = dataclasses.replace(self.chat[index], status="failed", detail=detail)
+        else:
+            path = f"pkgs/ds/ai/temp/scripts/{drafted.id}.py"
+            kind = f"changes the saved script {drafted.id}" if drafted.replaces else "a new saved script"
+            detail = " · ".join([kind, drafted.verified, f"Enter saves {path}"])
+            self.chat[index] = dataclasses.replace(
+                self.chat[index], status="proposed", name=SCRIPT_PREFIX + drafted.id, text=drafted.code, detail=detail
+            )
+        self._sync_usage()
+        self._refresh_debug()
+
+    def _script_save(self, index: int, code: str) -> None:
+        """Enter on a "/script" proposal: save its code, as the user left it, when it keeps the
+        script rules (else why shows under the box, which stays). Past the size cap, ask which
+        scripts to delete.
+        """
+        item = self.chat[index]
+        script_id = item.name.removeprefix(SCRIPT_PREFIX)
+        try:
+            scripts.save(script_id, code)
+        except ValueError as error:
+            self.chat[index] = dataclasses.replace(item, text=code, error=str(error))
+            return
+        self._session().last_fetch = None
+        self.chat[index] = dataclasses.replace(item, status="done", text=code, error="")
+        path = f"pkgs/ds/ai/temp/scripts/{script_id}.py"
+        saved = f"saved {path} (and registry.md): /assign can use it from now on; commit it with git"
+        notes = [ChatItem(kind="note", name="/script", text=saved)]
+        if over := scripts.over_cap():
+            listed = ", ".join(f"{info.id} ({info.size:,} bytes, last run {when[:10]})" for info, when in over)
+            cap = f"the scripts are over the {scripts.MAX_DIR_BYTES:,} byte cap: which should go?"
+            notes.append(
+                ChatItem(kind="note", name="/script", text=f"{cap} /script delete <id>. Least used first: {listed}")
+            )
+        self.chat[index + 1 : index + 1] = notes
 
     @event
     def assign_drop(self, key: str):

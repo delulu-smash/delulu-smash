@@ -383,8 +383,8 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
 - **`/assign`** (`ui/assign.py`, `assets/assign.js`; what must hold is in
   `spec/services/ui/variables.md`, "/assign"): a new variable whose code the AI writes.
   - **Use**: `/assign top5 = the five best players in @q1`, or without a name (`/assign the date Ultimate came
-    out`) and the AI picks one, by Python's naming conventions for its type (`assign.NAMING`): `top_players_df`
-    for a DataFrame, `release_date` for a date, `started_at` for a datetime, `is_offline` for a bool, a plural
+    out`) and the AI picks one, by Python's naming conventions for its type (`assign.NAMING`):
+    `release_date` for a date, `started_at` for a datetime, `is_offline` for a bool, a plural
     for a list (`player_tags`), `n_sets` for a count. A name you give is kept as it is. Under the command a box shows the code, eg
     `top5 = q1.sort("wins", descending=True)["player"].head(5).to_list()`. Change it if you like (also the
     name), then Enter (or Run) runs it; Esc (or Drop) runs nothing. Shift+Enter is a new line.
@@ -394,17 +394,56 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
     checked`.
   - **What a variable may be**: a `str`, `int`, `float`, `bool`, `date`, `datetime`, `time` or `timedelta`; a
     list of those (one kind); a record, as a frozen pydantic model (its class is defined by the code and kept
-    in the session, eg `PlayerSummary`); a polars DataFrame. A dict, `None`, a tuple, a set, a Series or a
-    list of records is refused, with why, and nothing is bound. Checked on the value the code made, so your
+    in the session, eg `PlayerSummary`); several records, as a list of models of one class. A DataFrame (make
+    models: `[Model(**row) for row in df.iter_rows(named=True)]`), a dict, `None`, a tuple, a set or a Series
+    is refused, with why, and nothing is bound. Checked on the value the code made, so your
     own edits are held to it too.
   - **Running**: the code runs in a copy of your namespace, so a failure (its traceback shows under the box,
     which stays for a fix) or a refused value changes nothing, and helper names don't stay. Then the variable
     is bound (an existing name is replaced, and the row says so) and printed under the code, as `@name` prints
-    one. Its source in the Variables pane is `/assign`. `BaseModel` and `datetime` are given to the code.
+    one. Its source in the Variables pane is `/assign`. `BaseModel`, `datetime` and `from_url` are given to
+    the code.
+  - **From a web page** (`pkgs/ds/ai/extract.py`): give a URL, eg `/assign aapl_daily = daily closes for the
+    past year from https://www.google.com/finance/quote/AAPL:NASDAQ`. The proposal defines a model class and
+    ends with `aapl_daily = from_url(url, list[DailyClose], "daily closing prices for the past year")`; the
+    line under it says `from a web page: filled by AI when run, not checked`. Change the class if you like
+    (its fields are what gets filled), then Enter:
+    - The page is downloaded and one AI call fills the class from its text (a few seconds, well under a
+      cent). Tables, and values a site labels only by CSS class, keep their labels.
+    - If the text doesn't hold it (data loaded by JavaScript), a browser agent opens the page in the system
+      Chromium (headless, `/usr/bin/chromium`; pydantic-ai-harness `PlaywrightBrowser`, locked to that site),
+      clicks what is needed (eg `1Y`) and reads the data the page loaded. For regular data it writes a
+      parser, which the app checks (no imports, files, network or `eval`) and runs on the full data; small
+      irregular data it copies. About 30 to 60 s and a few cents; at most 15 model requests.
+    - A folded `from_url` row under the code says what was done (page text or browser, clicks, copied or
+      parsed, rows, time, cost); unfold it for every browser step and every parser tried, with its result.
+      The downloads and AI calls are in the debug log (`from_url`), the cost on the chat title's meter.
+    - What isn't on the page is `Not assigned: from_url didn't find it: <why>`; nothing is bound. Only
+      public http(s) pages are read. Runs differ: the AI decides what to click, so check the row count.
   - **The AI**: one request, no tools; it reads the chat so far, your variables (and what `@` mentions hold)
     and the SmashDb tables. A proposal that isn't an assignment, or misses the name you gave, goes back to the
     model up to twice. Logged as `inline-assign` in the debug log, with its own card in the Agents tab; its
     cost is on the chat title's meter.
+- **`/script`: scripts the AI saves for itself** (`pkgs/ds/ai/scripts.py`; what must hold is in
+  `spec/pkgs/ds/ai/scripts.md`). A `from_url` run that used the browser can be kept as a small Python file
+  that gets the same data later with no AI (about 5 s, free, instead of 30 s and a few cents).
+  - **Save**: after such a run its `from_url` row ends with "/script saves it as a script". `/script` (or
+    `/script <name>`) has the AI write the file from what the run did (page, labels clicked, the data
+    response, the parser); the draft is run with no AI and must give the same rows. It then shows as code
+    in the `/assign` box: change it if you like, Enter saves `pkgs/ds/ai/temp/scripts/<id>.py` and rebuilds
+    `registry.md` there. Esc drops it. Commit the files with git as any code.
+  - **Use**: from then on `/assign` is told of the saved scripts and proposes `name = scripts.<id>(...)`
+    when one fits, also with other arguments (another ticker, another range). The line under the code says
+    "a saved script: no AI when run"; a `script` row under the result says what ran and how long it took.
+  - **When one stops working** (it raises, its result doesn't fit its return type, or its own `_check`
+    refuses it): the AI browser gets the value instead, the `script` row says why it failed, and `/script`
+    then proposes the repaired file. Asked in a way a script doesn't cover yet, `/script` proposes adding a
+    parameter to it rather than a second script.
+  - **Always the file as it is now**: a run reads the file from disk, so your edits and the AI's apply on
+    the next call. A file that breaks the script rules (one public function named as the file, typed,
+    allowlisted imports, no global state) isn't run, and says which rule.
+  - `/script list` lists them; `/script delete <id>` deletes one. Past 250,000 bytes of scripts, a save
+    asks which to delete, least used first. Calls are logged to `local/ai_scripts/runs.jsonl`.
 - **Keybindings**: Alt+K opens a searchable list of every shortcut, like Omarchy's SUPER+K: type to filter,
   Esc (or Alt+K) closes (`keys_palette`, `assets/keys.js`). Enter runs the picked shortcut, as in Omarchy,
   when a key press alone can run it (`commands.RUNNABLE`: the `Alt` keys; a ↵ marks those rows). Enter does

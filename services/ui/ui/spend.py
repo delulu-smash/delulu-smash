@@ -55,6 +55,8 @@ class SpendView:
     top: list[dict[str, str]] = field(default_factory=list)
     note: str = ""
     project_url: str = ""
+    gateway_url: str = ""  # the Gateway's own spending page: what is billed
+    balance_url: str = ""  # the Gateway's settings: the prepaid balance and its recharge
 
 
 def window_starts(today_utc: dt.date) -> dict[str, dt.date]:
@@ -105,6 +107,15 @@ def nice_top(peak: float) -> float:
         return 1.0
     step = 10 ** math.floor(math.log10(peak))
     return next(m * step for m in (1, 2, 5, 10) if m * step >= peak)
+
+
+def gateway_url(project_url: str, page: str = "spending/organization") -> str:
+    """A page of the organization's Gateway, from its project's url (…/<org>/<project>):
+    "spending/organization" (spend and its limits) or "settings" (the prepaid balance the
+    spend is drawn from, and its recharge).
+    """
+    organization = project_url.rstrip("/").rpartition("/")[0]
+    return f"{organization}/-/gateway/{page}" if organization else ""
 
 
 def limits_text(limits: SpendingLimits) -> str:
@@ -228,4 +239,6 @@ def load(days: int = DAYS) -> SpendView:
         problem = f"Limits unavailable: {type(error).__name__}: {error}"
     view = build(spend.hourly, spend.top, _local_zone(), dt.datetime.now(dt.UTC), days, limits, problem)
     view.project_url = spend.project_url
+    view.gateway_url = gateway_url(spend.project_url)
+    view.balance_url = gateway_url(spend.project_url, "settings")
     return view

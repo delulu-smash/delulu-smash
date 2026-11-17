@@ -4,11 +4,13 @@
 #          "/assign [name =] <what it should hold>" into Python that ends by assigning one name
 #          (propose); the user reviews and runs it (run), and the value is bound only when it
 #          is structured: a basic value (str, int, float, bool, date, datetime, time,
-#          timedelta), a list of those, a pydantic model of those, or a polars DataFrame. Never
-#          a dict. The AI writes code rather than the value, so what was computed is exact and
-#          how it was made stays visible; something it only knows is written as a literal.
-#          It reads the chat so far, the session's variables (and "@" mentions) and the SmashDb
-#          tables, and has no tools.
+#          timedelta), a list of those, a pydantic model, or a list of models (several records;
+#          `to_df` later makes a DataFrame). Never a DataFrame or a dict. `from_url(url,
+#          shape)` (ds.ai.extract) fills a shape from a web page when the code runs. The AI
+#          writes code rather than the value, so what was computed is exact and how it was made
+#          stays visible; something it only knows is written as a literal. It reads the chat so
+#          far, the session's variables (and "@" mentions)
+#          and the SmashDb tables, and has no tools.
 # Usage: await propose(session, token, text) -> Proposal; run(session, code) -> Ran, called by
 #        State.assign_ask / assign_run. Each proposal is one "agent" debug-log record.
 # Spec:  spec/services/ui/variables.md ("/assign")
@@ -23,15 +25,18 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Literal
 
 import polars as pl
+from ds.ai import extract, scripts
 from ds.util.const import DEFAULT_AI_MODEL
 from ds.util.logging import log_call
 from ds.util.text import clean_f_str
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent, ModelRetry, RunContext, capture_run_messages
+from pydantic_ai.exceptions import ModelAPIError, ModelQuotaExceededError
 
 from ui import mentions
 from ui.inline_edit import context as python_context
 from ui.session import log_usage, trace_parts
+from ui.typeinfo import keep_class_sources
 
 if TYPE_CHECKING:
     from ui.session import Session
@@ -44,33 +49,43 @@ _NAMED = re.compile(r"\s*([A-Za-z_]\w*)\s*=(?!=)\s*(.+)", re.DOTALL)
 BASIC = (str, int, float, bool, dt.date, dt.datetime, dt.time, dt.timedelta)
 ALLOWED = " ".join(
     [
-        "a str, int, float, bool, date, datetime, time or timedelta,",
-        "a list of those, a pydantic model, or a polars DataFrame",
+        "a str, int, float, bool, date, datetime, time or timedelta, a list of those,",
+        "a pydantic model, or a list of models of one class",
     ]
 )
 # How the AI names a variable it picks the name for, by the value's type (the user's own name
 # is kept as given). One line each; the end of the instructions.
 NAMING = "\n".join(
     [
-        "- a DataFrame ends in _df: top_players_df",
         "- a date ends in _date: release_date; a datetime ends in _at: started_at; a time ends in _time",
         "- a timedelta ends in _duration: set_duration",
         "- a bool starts with is_, has_ or can_: is_offline",
-        "- a list is a plural noun: player_tags, win_rates",
+        "- a list is a plural noun: player_tags, win_rates, mac_aerials",
         "- a count is n_ and a plural: n_sets; another number names its unit or kind: win_rate, damage_pct",
         "- a str is a singular noun: best_char, player_tag",
         "- a record (pydantic model) is a singular noun, its class the same in PascalCase: player_summary, PlayerSummary",  # noqa: E501  # one bullet of the prompt
     ]
 )
-COMPUTED, KNOWLEDGE = "computed", "knowledge"
-BASIS_TEXT = {COMPUTED: "computed from your data", KNOWLEDGE: "from the AI's knowledge or the chat: not checked"}
+COMPUTED, KNOWLEDGE, EXTRACTED, SCRIPT = "computed", "knowledge", "extracted", "script"
+BASIS_TEXT = {
+    COMPUTED: "computed from your data",
+    KNOWLEDGE: "from the AI's knowledge or the chat: not checked",
+    EXTRACTED: "from a web page: filled by AI when run, not checked",
+    SCRIPT: "a saved script: no AI when run",
+}
 
 
 class Assign(BaseModel):
     name: str = Field(description="The variable's name: short snake_case, a Python identifier.")
     code: str = Field(description="Python that ends by assigning that name. No Markdown fences, no explanation.")
-    basis: Literal["computed", "knowledge"] = Field(
-        description="computed: the value is worked out from the session's data. knowledge: you wrote it out yourself."
+    basis: Literal["computed", "knowledge", "extracted", "script"] = Field(
+        description=" ".join(
+            [
+                "computed: the value is worked out from the session's data.",
+                "knowledge: you wrote it out yourself. extracted: from_url fills it from a web page.",
+                "script: a saved script gets it.",
+            ]
+        )
     )
 
 
@@ -83,18 +98,22 @@ _INSTRUCTIONS = clean_f_str(f"""
     The value must be structured, one of:
     - a basic value: str, int, float, bool, datetime.date, datetime.datetime, datetime.time, datetime.timedelta
     - a list of basic values, all of one kind, eg ["Steve", "Sonic"]
-    - a record: a frozen pydantic model whose fields are basic values or lists of them. Define its class in
-      the code, before the assignment: `class PlayerSummary(BaseModel, frozen=True): ...` (`BaseModel` is
-      already imported for you)
-    - a table: a polars DataFrame (`pl` is polars). Several records are a DataFrame, never a list of records
+    - a record: a frozen pydantic model whose fields are basic values, lists of them, or other models. Define
+      its class in the code, before the assignment: `class PlayerSummary(BaseModel, frozen=True): ...`
+      (`BaseModel` is already imported for you)
+    - several records: a list of models of one class, eg `[PlayerWins(**row) for row in
+      q1.head(5).iter_rows(named=True)]`. Never a polars DataFrame: turn table rows into models
     Never a dict, a tuple, a set, None or a list of dicts.
 
-    Prefer computing the value from what the session has (its variables, `db`, the SmashDb) over writing it
-    out: computed code is exact and shows where the value comes from. Set basis to "computed" then. When
-    the value isn't in the session's data but you know it, or the chat so far states it, write it as a
-    literal, eg `release = datetime.date(2018, 12, 7)` (`datetime` is already imported), and set basis to
-    "knowledge". Don't refuse because something can't be computed: a literal is fine. Don't write out a
-    table of more than about 30 rows from memory.
+    When the user gives a URL to take the value from, define the model class(es) for what they want and end
+    with `name = from_url("<the url>", <shape>, "<what to get, in the user's words>")`, eg
+    `aapl_daily = from_url(url, list[DailyClose], "daily closing prices for the past year")`: when the code
+    runs, an AI fills the shape from the page (with a browser when the data is loaded by JavaScript). The
+    third argument must carry everything the shape can't say (which range, which section, how many). Give
+    each field a short comment saying what it holds. Set basis to "extracted" then. Use only URLs the user
+    gave. Keep the model to the fields the user asked for: you can't see the page, and a field it doesn't
+    hold makes the whole call fail (for "prices", a date and one price, not open/high/low/close). Keep the
+    user's own words for a time range ("last year") in the third argument, not your reading of them.
 
     Use only variables, tables and columns that are listed, written as the data has them. Variables the
     user mentions with @ are named without the @ in code. Earlier messages, when there are any, are the
@@ -168,6 +187,25 @@ def code_problem(code: str) -> str:
     if not target(code):
         return "The code must end with one top-level assignment to the variable, eg `name = ...`."
     return ""
+
+
+_SCRIPTS_RULE = clean_f_str("""
+    Saved scripts get data that was got before, with no AI. When one fits what the user asks (same site
+    and kind of data, even with other arguments), use it instead of from_url: end the code with
+    `name = scripts.<id>(<arguments by name>)` and set basis to "script". Don't define its model class
+    again: the script returns its own. If none fits, use from_url as described. The scripts:
+    """)
+
+
+@assign_agent.instructions
+def saved_scripts() -> str:
+    """The saved scripts (ds.ai.scripts), read from their files on every proposal, so a script
+    saved or changed a moment ago is offered.
+    """
+    usable = [info for info in scripts.registry() if not info.problem]
+    if not usable:
+        return ""
+    return "\n".join([_SCRIPTS_RULE, *[f"- scripts.{info.signature}: {info.description}" for info in usable]])
 
 
 @assign_agent.output_validator
@@ -258,10 +296,15 @@ def _is_basic(value: Any) -> bool:
 
 
 def _list_problem(items: list[Any], what: str) -> str:
+    if items and all(isinstance(item, BaseModel) for item in items):
+        classes = {type(item).__name__ for item in items}
+        if len(classes) > 1:
+            return f"{what} mixes the models {', '.join(sorted(classes))}: a list holds one class"
+        return next((problem for item in items if (problem := _model_problem(item))), "")
     odd = next((item for item in items if not _is_basic(item)), None)
     if odd is not None:
-        hint = ": several records are a polars DataFrame" if isinstance(odd, dict | BaseModel) else ""
-        return f"{what} holds a {type(odd).__name__}; a list may only hold basic values{hint}"
+        hint = ": several records are a list of pydantic models" if isinstance(odd, dict) else ""
+        return f"{what} holds a {type(odd).__name__}; a list holds basic values or models of one class{hint}"
     # int and float mix as numbers; a bool is not a number here
     kinds = {"number" if type(item) in (int, float) else type(item).__name__ for item in items}
     if len(kinds) > 1:
@@ -269,32 +312,58 @@ def _list_problem(items: list[Any], what: str) -> str:
     return ""
 
 
+def _model_problem(record: BaseModel) -> str:
+    """Why a record can't be assigned: its fields are basic
+    values, lists of them, models, lists of models.
+    """
+    for name in type(record).model_fields:
+        held = getattr(record, name)
+        if held is None or _is_basic(held):
+            continue
+        if isinstance(held, BaseModel):
+            if problem := _model_problem(held):
+                return problem
+            continue
+        if isinstance(held, list):
+            if problem := _list_problem(held, f"field {name}"):
+                return problem
+            continue
+        return f"field {name} is a {type(held).__name__}: a model's fields are basic values, models or lists of them"
+    return ""
+
+
 def value_problem(value: Any) -> str:
     """Why a value can't be assigned ("" when it can): it must be structured, see ALLOWED."""
     match value:
         case pl.DataFrame():
-            return ""
+            return " ".join(
+                [
+                    "/assign makes models, not DataFrames:",
+                    "use [Model(**row) for row in df.iter_rows(named=True)]",
+                ]
+            )
         case BaseModel():
-            for name in type(value).model_fields:
-                held = getattr(value, name)
-                if held is None or _is_basic(held):
-                    continue
-                if isinstance(held, list):
-                    if problem := _list_problem(held, f"field {name}"):
-                        return problem
-                    continue
-                return f"field {name} is a {type(held).__name__}: a model's fields are basic values or lists of them"
-            return ""
+            return _model_problem(value)
         case list():
             return _list_problem(value, "the list")
         case dict():
-            return "a dict is unstructured: use a pydantic model (named, typed fields) or a polars DataFrame"
+            return "a dict is unstructured: use a pydantic model (named, typed fields)"
         case None:
             return "the value is None"
         case _ if _is_basic(value):
             return ""
         case _:
             return f"a {type(value).__name__} isn't allowed: {ALLOWED}"
+
+
+def ai_problem(error: ModelAPIError) -> str:
+    """What to tell the user when an AI request failed (eg the Gateway is out of credits)."""
+    body = getattr(error, "body", None)
+    detail = str(body.get("detail") or body.get("message") or "") if isinstance(body, dict) else ""
+    if isinstance(error, ModelQuotaExceededError):
+        return f"the AI request was refused for lack of credits or quota. {detail}".strip()
+    status = getattr(error, "status_code", "")
+    return f"the AI request failed ({type(error).__name__} {status}). {detail}".strip()
 
 
 @dataclass
@@ -310,10 +379,26 @@ class Ran:
     """A traceback as styled parts (session.trace_parts), [] for a refusal."""
     classes: list[str] = field(default_factory=list)
     """Model classes the code defined, bound too (the record's type, to use again)."""
+    script_runs: list[scripts.ScriptRun] = field(default_factory=list)
+    """Each saved script the code called (ds.ai.scripts): whether it worked, how long."""
+    fetched: list[extract.FromUrlReport] = field(default_factory=list)
+    """What each from_url call in the code did (path, browser
+    steps, parsers): shown, for transparency."""
     replaced: bool = False
 
 
 def run(session: Session, code: str) -> Ran:
+    """Run a proposal's code (_run) and count what its
+    from_url calls cost, however it ended.
+    """
+    scripts.clear_runs()
+    made = _run(session, code)
+    made.script_runs = scripts.runs()
+    session.ai_cost += sum(report.cost for report in made.fetched)
+    return made
+
+
+def _run(session: Session, code: str) -> Ran:
     """Run a snippet and bind the variable it makes, when its value is allowed.
 
     It runs in a copy of the namespace, so nothing is bound when it fails or its value is
@@ -327,18 +412,35 @@ def run(session: Session, code: str) -> Ran:
     name = target(code)
     if problem := session.name_problem(name):
         return Ran(error=problem)
-    scratch = {**session.namespace, "BaseModel": BaseModel, "datetime": dt}
+    scratch = {**session.namespace, "BaseModel": BaseModel, "datetime": dt, "from_url": extract.from_url}
+    scratch["scripts"] = scripts.Scripts()
     before = dict(scratch)
+    extract.clear_reports()
     try:
-        exec(compile(code, "</assign>", "exec"), scratch)  # noqa: S102  # code the user reviewed and ran
+        # dont_inherit: else the code gets this module's `from __future__ import annotations`,
+        # and a model's field types (datetime.date) stay unresolved strings: the class then
+        # fails as from_url's shape with "not fully defined"
+        compiled = compile(code, "</assign>", "exec", dont_inherit=True)
+        exec(compiled, scratch)  # noqa: S102  # code the user reviewed and ran
+        keep_class_sources(code, scratch)  # its classes as written, for the hover on a model's name
+    except extract.NotOnPage as error:
+        made.fetched = extract.reports()
+        made.error = f"Not assigned: from_url didn't find it: {error}"
+        return made
+    except ModelAPIError as error:  # the AI provider refused or failed: one line, no traceback
+        made.fetched = extract.reports()
+        made.error = f"Not assigned: {ai_problem(error)}"
+        return made
     except Exception as error:  # noqa: BLE001  # any error is shown under the code, not raised
         tb = error.__traceback__.tb_next if error.__traceback__ else None
         made.error = "".join(traceback.format_exception(type(error), error, tb))
         made.trace = trace_parts(error, tb)
+        made.fetched = extract.reports()
         return made
+    made.fetched = extract.reports()
     value = scratch[name]
     if problem := value_problem(value):
-        return Ran(error=f"Not assigned: {problem}.")
+        return Ran(error=f"Not assigned: {problem}.", fetched=made.fetched)
     for other, held in scratch.items():
         new = other not in before or before[other] is not held
         if new and isinstance(held, type) and issubclass(held, BaseModel) and held is not BaseModel:

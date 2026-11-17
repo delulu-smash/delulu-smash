@@ -213,6 +213,17 @@ COMMANDS: list[Command] = [
         slash_event=("assign_ask",),
     ),
     Command(
+        "scripts.save",
+        "Scripts",
+        "Save the last browser run as a script the AI reuses (no AI when run)",
+        ICON_PY,
+        event=("script_ask", ""),
+        words="replay store keep function registry delete list",
+        slash="script",
+        takes="[name] | list | delete <id>",
+        slash_event=("script_ask",),
+    ),
+    Command(
         "results.close_all", "Results", "Close all tabs", ICON_CLOSE, event=("close_all_tabs",), slash="close-tabs"
     ),
     Command(

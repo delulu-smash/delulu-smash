@@ -33,6 +33,7 @@ from ds.data import char_icon_by_name
 from ds.data.raw.smashtube import MatchVideos
 from ds.data.raw.startgg import USAGE_PER_PAGE
 from ds.data.startgg import CharacterStats, PlayerUsage, StageStats
+from ds.util.df import to_df
 from pydantic import BaseModel
 from reflex.event import no_args_event_spec, passthrough_event_spec
 
@@ -40,6 +41,7 @@ from ui.db_console import DbConsole, DbTable
 from ui.editor import sql_editor
 from ui.shortcuts import Shortcut, sql_keys
 from ui.tool_forms import FormField, ToolForm, ToolRequest
+from ui.typeinfo import NO_TYPE, type_parts, type_text
 from ui.widgets import form_for
 
 MAX_GRID_ROWS = 2000
@@ -149,6 +151,9 @@ class ViewData:
     """A message shown above the view, eg a failed page fetch."""
     label: str = ""
     """The value's type, eg 'DataFrame', 'MatchVideos'."""
+    label_parts: dict[str, str] = dataclasses.field(default_factory=lambda: dict(NO_TYPE))
+    """label cut around the model it names (typeinfo.type_parts), for the hover on its name;
+    used while label is still its text (a kind may set its own label)."""
     note: str = ""
     """One line of summary, eg '120 rows' or 'Sparg0 · 500+ found · page 1 of 50'."""
     # table
@@ -439,7 +444,8 @@ class View:
             kind=self.kind,
             slot=slot,
             error=ui.error,
-            label=type(self.value).__name__,
+            label=type_text(self.value),
+            label_parts=type_parts(self.value),
             note=self.note or self.summary,
             query=query,
             videos=self.videos,
@@ -529,6 +535,10 @@ def to_view(value: Any) -> View | None:
                 return _model_view(value)
             case list() | tuple() if _is_models(value):
                 # a list of models is a table, one row per model
+                # typed from the model's fields (ds.util.df.to_df): a date is a date
+                # column. Models of several classes have no one schema: their JSON form
+                if len({type(model) for model in value}) == 1:
+                    return _table_view(value, to_df(value))
                 rows = [model.model_dump(mode="json") for model in value]
                 return _table_view(value, pl.DataFrame(rows, infer_schema_length=None))
             case _ if (frame := as_frame(value)) is not None:  # pandas
@@ -940,6 +950,30 @@ def float_button() -> rx.Component:
     )
 
 
+def type_label(parts: rx.Var) -> rx.Component:
+    """A type as text (typeinfo.type_parts), the model's name in it underlined: hovering it
+    shows the class as Python code (assets/typehover.js reads data-type-code).
+    """
+    return rx.fragment(
+        parts["pre"],
+        rx.cond(
+            parts["model"] != "",
+            rx.el.span(
+                parts["model"],
+                custom_attrs={"data-type-code": parts["code"], "data-type-html": parts["html"]},
+                class_name="type-model",
+            ),
+        ),
+        parts["post"],
+    )
+
+
+def typed_text(parts: rx.Var, text: rx.Var) -> rx.Component:
+    """A row's "type · the rest" (a variable's chat row): the type as type_label shows it."""
+    has_type = (parts["pre"] != "") | (parts["model"] != "")
+    return rx.fragment(type_label(parts), rx.cond(has_type & (text != ""), " · ", ""), text)
+
+
 def _bar(
     view: rx.Var[ViewData],
     actions: tuple[rx.Component, ...],
@@ -951,7 +985,14 @@ def _bar(
     With send (the view's event sender), a view that has a tool form gets its Inputs button.
     """
     return rx.el.div(
-        rx.el.span(view.label, class_name="out-kind"),
+        rx.el.span(
+            rx.cond(
+                (view.label_parts["model"] != "") & (view.label_parts["text"] == view.label),
+                type_label(view.label_parts),
+                view.label,
+            ),
+            class_name="out-kind",
+        ),
         rx.cond(view.note != view.label, rx.el.span(view.note, class_name="dim")),
         rx.el.span(class_name="spacer"),
         *controls,

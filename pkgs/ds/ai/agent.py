@@ -12,6 +12,7 @@ from ds.ai.mechanics import mechanics_capability
 from ds.ai.smashdb import smashdb_capability
 from ds.ai.smashtube import smashtube_capability
 from ds.ai.startgg import startgg_capability
+from ds.ai.web import WEB_RULE, web_capability
 from ds.util.const import DEFAULT_AI_MODEL
 
 __all__ = ["agent"]
@@ -37,7 +38,8 @@ agent = Agent(
     name="smash-agent",
     # resolve the model at run time, so `import ds.ai` (tests, chat app) works without a key
     defer_model_check=True,
-    instructions=_INSTRUCTIONS,
+    # WEB_RULE always-on too: it must steer the model before the deferred web_capability loads
+    instructions=[_INSTRUCTIONS, WEB_RULE],
     # prompt caching (Anthropic 5m TTL, refreshed on each hit): chats are multi-request
     # (capability load, tool calls, follow-ups), so later requests read the prefix at ~0.1x
     # cost. Override per run with model_settings={"cache": False}
@@ -53,6 +55,8 @@ agent = Agent(
         # site blocks automated clients since Nov 2026
         startgg_capability,
         smashtube_capability,
+        # last resort for Smash questions (WEB_RULE): reads a page it has a URL for; no search
+        web_capability,
     ],
 )
 

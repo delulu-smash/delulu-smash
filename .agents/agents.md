@@ -228,6 +228,13 @@ directory that references `.agents/` content, never a second copy of it.
   creating a duplicate.
 - Treat these notes as personal reference material, not approved implementation work. Include the idea, its
   relevant context, and concrete next steps when known.
+- **`personal/ai/todo/`** holds checklists of what must be finished before a piece of work (or the project)
+  counts as mature: one Markdown file per topic, `- [ ]` items. **Only items the user confirmed** go in a todo
+  file: what they asked for, or a suggestion they said yes to. Mention open items when the work comes up again;
+  tick one only when it's really done.
+- **AI suggestions go to `personal/ai/todo/triage.md`**, or are asked about directly. One dated line each,
+  short, for the user to triage later (move to a todo file, act on, or delete). Never put an unconfirmed
+  suggestion in a todo file.
 
 ## Script Implementation Pattern
 
@@ -237,6 +244,10 @@ directory that references `.agents/` content, never a second copy of it.
   shell-only or Python-only.
 
 ## Plans and Proposals: Show Examples
+
+> **"Use cases and examples are worth a thousand words."** The user's mantra for how we communicate, in
+> both directions: a requirement, a plan, a question or a hand-back of finished work is clearest as a
+> concrete example (what is typed, what comes back), not a description. When in doubt, show one.
 
 The user works as the **architect**: they decide the design, the AI builds it. A plan has to let them judge the
 design at that level without reading the finished code, so when presenting a plan, a design, options to choose
@@ -289,6 +300,51 @@ def resolve(session, text):                    # text: 'q1.wins.value_counts()'
         raise Refused(f"@{path}.{name} isn't allowed")
     return getattr(value, name)(*args, **kwargs)  # the result is described like any mention
 ```
+
+### Waiting on the user: say so loudly
+
+When a turn ends with something only the user can unblock (a plan to approve, decisions to make, a
+question), it must be impossible to miss: a short summary can read like finished work. Adopted
+2026-11-17, after the user read a plan's closing decisions as done work and missed that nothing was
+built. So:
+
+- **Ask with the question tool when the harness has one** (eg Claude Code's AskUserQuestion): the
+  user has to answer before anything moves, and each option carries the recommendation.
+- **And end the text with a large, bold heading** saying what is waited on and that nothing was built
+  yet, as the very last line:
+
+  ```
+  ## ⏸ Waiting on you: approve the plan above (nothing built yet)
+  ```
+- Never put that heading on a turn whose work is done; then the things-to-try table ends it.
+
+### When the work is done: things to try
+
+The mantra above applies to handing work back too. So the summary of finished work (a feature, a fix, a UI
+change: anything the user can run or see) ends with a **short table (or list) of things to try**, so the
+user can test it themselves: the workflows and test cases that matter, not everything that was built.
+
+- **Concise**: 2 to 5 rows, a line each. What to do, what they should see, and why it's worth trying (what
+  it shows about the change, an edge it exercises, a decision it lets them judge).
+- **Quick and real**: each takes seconds and uses their real data and setup.
+- **Cover the main workflow first**, then at least one edge (a refusal, a limit, an empty state) when
+  there is one.
+- **Say which ones you ran yourself** and which are untested on screen, so they know where to look hardest.
+- **A "Copy/paste" column when there is something to type**: the exact command, chat message or value, as
+  inline code (`` `...` ``) so it can be copied as is, with nothing else in the cell. The "Try" column
+  then only says where it goes or what to click. Leave the cell empty for a row with nothing to paste, and
+  drop the column when no row has anything.
+
+```
+Things to try
+| Try                          | Copy/paste                | Expect                            | Why                                |
+|------------------------------|---------------------------|-----------------------------------|------------------------------------|
+| Alt+D → Spend                |                           | This month: "$1.91 / $5 · 38%"    | your real limit, read live         |
+| In the chat, then Run        | `/assign df = q1.head(1)` | refused: "models, not DataFrames" | the edge: not run on screen by me  |
+| In a terminal                | `ds ui status`            | "delulu-smash is up: …"           | the service survived the restart   |
+```
+
+Skip it for changes with nothing to run (docs wording, instructions, a rename the user won't notice).
 
 ## Staying Aligned: Direction, Interpretation, Changes
 

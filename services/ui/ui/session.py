@@ -25,6 +25,7 @@ import ds.ai
 import ds.data
 import jedi
 import polars as pl
+from ds.util.df import to_df
 from ds.util.logging import log_call
 from pydantic_ai import capture_run_messages
 from pydantic_ai.messages import ModelResponse, ToolCallPart, ToolReturnPart
@@ -32,6 +33,7 @@ from pydantic_ai.models import infer_model
 
 from ui import perf
 from ui.render import Ui, View, ViewData, to_view
+from ui.typeinfo import keep_class_sources
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable, Iterable
@@ -43,7 +45,7 @@ MAX_REPEATED_FRAMES = 3
 REPO_DIR = Path(__file__).resolve().parents[3]
 MAX_ARGS_CHARS = 160
 # Names put in the namespace up front; never listed as data objects.
-BUILTIN_NAMES = ("pl", "db")
+BUILTIN_NAMES = ("pl", "db", "to_df")
 
 
 @dataclass
@@ -346,7 +348,9 @@ class Session:
         self.started = self.used = time.time()
         # The session's SmashDb: `db` in the cells, and what a SmashDb console queries.
         self.db = ds.data.init_db()
-        self.namespace: dict[str, Any] = {"__name__": "__main__", "pl": pl, "db": self.db}
+        # to_df: models (what "/assign" makes) as a typed DataFrame,
+        # eg `df = to_df(aapl_daily_closes)`
+        self.namespace: dict[str, Any] = {"__name__": "__main__", "pl": pl, "db": self.db, "to_df": to_df}
         self.ai_history: list[Any] = []
         # what the AI cost so far, chat turns and inline chats, in US dollars (TurnUsage.cost;
         # unpriced requests left out)
@@ -355,6 +359,9 @@ class Session:
         # what the next turn sends again. An inline chat reads the chat but doesn't add to it.
         self.chat_tokens: int = 0
         self.sources: dict[str, str] = {}
+        # the last from_url browser run that can become a saved script ("/script"): its report,
+        # the /assign code that made it, the variable holding its rows; None when there is none
+        self.last_fetch: tuple[Any, str, str] | None = None
         # Views of notebook cell results, by cell id, so grids
         # can be re-sorted and results opened as tabs.
         self.outputs: dict[str, View] = {}
@@ -408,9 +415,15 @@ class Session:
         try:
             with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stdout):
                 if tree.body:
-                    exec(compile(tree, filename, "exec"), self.namespace)  # noqa: S102  # a REPL runs user code
+                    exec(compile(tree, filename, "exec", dont_inherit=True), self.namespace)  # noqa: S102  # a REPL runs user code
+                    # its classes as written, for the hover on a model's name (typeinfo.py)
+                    keep_class_sources(code, self.namespace)
                 if trailing is not None:
-                    value = eval(compile(ast.Expression(trailing.value), filename, "eval"), self.namespace)  # noqa: S307
+                    # dont_inherit (here and above): else the user's code gets this module's
+                    # `from __future__ import annotations`, and a model defined in a cell keeps
+                    # its field types as unresolved strings
+                    last = compile(ast.Expression(trailing.value), filename, "eval", dont_inherit=True)
+                    value = eval(last, self.namespace)  # noqa: S307
                     if value is not None:
                         self.namespace["_"] = value
                         result.view = to_view(value)

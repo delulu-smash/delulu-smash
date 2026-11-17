@@ -41,5 +41,8 @@ an input or return type.
 - **pydantic-ai tools:** a DataFrame can't be serialized to the model, so tools return
   `ds.ai.table.TableResult.from_df(df)`. Python callers rebuild the frame with `.to_df()`. See
   `.agents/instructions/pkgs.md`, "pydantic-ai Conventions".
+- **pydantic models:** `ds.util.df.to_df(models)` is the one way to turn models into a DataFrame: one
+  row per model, column types read from the model's fields (a `date` field is a `Date` column, also when
+  the list is empty or every value is `None`), not guessed from JSON text.
 - **Scripts, notebooks and `local/` experiments** may use whatever they like, pandas included. This spec
   only covers library interfaces in `pkgs/`.

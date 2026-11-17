@@ -37,6 +37,7 @@ from ui import perf
 from ui.db_console import DbConsole
 from ui.session import BUILTIN_NAMES
 from ui.tool_forms import ToolRequest
+from ui.typeinfo import type_text
 
 if TYPE_CHECKING:
     from ui.session import Session
@@ -379,7 +380,7 @@ def rows(session: Session | None) -> list[dict[str, Any]]:
     return [
         {
             "name": name,
-            "type": type(session.namespace[name]).__name__,
+            "type": type_text(session.namespace[name]),
             "shape": perf.shape_text(session.namespace[name]),
             "source": session.sources.get(name, PYTHON),
             "parts": _parts(session.namespace[name]),

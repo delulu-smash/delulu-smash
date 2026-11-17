@@ -763,6 +763,7 @@ input, textarea { caret-color: var(--blue); }
 .ai-view { flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--bg3);
   padding-top: 6px; }
 .spend-h { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--grey1); margin-top: 8px; }
+.spend-link { margin-left: 12px; color: var(--blue); text-transform: none; letter-spacing: 0; }
 .ai-view > .spend-h:first-child { margin-top: 0; }
 .agent-card { border: 1px solid var(--bg3); border-radius: 4px; padding: 4px 8px; }
 .agent-card > summary { display: flex; align-items: baseline; gap: 10px; cursor: pointer; font-size: 12.5px; }
@@ -851,3 +852,26 @@ input, textarea { caret-color: var(--blue); }
 .spend-setup code { font-family: var(--mono); background: var(--bg0); padding: 0 4px; border-radius: 3px; }
 .spend-error { font-size: 12px; color: var(--red); white-space: pre-wrap; }
 .chat-model { margin-left: 8px; text-transform: none; letter-spacing: 0; font-size: 11px; color: var(--grey1); }
+
+/* a pydantic model's name in a type (render.type_label): hovered, its class as code (assets/typehover.js) */
+.type-model { text-decoration: underline dotted; text-underline-offset: 3px; cursor: help; }
+.type-pop { display: none; position: fixed; z-index: 200; max-width: 80vw; max-height: 60vh; overflow: auto;
+  background: var(--bg-dim); border: 1px solid var(--bg3); border-radius: 6px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4); }
+.type-pop pre { margin: 0; padding: 8px 40px 8px 12px; white-space: pre; font-family: var(--mono); font-size: 12px; color: var(--fg); }
+.type-pop .copy-btn { position: absolute; top: 4px; right: 4px; }
+.type-pop:hover .copy-btn { opacity: 1; }  /* as on other code blocks: shown once the mouse is on it */
+/* its code coloured as the cell editor colours Python (cell_editor.jsx, Everforest); Pygments' token names */
+.type-pop .py-k, .type-pop .py-kn, .type-pop .py-kd, .type-pop .py-kr, .type-pop .py-ow { color: var(--red); font-style: italic; }
+.type-pop .py-kc, .type-pop .py-mi, .type-pop .py-mf, .type-pop .py-m { color: var(--purple); }
+.type-pop [class^="py-s"] { color: var(--green); }
+.type-pop .py-nf, .type-pop .py-fm { color: var(--green); }
+.type-pop .py-nc { color: var(--yellow); }
+.type-pop .py-nb, .type-pop .py-bp { color: var(--blue); }
+.type-pop .py-o, .type-pop .py-nd { color: var(--orange); }
+.type-pop .py-c1, .type-pop .py-c, .type-pop .py-ch { color: var(--grey1); font-style: italic; }
+/* a variable's or from_url's chat row wraps, rather than cutting its end ("/script saves it…") */
+.mention-row { white-space: normal; }
+.mention-row .tool-args { overflow-wrap: anywhere; }
+/* a narrow grid's bar wraps its controls onto a second line rather than cutting them
+   (a long label, eg list[DailyClose]) */
+.cell-widget .viewer-bar { flex-wrap: wrap; }

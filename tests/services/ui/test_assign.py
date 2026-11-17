@@ -55,7 +55,7 @@ class Point(BaseModel):
 
 
 class Nested(BaseModel):
-    inner: dict[str, int]
+    inner: object  # a dict (refused), a model (allowed)
 
 
 # -- "/assign name = text" ---------------------------------------------------------------
@@ -70,11 +70,11 @@ def test_the_name_is_the_users_when_given() -> None:
 
 
 def test_the_ai_is_told_how_to_name_by_type() -> None:
-    """A name the AI picks follows assign.NAMING (a DataFrame ends in _df, ...)."""
+    """A name the AI picks follows assign.NAMING (a date ends in _date, ...)."""
     instructions = assign.assign_agent._instructions[0]  # no public getter
     text = getattr(instructions, "instruction", instructions)
     assert assign.NAMING in text
-    for convention in ("_df", "_date", "_at", "is_", "n_"):
+    for convention in ("_date", "_at", "is_", "n_"):
         assert convention in assign.NAMING
 
 
@@ -110,9 +110,10 @@ def test_the_code_must_end_with_one_plain_assignment() -> None:
         ["Steve", "Sonic"],
         [1, 2.5],
         [],
-        pl.DataFrame({"a": [1]}),
         Point(x=1, tags=["a"], when=dt.date(2020, 1, 1)),
         Point(x=1),
+        [Point(x=1), Point(x=2)],  # several records: a list of models of one class
+        Nested(inner=Point(x=1)),  # a model in a model
     ],
     ids=lambda value: type(value).__name__,
 )
@@ -125,8 +126,9 @@ def test_structured_values_are_allowed(value: object) -> None:
     [
         ({"a": 1}, "dict is unstructured"),
         (None, "None"),
-        ([{"a": 1}], "DataFrame"),
-        ([Point(x=1)], "DataFrame"),
+        ([{"a": 1}], "list of pydantic models"),
+        ([Point(x=1), Nested(inner=1)], "one class"),
+        (pl.DataFrame({"a": [1]}), "models, not DataFrames"),
         ([1, "a"], "mixes"),
         ([True, 2], "mixes"),
         ((1, 2), "tuple"),
@@ -175,7 +177,8 @@ def test_run_keeps_a_records_class_but_not_helper_names(session: Session) -> Non
         ("print(1)", "assignment"),
         ("pl = 3", "predefined"),
         ("_hidden = 3", "hidden"),
-        ("helper = 1\nrows = [{'a': helper}]", "DataFrame"),
+        ("helper = 1\nrows = [{'a': helper}]", "list of pydantic models"),
+        ("df = q1.head(1)", "models, not DataFrames"),
     ],
 )
 def test_run_binds_nothing_when_it_fails_or_the_value_is_refused(session: Session, code: str, why: str) -> None:
@@ -243,3 +246,78 @@ def test_what_cant_be_asked_never_reaches_the_model(session: Session) -> None:
     assert "Say what" in propose(session, "  ", [], seen).error
     assert "predefined" in propose(session, "pl = polars again", [], seen).error
     assert not seen
+
+
+def test_from_url_is_ready_in_the_code_and_what_it_did_is_reported(
+    session: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """from_url is a plain name in the code; its reports are on Ran, its cost is counted."""
+    from ds.ai import extract
+
+    def fake(url: str, _shape: object) -> object:
+        extract._keep(extract.FromUrlReport(url=url, how="copied", rows=2, cost=0.002))
+        return [7, 8]
+
+    monkeypatch.setattr(extract, "from_url", fake)
+    before = session.ai_cost
+    ran = assign.run(session, 'points = from_url("https://example.com", list[int])')
+    assert ran.name == "points"
+    assert session.namespace["points"] == [7, 8]
+    assert [report.url for report in ran.fetched] == ["https://example.com"]
+    assert session.ai_cost == pytest.approx(before + 0.002)
+
+
+def test_from_url_not_finding_it_binds_nothing_and_says_why(session: Session, monkeypatch: pytest.MonkeyPatch) -> None:
+    from ds.ai import extract
+
+    def fake(_url: str, _shape: object) -> object:
+        raise extract.NotOnPage("drawn by JavaScript")
+
+    monkeypatch.setattr(extract, "from_url", fake)
+    ran = assign.run(session, 'x = from_url("https://example.com", int)')
+    assert ran.name == ""
+    assert "drawn by JavaScript" in ran.error
+    assert not ran.trace
+
+
+def test_a_model_with_a_date_field_is_fully_defined(session: Session) -> None:
+    """The code is compiled without assign.py's `from __future__ import annotations`: with
+    it, a model's `datetime.date` field stays an unresolved string and the model can't be
+    used as a type (from_url's output type failed with "not fully defined").
+    """
+    from pydantic import TypeAdapter
+
+    code = "\n".join(
+        [
+            "class DailyClose(BaseModel, frozen=True):",
+            "    date: datetime.date  # trading day",
+            "    close: float",
+            "",
+            # the class is only defined here, never used: as when it is handed to from_url
+            "made = DailyClose.__name__",
+        ]
+    )
+    ran = assign.run(session, code)
+    assert ran.name == "made", ran.error
+    model = session.namespace["DailyClose"]
+    rows = TypeAdapter(list[model]).validate_python([{"date": "2026-11-16", "close": 1.0}])
+    assert rows[0].date == dt.date(2026, 11, 16)
+
+
+def test_an_ai_request_out_of_credits_is_one_line_not_a_traceback(
+    session: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The Gateway's 402 (no credits) under from_url: its own words, no traceback."""
+    from ds.ai import extract
+    from pydantic_ai.exceptions import ModelQuotaExceededError
+
+    def fake(_url: str, _shape: object) -> object:
+        detail = {"detail": "Add credits in the Gateway settings."}
+        raise ModelQuotaExceededError("claude-haiku-5-5", "402", body=detail)
+
+    monkeypatch.setattr(extract, "from_url", fake)
+    ran = assign.run(session, 'x = from_url("https://example.com", int)')
+    assert ran.name == ""
+    assert "credits" in ran.error
+    assert "Add credits in the Gateway settings." in ran.error
+    assert not ran.trace

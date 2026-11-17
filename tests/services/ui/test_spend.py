@@ -100,3 +100,11 @@ def test_daily_limit_line_at_its_height_or_pinned_off_the_chart():
     assert above.limit_line == {"bottom": "100%", "label": "daily limit $5 is off the chart"}
     monthly_only = spend.build(_hourly({NOW: 1.3}), _top(), "UTC", NOW, limits=_limits(Limits(monthly=5)))
     assert monthly_only.limit_line == {}
+
+
+def test_the_gateway_spending_page_is_the_organizations() -> None:
+    url = spend.gateway_url("https://logfire-us.pydantic.dev/delulu-smash/delulu-smash")
+    assert url == "https://logfire-us.pydantic.dev/delulu-smash/-/gateway/spending/organization"
+    settings = spend.gateway_url("https://logfire-us.pydantic.dev/delulu-smash/delulu-smash", "settings")
+    assert settings == "https://logfire-us.pydantic.dev/delulu-smash/-/gateway/settings"
+    assert spend.gateway_url("") == ""

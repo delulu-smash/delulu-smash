@@ -16,7 +16,8 @@
   // the mention being typed, up to the caret: "@", "@q", "@q1.", "@q1.ch" (not inside a word: an email)
   const TYPING = new RegExp(`(?:^|[^\\w@])@((?:${NAME})?\\.?)$`);
   // a row's icon by its kind, as the console's list has one per kind
-  const ICONS = { variable: "@", column: "▦", attribute: "▫", method: "ƒ" };
+  // (none for a variable: its name already starts with "@")
+  const ICONS = { column: "▦", attribute: "▫", method: "ƒ" };
 
   const data = () => document.querySelector("[data-mention-data]");
   const variables = () => [...document.querySelectorAll("[data-mention-data] [data-mention]")].map((item) => ({
@@ -131,7 +132,8 @@
       row.className = `menu-item mention-item is-${item.kind}`;
       row.dataset.insert = item.insert;
       row.dataset.kind = item.kind;
-      row.append(span("mention-icon", ICONS[item.kind] || ""), span("mention-name", item.label), span("mention-detail-type dim", item.detail || ""));
+      if (ICONS[item.kind]) row.append(span("mention-icon", ICONS[item.kind]));
+      row.append(span("mention-name", item.label), span("mention-detail-type dim", item.detail || ""));
       return row;
     }));
     box = target;

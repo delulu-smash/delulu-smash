@@ -472,11 +472,12 @@ dependencies = [
     { name = "keyring" },
     { name = "logfire" },
     { name = "loguru" },
+    { name = "markdownify" },
     { name = "polars" },
     { name = "pydantic", version = "2.13.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.15'" },
     { name = "pydantic", version = "2.14.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.15'" },
     { name = "pydantic-ai" },
-    { name = "pydantic-ai-harness", extra = ["coder"] },
+    { name = "pydantic-ai-harness", extra = ["coder", "playwright"] },
     { name = "pydantic-deep", extra = ["browser"] },
     { name = "reflex" },
     { name = "typer" },
@@ -498,10 +499,11 @@ requires-dist = [
     { name = "keyring", specifier = ">=25.7.0" },
     { name = "logfire", specifier = ">=4.41.0" },
     { name = "loguru", specifier = ">=0.7.3" },
+    { name = "markdownify", specifier = ">=1.2.3" },
     { name = "polars", specifier = ">=1.42.1" },
     { name = "pydantic", specifier = ">=2.13.4" },
     { name = "pydantic-ai", specifier = ">=2.68.0" },
-    { name = "pydantic-ai-harness", extras = ["coder"], specifier = ">=0.68.0" },
+    { name = "pydantic-ai-harness", extras = ["coder", "playwright"], specifier = ">=0.68.0" },
     { name = "pydantic-deep", extras = ["browser"], specifier = ">=0.3.43" },
     { name = "reflex", specifier = ">=0.8.28" },
     { name = "typer", specifier = ">=0.21.1" },
@@ -1979,6 +1981,10 @@ wheels = [
 coder = [
     { name = "json-repair" },
     { name = "ripgrep", marker = "sys_platform != 'android'" },
+]
+playwright = [
+    { name = "idna" },
+    { name = "playwright" },
 ]
 
 [[package]]

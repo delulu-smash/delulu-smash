@@ -20,7 +20,16 @@ from ui.commands import COMMANDS, ICON_BUG, ICON_PY, ICON_VARIABLE, RUNNABLE, SL
 from ui.commands import ICON_AI as ICON_CHAT
 from ui.commands import ICON_TABLE as ICON_RESULTS
 from ui.editor import cell_editor
-from ui.render import ICON_COLLAPSE, ICON_EXPAND, INLINE_EDIT_URL, copy_button, render_component, traceback_view
+from ui.render import (
+    ICON_COLLAPSE,
+    ICON_EXPAND,
+    INLINE_EDIT_URL,
+    copy_button,
+    render_component,
+    traceback_view,
+    type_label,
+    typed_text,
+)
 from ui.shortcuts import Shortcut, codemirror_keys, shortcuts_script
 from ui.state import State
 from ui.variables import UNDO_SECONDS
@@ -226,7 +235,7 @@ def ref_item(item: rx.Var) -> rx.Component:
         rx.el.div(
             rx.el.span(rx.cond(item.open, "▾", "▸"), class_name="ref-caret dim"),
             handle(item.name),
-            rx.el.span(item.text, class_name="dim"),
+            rx.el.span(typed_text(item.type_parts, item.text), class_name="dim"),
             rx.el.button("open →", title="Open as a tab in Results", on_click=open_tab, class_name="ref-open"),
             on_click=State.toggle_inline(item.name),
             title=rx.cond(item.open, "Hide the result", "Show the result here"),
@@ -261,14 +270,14 @@ def mention_item(item: rx.Var) -> rx.Component:
             rx.el.div(
                 rx.el.span(rx.cond(item.open, "▾", "▸"), class_name="ref-caret dim"),
                 rx.el.span(item.name, class_name="mention-token"),
-                rx.el.span(item.text, class_name="tool-args"),
+                rx.el.span(typed_text(item.type_parts, item.text), class_name="tool-args"),
                 on_click=State.toggle_mention(item.key),
                 title=rx.cond(item.open, "Hide", "Show"),
                 class_name="tool-step mono mention-row is-fold",
             ),
             rx.el.div(
                 rx.el.span(item.name, class_name="mention-token"),
-                rx.el.span(item.text, class_name="tool-args"),
+                rx.el.span(typed_text(item.type_parts, item.text), class_name="tool-args"),
                 class_name="tool-step mono mention-row",
             ),
         ),
@@ -338,8 +347,16 @@ def assign_item(item: rx.Var) -> rx.Component:
                 rx.el.div(
                     note,
                     rx.el.span(class_name="spacer"),
-                    rx.el.span(f"{Shortcut.SEND.keys} runs · {Shortcut.CLOSE.keys} drops", class_name="dim"),
-                    rx.el.button("Run", type="submit", class_name="act"),
+                    # a "/script" proposal (state.SCRIPT_PREFIX) is saved, not run
+                    rx.el.span(
+                        Shortcut.SEND.keys,
+                        rx.cond(item.name.startswith("script:"), " saves", " runs"),
+                        f" · {Shortcut.CLOSE.keys} drops",
+                        class_name="dim",
+                    ),
+                    rx.el.button(
+                        rx.cond(item.name.startswith("script:"), "Save", "Run"), type="submit", class_name="act"
+                    ),
                     rx.el.button(
                         "Drop",
                         type="button",
@@ -355,6 +372,18 @@ def assign_item(item: rx.Var) -> rx.Component:
                 ),
                 on_submit=State.assign_run,
                 class_name="assign-box",
+            ),
+        ),
+        (
+            "running",
+            rx.el.div(
+                rx.el.pre(item.text, class_name="assign-code is-done mono"),
+                rx.el.div(
+                    rx.el.span(*[rx.el.i() for _ in range(9)], class_name="dot-square"),
+                    rx.el.span("Running… (reading a web page can take 30 seconds or more)"),
+                    class_name="agent-progress",
+                ),
+                class_name="assign-box is-done",
             ),
         ),
         (
@@ -1005,7 +1034,29 @@ def agents_view() -> rx.Component:
 def spend_view() -> rx.Component:
     """The Spend tab: AI spend from Logfire."""
     return rx.el.div(
-        rx.el.div("Spend (Logfire, every machine)", class_name="spend-h"),
+        rx.el.div(
+            "Spend (Logfire, every machine)",
+            rx.cond(
+                State.spend_gateway_url != "",
+                rx.fragment(
+                    rx.el.a(
+                        "Gateway spend and limits ↗",
+                        href=State.spend_gateway_url,
+                        target="_blank",
+                        rel="noreferrer",
+                        class_name="spend-link",
+                    ),
+                    rx.el.a(
+                        "Gateway balance and recharge ↗",
+                        href=State.spend_balance_url,
+                        target="_blank",
+                        rel="noreferrer",
+                        class_name="spend-link",
+                    ),
+                ),
+            ),
+            class_name="spend-h",
+        ),
         rx.cond(
             State.spend_loading & (State.spend_status == ""),
             rx.el.div("Asking Logfire…", class_name="empty"),
@@ -1581,7 +1632,17 @@ def variable_row(row: rx.Var) -> rx.Component:
                 rx.cond(row["closed"] != "", rx.el.span("tab closed", class_name="dim vars-closed")),
                 class_name="vars-id",
             ),
-            rx.el.td(row["type"]),
+            rx.el.td(
+                type_label(
+                    {
+                        "pre": row["type_pre"],
+                        "model": row["type_model"],
+                        "post": row["type_post"],
+                        "code": row["type_code"],
+                        "html": row["type_html"],
+                    }
+                )
+            ),
             rx.el.td(row["shape"], class_name="vars-num"),
             rx.el.td(row["size"], class_name="vars-num"),
             rx.el.td(row["source"], class_name="dim"),
@@ -1891,6 +1952,8 @@ app = rx.App(
         # no password-manager or browser autofill on any
         # input (data-allow-autofill opts one back in)
         rx.el.script(src="/no_autofill.js", defer=True),
+        # a model's name in a type (render.type_label): its class as code, on hover
+        rx.el.script(src="/typehover.js", defer=True),
     ],
 )
 # The page title is the web app window's title (delulu-smash);

@@ -97,22 +97,46 @@ cells. The Variables pane shows what is in it and clears it. This says what must
   exact and says where a value comes from, so it is preferred. What can't be computed is still allowed: the
   AI writes what it knows as a literal (`release = datetime.date(2018, 12, 7)`). The proposal says which of
   the two it is, because a literal is the model's memory and is not checked.
-- **Structured values only**: a basic value (`str`, `int`, `float`, `bool`, `date`, `datetime`, `time`,
-  `timedelta`), a list of basic values of one kind, a pydantic model whose fields are those, or a polars
-  DataFrame. **Never a dict**, and no `None`, tuple, set, Series or list of records (several records are a
-  DataFrame). The check is on the value the code made (`assign.value_problem`), so it holds for code the user
-  changed too.
+- **Structured values only, as pydantic or basic values** (changed 2026-11-17; before, a table was a polars
+  DataFrame and a list of records was refused): a basic value (`str`, `int`, `float`, `bool`, `date`,
+  `datetime`, `time`, `timedelta`), a list of basic values of one kind, a pydantic model, or a list of models
+  of one class (several records). A model's fields are basic values, lists of them, models, or lists of
+  models. **Never a DataFrame** (`/assign` makes models; `to_df(models)`, predefined in cells like `pl` and `db`, turns them into a
+  DataFrame typed from the model's fields: `ds.util.df.to_df`),
+  **never a dict**, and no `None`, tuple, set or Series. The check is on the value the code made
+  (`assign.value_problem`), so it holds for code the user changed too. Results of the agent's tools (`r1`)
+  and SmashDb consoles (`q1`) stay DataFrames.
 - **A record is a pydantic model**, not a dataclass: the app already shows one as fields, a mention sends one
   as JSON, and its field types are checked. Its class is defined by the code and stays in the session.
 - **Nothing is bound unless all of it worked.** The code runs in a copy of the namespace: a failure or a
   refused value leaves the session as it was, and helper names the code made don't stay.
 - **The name is the user's when given** (`/assign top5 = ...`), kept exactly; else the AI's, which follows
-  Python's naming conventions for the value's type (`assign.NAMING`): a DataFrame ends in `_df`, a date in
+  Python's naming conventions for the value's type (`assign.NAMING`): a date ends in
   `_date`, a datetime in `_at`, a bool starts with `is_` / `has_`, a list is a plural noun, a count is
   `n_<plural>`, a record is a singular noun with its class in PascalCase. Either can be changed in the
   code before running. An existing name is replaced, as in Python, and the chat says so.
 - **It reads, it doesn't look up.** The chat so far, the session's variables and `@` mentions, the SmashDb
-  tables. No tools: a fact it should check belongs in a chat turn first.
+  tables. No tools: a fact it should check belongs in a chat turn first. (A web page is read when the code
+  runs, below, not while the proposal is written.)
+- **From a web page: `from_url(url, shape, what)`** (`ds.ai.extract`), for a URL the user gave. The proposal
+  defines the model class and ends with `name = from_url(...)`; the page is read when the user runs it.
+  - **Quick first, browser second.** The page is downloaded and one AI call fills the shape from its text.
+    Only when the text doesn't hold it (data loaded by JavaScript) does a browser agent open the page on the
+    system Chromium, do what the page needs (eg pick a range), and read the data the page loaded.
+  - **Never invented.** Values come from the page or the data it loaded; what isn't there is `NotOnPage`,
+    shown under the code, and nothing is bound.
+  - **Regular data is parsed, not copied.** For a series or a big table the AI writes a parser and the app
+    runs it on the full data; the AI's own sample rows must be in the result. Small irregular data is copied.
+  - **AI-written parsers are restricted and run without asking** (the user's decision, 2026-11-17): plain
+    Python with `json`, `re`, `datetime`, `math` stand-ins only: no imports, files, network, `eval` or
+    private attributes; refused before running otherwise. Not a full sandbox.
+  - **Everything it ran is shown.** A folded row under the code says how the value was got (page text or
+    browser, what was clicked, copied or parsed, rows, time, cost) and unfolds to every browser step and
+    every parser tried with its result. Each download and AI call is also in the debug log.
+  - **Public pages only**: no address on this machine or a private network; the browser is locked to the
+    URL's site. Bounded: 15,000 tokens of page text, 15 model requests in the browser.
+  - **Labelled as unchecked**: the proposal says "from a web page: filled by AI when run, not checked".
+  - Not built: re-running a parser later without the AI (`personal/ai/todo/url-data.md`).
 
 ## Not done yet
 

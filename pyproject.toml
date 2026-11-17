@@ -21,10 +21,11 @@ dependencies = [
     "keyring>=25.7.0",
     "logfire>=4.41.0",
     "loguru>=0.7.3",
+    "markdownify>=1.2.3",
     "polars>=1.42.1",
     "pydantic>=2.13.4",
     "pydantic-ai>=2.68.0",
-    "pydantic-ai-harness[coder]>=0.68.0",
+    "pydantic-ai-harness[coder,playwright]>=0.68.0",
     "pydantic-deep[browser]>=0.3.43",
     "reflex>=0.8.28",
     "typer>=0.21.1",
@@ -108,7 +109,12 @@ docstring-code-format = true
 [tool.ruff.lint]
 # TEMPORARY: skip linting (not formatting) for experimental/ prototypes while they're in flux --
 # remove to lint them again
-exclude = ["experimental/**"]
+exclude = [
+    "experimental/**",
+    # written by the AI and reviewed by the user in the app; held to their own rules instead
+    # (ds.ai.scripts.script_problem). Still formatted by ruff-format.
+    "pkgs/ds/ai/temp/scripts/**",
+]
 # TODO: remove auto fix of return None to just return (feels awkward)
 # definitions of rules can be found in: https://docs.astral.sh/ruff/rules/
 # we use extend-select so that we get defaults from ruff

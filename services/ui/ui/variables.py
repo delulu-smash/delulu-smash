@@ -17,6 +17,7 @@ import polars as pl
 
 from ui import perf
 from ui.session import BUILTIN_NAMES
+from ui.typeinfo import type_parts
 
 if TYPE_CHECKING:
     from ui.session import Session
@@ -53,7 +54,9 @@ def rows(session: Session, show_all: bool = False) -> list[Row]:
     return [
         {
             "name": name,
-            "type": type(found[name][0]).__name__,
+            # "type", and type_pre / type_model / type_post / type_code (typeinfo.type_parts):
+            # the model's name is hovered for its class
+            **{f"type_{key}" if key != "text" else "type": part for key, part in type_parts(found[name][0]).items()},
             "shape": perf.shape_text(found[name][0]),
             "size": perf.size_text(found[name][1]),
             "bytes": str(found[name][1]),
