@@ -42,12 +42,13 @@ class _Secret(BaseModel):
 _SECRETS = [
     _Secret(
         field="pydantic_gateway_api_key",
-        prompt="Pydantic AI Gateway key (eg pylf_v1_us_xxxx)",
-        used_by="all ds.ai model calls",
+        prompt="Pydantic API key (eg pylf_v1_us_xxxx)",
+        used_by="all ds.ai model calls (Gateway) and ds.data.raw.logfire (AI spend: the debug panel's Spend tab)",
         url="https://logfire-us.pydantic.dev",
         steps=[
-            "Open the Logfire project, then Gateway > Connect.",
-            "Create a key and copy it (starts with `pylf_`).",
+            "Open the Logfire project and create an API key with full access: the Gateway and",
+            "reading the project's records (the Spend tab) both use this one key.",
+            "Copy it (starts with `pylf_`).",
         ],
         op_item="Pydantic Logfire - DeLulu Smash",
     ),
@@ -63,18 +64,6 @@ _SECRETS = [
             "Limits: 80 requests per 60 s, 1000 objects per request. The token expires after one year.",
         ],
         op_item="Startgg API Key",
-    ),
-    _Secret(
-        field="logfire_read_token",
-        prompt="Logfire read token",
-        used_by="ds.data.raw.logfire (AI spend: the delulu-smash debug panel's Spend tab)",
-        url="https://logfire-us.pydantic.dev",
-        steps=[
-            "Open the Logfire project, then Settings (gear, top right) > Read tokens.",
-            "Click 'Create read token' and copy it: it is shown only once.",
-            "Or from a terminal: logfire read-tokens --project <organization>/<project> create",
-        ],
-        op_item="Pydantic Logfire Read Token - DeLulu Smash",
     ),
 ]
 
@@ -161,7 +150,7 @@ def sync(
     ] = False,
     guide: Annotated[bool, typer.Option("--guide", help="Show the steps for getting each secret asked for")] = False,
 ) -> None:
-    """Store secrets (Gateway key, start.gg API token, Logfire read token) in the keyring
+    """Store secrets (Pydantic API key, start.gg API token) in the keyring
 
     Each secret is read from 1Password (item named per secret) when it is there. One that isn't
     gets the steps for creating it and the 1Password item to save it as, then a prompt; Enter

@@ -13,7 +13,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import polars as pl
-from ds.data.raw.logfire import LogfireReadTokenMissingError, ai_spend
+from ds.data.raw.logfire import LogfireKeyMissingError, ai_spend
 
 from ui.session import cost_text, tokens_text
 
@@ -33,7 +33,7 @@ def _local_zone() -> str:
 @dataclass
 class SpendView:
     status: str = ""
-    """'' (not loaded), 'ok', 'setup' (no read token) or 'error'."""
+    """'' (not loaded), 'ok', 'setup' (no Pydantic API key) or 'error'."""
     error: str = ""
     tiles: list[dict[str, str]] = field(default_factory=list)
     bars: list[dict[str, str]] = field(default_factory=list)
@@ -114,7 +114,7 @@ def load(days: int = DAYS) -> SpendView:
     """Query Logfire (two queries; blocking: run it off the event loop) and build the view."""
     try:
         spend = ai_spend(days=days)
-    except LogfireReadTokenMissingError:
+    except LogfireKeyMissingError:
         return SpendView(status="setup")
     except Exception as error:  # noqa: BLE001  # shown in the tab (eg a 429 when the query budget is used up)
         return SpendView(status="error", error=f"{type(error).__name__}: {error}")

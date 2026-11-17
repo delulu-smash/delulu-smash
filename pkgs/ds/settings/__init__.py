@@ -31,19 +31,17 @@ class ApiKey(SecretStr):
 class Settings(BaseModel):
     """Application settings."""
 
-    # Pydantic AI Gateway key (`pylf_...`) in keyring; used by all ds.ai model calls
+    # Pydantic API key (`pylf_...`, full access) in keyring; used by all ds.ai model calls (the
+    # Gateway) and by ds.data.raw.logfire (AI spend queries)
     pydantic_gateway_api_key: ApiKey | None = None
     # start.gg personal API token in keyring; used by ds.data.raw.startgg (create one at
     # https://start.gg/admin/profile/developer)
     startgg_api_token: ApiKey | None = None
-    # Logfire project read token in keyring; used by ds.data.raw.logfire (AI spend queries)
-    logfire_read_token: ApiKey | None = None
 
 
 def set_settings(
     pydantic_gateway_api_key: str | None = None,
     startgg_api_token: str | None = None,
-    logfire_read_token: str | None = None,
 ) -> None:
     """Set application settings. Secrets (eg api keys) go in keyring; None keeps a value"""
     global SETTINGS  # noqa: PLW0603  # module-level settings by design, read through get_settings()
@@ -51,8 +49,6 @@ def set_settings(
         keyring.set_password(KEYRING_SERVICE_NAME, "PYDANTIC_AI_GATEWAY_API_KEY", pydantic_gateway_api_key)
     if startgg_api_token is not None:
         keyring.set_password(KEYRING_SERVICE_NAME, "STARTGG_API_TOKEN", startgg_api_token)
-    if logfire_read_token is not None:
-        keyring.set_password(KEYRING_SERVICE_NAME, "LOGFIRE_READ_TOKEN", logfire_read_token)
     # ensures global setting variable has updates
     SETTINGS = init_settings()
 
@@ -68,14 +64,9 @@ def init_settings() -> Settings:
     startgg_api_token = os.environ.get("STARTGG_API_TOKEN") or keyring.get_password(
         KEYRING_SERVICE_NAME, "STARTGG_API_TOKEN"
     )
-    # an exported LOGFIRE_READ_TOKEN wins over the keyring, as for start.gg
-    logfire_read_token = os.environ.get("LOGFIRE_READ_TOKEN") or keyring.get_password(
-        KEYRING_SERVICE_NAME, "LOGFIRE_READ_TOKEN"
-    )
     return Settings(
         pydantic_gateway_api_key=pydantic_gateway_api_key,
         startgg_api_token=startgg_api_token or None,
-        logfire_read_token=logfire_read_token or None,
     )
 
 
