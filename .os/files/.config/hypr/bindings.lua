@@ -53,4 +53,4 @@ o.bind("SUPER + SHIFT + A", "Claude: delulu-smash", { tui = os.getenv("HOME") ..
 hl.unbind("SUPER + SHIFT + P") -- previously: Google Photos
 o.bind("SUPER + SHIFT + P", "Copy 1Password master password", o.launch(os.getenv("HOME") .. "/repos/delulu-smash/.os/scripts/keybindings/pwd-copy.sh"))
 hl.unbind("SUPER + SHIFT + I") -- previously: Switch input language back
-o.bind("SUPER + SHIFT + I", "SmashGPT", o.launch(os.getenv("HOME") .. "/repos/delulu-smash/.os/scripts/keybindings/smashgpt.sh"))
+o.bind("SUPER + SHIFT + I", "delulu-smash", o.launch(os.getenv("HOME") .. "/repos/delulu-smash/.os/scripts/keybindings/delulu-smash.sh"))

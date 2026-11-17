@@ -67,7 +67,7 @@ _SECRETS = [
     _Secret(
         field="logfire_read_token",
         prompt="Logfire read token",
-        used_by="ds.data.raw.logfire (AI spend: the SmashGPT debug panel's Spend tab)",
+        used_by="ds.data.raw.logfire (AI spend: the delulu-smash debug panel's Spend tab)",
         url="https://logfire-us.pydantic.dev",
         steps=[
             "Open the Logfire project, then Settings (gear, top right) > Read tokens.",

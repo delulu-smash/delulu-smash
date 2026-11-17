@@ -142,12 +142,12 @@ Every request to an outside site or API goes through these two wrappers, never `
 - Each call logs one record (`ds.util.logging.log_call`): the full request with secret headers filtered
   (`http.SECRET_HEADERS`; add a new auth header name there), the response's status, type, size, `cf-ray` /
   bot-check headers and the start of an error body, timing, and for GraphQL the operation, variables,
-  query, rows / page info and `errors`. SmashGPT's debug panel (Alt+D) shows them, with copy-as-curl.
+  query, rows / page info and `errors`. delulu-smash's debug panel (Alt+D) shows them, with copy-as-curl.
 - Wrap work that makes many calls in `log_group("<name>")` so its records share a `group` id (start.gg's
   `player_sets` and the agent tools' `_run` do).
 - Agent tool calls: `ds.ai.call_log.ToolCallLog` (in `ds.ai.agent`'s capabilities) logs each call as a timed
   'tool' record and puts its `tool_call_id` on every record made inside it, which is how an app links a
-  request back to the tool call (SmashGPT's debug log does).
+  request back to the tool call (delulu-smash's debug log does).
 - The wrappers only send and log. Retries, rate limits and anything cache-like stay with each source
   (caches need the user's approval first, see "Caching Policy" in `.agents/agents.md`).
 

@@ -18,18 +18,18 @@ uv run reflex run
 Design intent lives in `spec/experimental/reflex-kernel/`: navigation, keys and much of the look follow
 Omarchy (`spec/experimental/reflex-kernel/omarchy.md`).
 
-## SmashGPT (desktop app)
+## delulu-smash (desktop app)
 
-On Omarchy this app is **SmashGPT**: `SUPER+SHIFT+I` opens it in its own web app window, or focuses
-the one already open (`.os/scripts/keybindings/smashgpt.sh`). The server runs as a systemd user
-service, `~/.config/systemd/user/smashgpt.service`, started at login by `~/.config/hypr/autostart.lua`;
+On Omarchy this app is **delulu-smash**: `SUPER+SHIFT+I` opens it in its own web app window, or focuses
+the one already open (`.os/scripts/keybindings/delulu-smash.sh`). The server runs as a systemd user
+service, `~/.config/systemd/user/delulu-smash.service`, started at login by `~/.config/hypr/autostart.lua`;
 if it isn't up, the shortcut starts it and opens the window once it answers (cold start up to about
-a minute). It's also in the app launcher as the SmashGPT web app. All of this is tracked by `os sync`.
+a minute). It's also in the app launcher as the delulu-smash web app. All of this is tracked by `os sync`.
 
 ```sh
-systemctl --user restart smashgpt      # eg after changing dependencies
-journalctl --user -u smashgpt -f       # server logs
-.os/scripts/keybindings/smashgpt.sh status
+systemctl --user restart delulu-smash      # eg after changing dependencies
+journalctl --user -u delulu-smash -f       # server logs
+.os/scripts/keybindings/delulu-smash.sh status
 ```
 
 The service runs `reflex run` in dev mode, so code edits hot-reload in the open window. Stop it

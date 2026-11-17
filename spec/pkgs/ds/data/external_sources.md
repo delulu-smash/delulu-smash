@@ -72,7 +72,7 @@ ids, icon file names). The translation belongs to the site's module and is the m
 | nasmashmate.com (icons) | `raw/smashmate.py` | `SITE_CHAR_ICON`: `char_id` -> site icon name | normalized |
 | smash-tube.com | `raw/smashtube.py` | `SITE_CHARACTER`: `char_id` -> Japanese name; inputs are `char_id` | normalized on input |
 | start.gg | `raw/startgg/` | name match + `api.SITE_CHARACTER` (Rosalina, Simon Belmont); `Character.char_group` + `char_icon`, site `id` kept; ids kept in code, `raw/startgg/characters.py` (not a SmashDb table) | normalized (picks, so `char_group`) |
-| Logfire query API | `raw/logfire.py` | none (AI spend from our own traces, not Smash data); needs a read token | AI tab of SmashGPT's debug panel |
+| Logfire query API | `raw/logfire.py` | none (AI spend from our own traces, not Smash data); needs a read token | AI tab of delulu-smash's debug panel |
 | supermajor.gg | `raw/supermajor.py` | returns the site's ids (`A1297`) and names | **not normalized** (TODO in file); player pages blocked since Nov 2026, so left as is |
 
 ## Layers inside a large source

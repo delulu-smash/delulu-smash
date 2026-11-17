@@ -33,7 +33,7 @@ from .variables import UNDO_SECONDS
 FAQ = [
     (
         'An answer says a key or token isn\'t stored (eg "no start.gg API token stored"), but you stored it',
-        "The server reads stored keys only when it starts. Store the key if you haven't, then restart SmashGPT:",
+        "The server reads stored keys only when it starts. Store the key if you haven't, then restart delulu-smash:",
         "ds settings sync\nds ui restart",
     ),
 ]
@@ -1696,7 +1696,7 @@ def statusbar() -> rx.Component:
 def index() -> rx.Component:
     return rx.el.div(
         rx.el.div(
-            rx.el.span("SmashGPT", class_name="title"),
+            rx.el.span("delulu-smash", class_name="title"),
             rx.el.span(class_name="spacer"),
             rx.el.button(
                 ICON_BUG,
@@ -1771,5 +1771,5 @@ app = rx.App(
         rx.el.script(src="/no_autofill.js", defer=True),
     ],
 )
-# The page title is the web app window's title (SmashGPT); see .os/scripts/keybindings/smashgpt.py.
-app.add_page(index, route="/", title="SmashGPT", on_load=State.on_load)
+# The page title is the web app window's title (delulu-smash); see .os/scripts/keybindings/delulu-smash.py.
+app.add_page(index, route="/", title="delulu-smash", on_load=State.on_load)

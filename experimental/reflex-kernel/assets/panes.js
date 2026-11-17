@@ -143,7 +143,7 @@
   // word and highlights the first; it starts with all rows, when the box takes focus on opening
   // The palette's "recently used": the ids of the last commands run (data-command), newest first,
   // kept in this browser. They are listed first, by CSS order (the rows themselves are React's).
-  const RECENT_KEY = "smashgpt.palette.recent";
+  const RECENT_KEY = "delulu-smash.palette.recent";
   const MAX_RECENT = 5;
   const recent = () => {
     try { return JSON.parse(localStorage.getItem(RECENT_KEY) || "[]"); } catch { return []; }

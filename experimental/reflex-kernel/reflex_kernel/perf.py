@@ -538,7 +538,7 @@ def table_text(title: str, rows: list[Row], columns: tuple[str, ...]) -> list[st
 
 def as_text(view: PerfView) -> str:
     """The report as plain text, to paste somewhere (an issue, a chat with an AI)."""
-    lines = ["# SmashGPT system report", dt.datetime.now().astimezone().isoformat(timespec="seconds"), ""]
+    lines = ["# delulu-smash system report", dt.datetime.now().astimezone().isoformat(timespec="seconds"), ""]
     lines += [f"- {tile['label']}: {tile['value']} ({tile['sub']})" for tile in view.tiles] + [""]
     lines += table_text("Memory", view.memory, ("what", "size", "share", "detail"))
     lines += table_text("Biggest variables (this session)", view.variables, ("name", "type", "shape", "size"))

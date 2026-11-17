@@ -25,8 +25,8 @@
 # TODO: archive each downloaded zip in an S3-style bucket (eg Cloudflare R2, where the docs
 #   site's assets already live; ds.util.r2 is only a stub so far). That would keep every raw
 #   release as history (re-load or re-parse any month on any machine, not just from a zip still
-#   in ~/Downloads), and lets the load be automated further, eg a SmashGPT widget that takes
-#   the zip, archives it and loads it.
+#   in ~/Downloads), and lets the load be automated further, eg a delulu-smash widget that
+#   takes the zip, archives it and loads it.
 from __future__ import annotations
 
 import datetime as dt
