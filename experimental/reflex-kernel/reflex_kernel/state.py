@@ -17,7 +17,7 @@ import reflex as rx
 from ds.data.raw.smashtube import MatchVideos, search_videos
 from ds.util.logging import logger
 
-from . import agents, logs, perf, spend, variables
+from . import agents, logs, mentions, perf, spend, variables
 from .commands import SLASH, parse_slash
 from .inline_fill import fill as fill_inputs
 from .render import ASK_FIELD, Ui, ViewData, apply_event, drop_proposal, fill_defaults, rerun_inputs
@@ -70,7 +70,9 @@ class ChatItem:
     """One chat entry. kind: user | agent | step | ref | error | usage (what the turn cost, under its
     answer; its name is the 'N requests' part, a link to the debug log) | note (the app's own line,
     eg a slash command that isn't known) | slash (a slash command that ran: its name and what it
-    did, drawn as a tool call's row; a widget it added follows as a ref). Neither is sent to the agent."""
+    did, drawn as a tool call's row; a widget it added follows as a ref) | mention (variables
+    mentioned with "@", mentions.py: its name is the mentions, detail what folds open under it).
+    None of the last three is sent to the agent."""
 
     kind: str
     name: str = ""
@@ -82,7 +84,11 @@ class ChatItem:
     'ref-<name>' (set in reflex_kernel.ref_item)."""
     text: str = ""
     open: bool = False
-    """ref only: whether the result is shown inline, under the row (collapsed by default)."""
+    """ref: whether the result is shown inline, under the row (collapsed by default). mention:
+    whether its detail is."""
+    detail: str = ""
+    """mention only: the text that folds open under the row (the printed value, or what the AI
+    was given for the mentions); "" = nothing to unfold, and the row has no caret."""
     view: ViewData = dataclasses.field(default_factory=ViewData)
     """ref only: the result's view at slot chat:<name> while open; empty when collapsed."""
     # error only: the traceback as styled parts, as on a cell (see Cell); text keeps the plain text
@@ -263,6 +269,9 @@ class State(rx.State):
     var_trash_seq: int = 0
     # what an undo couldn't put back
     var_note: str = ""
+    # the variables "@" can mention in a chat box (mentions.rows; parts joined by spaces), kept
+    # current with the tabs (_sync_now): assets/mentions.js lists and colours them from the page
+    mention_rows: list[dict[str, str]] = []
 
     def _session(self) -> Session:
         return get_session(self.router.session.client_token)
@@ -337,6 +346,10 @@ class State(rx.State):
         elif self.selected not in views:
             self._select(next(reversed(views), ""))
         self._show(f"tab:{self.selected}")
+        self.mention_rows = [
+            {**row, "parts": " ".join(part for part in row["parts"] if part.isidentifier())}
+            for row in mentions.rows(session)
+        ]
         # the last clear (a timer can end it while the pane is hidden)
         self.var_trash, self.var_can_undo = variables.trash_text(session), bool(session.trash)
         self.var_trash_seq = session.trash_seq
@@ -1229,6 +1242,12 @@ class State(rx.State):
         self.cells.append(self._new_cell())
 
     @event
+    def add_cell_below(self, cell_id: str):
+        """Shortcut.CELL_BELOW: a new cell right under this one (at the end if it is gone)."""
+        index = self._cell_index(cell_id)
+        self.cells.insert(index + 1 if index >= 0 else len(self.cells), self._new_cell())
+
+    @event
     def delete_cell(self, cell_id: str):
         index = self._cell_index(cell_id)
         if index >= 0 and not self.running:
@@ -1254,6 +1273,9 @@ class State(rx.State):
         prompt = str(form.get("prompt", "")).strip()
         parsed = parse_slash(prompt)
         if parsed is None:
+            # only "@" mentions of variables (mentions.py): print them, no turn
+            if mentions.bare(prompt, self._session()) is not None:
+                return State.show_mentions(prompt)
             return State.send_chat(form)
         name, rest = parsed
         command = SLASH.get(name)
@@ -1292,6 +1314,40 @@ class State(rx.State):
         return f"{command.group}: {command.title}"
 
     @event
+    def show_mentions(self, text: str):
+        """A message that is only "@" mentions, eg "@q1" (mentions.bare): print each variable in the
+        chat, with no AI call. A name with a view shows as a result does, unfolded under the
+        message's row; a part of one ("@q1.char") or a value with no view shows as text. These
+        rows are the app's: the agent never gets them (as a slash command's)."""
+        session = self._session()
+        found = mentions.bare(text, session) or []
+        views = session.views()
+        for mention in found:
+            about = " · ".join(
+                filter(
+                    None, [type(mention.value).__name__, perf.shape_text(mention.value), "printed, not sent to the AI"]
+                )
+            )
+            row = ChatItem(kind="mention", name=f"@{mention.path}", text=about, key=f"mention-{len(self.chat)}")
+            if mention.path in views:
+                # the result's own row, under it, is what folds
+                self.chat.append(row)
+                session.ui.setdefault(f"chat:{mention.path}", Ui())
+                label = " · ".join(filter(None, [session.sources.get(mention.path, ""), views[mention.path].summary]))
+                self.chat.append(ChatItem(kind="ref", name=mention.path, text=label, open=True))
+            else:
+                # no view: the value as text, unfolded under the row (its caret folds it)
+                self.chat.append(dataclasses.replace(row, detail=mentions.describe(mention), open=True))
+        self._sync()
+
+    @event
+    def toggle_mention(self, key: str):
+        """A mention row's caret: show or fold the text under it."""
+        for index, item in enumerate(self.chat):
+            if item.kind == "mention" and item.key == key:
+                self.chat[index] = dataclasses.replace(item, open=not item.open)
+
+    @event
     def slash_ran(self, name: str, text: str):
         """Add a slash command's row to the chat (kind slash: drawn as a tool call's row)."""
         self.chat.append(ChatItem(kind="slash", name=name, text=text))
@@ -1324,13 +1380,27 @@ class State(rx.State):
             self.chat.append(ChatItem(kind="user", text=prompt, key=turn))
             session = self._session()
             log_context = self._log_context("chat", turn=turn)
+            # "@q1" in the message: the model also gets what the variable holds (mentions.py)
+            sent = mentions.with_context(prompt, session, tool=True)
+            mentioned = [f"@{mention.path}" for mention in mentions.find(prompt, session)]
+            if mentioned:
+                # folded: what the AI was given for them
+                self.chat.append(
+                    ChatItem(
+                        kind="mention",
+                        name=" ".join(mentioned),
+                        text="sent to the AI as they are now",
+                        key=f"mention-{len(self.chat)}",
+                        detail=mentions.context(prompt, session, tool=True),
+                    )
+                )
 
         async def on_delta(delta: str) -> None:
             async with self:
                 self.streaming += delta
 
         with log_context:
-            result = await session.ask(prompt, on_delta)
+            result = await session.ask(prompt, on_delta, sent=sent, toolsets=[mentions.toolset(session)])
 
         async with self:
             last_table = ""

@@ -268,9 +268,11 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   bound to something new or the result is opened again from the chat (`Session.closed` / `tabs()`).
   A result the agent returned has `↖ chat` in its bar (and Show in Chat in the right-click menu): it
   scrolls the chat to that tool call's row and flashes it.
-- **Help**: the ? at the top right (Alt+H) lists the keyboard shortcuts and an FAQ of fixes for common errors
-  (`FAQ` in `reflex_kernel.py`: question, answer, commands to run); it is as tall as the window allows, then
-  scrolls. How the app works lives here in the README, not in the panel.
+- **Help**: the ? at the top right (Alt+H), kept short: examples of slash commands and `@` mentions as code
+  snippets (`HELP_EXAMPLES` in `reflex_kernel.py`: what to type and what it does, coloured as in the chat box),
+  the keyboard shortcuts in a box that scrolls (a few rows at a time; `Alt+K` is the searchable list), and an
+  FAQ of fixes for common errors (`FAQ`: question, answer, commands to run). It is as tall as the window
+  allows, then scrolls. How the app works lives here in the README, not in the panel.
 - **Command palette** (`Alt+P`, `Shortcut.PALETTE`; as VS Code's Ctrl+Shift+P and Omarchy's menu): a search
   box over every action of the app, one row each: icon, `Group: name`, its shortcut. Type to filter (a
   group name or other words work too, eg `view`, `jupyter`), arrows move, Enter runs, Esc or `Alt+P` closes. It always opens on top, as Omarchy's launcher does
@@ -312,6 +314,33 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
     (`spec/experimental/reflex-kernel/inline_ai.md`). In the list such a command shows as `/vods <text>`
     and Tab completes it with a space, ready for the text. A command that takes no text is not run when
     text follows it, so `/clear-chat please don't` clears nothing.
+- **Mentions** (`@name`; **experimental**, `reflex_kernel/mentions.py`, `assets/mentions.js`; what must hold is
+  in `spec/experimental/reflex-kernel/variables.md`, "Mentions"): `@q1` in a chat box points at a variable, so
+  the AI is told what it holds. Without it the agent only knows the results it made itself in this chat, not a
+  console's `q1`, a cell's names or a form you ran again.
+  - **Typing `@`** lists the variables at the box (name, type, shape, where it came from): type to filter,
+    Up / Down, Tab or Enter completes, Esc closes. After a name, `.` lists its parts: a table's columns
+    (`@q1.char`), a model's fields, a console's `df` and `sql` (`@r3.df`). Nothing is ever called. A name that
+    isn't a variable (`@someone`, an email) is plain text.
+  - **Where**: the chat box, a tool form's Ask AI row (so `/usage the top player in @q1` too) and the inline
+    chat in a cell or SQL box.
+  - **Colour**: a mention is purple where a slash command is blue, in the chat box as you type and in the
+    chat's `@q1 ...` row under your message. (The two single-line boxes list and complete, without colour.)
+    That row is a fold when there is text to show: `▸` opens what the AI was given for the mentions (the same
+    text is in the debug log, on the turn's record, as `added to the prompt`).
+  - **`@q1` alone prints it**: the variable unfolds in the chat as a result does, with no AI call; a part
+    (`@q1.char`) or a value with no view shows as text. The agent never gets these rows.
+  - **What the AI gets** (`mentions.describe`): added to the end of your message, as text. A table of at most
+    50 rows and 4,000 characters goes whole, as CSV. A bigger one goes as its shape, columns and first 5 rows,
+    and says it isn't all there. VODs / player usage go as JSON, a console as its query and result, anything
+    else as its repr (each cut at 4,000 characters, with a note).
+  - **Big tables in the chat**: the chat agent gets a tool, `query_variable(name, sql)`, to run SQL on the
+    variable (the table is `self`); what it returns is a new `r<n>`, at most 200 rows. The app adds the tool on
+    each run (`Session.ask(toolsets=...)`), so `pkgs/ds/ai` and `ds ai eval` are unchanged; the debug panel's
+    Agents tab says so. The inline AIs have no tools: there a big table is only its summary.
+  - **A snapshot**: the AI gets the value as it is when you send. The text stays in the chat history; no object
+    is kept, so clearing a mentioned variable still frees it. Built again on every send (no cache).
+  - Each mention costs input tokens on that turn and every later one, as any chat text does.
 - **Keybindings**: Alt+K opens a searchable list of every shortcut, like Omarchy's SUPER+K: type to filter,
   Esc (or Alt+K) closes (`keys_palette`, `assets/keys.js`). Enter runs the picked shortcut, as in Omarchy,
   when a key press alone can run it (`commands.RUNNABLE`: the `Alt` keys; a ↵ marks those rows). Enter does
@@ -368,7 +397,14 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   pages. Videos whose uploader disabled embedding show YouTube's own message; use the "YouTube ↗" button.
 - **Python cells**: Jupyter-style, each a CodeMirror editor with Everforest syntax colors.
   Shift+Enter runs a cell and moves to the next (adding one after the last), Ctrl+Enter runs in
-  place, Tab indents. `pl` (polars) and `db` (`ds.data.SmashDb`) are predefined. A cell ending in a
+  place, Tab indents. **The console has no buttons of its own: it is worked from the keyboard**, from the
+  cell the cursor is in (the keys are `Shortcut.RUN_ALL` ... `CELL_DOWN` in `shortcuts.py`, handled by
+  `cell_editor.jsx`): `Ctrl+Shift+Enter` runs all cells (this cell as typed), `Alt+Z` clears every output,
+  `Alt+Enter` adds a cell under this one and goes to it, `Alt+Backspace` deletes this cell (the cursor goes to
+  the one above; not while cells run; no undo), `Alt+ArrowUp` / `Alt+ArrowDown` go to the cell above / below
+  (these two replace CodeMirror's "move line up / down"). The title line names the main ones; hover it for
+  all. Each cell keeps its own ▶ and × (and the bug, on hover). With the cursor in no cell, the command palette
+  has `Python: Run all cells`, `Clear outputs` and `New cell` (which adds at the end). `pl` (polars) and `db` (`ds.data.SmashDb`) are predefined. A cell ending in a
   DataFrame (polars or pandas, or a Series) shows it in a compact version of the tables-pane grid (8 rows visible, columns sized
   to content, each header showing its polars dtype in italics on a second line, like polars' own notebook
   view; click a header to sort);

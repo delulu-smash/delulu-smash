@@ -8,6 +8,7 @@
 # ---------------------------------------------------------------------------
 from __future__ import annotations
 
+import re
 import json
 from typing import Any
 
@@ -36,6 +37,32 @@ FAQ = [
         "ds settings sync\nds ui restart",
     ),
 ]
+# The help panel's examples: (section, [(what to type in the chat box, what it does)]). Short on
+# purpose: a few lines that show the interesting uses, drawn as a code snippet (help_examples).
+HELP_EXAMPLES: list[tuple[str, list[tuple[str, str]]]] = [
+    (
+        "Slash commands: type / in the chat",
+        [
+            ("/vods mkleo vs sparg0 grand finals", "AI fills the form, you run it"),
+            ("/usage tweek offline, last 60 sets", "same, for player usage"),
+            ("/smashdb", "a SQL console, right in the chat"),
+            ("/clear-chat", "new conversation, variables stay"),
+            ("/clear-variables", "free the memory (3 s to undo)"),
+        ],
+    ),
+    (
+        "Variables: type @ in the chat",
+        [
+            ("@q1", "print it, no AI"),
+            ("@q1 who has the best win rate?", "ask about it"),
+            ("@q1.char which of these beat Steve?", "one column (or @r3.df, @r3.sql)"),
+            ("how do @r1 and @r2 differ?", "several at once"),
+            ("/usage the top player in @q1", "feed another widget's inputs"),
+        ],
+    ),
+]
+# a slash command or a mention of a variable in an example line, to colour it as the chat box does
+_EXAMPLE_TOKEN = re.compile(r"(^/[a-z0-9-]+|@[A-Za-z_][\w.]*)")
 # The editor fetches completions straight from the backend (see api.py).
 COMPLETE_URL = rx.config.get_config().api_url + "/complete"
 
@@ -130,6 +157,12 @@ def chat_item(item: rx.Var) -> rx.Component:
                 class_name="tool-step mono",
             ),
         ),
+        # variables mentioned with "@" (mentions.py): under the message that sent them to the AI,
+        # or printed by a message that was only mentions. Coloured as in the chat box
+        (
+            "mention",
+            mention_item(item),
+        ),
         # the app's own line, eg a slash command that isn't one
         (
             "note",
@@ -184,6 +217,33 @@ def ref_item(item: rx.Var) -> rx.Component:
         ),
         # the target of "Show in Chat" and debug-log links (State.reveal, assets/panes.js)
         id="ref-" + item.name.to(str),
+        class_name="chat-ref",
+    )
+
+
+def mention_item(item: rx.Var) -> rx.Component:
+    """Variables mentioned with "@" (mentions.py): the mentions, coloured as in the chat box, and
+    what happened to them. With a detail (a value printed as text, or what the AI was given) the
+    row is a fold: its caret shows or hides that text. Without one it has no caret (the result's
+    own row, under it, is what folds)."""
+    return rx.el.div(
+        rx.cond(
+            item.detail != "",
+            rx.el.div(
+                rx.el.span(rx.cond(item.open, "▾", "▸"), class_name="ref-caret dim"),
+                rx.el.span(item.name, class_name="mention-token"),
+                rx.el.span(item.text, class_name="tool-args"),
+                on_click=State.toggle_mention(item.key),
+                title=rx.cond(item.open, "Hide", "Show"),
+                class_name="tool-step mono mention-row is-fold",
+            ),
+            rx.el.div(
+                rx.el.span(item.name, class_name="mention-token"),
+                rx.el.span(item.text, class_name="tool-args"),
+                class_name="tool-step mono mention-row",
+            ),
+        ),
+        rx.cond((item.detail != "") & item.open, rx.el.pre(item.detail, class_name="mention-detail mono")),
         class_name="chat-ref",
     )
 
@@ -250,6 +310,28 @@ def slash_menu() -> rx.Component:
     )
 
 
+def mention_data() -> rx.Component:
+    """The variables "@" can mention (State.mention_rows, mentions.py), on the page but not shown:
+    assets/mentions.js reads them to list them at the caret when "@" is typed in a chat box (the
+    chat, a form's Ask AI row, an editor's inline chat) and to colour a mention in the chat box."""
+    return rx.el.div(
+        rx.foreach(
+            State.mention_rows,
+            lambda row: rx.el.span(
+                custom_attrs={
+                    "data-mention": row["name"],
+                    "data-type": row["type"],
+                    "data-shape": row["shape"],
+                    "data-source": row["source"],
+                    "data-parts": row["parts"],
+                },
+            ),
+        ),
+        hidden=True,
+        custom_attrs={"data-mention-data": ""},
+    )
+
+
 def chat_pane() -> rx.Component:
     return rx.el.div(
         rx.el.div(
@@ -296,11 +378,12 @@ def chat_pane() -> rx.Component:
         ),
         rx.el.form(
             slash_menu(),
+            mention_data(),
             # the box's text drawn again under it, to colour a slash command (assets/slash.js)
             rx.el.div(aria_hidden="true", custom_attrs={"data-slash-mirror": ""}, class_name="slash-mirror"),
             rx.el.textarea(
                 name="prompt",
-                placeholder=f"Ask the agent…  ({Shortcut.SEND.keys} to send, {Shortcut.NEW_LINE.keys} for a new line, / for commands)",
+                placeholder=f"Ask the agent…  ({Shortcut.SEND.keys} to send, {Shortcut.NEW_LINE.keys} for a new line, / for commands, @ for variables)",
                 enter_key_submit=True,
                 # the cursor starts here when the app opens
                 auto_focus=True,
@@ -1029,21 +1112,58 @@ def requests_view() -> rx.Component:
     )
 
 
-def help_panel() -> rx.Component:
+def help_examples(title: str, lines: list[tuple[str, str]]) -> rx.Component:
+    """One section of examples in the help panel: a code snippet, a line per example with what it
+    does beside it. Slash commands and mentions are coloured as in the chat box."""
+
+    def typed(text: str) -> list[rx.Component | str]:
+        parts = []
+        for part in filter(None, _EXAMPLE_TOKEN.split(text)):
+            token = "slash-token" if part.startswith("/") else "mention-token" if part.startswith("@") else ""
+            parts.append(rx.el.span(part, class_name=token) if token and _EXAMPLE_TOKEN.fullmatch(part) else part)
+        return parts
+
     return rx.el.div(
-        rx.el.div("Keyboard shortcuts", class_name="help-title"),
-        rx.el.table(
-            rx.el.tbody(
-                *[
-                    rx.el.tr(
-                        rx.el.td(rx.el.kbd(shortcut.keys), class_name="help-keys"),
-                        rx.el.td(shortcut.value.what),
-                        rx.el.td(shortcut.value.where, class_name="help-where dim"),
-                    )
-                    for shortcut in Shortcut
-                ]
+        rx.el.div(title, class_name="help-title"),
+        rx.el.div(
+            *[
+                rx.el.div(
+                    rx.el.span(*typed(text), class_name="help-typed"),
+                    rx.el.span(about, class_name="help-about dim"),
+                    class_name="help-example",
+                )
+                for text, about in lines
+            ],
+            class_name="help-snippet mono",
+        ),
+    )
+
+
+def help_panel() -> rx.Component:
+    """Short on purpose: examples first, then the keys in a box that scrolls (Shortcut.KEYS is the
+    searchable list of them), then fixes. How the app works is in the README."""
+    return rx.el.div(
+        *[help_examples(title, lines) for title, lines in HELP_EXAMPLES],
+        rx.el.div(
+            "Keyboard shortcuts",
+            rx.el.span(f"scroll · {Shortcut.KEYS.keys} to search them", class_name="help-hint dim"),
+            class_name="help-title",
+        ),
+        rx.el.div(
+            rx.el.table(
+                rx.el.tbody(
+                    *[
+                        rx.el.tr(
+                            rx.el.td(rx.el.kbd(shortcut.keys), class_name="help-keys"),
+                            rx.el.td(shortcut.value.what),
+                            rx.el.td(shortcut.value.where, class_name="help-where dim"),
+                        )
+                        for shortcut in Shortcut
+                    ]
+                ),
+                class_name="help-table",
             ),
-            class_name="help-table",
+            class_name="help-scroll",
         ),
         rx.el.div("FAQ", class_name="help-title"),
         *[
@@ -1138,11 +1258,20 @@ def cell_view(cell: rx.Var) -> rx.Component:
                     token=State.token,
                     on_run=lambda code, advance: State.run_cell(cell.id, code, advance),
                     on_save=lambda code: State.save_code(cell.id, code),
+                    on_run_all=State.run_all,
+                    on_clear_outputs=State.clear_outputs,
+                    on_add_below=State.add_cell_below(cell.id),
+                    on_delete=State.delete_cell(cell.id),
                 ),
                 class_name="cell-editor",
             ),
             rx.el.button("▶", title=Shortcut.RUN.hint("Run"), on_click=State.run_saved(cell.id), class_name="cell-btn"),
-            rx.el.button("×", title="Delete cell", on_click=State.delete_cell(cell.id), class_name="cell-btn"),
+            rx.el.button(
+                "×",
+                title=Shortcut.DELETE_CELL.hint("Delete cell"),
+                on_click=State.delete_cell(cell.id),
+                class_name="cell-btn",
+            ),
             logs_button("cell:" + cell.id.to(str), "this cell"),
             class_name="cell-in",
         ),
@@ -1180,15 +1309,26 @@ def notebook() -> rx.Component:
     return rx.el.div(
         rx.el.div(
             rx.el.span(rx.el.span(ICON_PY, class_name="mono accent-green icon"), "Python"),
+            # no buttons: the console is worked from the keyboard, in a cell (shortcuts.py). The
+            # line names the keys used most; hover it, or Alt+K, for all of them
             rx.el.span(
-                f"{Shortcut.RUN_AND_ADVANCE.keys} run and advance · {Shortcut.RUN.keys} run · {Shortcut.COMPLETE.keys} complete",
+                " · ".join(
+                    [
+                        f"{Shortcut.RUN_AND_ADVANCE.keys} run and advance",
+                        f"{Shortcut.RUN_ALL.keys} run all",
+                        f"{Shortcut.CELL_BELOW.keys} new cell",
+                        f"{Shortcut.KEYS.keys} all keys",
+                    ]
+                ),
+                title="\n".join(
+                    f"{shortcut.keys}: {shortcut.value.what}"
+                    for shortcut in Shortcut
+                    if shortcut.value.where.startswith("cell")
+                ),
                 class_name="dim",
             ),
             rx.el.span(class_name="spacer"),
             rx.cond(State.running, rx.el.span("running…", class_name="dim")),
-            rx.el.button("Run all", on_click=State.run_all, class_name="act"),
-            rx.el.button("Clear outputs", on_click=State.clear_outputs, class_name="act"),
-            rx.el.button("+ Cell", on_click=State.add_cell, class_name="act"),
             zoom_button("python"),
             class_name="console-head sans",
         ),
@@ -1513,6 +1653,8 @@ app = rx.App(
         rx.el.script(src="/keys.js", defer=True),
         # slash commands in the chat box (slash_menu)
         rx.el.script(src="/slash.js", defer=True),
+        # "@" mentions of variables in the chat boxes (mention_data; EXPERIMENTAL)
+        rx.el.script(src="/mentions.js", defer=True),
         # pick-from-a-list inputs in tool forms: characters, list[<choices>] (render._choice_input)
         rx.el.script(src="/choice.js", defer=True),
         # no password-manager or browser autofill on any input (data-allow-autofill opts one back in)

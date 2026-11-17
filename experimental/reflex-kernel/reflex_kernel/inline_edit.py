@@ -24,7 +24,7 @@ from ds.util.const import DEFAULT_AI_MODEL
 from ds.util.logging import log_call, logger
 from ds.util.text import clean_f_str
 
-from . import logs
+from . import logs, mentions
 from .session import BUILTIN_NAMES, find_session, log_usage
 
 # Context sent to the model is capped, so a namespace full of tables can't blow up the prompt.
@@ -229,9 +229,12 @@ async def edit(body: dict[str, Any]) -> dict[str, str]:
     if not instruction:
         return {"error": "Type what to change first."}
     request = prompt(before, selected, after, instruction, str(body.get("previous") or ""))
-    text = "\n\n".join([context(language, token, body.get("schema")), request])
-    # the chat so far goes along (read only: the inline call is not added to the chat)
     session = find_session(token)
+    # "@q1" in the instruction: what the variable holds goes along (mentions.py; no tools here)
+    text = "\n\n".join(
+        filter(None, [context(language, token, body.get("schema")), request, mentions.context(instruction, session)])
+    )
+    # the chat so far goes along (read only: the inline call is not added to the chat)
     history = list(session.ai_history) if session else []
     run = EditRun(language=language, whole=not selected, db=session.db if session else None)
     name = f"inline edit ({language})"
@@ -241,6 +244,7 @@ async def edit(body: dict[str, Any]) -> dict[str, str]:
         capture_run_messages() as captured,
     ):
         answer: dict[str, str] = {}
+        call["added"] = mentions.context(instruction, session)
         try:
             result = await edit_agent.run(text, message_history=history, deps=run)
             answer["code"] = result.output.code

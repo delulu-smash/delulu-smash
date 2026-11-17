@@ -31,12 +31,43 @@ cells. The Variables pane shows what is in it and clears it. This says what must
   Keeping cleared values longer (a history, a recycle bin) would need the user's approval first, as any
   cache does (`.agents/agents.md`, "Caching Policy").
 
+## Mentions (`@name`, experimental)
+
+`@q1` in a chat box points at a variable: the AI is told what it holds. Started Nov 2026 on the branch
+`exp/at-variables` (`reflex_kernel/mentions.py`); ideas not built are in `personal/ai/at-variable-mentions.md`.
+
+- **Chats only, for now**: the chat, a tool form's Ask AI row (so `/vods <text>` too) and an editor's inline
+  chat. Not form fields, cells or the SQL box.
+- **A variable or plain text.** `@name` is a mention only when `name` is one of the user's variables (the rule
+  above, `perf.user_variables`). Anything else (`@someone`, an email) is sent as typed, with no error.
+- **Nothing is called.** A dotted path (`@r3.df`, `@q1.char`) follows columns, fields, keys and attributes;
+  never a method, never a private name. It is followed as far as it names something: the rest is the sentence.
+- **Small goes whole, big goes as a summary** (`mentions.WHOLE_ROWS`, `WHOLE_CHARS`): a big table is its shape,
+  columns and first rows, and the text says it is not all there. The AI must never be left thinking a cut
+  value is the whole one.
+- **Only the chat agent can read further**, with `query_variable` (SQL on the variable; its result is a new
+  `r<n>`). The app adds that tool on each run: `pkgs/ds/ai` doesn't know of it. The inline AIs keep "no tools"
+  (`inline_ai.md`), so there a big variable is its summary.
+- **A snapshot.** The AI gets the value as it is when the message is sent. Binding the name to something new
+  later doesn't change what was sent.
+- **Text only: no new holder.** A mention gives the AI text and keeps no object, so "cleared means gone" holds
+  with no change to `Session.purge` (tested with a `weakref`, as clearing is). The text stays in the chat
+  history, as a tool result's CSV does.
+- **Not a cache.** The text is built again on every send.
+- **Only mentions = print, no AI.** A message that is nothing but mentions (`@q1`) shows them in the chat and
+  asks no model; the agent never gets those rows (as a slash command's).
+- **Through the AI into a widget.** A variable reaches another widget's inputs by the inline AI reading it and
+  proposing inputs, which the user runs (`inline_ai.md`). Typing `@name` into a form field does nothing.
+- **Coloured as a slash command is, in another colour** (purple; a slash command is blue), where it is typed
+  in the chat box and in the chat's row of what was mentioned.
+
 ## Not done yet
 
 - **Rename** (`r3` → `mac_h2h`), with the tab, tool form and debug-log link following the name.
 - **Clear by group** (only agent results, only saved queries, only your own names) and **pin** (kept by
   `Clear all`): the user chose select all / deselect all instead, for now.
 - **A filter box** over the list, as Omarchy's menus have (`spec/experimental/reflex-kernel/omarchy.md`).
-- **The chat agent doesn't know the variables.** It can't be asked about `q1` or a name made in a cell.
+- **The chat agent only knows the variables you mention** (`@q1`, above). It has no list of what exists, so
+  "the table I saved" without an `@` means nothing to it.
 - **Nothing survives a backend restart.** Variables live in server memory only; keeping them is a data
   storage question (`spec/pkgs/ds/data/data_storage.md`), not this pane's.

@@ -159,9 +159,18 @@ COMMANDS: list[Command] = [
         press=Shortcut.FULL_SCREEN,
         words="float zoom maximize",
     ),  # fmt: skip
+    # the Python console has no buttons: these, or their keys in a cell (the palette's New cell
+    # adds at the end; Shortcut.CELL_BELOW, in a cell, adds under that cell)
     Command("python.new_cell", "Python", "New cell", ICON_PY, event=("add_cell",), words="add", slash="new-cell"),
-    Command("python.run_all", "Python", "Run all cells", ICON_PLAY, event=("run_all",)),
-    Command("python.clear", "Python", "Clear outputs", ICON_ERASER, event=("clear_outputs",)),
+    Command("python.run_all", "Python", "Run all cells", ICON_PLAY, event=("run_all",), shortcut=Shortcut.RUN_ALL),
+    Command(
+        "python.clear",
+        "Python",
+        "Clear outputs",
+        ICON_ERASER,
+        event=("clear_outputs",),
+        shortcut=Shortcut.CLEAR_OUTPUTS,
+    ),
     Command(
         "chat.clear",
         "Chat",

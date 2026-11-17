@@ -54,6 +54,14 @@ class Shortcut(Enum):
     RUN_AND_ADVANCE = Binding("Shift+Enter", "cell", "Run and go to the next cell")
     RUN = Binding("Ctrl+Enter", "cell", "Run")
     COMPLETE = Binding("Tab", "cell, table SQL, SmashDb console", "Complete")
+    # The Python console has no buttons for these: it is worked from the keyboard, from the cell
+    # the cursor is in (the palette has Run all / Clear outputs / New cell for when it is in none).
+    RUN_ALL = Binding("Ctrl+Shift+Enter", "cell", "Run all cells, top to bottom")
+    CLEAR_OUTPUTS = Binding("Alt+Z", "cell", "Clear every cell's output")
+    CELL_BELOW = Binding("Alt+Enter", "cell", "Add a cell below this one and go to it")
+    DELETE_CELL = Binding("Alt+Backspace", "cell", "Delete this cell (the cursor goes to the one above)")
+    CELL_UP = Binding("Alt+ArrowUp", "cell", "Go to the cell above")
+    CELL_DOWN = Binding("Alt+ArrowDown", "cell", "Go to the cell below")
     # Handled by inline_edit.jsx, in a cell and the SmashDb console's SQL box; outside an editor, in
     # a result with a tool form, by assets/panes.js (it clicks the result's AI button, render.ai_toggle).
     INLINE_EDIT = Binding(
@@ -125,4 +133,10 @@ def codemirror_keys() -> dict[str, str]:
         "runAndAdvance": codemirror_key(Shortcut.RUN_AND_ADVANCE),
         "complete": codemirror_key(Shortcut.COMPLETE),
         "inlineEdit": codemirror_key(Shortcut.INLINE_EDIT),
+        "runAll": codemirror_key(Shortcut.RUN_ALL),
+        "clearOutputs": codemirror_key(Shortcut.CLEAR_OUTPUTS),
+        "cellBelow": codemirror_key(Shortcut.CELL_BELOW),
+        "deleteCell": codemirror_key(Shortcut.DELETE_CELL),
+        "cellUp": codemirror_key(Shortcut.CELL_UP),
+        "cellDown": codemirror_key(Shortcut.CELL_DOWN),
     }

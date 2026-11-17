@@ -307,3 +307,17 @@ AGENTS: list[AgentInfo] = [
         "experimental/reflex-kernel/reflex_kernel/inline_fill.py",
     ),
 ]
+# "@" mentions (mentions.py, EXPERIMENTAL): the app gives the chat agent one more tool on each run,
+# which the Agent object (read above) doesn't know of
+AGENTS[0].loading.append(
+    {
+        "label": "added by this app on every run (not in pkgs/ds/ai)",
+        "value": " ".join(
+            [
+                "the tool `query_variable`: SQL on a variable mentioned with @ that was too big to send whole",
+                "(reflex_kernel/mentions.py); a message with @ mentions also ends with what those variables hold",
+            ]
+        ),
+    }
+)
+AGENTS[0].text = _text(AGENTS[0])

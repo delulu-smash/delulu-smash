@@ -55,25 +55,28 @@
     const mirror = form && form.querySelector("[data-slash-mirror]");
     if (!mirror) return;
     const typed = /^\/(\S*)/.exec(box.value);
-    form.toggleAttribute("data-slashing", Boolean(typed));
-    if (!typed) {
+    // "@" mentions of variables are coloured in the same layer (assets/mentions.js paints them)
+    const mentions = window.paintMentions || ((text) => ({ html: escapeHtml(text), found: false }));
+    const painted = mentions(typed ? box.value.slice(typed[0].length) : box.value, escapeHtml);
+    form.toggleAttribute("data-slashing", Boolean(typed) || painted.found);
+    if (!typed && !painted.found) {
       box.title = "";
       mirror.textContent = "";
       return;
     }
     const menu = menuOf(box);
-    const row = menu && rowsOf(menu).find((other) => other.dataset.slash === typed[1].toLowerCase());
+    const row = typed && menu && rowsOf(menu).find((other) => other.dataset.slash === typed[1].toLowerCase());
     const style = getComputedStyle(box);
     COPIED.forEach((name) => { mirror.style[name] = style[name]; });
     mirror.style.left = `${box.offsetLeft}px`;
     mirror.style.top = `${box.offsetTop}px`;
     mirror.style.width = `${box.offsetWidth}px`;
     mirror.style.height = `${box.offsetHeight}px`;
-    const rest = box.value.slice(typed[0].length);
+    const command = typed ? `<span class="slash-token${row ? "" : " is-unknown"}">${escapeHtml(typed[0])}</span>` : "";
     // the trailing space keeps a last empty line as tall as the box's
-    mirror.innerHTML = `<span class="slash-token${row ? "" : " is-unknown"}">${escapeHtml(typed[0])}</span>${escapeHtml(rest)} `;
+    mirror.innerHTML = `${command}${painted.html} `;
     mirror.scrollTop = box.scrollTop;
-    box.title = row ? `${typed[0]} · ${row.dataset.about}` : `${typed[0]} isn't a command`;
+    box.title = !typed ? "" : row ? `${typed[0]} · ${row.dataset.about}` : `${typed[0]} isn't a command`;
   };
 
   document.addEventListener("input", (event) => {
@@ -93,6 +96,8 @@
   };
   document.addEventListener("reset", (event) => recolour(event.target), true);
   window.addEventListener("resize", () => document.querySelectorAll(BOX).forEach(colour));
+  // assets/mentions.js: the variables changed, so what counts as a mention did
+  window.recolourChatBox = () => document.querySelectorAll(BOX).forEach(colour);
 
   // capture phase: before the box's own Enter (send) and the page's Escape
   document.addEventListener("keydown", (event) => {

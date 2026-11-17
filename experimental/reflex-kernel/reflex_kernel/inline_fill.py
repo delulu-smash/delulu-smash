@@ -23,6 +23,7 @@ from ds.util.const import DEFAULT_AI_MODEL
 from ds.util.logging import log_call
 from ds.util.text import clean_f_str
 
+from . import mentions
 from .session import log_usage
 
 if TYPE_CHECKING:
@@ -96,12 +97,14 @@ async def fill(
     if not instruction:
         return Fill(error="Type what to change first.")
     output_type = StructuredDict(form.fill_schema, name=form.key, description=f"The inputs of {form.title}.")
-    text = prompt(form, form.texts(shown), instruction, note)
+    # "@q1" in the instruction: what the variable holds goes along (mentions.py; no tools here)
+    text = mentions.with_context(prompt(form, form.texts(shown), instruction, note), session)
     # the chat so far goes along (read only: the inline call is not added to the chat)
     history = list(session.ai_history) if session else []
     answer = Fill()
     used: list[Any] = []
     with log_call("agent", "inline-fill", name=f"inline fill ({form.key})", prompt=instruction) as call:
+        call["added"] = mentions.context(instruction, session)
         for _ in range(MAX_FIXES + 1):
             # a capture per run: one capture only holds its first run's messages
             with capture_run_messages() as captured:

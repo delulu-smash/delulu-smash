@@ -29,6 +29,8 @@ three by its row in `WIDGETS`.
 - **A proposal is valid before it is shown.** It passes the tool's own validator; one that doesn't goes back
   to the model, and if it still doesn't, nothing in the form changes.
 - **The AI works on what is on screen**: the inputs as typed, run or not, and its own last proposal.
+- **And on the variables the instruction mentions** (`@q1`, experimental: `variables.md`, "Mentions"): it is
+  told what they hold, as text. It still has no tools, so a big one is a summary.
 - **One key.** `Alt+A` means "inline AI here" everywhere: code in an editor, inputs in a widget. An editor
   inside a widget (the SmashDb console's SQL box) keeps the editor meaning.
 - **It reads the chat and adds nothing to it.** Each call is logged and costed like a chat turn.

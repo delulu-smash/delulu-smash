@@ -9,7 +9,7 @@
 from __future__ import annotations
 
 import reflex as rx
-from reflex.event import passthrough_event_spec
+from reflex.event import no_args_event_spec, passthrough_event_spec
 
 # shared=True: the .jsx lives next to this module and is linked into the frontend build.
 _SOURCE = rx.asset("./cell_editor.jsx", shared=True)
@@ -44,13 +44,20 @@ class CellEditor(rx.NoSSRComponent):
     # Backend URL for the Alt+A inline chat (api.py /inline_edit).
     edit_url: rx.Var[str]
 
-    # The keymap, in CodeMirror's spelling: {"run", "runAndAdvance", "complete"} (shortcuts.codemirror_keys).
+    # The keymap, in CodeMirror's spelling: {"run", "runAndAdvance", "complete", "runAll", ...}
+    # (shortcuts.codemirror_keys).
     keys: rx.Var[dict[str, str]]
 
     # (code, advance): Shortcut.RUN_AND_ADVANCE sends advance=True, Shortcut.RUN False.
     on_run: rx.EventHandler[passthrough_event_spec(str, bool)]
-    # (code): fired when the editor loses focus.
+    # (code): fired when the editor loses focus (and before on_run_all, so it runs what is typed).
     on_save: rx.EventHandler[passthrough_event_spec(str)]
+    # The console's keys, from the cell the cursor is in: Shortcut.RUN_ALL, CLEAR_OUTPUTS,
+    # CELL_BELOW (a new cell under this one), DELETE_CELL (this one).
+    on_run_all: rx.EventHandler[no_args_event_spec]
+    on_clear_outputs: rx.EventHandler[no_args_event_spec]
+    on_add_below: rx.EventHandler[no_args_event_spec]
+    on_delete: rx.EventHandler[no_args_event_spec]
 
 
 cell_editor = CellEditor.create

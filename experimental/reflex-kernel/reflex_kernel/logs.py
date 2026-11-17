@@ -212,6 +212,9 @@ def _agent(record: dict[str, Any]) -> LogView:
     if record.get("cost") is not None:
         parts.append(cost_text(record["cost"]))
     details = [("prompt", str(record.get("prompt", "")))]
+    # what the app added to the prompt for the model: the variables it mentions with "@" (mentions.py)
+    if record.get("added"):
+        details.append(("added to the prompt (@ mentions)", str(record["added"])))
     # one line per model request (session.TurnUsage): which one grew the input, and why it stopped
     if record.get("model_requests"):
         details.append(("model requests", "\n".join(record["model_requests"])))

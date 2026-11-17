@@ -614,14 +614,25 @@ class Session:
 
     # -- agent ------------------------------------------------------------------
 
-    async def ask(self, prompt: str, on_delta: Callable[[str], Awaitable[None]]) -> AiResult:
-        """One agent turn. Text streams through on_delta; tool results with a view (tables, videos, models) become r1, r2, ..."""
+    async def ask(
+        self, prompt: str, on_delta: Callable[[str], Awaitable[None]], sent: str = "", toolsets: Any = None
+    ) -> AiResult:
+        """One agent turn. Text streams through on_delta; tool results with a view (tables, videos, models) become r1, r2, ...
+
+        sent: the message as the model gets it, when that is more than what the user typed (the
+        variables it mentions, mentions.with_context). toolsets: tools the app adds for this run
+        (mentions.toolset), on top of the agent's own."""
         result = AiResult()
         # one "agent" record per turn (the debug panel, logs.py); each tool call logs its own
         # "tool" record, tagged with its tool_call_id (ds.ai.call_log.ToolCallLog)
         with log_call("agent", "smash-agent", name="turn", prompt=prompt) as call, capture_run_messages() as captured:
+            if sent and sent != prompt:
+                # what the model got on top of the typed prompt (the debug log shows it, logs._agent)
+                call["added"] = sent.removeprefix(prompt).strip()
             try:
-                async with ds.ai.agent.run_stream(prompt, message_history=self.ai_history) as stream:
+                async with ds.ai.agent.run_stream(
+                    sent or prompt, message_history=self.ai_history, toolsets=toolsets
+                ) as stream:
                     async for delta in stream.stream_text(delta=True):
                         await on_delta(delta)
                     result.text = str(await stream.get_output())
