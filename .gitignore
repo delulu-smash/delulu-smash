@@ -233,3 +233,5 @@ __marimo__/
 # MyST build outputs
 _build
 
+# Reflex copies the app's .jsx files here when tests import it from the repo root
+/assets/external/

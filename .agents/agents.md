@@ -76,7 +76,8 @@ Prefer a boxed header comment style modeled after below code snippet example:
   the one list of what every machine should have (packages, settings, files, web apps); `os sync` keeps the
   machine and the list the same in both directions.
 - `pkgs/`: Reusable Python package code for scripting, automation, and analysis.
-- `tools/`: Interactive application code, including the Reflex-based app(s).
+- `services/`: Official apps that run all the time, eg `services/ui/` (the delulu-smash Reflex app).
+  Prototypes live in `experimental/` until they're official.
 - `local/`: Local-only scratch files, generated outputs, experiments, and machine-specific artifacts. Treat this
   folder as fully git-ignored by default and do not recommend committing from it unless the user explicitly asks
   to change that policy.
@@ -90,7 +91,7 @@ Before editing files in one of these folders, read the matching file below for d
 | `docs/**`   | @.agents/instructions/docs.md                                         |
 | `.os/**`    | @.agents/instructions/os.md                                           |
 | `pkgs/**`   | @.agents/instructions/pkgs.md                                         |
-| `tools/**`  | @.agents/instructions/tools.md                                        |
+| `services/**` | @.agents/instructions/services.md                                   |
 | `local/**`  | @.agents/instructions/local.md                                        |
 
 ## Specs (`spec/`)
@@ -304,7 +305,7 @@ end." If the readings lead to different work, ask instead of picking.
 
 When a request undoes or bends something already written down (a rule in `spec/`, these instructions, a
 README's stated behaviour), name the rule and where it is written before changing it, eg "this undoes 'nothing
-is called' in `spec/experimental/reflex-kernel/variables.md`". Don't rewrite the rule quietly to fit the new
+is called' in `spec/services/ui/variables.md`". Don't rewrite the rule quietly to fit the new
 work; the user decides whether the rule changes or the request does.
 
 ### Report a change from an approved plan when it happens (trial)

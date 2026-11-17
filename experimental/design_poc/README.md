@@ -6,7 +6,7 @@ Static mockups of possible looks for a Reflex version of
 `experimental/textual-kernel`, all in Everforest (dark, medium). No kernel, no real
 editor: content is hardcoded (`design_poc/sample.py`, `design_poc/looks/agent_common.py`). Add a new
 look as a page function under `design_poc/looks/` and register it in `design_poc/design_poc.py`.
-The usable app built from the `/split` look is `experimental/reflex-kernel`.
+The usable app built from the `/split` look is `services/ui`.
 
 ```sh
 cd experimental/design_poc

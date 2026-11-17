@@ -70,7 +70,8 @@ Use this repo structure as default context when interpreting user requests and m
 - `docs/`: Source content for the Smash Ultimate website, built with MyST/Myst engine. Preserve documentation structure and publishing intent.
 - `.os/`: Personal machine/bootstrap tooling and installation docs for the user's Linux/Omarchy setup. This folder is for reusable PC setup and local tooling, not Smash-specific product code. `.os/machine.toml` is the one list of what every machine should have (packages, settings, files, web apps); `os sync` keeps the machine and the list the same in both directions.
 - `pkgs/`: Reusable Python package code for scripting, automation, and analysis.
-- `tools/`: Interactive application code, including the Reflex-based app(s).
+- `services/`: Official apps that run all the time, eg `services/ui/` (the delulu-smash Reflex app).
+  Prototypes live in `experimental/` until they're official.
 - `local/`: Local-only scratch files, generated outputs, experiments, and machine-specific artifacts. Treat this folder as fully git-ignored by default and do not recommend committing from it unless the user explicitly asks to change that policy.
 
 Deferred ideas:

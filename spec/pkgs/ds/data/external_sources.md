@@ -9,7 +9,7 @@ functions built on different sites can be combined without translating between t
 
 1. **All external sourcing lives under `pkgs/ds/data/`.** Code that calls another site or API goes in
    `pkgs/ds/data/raw/<site>.py` (or `raw/<site>/` when it is large). Nothing outside `ds/data` makes requests
-   to a data source: `ds/ai`, `ds/calc`, `tools/` and scripts call `ds.data` functions.
+   to a data source: `ds/ai`, `ds/calc`, `services/` and scripts call `ds.data` functions.
 2. **Outputs are normalized at that boundary.** A public function in `ds.data` speaks this repo's vocabulary,
    not the site's. Callers never see or pass a site's own ids.
 3. **Public functions take the normalized values as input too.** A character argument is a `char_id` (or a `char_group` where the data is about picks)

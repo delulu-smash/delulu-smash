@@ -108,7 +108,7 @@ docstring-code-format = true
 [tool.ruff.lint]
 # TEMPORARY: skip linting (not formatting) for experimental/ prototypes while they're in flux --
 # remove to lint them again
-exclude = ["experimental/**"]
+exclude = ["experimental/**", "services/ui/**"]  # services/ui: until its lint cleanup lands
 # TODO: remove auto fix of return None to just return (feels awkward)
 # definitions of rules can be found in: https://docs.astral.sh/ruff/rules/
 # we use extend-select so that we get defaults from ruff
@@ -377,12 +377,12 @@ extend-unfixable = [
 # personal machine tooling shells out to fixed system tools (wl-copy, secret-tool, wf-recorder, etc)
 ".os/**/*.py" = ["S607"]
 "personal/**/*.py" = ["ERA001"]
-"tools/reflex/**/*.py" = [
+"services/ui/**/*.py" = [
     # Reflex State/Component classes declare mutable class attributes by design (vars, rx.Model fields)
     "RUF012",
     # UI app code (mostly small component functions returning rx.Component), not library code,
     # so docstrings/annotations are optional here (same as scripts/ and tests/)
-    "D100", "D101", "D102", "D103", "D106",
+    "D100", "D101", "D102", "D103", "D105", "D106",
     "ANN",
 ]
 "pkgs/**/typing.py" = [

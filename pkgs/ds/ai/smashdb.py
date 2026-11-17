@@ -79,7 +79,7 @@ class MoveRef(BaseModel):
 
 
 # How to read the data, for any AI that writes queries or code on SmashDb (this capability's
-# instructions; the reflex-kernel app's inline chat, which sees no tool results to learn from)
+# instructions; the delulu-smash app's inline chat, which sees no tool results to learn from)
 DATA_NOTES = """\
 basedamage is listed WITHOUT the 1v1 damage multiplier (x1.2 in 1v1 matches).
 Frame data values are strings: '--' means not applicable, 'a/b' lists per-hitbox values (see
