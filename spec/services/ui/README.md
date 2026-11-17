@@ -70,3 +70,5 @@ another tool the user knows uses for it (``Alt+` `` for the Terminal, from VS Co
   function; the AI fills its inputs and the user runs them.
 - [variables.md](variables.md): the Variables pane. Cleared means gone: one short undo, then the memory
   is really released. Also `@name` mentions of variables in the chats (experimental) and `/assign`, a variable whose code the AI writes.
+- [poc_omarchy.md](poc_omarchy.md): **POC, branch `poc-omarchy` only, paused.** Panels tiled as Hyprland's
+  dwindle layout with Omarchy's animations: what was decided, what worked, what's open.

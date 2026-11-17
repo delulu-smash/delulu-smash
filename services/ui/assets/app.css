@@ -911,3 +911,17 @@ input, textarea { caret-color: var(--blue); }
 /* a narrow grid's bar wraps its controls onto a second line rather than cutting them
    (a long label, eg list[DailyClose]) */
 .cell-widget .viewer-bar { flex-wrap: wrap; }
+
+/* POC (poc-omarchy): the panels as tiles, Hyprland's dwindle layout (assets/tiling.js places them). As the
+   user's desktop: no gaps, no border, square; the container's colour is the one line between two tiles */
+.tiles { position: relative; flex: 1; min-height: 0; overflow: hidden; background: var(--bg2); }
+.tiles > .tile { position: absolute; flex: none; margin: 0; transform-origin: 0 0; will-change: transform;
+  min-width: 0 !important; min-height: 0 !important; max-width: none !important; max-height: none !important;
+  resize: none !important; border: 0 !important; }
+/* not placed yet, or closed: nothing on screen, but still mounted (cells, shell and variables are kept) */
+.tiles > .tile:not([data-tile="on"]) { display: none !important; }
+.tile-splits { position: absolute; inset: 0; pointer-events: none; z-index: 4; }
+.tile-split { position: absolute; pointer-events: auto; cursor: row-resize; }
+.tile-split.is-side { cursor: col-resize; }
+.tiles.is-dragging iframe { pointer-events: none; }
+.tiles.is-dragging { user-select: none; }

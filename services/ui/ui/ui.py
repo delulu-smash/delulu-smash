@@ -644,13 +644,10 @@ def chat_pane() -> rx.Component:
             # while the agent works: the same sweep of light as the inline chat's (app.css)
             class_name=rx.cond(State.busy, "composer is-thinking", "composer"),
         ),
-        class_name=rx.match(
-            State.chat_layout,
-            ("hidden", "chat-pane sans is-hidden"),
-            ("alone", "chat-pane sans is-alone"),
-            "chat-pane sans",
-        ),
-        custom_attrs={"data-pane": "chat"},
+        # POC (poc-omarchy): a tile; assets/tiling.js places it (dwindle),
+        # data-shown says whether it is wanted
+        class_name="chat-pane sans tile",
+        custom_attrs={"data-pane": "chat", "data-shown": State.show_chat},
     )
 
 
@@ -1655,13 +1652,8 @@ def terminal_pane() -> rx.Component:
             State.terminal_started,
             rx.el.iframe(src=TERMINAL_URL, title="Terminal", class_name="terminal-frame"),
         ),
-        class_name=rx.match(
-            State.terminal_layout,
-            ("hidden", "console terminal-pane is-hidden"),
-            ("alone", "console terminal-pane is-alone"),
-            "console terminal-pane",
-        ),
-        custom_attrs={"data-pane": "terminal"},
+        class_name="console terminal-pane tile",
+        custom_attrs={"data-pane": "terminal", "data-shown": State.show_terminal},
     )
 
 
@@ -1695,8 +1687,8 @@ def notebook() -> rx.Component:
         ),
         rx.el.div(rx.foreach(State.cells, cell_view), class_name="notebook-body"),
         # hidden with CSS, not unmounted, so the editors keep their text and cursor
-        class_name=rx.cond(State.python_on, "console", "console is-hidden"),
-        custom_attrs={"data-pane": "python"},
+        class_name="console tile",
+        custom_attrs={"data-pane": "python", "data-shown": State.show_python},
     )
 
 
@@ -1899,13 +1891,8 @@ def variables_pane() -> rx.Component:
                 class_name="vars-strip sans",
             ),
         ),
-        class_name=rx.match(
-            State.variables_layout,
-            ("hidden", "console vars is-hidden"),
-            ("alone", "console vars is-alone"),
-            "console vars",
-        ),
-        custom_attrs={"data-pane": "variables"},
+        class_name="console vars tile",
+        custom_attrs={"data-pane": "variables", "data-shown": State.show_variables},
     )
 
 
@@ -1935,13 +1922,8 @@ def tables_pane() -> rx.Component:
             ),
             class_name="ws-widget",
         ),
-        class_name=rx.match(
-            State.pane_layout,
-            ("hidden", "ws-pane is-hidden"),
-            ("alone", "ws-pane is-alone"),
-            "ws-pane",
-        ),
-        custom_attrs={"data-pane": "results"},
+        class_name="ws-pane tile",
+        custom_attrs={"data-pane": "results", "data-shown": State.show_results},
     )
 
 
@@ -2005,16 +1987,19 @@ def index() -> rx.Component:
             ),
             class_name="titlebar sans",
         ),
+        # POC (poc-omarchy): every panel is a tile in one container, laid out by
+        # assets/tiling.js as Hyprland's dwindle layout does windows;
+        # data-zoomed is the panel filling the window ("" for none)
         rx.el.div(
             chat_pane(),
-            rx.el.div(
-                tables_pane(),
-                notebook(),
-                variables_pane(),
-                class_name=rx.cond(State.bottom_on, "bottom-split", "bottom-split is-hidden"),
-            ),
+            tables_pane(),
+            notebook(),
+            variables_pane(),
             terminal_pane(),
-            class_name="split-main",
+            # the drag handles between tiles (tiling.js fills it; React renders nothing in it)
+            rx.el.div(class_name="tile-splits"),
+            class_name="tiles",
+            custom_attrs={"data-zoomed": State.zoomed},
         ),
         statusbar(),
         overlays(),
@@ -2062,6 +2047,8 @@ app = rx.App(
         # full screen, float a view, close menus
         rx.el.script(shortcuts_script()),
         rx.el.script(src="/panes.js", defer=True),
+        # POC (poc-omarchy): the panels as tiles, Hyprland's dwindle layout and animations
+        rx.el.script(src="/tiling.js", defer=True),
         # the keybindings list, Alt+K (keys_palette)
         rx.el.script(src="/keys.js", defer=True),
         # slash commands in the chat box (slash_menu)
