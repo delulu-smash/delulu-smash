@@ -61,6 +61,31 @@ cells. The Variables pane shows what is in it and clears it. This says what must
 - **Coloured as a slash command is, in another colour** (purple; a slash command is blue), where it is typed
   in the chat box and in the chat's row of what was mentioned.
 
+## `/assign`: a variable written by the AI
+
+`/assign [name =] <what it should hold>` in the chat makes a new variable (`reflex_kernel/assign.py`).
+
+- **The AI writes code, the user runs it.** The proposal is the Python that makes the variable, shown in the
+  chat to read and change. Nothing runs until the user does it (Enter); Esc drops it. As everywhere, the AI
+  proposes and the user runs (`inline_ai.md`).
+- **Code, for what it shows, never at the cost of the answer.** Code that computes from the session's data is
+  exact and says where a value comes from, so it is preferred. What can't be computed is still allowed: the
+  AI writes what it knows as a literal (`release = datetime.date(2018, 12, 7)`). The proposal says which of
+  the two it is, because a literal is the model's memory and is not checked.
+- **Structured values only**: a basic value (`str`, `int`, `float`, `bool`, `date`, `datetime`, `time`,
+  `timedelta`), a list of basic values of one kind, a pydantic model whose fields are those, or a polars
+  DataFrame. **Never a dict**, and no `None`, tuple, set, Series or list of records (several records are a
+  DataFrame). The check is on the value the code made (`assign.value_problem`), so it holds for code the user
+  changed too.
+- **A record is a pydantic model**, not a dataclass: the app already shows one as fields, a mention sends one
+  as JSON, and its field types are checked. Its class is defined by the code and stays in the session.
+- **Nothing is bound unless all of it worked.** The code runs in a copy of the namespace: a failure or a
+  refused value leaves the session as it was, and helper names the code made don't stay.
+- **The name is the user's when given** (`/assign top5 = ...`), else the AI's, and it can be changed in the
+  code before running. An existing name is replaced, as in Python, and the chat says so.
+- **It reads, it doesn't look up.** The chat so far, the session's variables and `@` mentions, the SmashDb
+  tables. No tools: a fact it should check belongs in a chat turn first.
+
 ## Not done yet
 
 - **Rename** (`r3` → `mac_h2h`), with the tab, tool form and debug-log link following the name.
@@ -69,5 +94,8 @@ cells. The Variables pane shows what is in it and clears it. This says what must
 - **A filter box** over the list, as Omarchy's menus have (`spec/experimental/reflex-kernel/omarchy.md`).
 - **The chat agent only knows the variables you mention** (`@q1`, above). It has no list of what exists, so
   "the table I saved" without an `@` means nothing to it.
+- **A `/assign` variable doesn't keep its code.** The code stays in the chat row; the Variables pane only
+  says it came from `/assign`. Showing the code there (and running it again) needs a record that follows the
+  value through clear, undo and a rebind.
 - **Nothing survives a backend restart.** Variables live in server memory only; keeping them is a data
   storage question (`spec/pkgs/ds/data/data_storage.md`), not this pane's.

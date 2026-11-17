@@ -341,6 +341,29 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   - **A snapshot**: the AI gets the value as it is when you send. The text stays in the chat history; no object
     is kept, so clearing a mentioned variable still frees it. Built again on every send (no cache).
   - Each mention costs input tokens on that turn and every later one, as any chat text does.
+- **`/assign`** (`reflex_kernel/assign.py`, `assets/assign.js`; what must hold is in
+  `spec/experimental/reflex-kernel/variables.md`, "/assign"): a new variable whose code the AI writes.
+  - **Use**: `/assign top5 = the five best players in @q1`, or without a name (`/assign the date Ultimate came
+    out`) and the AI picks one. Under the command a box shows the code, eg
+    `top5 = q1.sort("wins", descending=True)["player"].head(5).to_list()`. Change it if you like (also the
+    name), then Enter (or Run) runs it; Esc (or Drop) runs nothing. Shift+Enter is a new line.
+  - **Computed or known**: the AI computes from what the session has when it can (your variables, `db`); what
+    it only knows, or the chat states, it writes as a literal (`release = datetime.date(2018, 12, 7)`). The
+    line under the code says which: `computed from your data`, or `from the AI's knowledge or the chat: not
+    checked`.
+  - **What a variable may be**: a `str`, `int`, `float`, `bool`, `date`, `datetime`, `time` or `timedelta`; a
+    list of those (one kind); a record, as a frozen pydantic model (its class is defined by the code and kept
+    in the session, eg `PlayerSummary`); a polars DataFrame. A dict, `None`, a tuple, a set, a Series or a
+    list of records is refused, with why, and nothing is bound. Checked on the value the code made, so your
+    own edits are held to it too.
+  - **Running**: the code runs in a copy of your namespace, so a failure (its traceback shows under the box,
+    which stays for a fix) or a refused value changes nothing, and helper names don't stay. Then the variable
+    is bound (an existing name is replaced, and the row says so) and printed under the code, as `@name` prints
+    one. Its source in the Variables pane is `/assign`. `BaseModel` and `datetime` are given to the code.
+  - **The AI**: one request, no tools; it reads the chat so far, your variables (and what `@` mentions hold)
+    and the SmashDb tables. A proposal that isn't an assignment, or misses the name you gave, goes back to the
+    model up to twice. Logged as `inline-assign` in the debug log, with its own card in the Agents tab; its
+    cost is on the chat title's meter.
 - **Keybindings**: Alt+K opens a searchable list of every shortcut, like Omarchy's SUPER+K: type to filter,
   Esc (or Alt+K) closes (`keys_palette`, `assets/keys.js`). Enter runs the picked shortcut, as in Omarchy,
   when a key press alone can run it (`commands.RUNNABLE`: the `Alt` keys; a ↵ marks those rows). Enter does

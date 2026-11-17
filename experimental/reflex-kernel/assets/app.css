@@ -125,6 +125,16 @@ button { font: inherit; color: inherit; }
 .mention-menu.is-open { display: flex; }
 .mention-name { color: var(--purple); flex: none; }
 .mention-menu .palette-title { margin-left: auto; white-space: nowrap; }
+/* a "/assign" proposal in the chat (reflex_kernel.assign_item): the code of a new variable, to review and run */
+.assign-box { display: flex; flex-direction: column; gap: 4px; padding: 6px 8px; background: var(--bg-dim);
+  border: 1px solid var(--purple); border-radius: 6px; }
+.assign-box.is-done { border-color: var(--bg2); padding: 4px 8px; }
+.assign-code { width: 100%; margin: 0; padding: 0; border: 0; outline: none; resize: none; background: transparent;
+  color: var(--fg); font-size: 12.5px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere;
+  field-sizing: content; min-height: 1.5em; max-height: 260px; overflow: auto; }
+.assign-code.is-done { color: var(--grey2); }
+.assign-bar { display: flex; align-items: center; gap: 8px; font-size: 11.5px; }
+.assign-failed { color: var(--orange); align-self: flex-start; }
 /* the app's own line in the chat, eg a slash command that was run (state.ChatItem kind note) */
 .chat-note { align-self: center; font-size: 11.5px; color: var(--grey1); }
 

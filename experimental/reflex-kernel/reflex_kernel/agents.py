@@ -20,6 +20,7 @@ from pydantic_ai import Agent
 from pydantic_ai.messages import ToolCallPart, ToolReturnPart
 from pydantic_ai.models import infer_model
 
+from .assign import assign_agent
 from .inline_edit import edit_agent
 from .inline_fill import fill_agent
 from .session import tokens_text
@@ -305,6 +306,11 @@ AGENTS: list[AgentInfo] = [
         fill_agent,
         "Inline chat in a widget's tool form: fills its inputs (Alt+A)",
         "experimental/reflex-kernel/reflex_kernel/inline_fill.py",
+    ),
+    _info(
+        assign_agent,
+        "/assign: writes the code of a new variable (you run it)",
+        "experimental/reflex-kernel/reflex_kernel/assign.py",
     ),
 ]
 # "@" mentions (mentions.py, EXPERIMENTAL): the app gives the chat agent one more tool on each run,

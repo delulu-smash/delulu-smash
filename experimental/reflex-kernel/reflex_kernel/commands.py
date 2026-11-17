@@ -192,6 +192,19 @@ COMMANDS: list[Command] = [
     Command(
         "variables.undo", "Variables", "Undo the last clear", ICON_UNDO, event=("undo_clear_vars",), words="restore"
     ),
+    # "/assign [name =] <text>" (assign.py): the AI writes the code of a new variable, the user runs
+    # it. It needs the text, so its palette row only says how to use it
+    Command(
+        "variables.assign",
+        "Variables",
+        "Assign a new variable: the AI writes its code, you run it",
+        ICON_VARIABLE,
+        event=("assign_ask", ""),
+        words="new create set make name value",
+        slash="assign",
+        takes="[name =] what it should hold",
+        slash_event=("assign_ask",),
+    ),
     Command(
         "results.close_all", "Results", "Close all tabs", ICON_CLOSE, event=("close_all_tabs",), slash="close-tabs"
     ),

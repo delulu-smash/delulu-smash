@@ -46,6 +46,7 @@ HELP_EXAMPLES: list[tuple[str, list[tuple[str, str]]]] = [
             ("/vods mkleo vs sparg0 grand finals", "AI fills the form, you run it"),
             ("/usage tweek offline, last 60 sets", "same, for player usage"),
             ("/smashdb", "a SQL console, right in the chat"),
+            ("/assign top5 = the five best players in @q1", "AI writes the code, you run it"),
             ("/clear-chat", "new conversation, variables stay"),
             ("/clear-variables", "free the memory (3 s to undo)"),
         ],
@@ -163,6 +164,7 @@ def chat_item(item: rx.Var) -> rx.Component:
             "mention",
             mention_item(item),
         ),
+        ("assign", assign_item(item)),
         # the app's own line, eg a slash command that isn't one
         (
             "note",
@@ -245,6 +247,67 @@ def mention_item(item: rx.Var) -> rx.Component:
         ),
         rx.cond((item.detail != "") & item.open, rx.el.pre(item.detail, class_name="mention-detail mono")),
         class_name="chat-ref",
+    )
+
+
+def assign_item(item: rx.Var) -> rx.Component:
+    """A "/assign" proposal (assign.py), under its slash command's row: the code that makes the new
+    variable, in a box to review and change. Enter (or Run) runs it, Esc (or Drop) doesn't
+    (assets/assign.js); a run that fails shows why under the code and the box stays. Once run,
+    the code stays as text, with the variable printed under it."""
+    note = rx.el.span(item.detail, class_name="assign-note dim")
+    return rx.match(
+        item.status,
+        (
+            "asking",
+            rx.el.div(
+                rx.el.span(*[rx.el.i() for _ in range(9)], class_name="dot-square"),
+                rx.el.span("Writing the code…"),
+                class_name="agent-progress",
+            ),
+        ),
+        (
+            "proposed",
+            rx.el.form(
+                rx.el.input(type="hidden", name="key", value=item.key),
+                rx.el.textarea(
+                    name="code",
+                    default_value=item.text,
+                    enter_key_submit=True,
+                    auto_focus=True,
+                    spell_check=False,
+                    title="The code that makes the variable: change it if you like, also its name",
+                    custom_attrs={"data-assign-code": ""},
+                    class_name="assign-code mono",
+                ),
+                rx.el.div(
+                    note,
+                    rx.el.span(class_name="spacer"),
+                    rx.el.span(f"{Shortcut.SEND.keys} runs · {Shortcut.CLOSE.keys} drops", class_name="dim"),
+                    rx.el.button("Run", type="submit", class_name="act"),
+                    rx.el.button(
+                        "Drop",
+                        type="button",
+                        on_click=State.assign_drop(item.key),
+                        custom_attrs={"data-assign-drop": ""},
+                        class_name="act",
+                    ),
+                    class_name="assign-bar",
+                ),
+                rx.cond(
+                    (item.trace.length() > 0) | (item.error != ""),
+                    traceback_view(item.trace, item.trace_hidden, item.trace_more, item.error),
+                ),
+                on_submit=State.assign_run,
+                class_name="assign-box",
+            ),
+        ),
+        (
+            "done",
+            rx.el.div(rx.el.pre(item.text, class_name="assign-code is-done mono"), class_name="assign-box is-done"),
+        ),
+        ("dropped", rx.el.div("dropped: nothing was run", class_name="chat-note mono")),
+        rx.el.div(item.detail, class_name="chat-note mono assign-failed"),
     )
 
 
@@ -1655,6 +1718,8 @@ app = rx.App(
         rx.el.script(src="/slash.js", defer=True),
         # "@" mentions of variables in the chat boxes (mention_data; EXPERIMENTAL)
         rx.el.script(src="/mentions.js", defer=True),
+        # Esc on a "/assign" proposal drops it (assign_item)
+        rx.el.script(src="/assign.js", defer=True),
         # pick-from-a-list inputs in tool forms: characters, list[<choices>] (render._choice_input)
         rx.el.script(src="/choice.js", defer=True),
         # no password-manager or browser autofill on any input (data-allow-autofill opts one back in)

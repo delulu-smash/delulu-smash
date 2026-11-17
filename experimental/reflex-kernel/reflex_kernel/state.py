@@ -17,7 +17,7 @@ import reflex as rx
 from ds.data.raw.smashtube import MatchVideos, search_videos
 from ds.util.logging import logger
 
-from . import agents, logs, mentions, perf, spend, variables
+from . import agents, assign, logs, mentions, perf, spend, variables
 from .commands import SLASH, parse_slash
 from .inline_fill import fill as fill_inputs
 from .render import ASK_FIELD, Ui, ViewData, apply_event, drop_proposal, fill_defaults, rerun_inputs
@@ -71,8 +71,9 @@ class ChatItem:
     answer; its name is the 'N requests' part, a link to the debug log) | note (the app's own line,
     eg a slash command that isn't known) | slash (a slash command that ran: its name and what it
     did, drawn as a tool call's row; a widget it added follows as a ref) | mention (variables
-    mentioned with "@", mentions.py: its name is the mentions, detail what folds open under it).
-    None of the last three is sent to the agent."""
+    mentioned with "@", mentions.py: its name is the mentions, detail what folds open under it) |
+    assign (a "/assign" proposal, assign.py: text is its code, name the variable, status where it
+    is). None of the last four is sent to the agent."""
 
     kind: str
     name: str = ""
@@ -87,8 +88,14 @@ class ChatItem:
     """ref: whether the result is shown inline, under the row (collapsed by default). mention:
     whether its detail is."""
     detail: str = ""
-    """mention only: the text that folds open under the row (the printed value, or what the AI
-    was given for the mentions); "" = nothing to unfold, and the row has no caret."""
+    """mention: the text that folds open under the row (the printed value, or what the AI
+    was given for the mentions); "" = nothing to unfold, and the row has no caret. assign: the
+    line under the code (how the value is made, what the call used, what was bound)."""
+    status: str = ""
+    """assign only: asking (the AI is writing the code) | proposed (code to review and run) |
+    done (run, the variable is bound) | dropped | failed (no code came back)."""
+    error: str = ""
+    """assign only: why the last run bound nothing, as plain text (its traceback is in trace)."""
     view: ViewData = dataclasses.field(default_factory=ViewData)
     """ref only: the result's view at slot chat:<name> while open; empty when collapsed."""
     # error only: the traceback as styled parts, as on a cell (see Cell); text keeps the plain text
@@ -1307,6 +1314,8 @@ class State(rx.State):
             return f"cleared {count} variable{'s' if count != 1 else ''}" if count else "no variables to clear"
         if handler == "clear_chat":
             return "cleared: a new conversation"
+        if handler == "assign_ask":
+            return "the AI writes the code, you run it"
         if handler == "close_all_tabs":
             return f"closed {len(self.objects)} tab{'s' if len(self.objects) != 1 else ''}"
         if command.shown:
@@ -1320,25 +1329,90 @@ class State(rx.State):
         message's row; a part of one ("@q1.char") or a value with no view shows as text. These
         rows are the app's: the agent never gets them (as a slash command's)."""
         session = self._session()
-        found = mentions.bare(text, session) or []
-        views = session.views()
-        for mention in found:
-            about = " · ".join(
-                filter(
-                    None, [type(mention.value).__name__, perf.shape_text(mention.value), "printed, not sent to the AI"]
-                )
-            )
-            row = ChatItem(kind="mention", name=f"@{mention.path}", text=about, key=f"mention-{len(self.chat)}")
-            if mention.path in views:
-                # the result's own row, under it, is what folds
-                self.chat.append(row)
-                session.ui.setdefault(f"chat:{mention.path}", Ui())
-                label = " · ".join(filter(None, [session.sources.get(mention.path, ""), views[mention.path].summary]))
-                self.chat.append(ChatItem(kind="ref", name=mention.path, text=label, open=True))
-            else:
-                # no view: the value as text, unfolded under the row (its caret folds it)
-                self.chat.append(dataclasses.replace(row, detail=mentions.describe(mention), open=True))
+        for mention in mentions.bare(text, session) or []:
+            self.chat += self._printed(mention, "printed, not sent to the AI")
         self._sync()
+
+    def _printed(self, mention: mentions.Mention, note: str) -> list[ChatItem]:
+        """A variable printed in the chat, as rows to add: its "@name · type · shape · note" row,
+        then the value. One with a view shows as a result does, unfolded (its own row is what
+        folds); any other as text under the row, whose caret folds it."""
+        session = self._session()
+        views = session.views()
+        about = " · ".join(filter(None, [type(mention.value).__name__, perf.shape_text(mention.value), note]))
+        row = ChatItem(
+            kind="mention", name=f"@{mention.path}", text=about, key=f"mention-{len(self.chat)}-{mention.path}"
+        )
+        if mention.path not in views:
+            return [dataclasses.replace(row, detail=mentions.describe(mention), open=True)]
+        session.ui.setdefault(f"chat:{mention.path}", Ui())
+        label = " · ".join(filter(None, [session.sources.get(mention.path, ""), views[mention.path].summary]))
+        return [row, ChatItem(kind="ref", name=mention.path, text=label, open=True)]
+
+    def _chat_index(self, key: str) -> int:
+        return next((index for index, item in enumerate(self.chat) if item.key == key), -1)
+
+    @event
+    async def assign_ask(self, text: str):
+        """ "/assign [name =] <what it should hold>" (assign.py): the AI writes the Python that makes
+        a new variable, shown in the chat as code to review. Nothing runs here: assign_run does,
+        when the user presses Enter on it."""
+        if not text.strip():
+            usage = "Say what the variable should hold, eg: /assign top5 = the five best players in @q1"
+            self.chat.append(ChatItem(kind="note", name="/assign", text=usage))
+            return
+        key = f"assign-{len(self.chat)}"
+        self.chat.append(ChatItem(kind="assign", key=key, status="asking"))
+        yield
+        session = self._session()
+        with self._log_context("inline assign"):
+            answer = await assign.propose(session, self.router.session.client_token, text)
+        index = self._chat_index(key)
+        if index < 0:  # the chat was cleared meanwhile
+            return
+        if answer.error:
+            detail = " · ".join(filter(None, [answer.error, answer.usage]))
+            self.chat[index] = dataclasses.replace(self.chat[index], status="failed", detail=detail)
+        else:
+            detail = " · ".join(filter(None, [assign.BASIS_TEXT.get(answer.basis, ""), answer.usage]))
+            self.chat[index] = dataclasses.replace(
+                self.chat[index], status="proposed", name=answer.name, text=answer.code, detail=detail
+            )
+        self._sync_usage()
+        self._refresh_debug()
+
+    @event
+    async def assign_run(self, form: dict[str, Any]):
+        """Enter (or Run) on a "/assign" proposal: run its code, as the user left it, and bind the
+        variable it makes when its value is allowed (assign.run). The value then shows under the
+        code, as a printed variable does. A failure stays in the box, to fix and run again."""
+        index = self._chat_index(str(form.get("key", "")))
+        code = str(form.get("code", "")).strip()
+        if index < 0 or self.chat[index].status != "proposed" or not code:
+            return
+        session = self._session()
+        ran = await asyncio.to_thread(assign.run, session, code)
+        item = self.chat[index]
+        if not ran.name:
+            self.chat[index] = dataclasses.replace(item, text=code, error=ran.error, **_trace_fields(ran.trace))
+            return
+        mention = mentions.Mention(ran.name, session.namespace[ran.name])
+        notes = [
+            "replaced the old one" if ran.replaced else "",
+            f"class {', '.join(ran.classes)} defined" if ran.classes else "",
+        ]
+        self.chat[index] = dataclasses.replace(
+            item, status="done", name=ran.name, text=code, error="", **_trace_fields([])
+        )
+        self.chat[index + 1 : index + 1] = self._printed(mention, " · ".join(filter(None, ["assigned", *notes])))
+        self._sync()
+
+    @event
+    def assign_drop(self, key: str):
+        """Esc (or Drop) on a "/assign" proposal: nothing is run or bound."""
+        index = self._chat_index(key)
+        if index >= 0 and self.chat[index].status == "proposed":
+            self.chat[index] = dataclasses.replace(self.chat[index], status="dropped", error="", **_trace_fields([]))
 
     @event
     def toggle_mention(self, key: str):
