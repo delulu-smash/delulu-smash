@@ -252,10 +252,10 @@ class State(rx.State):
     # turn, a result, a cell; "" = all. Same ids as the rows' ↖ links (State.reveal).
     debug_focus: str = ""
     debug_focus_label: str = ""
-    # the panel's tabs: "requests" (the log above), "agents" (how each agent is set up),
-    # agents.py), "spend" (AI spend from Logfire, every machine, spend.py) or "system". The
-    # panel opens on Requests; Logfire is only queried when the Spend tab is clicked or its
-    # Refresh pressed (the agents' info needs no request).
+    # the panel's tabs, in order: "requests" (the log above), "system" (perf.py), "spend" (AI
+    # spend from Logfire, every machine, spend.py) or "agents" (how each agent is set up,
+    # agents.py). The panel opens on Requests; Logfire is only queried when the Spend tab is
+    # clicked or its Refresh pressed (the agents' info needs no request).
     debug_tab: str = "requests"
     # the panel fills the window (its button, Shortcut.FULL_SCREEN
     # while it is open); kept when it closes
@@ -270,6 +270,9 @@ class State(rx.State):
     spend_error: str = ""
     spend_tiles: list[dict[str, str]] = []
     spend_bars: list[dict[str, str]] = []
+    spend_axis: list[dict[str, str]] = []
+    spend_limit_line: dict[str, str] = {}
+    spend_limits: str = ""
     spend_rows: list[dict[str, str]] = []
     spend_top: list[dict[str, str]] = []
     spend_note: str = ""
@@ -894,6 +897,7 @@ class State(rx.State):
             self.spend_loading = False
             self.spend_status, self.spend_error, self.spend_note = view.status, view.error, view.note
             self.spend_tiles, self.spend_bars = view.tiles, view.bars
+            self.spend_axis, self.spend_limit_line, self.spend_limits = view.axis, view.limit_line, view.limits
             self.spend_rows, self.spend_top = view.rows, view.top
             self.spend_project_url = view.project_url
 

@@ -84,31 +84,7 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   A new kind of record is one function in `logs.LOG_FORMATS`.
   The panel goes full screen with the arrows at its top right, or `Alt+F` while it is open (Esc goes back to
   the side panel first, then closes it); it reopens the way you left it.
-  Four tabs: **Requests** (the log above), **Agents**, **Spend** and **System**:
-  - **Agents** (`ui/agents.py`): each agent the app runs (`smash-agent` for the chat and `ds ai eval`,
-    `inline-edit` for Alt+A in an editor, `inline-fill` for Alt+A in a widget's form) with its model, provider, context window, list price per 1M tokens (genai-prices),
-    model settings, output type and retries, then what the model is actually given, named as pydantic-ai
-    names it: the agent's `instructions` (its prompt), and each capability with whether it is deferred
-    (`defer_loading=True`) or always-on, its `description`, its own `instructions` and its `tools` (each
-    tool's description and parameters). A dashed `How it loads` box at the top of a card is the app's own
-    explanation of that setup, marked as not being text the model gets. `Copy setup` copies one
-    agent's whole setup as text. Read once from the Agent objects at start, so no request is made; the chat
-    title shows the chat agent's model.
-    - **Why a tool wasn't used**: the chat agent's capabilities are all deferred (`defer_loading=True`). A request starts with
-      only the agent's instructions, the tool `load_capability` and a list of capability ids with their
-      descriptions; a capability's tools and instructions don't exist for the model until it loads that
-      capability, which it decides from the description alone. The card says so at its top, and each
-      capability shows `loaded in this chat` or `not loaded in this chat`.
-    - **This chat** (top of the tab): the capabilities this chat's model loaded and how often it called each
-      tool, read from the chat's message history (`agents.activity`) when the tab opens and after a turn.
-  - **Spend** (`ui/spend.py`, `ds.data.raw.logfire`): AI spend from Logfire, so every machine and app
-    that traces there (chat, inline chats, evals), not only this session: totals for today / 7 / 30 days, a bar
-    per day (local days), a split by agent and model, the priciest requests (copy a trace id to find it in
-    Logfire). Logfire is only asked when you click the Spend tab or its Refresh (the panel always opens on
-    Requests), three small requests, each logged in the Requests tab; nothing stored. The agents' info needs no
-    request (read from the Agent objects; prices from genai-prices' bundled data). Needs a Logfire read
-    token (`ds settings sync`, then restart the app); without one the tab says how to get it. Only traced calls
-    count: the actual bill (everything that used the Gateway key) is in Logfire > Settings > Spending.
+  Four tabs: **Requests** (the log above), **System**, **Spend** and **Agents**:
   - **System** (`ui/perf.py`): where the memory is and what was slow, to understand the app while
     using it. Read when you click the tab and on its Refresh, never in the background; nothing is stored
     beyond the timings below.
@@ -140,6 +116,40 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
     - Timings are kept in memory only (the newest 5000, every session, about 100 bytes each; gone on restart),
       like the log's records. A new timed step is `with perf.span("name"):`; a new handler is timed by using
       `@event` (background handlers use plain `rx.event(background=True)` and are not timed).
+  - **Spend** (`ui/spend.py`, `ds.data.raw.logfire`, `ds.data.raw.gateway`): AI spend from Logfire, so
+    every machine and app that traces there (chat, inline chats, evals), not only this session, next to
+    the Gateway's spending limits:
+    - **Tiles**: Today / This week / This month in UTC (the limit windows; assumed, the Gateway's docs
+      don't say), each against the tighter of the project's and the organization's limit, with a meter
+      (green, yellow from 75%, red from 90%; the share is written beside it). One "Limits:" line names
+      both levels' limits.
+    - **Chart**: a bar per day (local days, last 30) on a $ scale with a y axis (top, half, 0); a daily
+      limit, when one is set, is a dashed labelled line (pinned to the top when it's above the scale).
+    - A split by agent and model, the priciest requests (copy a trace id to find it in Logfire).
+    - Asked only when you click the Spend tab or its Refresh (the panel always opens on Requests): Logfire's
+      query API (three requests) and its management API for the limits (three more), each logged in the
+      Requests tab; nothing stored.
+    - Needs the Pydantic API key (`ds settings sync`, then restart the app); reading the limits needs it to
+      have `organization:read_gateway`. Without the key the tab says how to get it; without that scope it
+      shows spend and says why the limits are missing. Only priced, traced calls count (a model the Gateway
+      has no price for counts as $0, and the note says how many).
+    The agents' info needs no request (read from the Agent objects; prices from genai-prices' bundled data).
+  - **Agents** (`ui/agents.py`): each agent the app runs (`smash-agent` for the chat and `ds ai eval`,
+    `inline-edit` for Alt+A in an editor, `inline-fill` for Alt+A in a widget's form) with its model, provider, context window, list price per 1M tokens (genai-prices),
+    model settings, output type and retries, then what the model is actually given, named as pydantic-ai
+    names it: the agent's `instructions` (its prompt), and each capability with whether it is deferred
+    (`defer_loading=True`) or always-on, its `description`, its own `instructions` and its `tools` (each
+    tool's description and parameters). A dashed `How it loads` box at the top of a card is the app's own
+    explanation of that setup, marked as not being text the model gets. `Copy setup` copies one
+    agent's whole setup as text. Read once from the Agent objects at start, so no request is made; the chat
+    title shows the chat agent's model.
+    - **Why a tool wasn't used**: the chat agent's capabilities are all deferred (`defer_loading=True`). A request starts with
+      only the agent's instructions, the tool `load_capability` and a list of capability ids with their
+      descriptions; a capability's tools and instructions don't exist for the model until it loads that
+      capability, which it decides from the description alone. The card says so at its top, and each
+      capability shows `loaded in this chat` or `not loaded in this chat`.
+    - **This chat** (top of the tab): the capabilities this chat's model loaded and how often it called each
+      tool, read from the chat's message history (`agents.activity`) when the tab opens and after a turn.
 - **Tables**: click a tab to switch, type in the filter box to search. Click a column header to sort
   (ascending, descending, unsorted); filter and sort work the same in a tab and in a cell's result.
   The grid shows at most 2000 rows; the DataFrame itself is never truncated.

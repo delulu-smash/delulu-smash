@@ -4,7 +4,8 @@
 #          inline chats, evals): Logfire's query API over the model-request spans
 #          pydantic-ai records, each with its cost. Needs the Pydantic API key
 #          (full access, the one the Gateway uses; `ds settings sync`); nothing is stored.
-# Usage: ai_spend(days=30) gives hourly and top (polars DataFrames) and project_url.
+# Usage: ai_spend(days=30) gives hourly and top (polars
+#        DataFrames), project_name and project_url.
 # ---------------------------------------------------------------------------
 from __future__ import annotations
 
@@ -77,6 +78,8 @@ class AiSpend:
     output_tokens, cost."""
     project_url: str
     """The Logfire project's web page (its Live view takes a trace_id query)."""
+    project_name: str
+    """The project the traces are in (its spending limits: ds.data.raw.gateway)."""
     since: dt.datetime
 
 
@@ -133,5 +136,6 @@ def ai_spend(days: int = 30) -> AiSpend:
         hourly=_frame(hourly, hourly_schema).with_columns(pl.col(*counts).fill_null(0)),
         top=_frame(top, top_schema).rename({"start_timestamp": "start_at"}),
         project_url=f"{base_url}/{info.get('organization_name', '')}/{info.get('project_name', '')}",
+        project_name=info.get("project_name", ""),
         since=since,
     )

@@ -751,13 +751,13 @@ def debug_panel() -> rx.Component:
         rx.el.div(
             rx.el.span("Debug", class_name="help-title"),
             debug_tab("requests", "Requests", "The outside calls this app made (since the backend started)"),
+            debug_tab("system", "System", "Memory, what was slow, sessions and what the app holds (read now)"),
+            debug_tab("spend", "Spend", "AI spend from Logfire (every machine, 30 days)"),
             debug_tab(
                 "agents",
                 "Agents",
                 "How each AI agent is set up: its prompt, capabilities and tools, and what this chat used",
             ),
-            debug_tab("spend", "Spend", "AI spend from Logfire (every machine, 30 days)"),
-            debug_tab("system", "System", "Memory, what was slow, sessions and what the app holds (read now)"),
             rx.el.span(class_name="spacer"),
             rx.match(
                 State.debug_tab,
@@ -1046,26 +1046,69 @@ def spend_report() -> rx.Component:
                 State.spend_tiles,
                 lambda tile: rx.el.div(
                     rx.el.div(tile["label"], class_name="spend-tile-label"),
-                    rx.el.div(tile["value"], class_name="spend-tile-value mono"),
-                    rx.el.div(tile["sub"], class_name="dim"),
+                    rx.el.div(
+                        tile["value"],
+                        rx.el.span(" ", tile["limit"], class_name="spend-tile-limit"),
+                        class_name="spend-tile-value mono",
+                    ),
+                    # the meter's fill carries severity (data-level);
+                    # the share is always written next to it
+                    rx.cond(
+                        tile["meter"] != "",
+                        rx.el.div(
+                            rx.el.i(style={"width": tile["meter"]}, custom_attrs={"data-level": tile["level"]}),
+                            class_name="spend-meter",
+                            title=tile["share"],
+                        ),
+                    ),
+                    rx.el.div(
+                        rx.cond(tile["share"] != "", rx.el.span(tile["share"], " · ")),
+                        tile["sub"],
+                        class_name="dim",
+                    ),
                     class_name="spend-tile",
                 ),
             ),
             class_name="spend-tiles",
         ),
+        rx.el.div(State.spend_limits, class_name="spend-limits dim"),
         # one series: one theme hue, no legend; each bar's
         # tooltip has its day, cost and requests
         rx.el.div(
-            rx.foreach(
-                State.spend_bars,
-                lambda bar: rx.el.div(
-                    rx.el.i(style={"height": bar["height"]}),
-                    rx.el.span(bar["label"], class_name="spend-bar-label"),
-                    title=bar["title"],
-                    class_name="spend-bar",
+            # the y axis: the scale's top, half and 0 (spend.py
+            # nice_top), lined up with the gridlines
+            rx.el.div(
+                rx.foreach(
+                    State.spend_axis,
+                    lambda tick: rx.el.span(tick["label"], style={"bottom": tick["bottom"]}),
                 ),
+                class_name="spend-axis mono",
             ),
-            class_name="spend-bars",
+            rx.el.div(
+                rx.foreach(State.spend_axis, lambda tick: rx.el.b(style={"bottom": tick["bottom"]})),
+                rx.cond(
+                    State.spend_limit_line.contains("bottom"),
+                    rx.el.div(
+                        rx.el.span(State.spend_limit_line["label"]),
+                        class_name="spend-limit-line",
+                        style={"bottom": State.spend_limit_line["bottom"]},
+                    ),
+                ),
+                rx.el.div(
+                    rx.foreach(
+                        State.spend_bars,
+                        lambda bar: rx.el.div(
+                            rx.el.i(style={"height": bar["height"]}),
+                            rx.el.span(bar["label"], class_name="spend-bar-label"),
+                            title=bar["title"],
+                            class_name="spend-bar",
+                        ),
+                    ),
+                    class_name="spend-bars",
+                ),
+                class_name="spend-plot",
+            ),
+            class_name="spend-chart",
             aria_label="Cost per day",
         ),
         rx.el.table(

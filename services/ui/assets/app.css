@@ -755,7 +755,7 @@ input, textarea { caret-color: var(--blue); }
 .ctx-bar i { display: block; height: 100%; min-width: 2px; background: var(--green); }
 .ctx-meter.is-full { color: var(--yellow); }
 .ctx-meter.is-full .ctx-bar i { background: var(--yellow); }
-/* debug panel tabs: Requests (the log) | AI (agents + spend, agents.py / spend.py) */
+/* debug panel tabs: Requests (the log) | System | Spend | Agents (perf.py / spend.py / agents.py) */
 .dbg-tab { font: inherit; font-size: 12px; padding: 1px 10px; border: 0; border-bottom: 2px solid transparent; background: transparent;
   color: var(--grey1); cursor: pointer; }
 .dbg-tab:hover { color: var(--fg); }
@@ -803,9 +803,28 @@ input, textarea { caret-color: var(--blue); }
 .spend-tile { flex: 1; background: var(--bg0); border-radius: 4px; padding: 6px 10px; font-size: 11.5px; }
 .spend-tile-label { color: var(--grey1); }
 .spend-tile-value { font-size: 18px; color: var(--fg); }
+/* a tile's limit: "/ $5" in muted ink next to the amount; the meter under it (fill = severity,
+   track = a lighter step; the share is always written beside it, never colour alone) */
+.spend-tile-limit { font-size: 12px; color: var(--grey1); }
+.spend-meter { height: 6px; margin: 4px 0 3px; background: var(--bg2); border-radius: 3px; overflow: hidden; }
+.spend-meter i { display: block; height: 100%; background: var(--green); border-radius: 3px; }
+.spend-meter i[data-level="warn"] { background: var(--yellow); }
+.spend-meter i[data-level="danger"] { background: var(--red); }
+.spend-limits { margin: 4px 0 8px; font-size: 11.5px; }
+/* the chart: a y axis (top / half / 0, muted ink) beside the plot; recessive 1px solid gridlines at
+   the same heights; the daily limit as a dashed labelled line (dashed so it never reads as a
+   gridline), pinned to the top when it's above the scale */
+.spend-chart { display: flex; gap: 6px; margin-bottom: 14px; }
+.spend-axis { position: relative; width: 44px; height: 90px; font-size: 10px; color: var(--grey1); }
+.spend-axis span { position: absolute; right: 0; transform: translateY(50%); white-space: nowrap; }
+.spend-plot { position: relative; flex: 1; height: 90px; }
+.spend-plot > b { position: absolute; left: 0; right: 0; height: 0; border-top: 1px solid var(--bg2); }
+.spend-plot > b:last-of-type { border-top-color: var(--bg3); }
+.spend-limit-line { position: absolute; left: 0; right: 0; height: 0; border-top: 1px dashed var(--grey1); z-index: 1; }
+.spend-limit-line span { position: absolute; right: 0; bottom: 1px; font-size: 10px; color: var(--grey1);
+  background: var(--bg0); padding: 0 3px; }
 /* a bar per day: one hue from the theme, 4px rounded tops on the baseline, 2px gaps */
-.spend-bars { display: flex; align-items: flex-end; gap: 2px; height: 90px; padding: 0 0 14px; border-bottom: 1px solid var(--bg3);
-  position: relative; }
+.spend-bars { position: absolute; inset: 0; display: flex; align-items: flex-end; gap: 2px; }
 .spend-bar { flex: 1; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; position: relative; }
 .spend-bar:hover { background: var(--bg1); }
 .spend-bar i { display: block; min-height: 1px; background: var(--green); border-radius: 4px 4px 0 0; }

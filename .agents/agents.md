@@ -240,8 +240,8 @@ directory that references `.agents/` content, never a second copy of it.
 
 The user works as the **architect**: they decide the design, the AI builds it. A plan has to let them judge the
 design at that level without reading the finished code, so when presenting a plan, a design, options to choose
-from, or ideas for a feature (before or instead of building it), always show two things (a full plan with
-every section, approved by the user as the model: `personal/ai/plan-example.md`):
+from, or ideas for a feature (before or instead of building it), always show two things (full plans with
+every section, approved by the user as models, are in `personal/ai/plan_examples/`):
 
 1. **What the user types and sees.** What they type or click and what comes back: for a chat
    feature, the message and the rows the app shows; for a CLI, the command and its output; for a function, a
@@ -324,13 +324,28 @@ README's stated behaviour), name the rule and where it is written before changin
 is called' in `spec/services/ui/variables.md`". Don't rewrite the rule quietly to fit the new
 work; the user decides whether the rule changes or the request does.
 
-### Report a change from an approved plan when it happens (trial)
+### Departing from an approved plan: confirm or point out
 
-On trial since 2026-11-16; the user may drop it. When the work departs from a plan the user approved, say so
-at the point of the change, with the reason, not only in the final summary, eg "Change from the plan: no
-`/mentions` route. The colouring needs the names on every keystroke, so they are kept on the page by the
-existing sync instead." A departure that changes the architecture or user-facing behaviour is a question, not
-a report.
+Adopted 2026-11-17, after a trial from 2026-11-16. An approved plan is a spec: everything in it (the
+sketches of what the user sees, the interfaces, the workflows, the edge cases) is what gets built. When
+the work departs from it, how serious the departure is decides what to do:
+
+| Departure | What to do | Eg |
+|---|---|---|
+| Changes what the user sees, the architecture, or a decision they made | **Confirm first** (ask), before building it | the plan's sketch pins an off-scale limit line at the top of the chart; you'd put a note under it instead |
+| Changes only how it's built, but they'd want to know (cost, outside requests, a style rule from a skill overriding the sketch) | **Point it out** when it happens, in a line with the reason | "Change from the plan: 3 requests, not 2: the project's id has to be looked up first." |
+| Pure implementation detail (helper names, splitting a function) | Nothing | `axis()` folded into `build()` |
+
+- Keep it short: what changed and why, in a line or two, eg "Change from the plan: no `/mentions` route.
+  The colouring needs the names on every keystroke, so they are kept on the page by the existing sync
+  instead."
+- A skill's or guide's rule doesn't silently override the plan: if it conflicts with what the plan shows
+  (eg a chart guide's "never dashed" vs a dashed limit line in the sketch), confirm.
+- **Say what won't be visible yet.** If a planned piece only shows under conditions the user's data doesn't
+  meet (a daily-limit line when only a monthly limit is set), say so in the summary, so it doesn't look
+  missing.
+- The final summary repeats the departures under "Changes from the plan", but never instead of raising them
+  when they happen.
 
 ## Caching Policy
 
