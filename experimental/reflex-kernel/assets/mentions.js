@@ -2,37 +2,66 @@
 // Purpose: "@" mentions of the session's variables in the chat boxes (EXPERIMENTAL; mentions.py,
 //          reflex_kernel.mention_data). Typing "@" in the chat box, a tool form's Ask AI row or an
 //          editor's inline chat lists the variables at the box: type to filter, Up / Down move, Tab or
-//          Enter completes, Escape closes. After a name, "." lists its parts (a table's columns, a
-//          model's fields). In the chat box a mention is coloured as a slash command is, in purple
-//          (window.paintMentions, drawn by assets/slash.js in its layer under the box).
-//          The variables are read from the page each time (State.mention_rows): nothing is kept here.
+//          Enter completes, Escape closes. After a name, "." lists what can follow it, as the Python
+//          console does: its columns or fields, its attributes, and the methods a mention may call
+//          ("head()": one call, at the end). That list is asked from the backend on each keystroke
+//          (POST /mention_complete), at any depth ("@r3.df."). In the chat box a mention is coloured as
+//          a slash command is, in purple (window.paintMentions, drawn by assets/slash.js in its layer
+//          under the box). The variable names are read from the page each time (State.mention_rows):
+//          nothing is kept here.
 (() => {
   // the chat box, a form's Ask AI row (render.ASK_FIELD), an editor's inline chat (inline_edit.jsx)
   const BOXES = 'textarea[name="prompt"], input[name="__ask"], input.cm-inline-edit-input';
   const NAME = "[A-Za-z_]\\w*(?:\\.[A-Za-z_]\\w*)*";
   // the mention being typed, up to the caret: "@", "@q", "@q1.", "@q1.ch" (not inside a word: an email)
   const TYPING = new RegExp(`(?:^|[^\\w@])@((?:${NAME})?\\.?)$`);
+  // a row's icon by its kind, as the console's list has one per kind
+  const ICONS = { variable: "@", column: "▦", attribute: "▫", method: "ƒ" };
 
+  const data = () => document.querySelector("[data-mention-data]");
   const variables = () => [...document.querySelectorAll("[data-mention-data] [data-mention]")].map((item) => ({
     name: item.dataset.mention,
     about: [item.dataset.type, item.dataset.shape, item.dataset.source].filter(Boolean).join(" · "),
     parts: (item.dataset.parts || "").split(" ").filter(Boolean),
   }));
 
+  // where the bracket opened at text[start] closes (the index after it), -1 if it never does;
+  // brackets inside quotes don't count (as mentions.py reads a call)
+  const closeOf = (text, start) => {
+    let depth = 0;
+    let quote = "";
+    for (let at = start; at < text.length; at += 1) {
+      const char = text[at];
+      if (quote) {
+        if (char === "\\") at += 1;
+        else if (char === quote) quote = "";
+      } else if (char === '"' || char === "'") quote = char;
+      else if ("([{".includes(char)) depth += 1;
+      else if (")]}".includes(char)) {
+        depth -= 1;
+        if (depth === 0) return at + 1;
+      }
+    }
+    return -1;
+  };
+
   // -- colouring (the chat box): the text as html with each mention of a variable in a span.
-  // As mentions.py reads it: the first name must be a variable; what follows it is coloured only
-  // as far as it names a known part.
+  // The first name must be a variable. The whole dotted path after it is coloured ("@q1.shape",
+  // "@r3.df.wins"), and a method call through its closing bracket ("@q1.head(5)"), so a mention
+  // never reads as plain text.
   window.paintMentions = (text, escapeHtml) => {
     const known = new Map(variables().map((item) => [item.name, item.parts]));
     let found = false;
     let html = "";
     let last = 0;
     for (const match of text.matchAll(new RegExp(`(?<![\\w@])@(${NAME})`, "g"))) {
-      const [root, part] = match[1].split(".");
+      if (match.index < last) continue; // inside the brackets of a call already painted
+      const [root] = match[1].split(".");
       if (!known.has(root)) continue;
-      const path = part && known.get(root).includes(part) ? `${root}.${part}` : root;
-      const end = match.index + 1 + path.length;
-      html += `${escapeHtml(text.slice(last, match.index))}<span class="mention-token">@${escapeHtml(path)}</span>`;
+      const whole = match.index + match[0].length;
+      const close = match[1].includes(".") && text[whole] === "(" ? closeOf(text, whole) : -1;
+      const end = close > 0 ? close : whole;
+      html += `${escapeHtml(text.slice(last, match.index))}<span class="mention-token">${escapeHtml(text.slice(match.index, end))}</span>`;
       last = end;
       found = true;
     }
@@ -41,10 +70,12 @@
 
   // -- the list: one element for every box, placed over (or under) the box being typed in
   const menu = document.createElement("div");
-  menu.className = "mention-menu sans";
+  menu.className = "mention-menu mono";
   let box = null;
+  // numbers the questions asked of the backend: an answer to an older one is dropped
+  let asked = 0;
   const isOpen = () => menu.classList.contains("is-open");
-  const close = () => { menu.classList.remove("is-open"); box = null; };
+  const close = () => { menu.classList.remove("is-open"); box = null; asked += 1; };
   const rows = () => [...menu.querySelectorAll("[data-insert]")];
   const setActive = (row) => {
     rows().forEach((other) => other.classList.toggle("is-active", other === row));
@@ -65,36 +96,42 @@
     return match ? { typed: match[1], start: before.length - match[1].length - 1 } : null;
   };
 
-  // the rows for what is typed: variables by name, or after "name." that variable's parts
-  const options = (typed) => {
-    const all = variables();
-    const dot = typed.indexOf(".");
-    const owner = dot > 0 && all.find((item) => item.name === typed.slice(0, dot));
-    if (owner) {
-      const query = typed.slice(dot + 1).toLowerCase();
-      return owner.parts
-        .filter((part) => part.toLowerCase().includes(query))
-        .map((part) => ({ insert: `${owner.name}.${part}`, about: `part of ${owner.name}` }));
-    }
+  // the variables matching what is typed (no dot yet): from the page
+  const names = (typed) => {
     const query = typed.toLowerCase();
-    return all
+    return variables()
       .filter((item) => item.name.toLowerCase().includes(query))
       .sort((a, b) => b.name.toLowerCase().startsWith(query) - a.name.toLowerCase().startsWith(query))
-      .map((item) => ({ insert: item.name, about: item.about }));
+      .map((item) => ({ insert: item.name, label: `@${item.name}`, kind: "variable", detail: item.about }));
   };
 
-  const update = (target) => {
-    const now = typing(target);
-    const found = now ? options(now.typed) : [];
+  // what can follow the dot: asked from the backend, which knows the live value (mentions.complete)
+  const parts = async (typed) => {
+    const source = data();
+    if (!source || !source.dataset.url) return [];
+    try {
+      const response = await fetch(source.dataset.url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: source.dataset.token, text: typed }),
+      });
+      return response.ok ? await response.json() : [];
+    } catch {
+      return []; // backend unreachable: just no list
+    }
+  };
+
+  const draw = (target, found) => {
     if (!found.length) return close();
     const active = menu.querySelector(".is-active");
     const keep = active && found.some((item) => item.insert === active.dataset.insert) ? active.dataset.insert : found[0].insert;
     menu.replaceChildren(...found.map((item) => {
       const row = document.createElement("button");
       row.type = "button";
-      row.className = "menu-item palette-item";
+      row.className = `menu-item mention-item is-${item.kind}`;
       row.dataset.insert = item.insert;
-      row.append(span("mono mention-name", `@${item.insert}`), span("dim palette-title", item.about));
+      row.dataset.kind = item.kind;
+      row.append(span("mention-icon", ICONS[item.kind] || ""), span("mention-name", item.label), span("mention-detail-type dim", item.detail || ""));
       return row;
     }));
     box = target;
@@ -109,17 +146,32 @@
     setActive(rows().find((row) => row.dataset.insert === keep));
   };
 
-  // put the picked name where the mention was being typed
+  const update = async (target) => {
+    const now = typing(target);
+    if (!now) return close();
+    if (!now.typed.includes(".")) return draw(target, names(now.typed));
+    asked += 1;
+    const mine = asked;
+    const found = await parts(now.typed);
+    // typed on since, or left the box: this answer is old
+    if (mine !== asked || document.activeElement !== target) return undefined;
+    return draw(target, found);
+  };
+
+  // put the picked name where the mention was being typed; a method gets its brackets, with the
+  // caret between them
   const complete = (row) => {
     const target = box;
     const now = target && typing(target);
     if (!now) return close();
     const end = target.selectionStart;
-    const text = `@${row.dataset.insert}`;
+    const method = row.dataset.kind === "method";
+    const text = `@${row.dataset.insert}${method ? ")" : ""}`;
     target.value = target.value.slice(0, now.start) + text + target.value.slice(end);
-    target.selectionStart = target.selectionEnd = now.start + text.length;
+    target.selectionStart = target.selectionEnd = now.start + text.length - (method ? 1 : 0);
     close();
-    // the chat box's colouring follows (assets/slash.js listens for input)
+    // the chat box's colouring follows (assets/slash.js listens for input); the list this would
+    // open again is closed
     target.dispatchEvent(new Event("input", { bubbles: true }));
     close();
   };
@@ -162,10 +214,10 @@
 
   // the variables changed (a result arrived, one was cleared): what counts as a mention did too
   const watch = () => {
-    const data = document.querySelector("[data-mention-data]");
-    if (!data) return setTimeout(watch, 500);
+    const source = data();
+    if (!source) return setTimeout(watch, 500);
     new MutationObserver(() => window.recolourChatBox && window.recolourChatBox())
-      .observe(data, { childList: true, subtree: true, attributes: true });
+      .observe(source, { childList: true, subtree: true, attributes: true });
   };
   watch();
 })();

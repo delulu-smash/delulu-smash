@@ -44,6 +44,21 @@ SOURCE = "/assign"
 _NAMED = re.compile(r"\s*([A-Za-z_]\w*)\s*=(?!=)\s*(.+)", re.DOTALL)
 BASIC = (str, int, float, bool, dt.date, dt.datetime, dt.time, dt.timedelta)
 ALLOWED = "a str, int, float, bool, date, datetime, time or timedelta, a list of those, a pydantic model, or a polars DataFrame"
+# How the AI names a variable it picks the name for, by the value's type (the user's own name is
+# kept as given). One line each; the end of the instructions.
+NAMING = "\n".join(
+    [
+        "- a DataFrame ends in _df: top_players_df",
+        "- a date ends in _date: release_date; a datetime ends in _at: started_at; a time ends in _time",
+        "- a timedelta ends in _duration: set_duration",
+        "- a bool starts with is_, has_ or can_: is_offline",
+        "- a list is a plural noun: player_tags, win_rates",
+        "- a count is n_ and a plural: n_sets; another number names its unit or kind: win_rate, damage_pct",
+        "- a str is a singular noun: best_char, player_tag",
+        "- a record (pydantic model) is a singular noun, its class the same in PascalCase: player_summary,"
+        " PlayerSummary",
+    ]
+)
 COMPUTED, KNOWLEDGE = "computed", "knowledge"
 BASIS_TEXT = {COMPUTED: "computed from your data", KNOWLEDGE: "from the AI's knowledge or the chat: not checked"}
 
@@ -81,9 +96,13 @@ _INSTRUCTIONS = clean_f_str(f"""
     Use only variables, tables and columns that are listed, written as the data has them. Variables the
     user mentions with @ are named without the @ in code. Earlier messages, when there are any, are the
     user's chat with the app's assistant (its answers and tool results): use them to understand what the
-    user means. Name: the user's when they give one, else short snake_case that says what it holds; not one
-    that already exists unless the user gave it. Allowed in the end: {ALLOWED}.
+    user means. Allowed in the end: {ALLOWED}.
+
+    Name: the user's, exactly as given, when they give one. Else pick a short snake_case name that says what
+    it holds, not one that already exists, following Python's usual conventions for its type:
     """)
+# joined, not inserted: a value of several lines would break clean_f_str's indent stripping
+_INSTRUCTIONS = "\n".join([_INSTRUCTIONS, NAMING])
 
 
 @dataclass
@@ -184,6 +203,11 @@ async def propose(session: Session | None, token: str, text: str) -> Proposal:
         return Proposal(error="Say what the variable should hold, eg: /assign top5 = the five best players in @q1")
     if session is not None and name and (problem := session.name_problem(name)):
         return Proposal(error=problem)
+    if problem := mentions.problems(what, session):
+        return Proposal(error=problem)
+    # "@q1" in the text: what the variable holds goes along (no tools here). Built once: a call
+    # such as "@q1.sample(5)" gives other rows each time it runs
+    mentioned = mentions.context(what, session)
     wanted = f"Name it {name}." if name else "Pick its name."
     request = "\n\n".join(
         filter(
@@ -191,8 +215,7 @@ async def propose(session: Session | None, token: str, text: str) -> Proposal:
             [
                 python_context("python", token, None),
                 f"The new variable should hold: {what}\n{wanted}",
-                # "@q1" in the text: what the variable holds goes along (no tools here)
-                mentions.context(what, session),
+                mentioned,
             ],
         )
     )
@@ -205,7 +228,7 @@ async def propose(session: Session | None, token: str, text: str) -> Proposal:
         log_call("agent", "inline-assign", name="inline assign", prompt=text) as call,
         capture_run_messages() as captured,
     ):
-        call["added"] = mentions.context(what, session)
+        call["added"] = mentioned
         try:
             result = await assign_agent.run(request, message_history=history, deps=asked)
             output = result.output

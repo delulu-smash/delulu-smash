@@ -4,17 +4,22 @@
 #          "@q1" in a message points at a variable: the AI gets a text block describing it
 #          (a small value whole, a big one as shape, columns and first rows; the chat agent can
 #          then query it with the query_variable tool), and a message that is only mentions
-#          prints them with no AI call. "@r3.df" / "@q1.char" follow a dotted path; nothing is
-#          ever called. An "@name" that isn't a variable is plain text.
+#          prints them with no AI call. "@r3.df" / "@q1.char" follow a dotted path. A path may
+#          end in ONE method call, "@q1.head(5)" / "@big.describe()": only a read-only method on
+#          the allowlist (CALLS), with plain values as arguments; anything else is refused and
+#          the message is not sent (problems). An "@name" that isn't a variable is plain text.
 #          Text only: nothing here keeps a value, so a cleared variable is still freed, and the
 #          block is built again on every send (no cache).
-# Usage: find(text, session) / context(text, session, tool) / bare(text, session) /
-#        rows(session) / toolset(session); read by state.py (which also keeps rows() on the
-#        page for assets/mentions.js: the list "@" opens), inline_fill.py and inline_edit.py.
+# Usage: find(text, session) / problems(text, session) / context(text, session, tool) /
+#        bare(text, session) / rows(session) / complete(session, typed) / toolset(session);
+#        read by state.py (which also keeps rows() on the page for assets/mentions.js: the list
+#        "@" opens), api.py (POST /mention_complete: the list after a dot), inline_fill.py,
+#        inline_edit.py and assign.py.
 # Spec:  spec/experimental/reflex-kernel/variables.md ("Mentions")
 # ---------------------------------------------------------------------------
 from __future__ import annotations
 
+import ast
 import inspect
 import json
 import re
@@ -37,6 +42,17 @@ if TYPE_CHECKING:
 
 # "@name" or "@name.part.part". Not inside a word or after another "@" (an email, "@@x").
 MENTION = re.compile(r"(?<![\w@])@([A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*)")
+# The methods a mention may call, by the type of what they are called on: read-only ones that
+# give back a value (a new table, a number, a list). Nothing that writes a file or changes the
+# value in place. A new one is a name here; the list after a dot (complete) reads this too.
+_TABLE_CALLS = ("head", "tail", "sample", "slice", "describe", "sort", "unique", "drop_nulls", "null_count")
+_TABLE_CALLS += ("top_k", "bottom_k", "sum", "mean", "median", "min", "max")
+CALLS: dict[type, tuple[str, ...]] = {
+    pl.DataFrame: (*_TABLE_CALLS, "select", "drop", "sql"),
+    pl.Series: (*_TABLE_CALLS, "value_counts", "to_list", "n_unique"),
+}
+# how many rows the list after a dot holds at most
+MAX_COMPLETIONS = 60
 # The hybrid rule: a value at most this big is given to the AI whole, a bigger one as a summary.
 WHOLE_ROWS = 50
 WHOLE_CHARS = 4000
@@ -51,8 +67,12 @@ TOOL_NAME = "query_variable"
 @dataclass
 class Mention:
     path: str
-    """As written after the "@", eg "q1" or "r3.df" (only the part that names something)."""
+    """As written after the "@", eg "q1", "r3.df" or "q1.head(5)" (only the part that names
+    something)."""
     value: Any
+    """What it names; a call's result. None when error is set."""
+    error: str = ""
+    """A method call that was refused or failed: why. The message must not be sent then."""
 
     @property
     def root(self) -> str:
@@ -85,8 +105,8 @@ def _step(value: Any, part: str) -> tuple[bool, Any]:
 
 
 def resolve(session: Session, path: str) -> Mention | None:
-    """The variable a path names, None when its first name isn't one. A path is followed as far
-    as it names something: "@q1.Thanks" is q1 (the rest is the sentence going on)."""
+    """The variable a dotted path names (no call), None when its first name isn't one. A path is
+    followed as far as it names something: "@q1.Thanks" is q1 (the rest is the sentence going on)."""
     root, *parts = path.split(".")
     if root not in _names(session):
         return None
@@ -100,32 +120,147 @@ def resolve(session: Session, path: str) -> Mention | None:
     return Mention(".".join(taken), value)
 
 
+def allowed_calls(value: Any) -> tuple[str, ...]:
+    """The methods a mention may call on a value (CALLS), () when none."""
+    return next((names for kind, names in CALLS.items() if isinstance(value, kind)), ())
+
+
+def _close(text: str, start: int) -> int:
+    """Where the bracket opened at text[start] is closed (the index after it), -1 when it never
+    is. Brackets inside quotes don't count."""
+    depth, quote, at = 0, "", start
+    while at < len(text):
+        char = text[at]
+        if quote:
+            if char == "\\":
+                at += 1
+            elif char == quote:
+                quote = ""
+        elif char in "\"'":
+            quote = char
+        elif char in "([{":
+            depth += 1
+        elif char in ")]}":
+            depth -= 1
+            if depth == 0:
+                return at + 1
+        at += 1
+    return -1
+
+
+def _arguments(text: str) -> tuple[list[Any], dict[str, Any]]:
+    """The arguments of a call written as "(5, by='wins')": plain values only (text, numbers,
+    True / False / None, lists of those). Raises ValueError for anything else: nothing is
+    evaluated, so an argument can't run code."""
+    try:
+        call = ast.parse(f"f{text}", mode="eval").body
+    except SyntaxError as error:
+        raise ValueError(str(error)) from error
+    if not isinstance(call, ast.Call) or any(keyword.arg is None for keyword in call.keywords):
+        raise ValueError("not a plain list of arguments")
+    args = [ast.literal_eval(arg) for arg in call.args]
+    return args, {str(keyword.arg): ast.literal_eval(keyword.value) for keyword in call.keywords}
+
+
+def _call(owner: Any, method: str, arguments: str, shown: str) -> Mention:
+    """One method call on a mentioned value: allowed (CALLS), plain arguments, then run."""
+    allowed = allowed_calls(owner)
+    kind = type(owner).__name__
+    if method not in allowed:
+        can = f"On a {kind} you can call: {', '.join(allowed)}" if allowed else f"A {kind} has no methods to call"
+        return Mention(shown, None, f"@{shown}: {method}() isn't allowed in a mention. {can}.")
+    try:
+        args, kwargs = _arguments(arguments)
+    except ValueError:
+        hint = ' For a filter, use .sql("select * from self where ...").' if "sql" in allowed else ""
+        plain = "arguments must be plain values (text, numbers, True / False, lists of those)"
+        return Mention(shown, None, f"@{shown}: {plain}.{hint}")
+    try:
+        return Mention(shown, getattr(owner, method)(*args, **kwargs))
+    except Exception as error:  # noqa: BLE001  # whatever the method raises is shown to the user
+        return Mention(shown, None, f"@{shown} failed: {type(error).__name__}: {error}")
+
+
+def _read(session: Session, text: str, start: int) -> tuple[Mention | None, int]:
+    """The mention whose path starts at text[start] (just after its "@"), and where it ends.
+    None when the first name isn't a variable."""
+    path = MENTION.match(text, start - 1).group(1)  # type: ignore[union-attr]  # the caller matched it
+    end = start + len(path)
+    plain = resolve(session, path)
+    if plain is None:
+        return None, end
+    owner_path, _, method = path.rpartition(".")
+    # a call: "(...)" right after a name that is a method of what the path before it names
+    if owner_path and text[end : end + 1] == "(" and plain.path == owner_path and not method.startswith("_"):
+        if callable(getattr(plain.value, method, None)):
+            close = _close(text, end)
+            if close < 0:
+                return Mention(path, None, f"@{path}(: the brackets are not closed."), len(text)
+            shown = path + text[end:close]
+            # one call only: "@q1.head(5).tail(1)" would send ".tail(1)" as plain words
+            if re.match(r"\.[A-Za-z_]", text[close:]):
+                more = "only one method call, at the end of a mention. For more, use .sql(...) or /assign"
+                return Mention(shown, None, f"@{shown}…: {more}."), close
+            return _call(plain.value, method, text[end:close], shown), close
+    return plain, start + len(plain.path)
+
+
+def spans(text: str, session: Session | None) -> list[tuple[int, int, Mention]]:
+    """Every mention in a text, in order: (where it starts, at its "@", where it ends, it)."""
+    found: list[tuple[int, int, Mention]] = []
+    if session is None or "@" not in text:
+        return found
+    done = 0
+    for match in MENTION.finditer(text):
+        if match.start() < done:  # inside the arguments of a call already read
+            continue
+        mention, end = _read(session, text, match.start() + 1)
+        if mention is not None:
+            found.append((match.start(), end, mention))
+            done = end
+    return found
+
+
+def pieces(text: str, session: Session | None) -> list[dict[str, str]]:
+    """A text cut at its mentions, to draw them coloured where it is shown (a sent message in the
+    chat): [{text, mention: "1" for a mention, else ""}], in order. [] when it has none."""
+    found = spans(text, session)
+    cut: list[dict[str, str]] = []
+    last = 0
+    for start, end, _ in found:
+        cut += [{"text": text[last:start], "mention": ""}, {"text": text[start:end], "mention": "1"}]
+        last = end
+    return [piece for piece in [*cut, {"text": text[last:], "mention": ""}] if piece["text"]] if found else []
+
+
 def find(text: str, session: Session | None) -> list[Mention]:
     """The variables a message mentions, each once, in the order written."""
-    if session is None or "@" not in text:
-        return []
     found: dict[str, Mention] = {}
-    for match in MENTION.finditer(text):
-        mention = resolve(session, match.group(1))
-        if mention is not None:
-            found.setdefault(mention.path, mention)
+    for _, _, mention in spans(text, session):
+        found.setdefault(mention.path, mention)
     return list(found.values())
 
 
+def problems(text: str, session: Session | None) -> str:
+    """Why a message's mentions can't be read: a method call that isn't allowed, has arguments
+    that aren't plain values, or failed. "" when there is none. A message with a problem must
+    not be sent: the AI would be answering without what the user pointed at."""
+    return "\n".join(mention.error for mention in find(text, session) if mention.error)
+
+
 def bare(text: str, session: Session | None) -> list[Mention] | None:
-    """The mentions of a message that is nothing but mentions ("@q1", "@q1 @r2"): it prints them
-    and no AI is asked. None for any other message, or when one of them isn't a variable."""
-    words = text.split()
-    if session is None or not words:
+    """The mentions of a message that is nothing but mentions ("@q1", "@q1 @r2.describe()"): it
+    prints them and no AI is asked. None for any other message."""
+    found = spans(text, session)
+    if not found:
         return None
-    found = []
-    for word in words:
-        match = MENTION.fullmatch(word)
-        mention = resolve(session, match.group(1)) if match else None
-        if mention is None or mention.path != word[1:]:
-            return None
-        found.append(mention)
-    return found
+    rest, last = "", 0
+    for start, end, _ in found:
+        rest += text[last:start]
+        last = end
+    if (rest + text[last:]).strip():
+        return None
+    return [mention for _, _, mention in found]
 
 
 def _cut(text: str, limit: int = WHOLE_CHARS) -> str:
@@ -178,7 +313,10 @@ def describe(mention: Mention, session: Session | None = None, tool: bool = Fals
     """One mentioned variable as text for the model: what it is, where it came from, its value
     (the hybrid rule). tool: the reader has query_variable (the chat agent), so a big table
     says how to read the rest; an inline AI has no tools and is told only what it has."""
-    hint = f'To read more of it, call {TOOL_NAME}("{mention.path}", "select ... from self").' if tool else ""
+    if mention.error:
+        return f"@{mention.path}: could not be read. {mention.error}"
+    quoted = json.dumps(mention.path)
+    hint = f'To read more of it, call {TOOL_NAME}({quoted}, "select ... from self").' if tool else ""
     source = session.sources.get(mention.root, PYTHON) if session else ""
     made = f" (made by: {source})" if source else ""
     return f"@{mention.path}{made}: {_value(mention.value, hint)}"
@@ -234,6 +372,41 @@ def rows(session: Session | None) -> list[dict[str, Any]]:
     ]
 
 
+def complete(session: Session | None, typed: str) -> list[dict[str, str]]:
+    """The list after a dot, as the Python console's: what can follow "name." in a mention, for
+    what is typed after the "@" (eg "q1.", "q1.he", "r3.df."). First the value's own parts (a
+    table's columns, a model's fields), then its public attributes, then the methods a mention
+    may call (CALLS). Only what a mention can really use, so nothing listed is then ignored.
+
+    Each row: label, kind (column | attribute | method), detail (the type there) and insert
+    (the whole path to put after the "@"; a method's ends in "(").
+    """
+    owner_path, dot, prefix = typed.rpartition(".")
+    owner = resolve(session, owner_path) if session and dot else None
+    if owner is None or owner.path != owner_path:
+        return []
+    value, calls = owner.value, allowed_calls(owner.value)
+    found: list[dict[str, str]] = []
+    parts = _parts(value)
+    for name in parts:
+        if name.isidentifier() and _step(value, name)[0]:
+            found.append({"label": name, "kind": "column", "detail": type(_step(value, name)[1]).__name__})
+    for name in dir(value):
+        if name.startswith("_") or name in parts or (isinstance(value, BaseModel) and name.startswith("model_")):
+            continue
+        if name in calls:
+            found.append({"label": f"{name}()", "kind": "method", "detail": "method"})
+            continue
+        there, held = _step(value, name)
+        # not polars' accessor objects (.str, .dt, .list): they hold nothing a mention can show
+        if there and not type(held).__name__.endswith("NameSpace"):
+            found.append({"label": name, "kind": "attribute", "detail": type(held).__name__})
+    wanted = prefix.lower()
+    rows = [row for row in found if row["label"].lower().startswith(wanted)]
+    rows += [row for row in found if wanted in row["label"].lower() and row not in rows]
+    return [{**row, "insert": f"{owner_path}.{row['label'].removesuffix(')')}"} for row in rows[:MAX_COMPLETIONS]]
+
+
 def _frame(value: Any) -> pl.DataFrame | None:
     match value:
         case pl.DataFrame():
@@ -257,12 +430,15 @@ def toolset(session: Session) -> FunctionToolset[Any]:
         SELECT (PostgreSQL syntax) in which the variable is the table `self`.
 
         Args:
-            name: the variable as mentioned, without the @, eg "q1" or "r3.df".
+            name: the variable as mentioned, without the @, eg "q1", "r3.df" or "q1.head(100)".
             sql: the query, eg "select player, wins from self order by wins desc limit 10".
         """
-        mention = resolve(session, name.lstrip("@"))
+        found = find(f"@{name.lstrip('@')}", session)
+        mention = found[0] if found else None
         if mention is None:
             raise ModelRetry(f"There is no variable {name!r}. The variables are: {', '.join(_names(session))}")
+        if mention.error:
+            raise ModelRetry(mention.error)
         df = _frame(mention.value)
         if df is None:
             raise ModelRetry(f"{name} is a {type(mention.value).__name__}, not a table: it can't be queried.")

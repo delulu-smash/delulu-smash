@@ -97,14 +97,18 @@ async def fill(
     if not instruction:
         return Fill(error="Type what to change first.")
     output_type = StructuredDict(form.fill_schema, name=form.key, description=f"The inputs of {form.title}.")
-    # "@q1" in the instruction: what the variable holds goes along (mentions.py; no tools here)
-    text = mentions.with_context(prompt(form, form.texts(shown), instruction, note), session)
+    if problem := mentions.problems(instruction, session):
+        return Fill(error=problem)
+    # "@q1" in the instruction: what the variable holds goes along (mentions.py; no tools here).
+    # Built once: a call such as "@q1.sample(5)" gives other rows each time it runs
+    mentioned = mentions.context(instruction, session)
+    text = "\n\n".join(filter(None, [prompt(form, form.texts(shown), instruction, note), mentioned]))
     # the chat so far goes along (read only: the inline call is not added to the chat)
     history = list(session.ai_history) if session else []
     answer = Fill()
     used: list[Any] = []
     with log_call("agent", "inline-fill", name=f"inline fill ({form.key})", prompt=instruction) as call:
-        call["added"] = mentions.context(instruction, session)
+        call["added"] = mentioned
         for _ in range(MAX_FIXES + 1):
             # a capture per run: one capture only holds its first run's messages
             with capture_run_messages() as captured:

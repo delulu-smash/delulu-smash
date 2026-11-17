@@ -69,6 +69,15 @@ def test_the_name_is_the_users_when_given() -> None:
     assert assign.split("") == ("", "")
 
 
+def test_the_ai_is_told_how_to_name_by_type() -> None:
+    """A name the AI picks follows assign.NAMING (a DataFrame ends in _df, ...)."""
+    instructions = assign.assign_agent._instructions[0]  # no public getter
+    text = getattr(instructions, "instruction", instructions)
+    assert assign.NAMING in text
+    for convention in ("_df", "_date", "_at", "is_", "n_"):
+        assert convention in assign.NAMING
+
+
 def test_the_command_takes_text() -> None:
     assert SLASH["assign"].takes
     assert SLASH["assign"].slash_event == ("assign_ask",)

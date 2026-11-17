@@ -5,6 +5,29 @@ Design requirements for reflex-kernel (SmashGPT), kept apart from `experimental/
 which documents what is built. One file per concern. The spec says what must hold, the README says what
 does.
 
+## Words: panel and widget
+
+Two different things, and the design rules differ for each. Use these words (the user's, Nov 2026); older text
+and the code say "pane" for a panel.
+
+| | Panel | Widget |
+| --- | --- | --- |
+| What it is | a fixed region of the window's layout: a place | a view of one value: a thing shown in a place |
+| Which | Chat, Results, Python, Variables | table, VODs, player usage, fields, SmashDb console |
+| How many | one of each; shown or hidden (the bottom bar, `Alt` keys) | any number; the same value can be shown in several places |
+| Where defined | the layout in `reflex_kernel/reflex_kernel.py` | a row in `WIDGETS` (`reflex_kernel/widgets.py`), drawn by `render.py` |
+| Holds | widgets, cells, messages | its own controls and state (filter, sort, inputs) |
+
+Design rules that follow from the difference:
+
+- **Panels are flush and uniform.** They touch their neighbours with one dividing line, no gap and no frame of
+  their own, and the strip at the top of each is the same height (`--panel-head` in `assets/app.css`), so they
+  line up when several are open.
+- **A widget is self-contained and the same wherever it is placed** (a Results tab, the chat, under a cell):
+  it keeps its own frame and brings its controls with it. See the README's "Rendering" design rule.
+- A new region of the window is a panel; a new way to show a value is a widget. Don't give a panel a widget's
+  frame, or build a widget that only works in one panel.
+
 - [omarchy.md](omarchy.md): navigation, keys and many other parts of the app follow Omarchy, the desktop
   it runs on.
 - [inline_ai.md](inline_ai.md): `Alt+A`, the AI that changes what you are in. A widget with a tool is a

@@ -98,6 +98,15 @@
   window.addEventListener("resize", () => document.querySelectorAll(BOX).forEach(colour));
   // assets/mentions.js: the variables changed, so what counts as a mention did
   window.recolourChatBox = () => document.querySelectorAll(BOX).forEach(colour);
+  // State.submit_chat: a message that wasn't sent (an "@" method call was refused) goes back in the
+  // box, to fix. After the form's own reset, which empties it
+  window.restoreChatBox = (text) => setTimeout(() => {
+    const box = document.querySelector(BOX);
+    if (!box || box.value) return;
+    box.value = text;
+    box.focus();
+    colour(box);
+  }, 80);
 
   // capture phase: before the box's own Enter (send) and the page's Escape
   document.addEventListener("keydown", (event) => {

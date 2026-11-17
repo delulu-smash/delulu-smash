@@ -239,3 +239,60 @@ def test_clear_chat_forgets_the_conversation_and_keeps_the_variables():
     State.clear_chat.fn(made)
     assert made.chat[0].text == "hi"
     assert made.chat[-1].kind == "note"
+
+
+# -- "@" mentions typed alone: printed as the Python console prints ------------------------
+
+
+def printed(made: State, text: str) -> list[ChatItem]:
+    """Send a message that is only mentions and run what it returns: the rows the chat got."""
+    assert [name for name, _ in ran([submit(made, text)])] == ["show_mentions"]
+    State.show_mentions.fn(made, text)
+    return list(made.chat)
+
+
+def test_a_bare_mention_shows_what_a_cell_would():
+    import polars as pl  # only this group of tests needs it
+
+    made = state()
+    session = made._session()
+    session.namespace["q1"] = pl.DataFrame({"player": ["a", "b"], "wins": [1, 2]})
+    session.namespace["n"] = 5
+    # a variable with a view: its own result row, unfolded
+    assert [(item.kind, item.name) for item in printed(made, "@q1")] == [("mention", "@q1"), ("ref", "q1")]
+    made.chat = []
+    # a call's result has no name: shown as a cell's result is, kept in the session's outputs
+    row, output = printed(made, "@q1.head(1)")
+    assert (row.kind, row.detail, output.kind, output.view.kind) == ("mention", "", "output", "table")
+    assert session.outputs[output.key].value.height == 1
+    assert "q1.head(1)" not in session.namespace  # "@" binds nothing
+    made.chat = []
+    # no view: its repr, as under a cell
+    (row,) = printed(made, "@n")
+    assert (row.detail, row.open) == ("5", True)
+
+
+def test_a_printed_result_can_be_opened_as_a_tab_and_goes_with_the_chat():
+    import polars as pl  # only this group of tests needs it
+
+    made = state()
+    session = made._session()
+    session.namespace["q1"] = pl.DataFrame({"player": ["a", "b"], "wins": [1, 2]})
+    _, output = printed(made, "@q1.wins")
+    State.open_chat_output.fn(made, output.key)
+    assert session.namespace["out1"].to_list() == [1, 2]
+    assert session.sources["out1"] == "@q1.wins"
+    State.clear_chat.fn(made)
+    assert output.key not in session.outputs
+    assert "out1" in session.namespace  # what was given a name stays
+
+
+def test_a_refused_call_is_not_sent_and_goes_back_in_the_box():
+    import polars as pl  # only this group of tests needs it
+
+    made = state()
+    made._session().namespace["q1"] = pl.DataFrame({"wins": [1, 2]})
+    back = submit(made, 'what is in @q1.write_csv("/tmp/never.csv")')
+    assert "restoreChatBox" in str(back)
+    assert [(item.kind, item.name) for item in made.chat] == [("mention", "not sent")]
+    assert "write_csv() isn't allowed" in made.chat[0].detail

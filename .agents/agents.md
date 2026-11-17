@@ -235,6 +235,86 @@ directory that references `.agents/` content, never a second copy of it.
 - The shell wrapper should stay thin and call the Python script via `uv run`, unless the user explicitly asks for
   shell-only or Python-only.
 
+## Plans and Proposals: Show Examples
+
+The user works as the **architect**: they decide the design, the AI builds it. A plan has to let them judge the
+design at that level without reading the finished code, so when presenting a plan, a design, options to choose
+from, or ideas for a feature (before or instead of building it), always show two things:
+
+1. **The interface, as the user would use it.** What they type or click and what comes back: for a chat
+   feature, the message and the rows the app shows; for a CLI, the command and its output; for a function, a
+   call and its result; for a UI, a small text sketch of the screen.
+2. **Pseudo code for the spirit of the implementation.** The underlying functions, what each one does, what
+   goes in and comes out, and how they call each other, plus the data that drives them (eg an allowlist, a
+   table of rules). Short and readable: the shape of the solution, not the final code. Name where each piece
+   would live when that is part of the decision (which module, which existing function it reuses).
+
+Also:
+
+- **Cover the edges**: what is refused or fails and what the user sees then, not only the happy path.
+- **Per option**: when offering alternatives, give each its own example so they can be compared side by side.
+- **End with the decisions that are theirs**, stated as choices, each with a recommendation.
+- Keep examples short, and use the repo's real names (eg `@q1`, `/vods`, `ds data char_ranking`) rather than
+  `foo` / `bar`.
+
+Example of the pseudo code level wanted (from the `@q1.head(5)` method-call proposal):
+
+```python
+ALLOWED = {pl.DataFrame: {"head", "tail", "describe", "sql"}, pl.Series: {"value_counts", "unique"}}
+
+def resolve(session, text):                    # text: 'q1.wins.value_counts()'
+    path, call = split_trailing_call(text)      # ('q1.wins', 'value_counts()') or (text, None)
+    value = follow(session, path)               # as today: columns, fields, attributes; nothing called
+    if call is None:
+        return value
+    name, args, kwargs = parse_literals(call)   # plain values only, else refuse
+    if name not in ALLOWED.get(type(value), ()):
+        raise Refused(f"@{path}.{name} isn't allowed")
+    return getattr(value, name)(*args, **kwargs)  # the result is described like any mention
+```
+
+## Staying Aligned: Direction, Interpretation, Changes
+
+How the user and the AI share the design work, and how to avoid building from a wrong reading.
+
+### Direction: who weighs in where
+
+The user gives direction on **organization, architecture and the high-level components**: where code lives,
+which modules or components exist and what each owns, how they talk to each other, user-facing behaviour, data
+shapes, and the rules in `spec/`. They give less feedback on how a component is implemented inside (function
+internals, helper names, parsing details, test structure, styling), and only in specific cases.
+
+- **This is not a gate on ideas.** The user is not the only one who shapes the architecture: propose designs,
+  alternatives and creative ideas freely, and recommend one. What they want is for the architecture-level
+  choices to be **laid out and pointed out explicitly**, so they can steer, not for the AI to wait to be told.
+- **Scale it to the work.** A big plan or a new area of the architecture gets the organized treatment (what
+  is new, what each part owns, what is reused, the choices and a recommendation for each). A small change in
+  an existing pattern needs none of that.
+- **Implementation is the AI's to decide**, without asking. Do say so when an implementation choice costs
+  money or outside requests, can lose data, bends a rule in these instructions, or changes what the user sees.
+- **When in doubt, over-ask.** A question too many costs seconds; a wrong assumption costs a rebuild.
+
+### Restate an ask that can be read two ways
+
+Before starting, say in a line how the request was read when it is ambiguous (a file, a term, the scope), eg
+"I read `prompt.md` as `personal/prompts.md`, the only file by that name, and 'note' as a new entry at the
+end." If the readings lead to different work, ask instead of picking.
+
+### Call out a request that reverses an existing rule
+
+When a request undoes or bends something already written down (a rule in `spec/`, these instructions, a
+README's stated behaviour), name the rule and where it is written before changing it, eg "this undoes 'nothing
+is called' in `spec/experimental/reflex-kernel/variables.md`". Don't rewrite the rule quietly to fit the new
+work; the user decides whether the rule changes or the request does.
+
+### Report a change from an approved plan when it happens (trial)
+
+On trial since 2026-11-16; the user may drop it. When the work departs from a plan the user approved, say so
+at the point of the change, with the reason, not only in the final summary, eg "Change from the plan: no
+`/mentions` route. The colouring needs the names on every keystroke, so they are kept on the page by the
+existing sync instead." A departure that changes the architecture or user-facing behaviour is a question, not
+a report.
+
 ## Caching Policy
 
 The user decided against caching (Nov 2026): a cache hides what the code really costs (the start.gg character

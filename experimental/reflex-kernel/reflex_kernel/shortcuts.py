@@ -50,6 +50,12 @@ class Shortcut(Enum):
     # Handled by the chat box (a form textarea).
     SEND = Binding("Enter", "chat", "Send")
     NEW_LINE = Binding("Shift+Enter", "chat", "New line")
+    # Handled by assets/history.js, as a terminal's history.
+    CHAT_HISTORY = Binding(
+        "ArrowUp",
+        "chat (empty box)",
+        "The last message you sent, then the ones before; ArrowDown goes forward again",
+    )
     # Handled by the cell editor's keymap (cell_editor.jsx, given by codemirror_keys).
     RUN_AND_ADVANCE = Binding("Shift+Enter", "cell", "Run and go to the next cell")
     RUN = Binding("Ctrl+Enter", "cell", "Run")

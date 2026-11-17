@@ -57,6 +57,8 @@ HELP_EXAMPLES: list[tuple[str, list[tuple[str, str]]]] = [
             ("@q1", "print it, no AI"),
             ("@q1 who has the best win rate?", "ask about it"),
             ("@q1.char which of these beat Steve?", "one column (or @r3.df, @r3.sql)"),
+            ("@big.describe() anything odd?", "one method call: you pick what the AI sees"),
+            ('@big.sql("select * from self limit 1")', "any SQL on it first"),
             ("how do @r1 and @r2 differ?", "several at once"),
             ("/usage the top player in @q1", "feed another widget's inputs"),
         ],
@@ -66,6 +68,8 @@ HELP_EXAMPLES: list[tuple[str, list[tuple[str, str]]]] = [
 _EXAMPLE_TOKEN = re.compile(r"(^/[a-z0-9-]+|@[A-Za-z_][\w.]*)")
 # The editor fetches completions straight from the backend (see api.py).
 COMPLETE_URL = rx.config.get_config().api_url + "/complete"
+# assets/mentions.js asks it what can follow the dot in an "@" mention (api.py, mentions.complete)
+MENTION_COMPLETE_URL = rx.config.get_config().api_url + "/mention_complete"
 
 
 def handle(name: rx.Var | str) -> rx.Component:
@@ -104,7 +108,17 @@ def chat_item(item: rx.Var) -> rx.Component:
         (
             "user",
             rx.el.div(
-                item.text,
+                # an "@" mention in it stays coloured, as it was in the chat box (mentions.pieces)
+                rx.cond(
+                    item.pieces.length() > 0,
+                    rx.foreach(
+                        item.pieces,
+                        lambda piece: rx.el.span(
+                            piece["text"], class_name=rx.cond(piece["mention"] != "", "mention-token", "")
+                        ),
+                    ),
+                    item.text,
+                ),
                 # top-right, on hover: this turn's requests, copy the message
                 rx.el.div(
                     rx.cond(item.key != "", logs_button(item.key, "this turn")),
@@ -165,6 +179,7 @@ def chat_item(item: rx.Var) -> rx.Component:
             mention_item(item),
         ),
         ("assign", assign_item(item)),
+        ("output", output_item(item)),
         # the app's own line, eg a slash command that isn't one
         (
             "note",
@@ -246,6 +261,31 @@ def mention_item(item: rx.Var) -> rx.Component:
             ),
         ),
         rx.cond((item.detail != "") & item.open, rx.el.pre(item.detail, class_name="mention-detail mono")),
+        class_name="chat-ref",
+    )
+
+
+def output_item(item: rx.Var) -> rx.Component:
+    """The result of a message that was only an "@" mention and names no variable ("@q1.describe()",
+    "@q1.wins"), shown as a cell shows its result: the same component, compact, with "open as tab"."""
+    return rx.el.div(
+        rx.cond(
+            item.view.kind != "",
+            render_component(
+                item.view,
+                State.view_event,
+                compact=True,
+                actions=(
+                    rx.el.button(
+                        "↗ tab",
+                        title="Open as a tab in Results (bound as out<n>)",
+                        on_click=State.open_chat_output(item.key),
+                        class_name="act",
+                    ),
+                ),
+            ),
+            rx.el.div("No longer available (its variable was cleared).", class_name="ref-gone dim"),
+        ),
         class_name="chat-ref",
     )
 
@@ -391,7 +431,8 @@ def mention_data() -> rx.Component:
             ),
         ),
         hidden=True,
-        custom_attrs={"data-mention-data": ""},
+        # the url and session for the list after a dot ("@q1.": columns, attributes, methods)
+        custom_attrs={"data-mention-data": "", "data-url": MENTION_COMPLETE_URL, "data-token": State.token},
     )
 
 
@@ -1497,35 +1538,37 @@ def variables_pane() -> rx.Component:
     )
     return rx.el.div(
         rx.el.div(
-            rx.el.span(rx.el.span(ICON_VARIABLE, class_name="mono accent-green icon"), "Variables"),
-            rx.el.span(State.var_summary, class_name="dim"),
+            rx.el.span(
+                rx.el.span(ICON_VARIABLE, class_name="mono accent-green icon"), "Variables", class_name="head-name"
+            ),
+            # the part that gives way in a narrow panel (an ellipsis); the name, the buttons and the
+            # full screen button always show. With rows ticked it says what they hold together
             rx.cond(
                 State.var_selected_summary != "",
-                rx.el.span(State.var_selected_summary, class_name="vars-selected"),
+                rx.el.span(
+                    State.var_selected_summary, title=State.var_selected_summary, class_name="dim vars-selected"
+                ),
+                rx.el.span(State.var_summary, title=State.var_summary, class_name="dim"),
             ),
-            rx.el.span(class_name="spacer"),
             rx.el.button(
-                "show all",
-                title="Also list modules, functions and classes (pl, db and _names never are)",
+                "All",
+                title="Also list modules, functions and classes",
                 on_click=State.toggle_var_show_all,
                 class_name=rx.cond(State.var_show_all, "act is-on", "act"),
             ),
+            rx.el.span(class_name="spacer"),
+            # one Clear: the ticked rows (the table's header box ticks all). Clearing everything in
+            # one go is also /clear-variables and the palette's "Variables: Clear all"
             rx.el.button(
-                "Clear selected",
+                "Clear",
                 rx.cond(count > 0, rx.fragment(" (", count, ")"), ""),
+                title="Remove the ticked variables from Python (the header box ticks all); undo for 3 s",
                 on_click=State.clear_selected_vars,
                 disabled=count == 0,
                 class_name="act",
             ),
-            rx.el.button(
-                "Clear all",
-                title="Remove every listed variable from Python",
-                on_click=State.clear_all_vars,
-                disabled=State.var_rows.length() == 0,
-                class_name="act",
-            ),
             zoom_button("variables"),
-            class_name="console-head sans",
+            class_name="console-head vars-head sans",
         ),
         rx.el.div(
             rx.cond(
@@ -1718,6 +1761,8 @@ app = rx.App(
         rx.el.script(src="/slash.js", defer=True),
         # "@" mentions of variables in the chat boxes (mention_data; EXPERIMENTAL)
         rx.el.script(src="/mentions.js", defer=True),
+        # ArrowUp in the empty chat box: the messages sent before, as a terminal's history
+        rx.el.script(src="/history.js", defer=True),
         # Esc on a "/assign" proposal drops it (assign_item)
         rx.el.script(src="/assign.js", defer=True),
         # pick-from-a-list inputs in tool forms: characters, list[<choices>] (render._choice_input)

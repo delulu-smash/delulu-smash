@@ -40,13 +40,32 @@ cells. The Variables pane shows what is in it and clears it. This says what must
   chat. Not form fields, cells or the SQL box.
 - **A variable or plain text.** `@name` is a mention only when `name` is one of the user's variables (the rule
   above, `perf.user_variables`). Anything else (`@someone`, an email) is sent as typed, with no error.
-- **Nothing is called.** A dotted path (`@r3.df`, `@q1.char`) follows columns, fields, keys and attributes;
-  never a method, never a private name. It is followed as far as it names something: the rest is the sentence.
+- **A path, then at most one allowed call.** A dotted path (`@r3.df`, `@q1.char`) follows columns, fields,
+  keys and attributes, never a private name, and is followed as far as it names something: the rest is the
+  sentence. It may end in **one** method call (`@q1.head(5)`, `@big.describe()`), under these rules (this
+  replaced "nothing is called", Nov 2026, the user's decision):
+  - **Allowlist, not blocklist** (`mentions.CALLS`, by type): read-only methods that give a value back. Nothing
+    that writes a file or changes the value in place. A method not on it is refused, however harmless.
+  - **Plain values as arguments** (text, numbers, `True` / `False`, lists of those), read without being
+    evaluated, so an argument can never run code. A filter is `.sql("select ... where ...")`.
+  - **One call, last.** No chain, nothing after it. More than that is `/assign` or a cell.
+  - **A refused or failed call stops the send**, says why, and the message goes back in the box. The AI must
+    never answer without what the user pointed at.
+  - **What the chat shows as sent is what the AI got.** The text for the AI is built once per send and shown
+    from that, so a call whose result varies (`sample()`) can't show one thing and send another. (The call
+    itself may run more than once while the message is checked and coloured; allowed methods change nothing.)
+  - **`@` never makes a variable.** A call's result is sent or printed as text and bound to nothing; naming a
+    value is `/assign`'s job.
+  - **Brackets only mean a call after a method name.** `@q1 (the saved one)` and `@q1.wins(see above)`, a
+    column, stay plain mentions.
+- **The list after a dot offers only what a mention can use** (`mentions.complete`, as the Python console's
+  list: columns or fields, attributes, methods, at any depth). Methods are the allowlist's; nothing is listed
+  that would then be ignored or refused.
 - **Small goes whole, big goes as a summary** (`mentions.WHOLE_ROWS`, `WHOLE_CHARS`): a big table is its shape,
   columns and first rows, and the text says it is not all there. The AI must never be left thinking a cut
   value is the whole one.
-- **Only the chat agent can read further**, with `query_variable` (SQL on the variable; its result is a new
-  `r<n>`). The app adds that tool on each run: `pkgs/ds/ai` doesn't know of it. The inline AIs keep "no tools"
+- **Only the chat agent can read further**, with `query_variable` (SQL on the variable, or on a mention with
+  a call; its result is a new `r<n>`). The app adds that tool on each run: `pkgs/ds/ai` doesn't know of it. The inline AIs keep "no tools"
   (`inline_ai.md`), so there a big variable is its summary.
 - **A snapshot.** The AI gets the value as it is when the message is sent. Binding the name to something new
   later doesn't change what was sent.
@@ -56,10 +75,16 @@ cells. The Variables pane shows what is in it and clears it. This says what must
 - **Not a cache.** The text is built again on every send.
 - **Only mentions = print, no AI.** A message that is nothing but mentions (`@q1`) shows them in the chat and
   asks no model; the agent never gets those rows (as a slash command's).
+- **Printed as the Python console prints.** What a bare mention shows is what a cell holding the same text
+  without the `@` would show: a value with a view as that view (a table, also a call's result, as the grid
+  with "open as tab"), anything else as its repr. Only the output is the console's: what may be called is
+  still the allowlist. A result that names no variable is kept where a cell's result is (`Session.outputs`),
+  so clearing its variable drops it the same way, and clearing the chat drops it.
 - **Through the AI into a widget.** A variable reaches another widget's inputs by the inline AI reading it and
   proposing inputs, which the user runs (`inline_ai.md`). Typing `@name` into a form field does nothing.
-- **Coloured as a slash command is, in another colour** (purple; a slash command is blue), where it is typed
-  in the chat box and in the chat's row of what was mentioned.
+- **Coloured as a slash command is, in another colour** (purple; a slash command is blue), so a mention never
+  reads as plain text: the whole path and a call's brackets, where it is typed in the chat box, in the sent
+  message, and in the chat's row of what was mentioned.
 
 ## `/assign`: a variable written by the AI
 
@@ -81,7 +106,10 @@ cells. The Variables pane shows what is in it and clears it. This says what must
   as JSON, and its field types are checked. Its class is defined by the code and stays in the session.
 - **Nothing is bound unless all of it worked.** The code runs in a copy of the namespace: a failure or a
   refused value leaves the session as it was, and helper names the code made don't stay.
-- **The name is the user's when given** (`/assign top5 = ...`), else the AI's, and it can be changed in the
+- **The name is the user's when given** (`/assign top5 = ...`), kept exactly; else the AI's, which follows
+  Python's naming conventions for the value's type (`assign.NAMING`): a DataFrame ends in `_df`, a date in
+  `_date`, a datetime in `_at`, a bool starts with `is_` / `has_`, a list is a plural noun, a count is
+  `n_<plural>`, a record is a singular noun with its class in PascalCase. Either can be changed in the
   code before running. An existing name is replaced, as in Python, and the chat says so.
 - **It reads, it doesn't look up.** The chat so far, the session's variables and `@` mentions, the SmashDb
   tables. No tools: a fact it should check belongs in a chat turn first.
@@ -89,8 +117,8 @@ cells. The Variables pane shows what is in it and clears it. This says what must
 ## Not done yet
 
 - **Rename** (`r3` → `mac_h2h`), with the tab, tool form and debug-log link following the name.
-- **Clear by group** (only agent results, only saved queries, only your own names) and **pin** (kept by
-  `Clear all`): the user chose select all / deselect all instead, for now.
+- **Clear by group** (only agent results, only saved queries, only your own names) and **pin** (kept when
+  everything is cleared): the user chose select all / deselect all with one `Clear` instead, for now.
 - **A filter box** over the list, as Omarchy's menus have (`spec/experimental/reflex-kernel/omarchy.md`).
 - **The chat agent only knows the variables you mention** (`@q1`, above). It has no list of what exists, so
   "the table I saved" without an `@` means nothing to it.

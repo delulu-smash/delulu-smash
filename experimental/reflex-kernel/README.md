@@ -38,7 +38,11 @@ before running the app by hand (both use ports 3000 and 8000).
 Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway key the rest of
 `ds.ai` uses.
 
-- **Chat**: Enter sends, Shift+Enter adds a line. Tool calls are listed above each reply. While the agent works,
+- **Chat**: Enter sends, Shift+Enter adds a line. ArrowUp in the empty box brings back the last message you
+  sent (slash commands and `@` prints too), again for the one before; ArrowDown goes forward, and past the
+  newest back to the empty box, as in a terminal. It only works while the box is empty or still shows a
+  recalled message untouched: edit it and the arrows move the cursor again. Kept in this browser
+  (`assets/history.js`: localStorage, the newest 100, a message sent twice in a row once). Tool calls are listed above each reply. While the agent works,
   light sweeps across the chat box (as over the code in an inline chat).
   Scroll up and a round ↓ button appears over the bottom of the chat: it jumps back to the newest message.
   Hover a message for its copy button on the top-right corner (a reply copies as its markdown source).
@@ -301,7 +305,8 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   `assets/slash.js` draws the box's text again in a layer under it while it starts with `/`. Today:
   - `/clear-chat` (`Chat: Clear`): a new conversation. The chat's rows and what the agent remembers go; the
     variables it made (`r1`, ...) and the spend so far stay. Not undoable, and not while a turn is running.
-  - `/clear-variables` (`Variables: Clear all`): as the pane's `Clear all`, with its 3 s Undo.
+  - `/clear-variables` (`Variables: Clear all`): every listed variable at once (as ticking them all and
+    `Clear` in the Variables panel), with its 3 s Undo.
   - `/results`, `/python`, `/variables` (show or hide the pane), `/new-cell`, `/close-tabs`, `/help`,
     `/keys`, `/debug`.
   - **A widget is its kind**: `/vods`, `/usage`, `/smashdb` add it and show it in the chat, under the
@@ -319,23 +324,47 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   the AI is told what it holds. Without it the agent only knows the results it made itself in this chat, not a
   console's `q1`, a cell's names or a form you ran again.
   - **Typing `@`** lists the variables at the box (name, type, shape, where it came from): type to filter,
-    Up / Down, Tab or Enter completes, Esc closes. After a name, `.` lists its parts: a table's columns
-    (`@q1.char`), a model's fields, a console's `df` and `sql` (`@r3.df`). Nothing is ever called. A name that
-    isn't a variable (`@someone`, an email) is plain text.
+    Up / Down, Tab or Enter completes, Esc closes. A name that isn't a variable (`@someone`, an email) is
+    plain text.
+  - **After a name, `.` lists what can follow, as the Python console does** (`mentions.complete`, asked from
+    the backend on each keystroke: `POST /mention_complete`): first its columns (`@q1.char`), a model's fields
+    or a console's `df` and `sql` (`@r3.df`), then its attributes (`@q1.shape`, `@q1.columns`), then the
+    methods a mention may call (`head()`, green). A kind icon on the left, the type on the right. Any depth
+    (`@r3.df.`). Picking a method puts the cursor between its brackets. Only what a mention can use is listed.
+  - **One method call, at the end** (`mentions.CALLS`): `@big.describe()`, `@q1.head(5)`,
+    `@sets.char.value_counts()`, `@q1.sort("wins", descending=True)`,
+    `@big.sql("select char, count(*) n from self group by 1")`. So you pick what the AI sees of a big table
+    (also where the AI has no tools: a form's Ask AI row, `Alt+A`). The rules:
+    - Only read-only methods on the list. A table (DataFrame): `head`, `tail`, `sample`, `slice`, `describe`,
+      `sort`, `unique`, `drop_nulls`, `null_count`, `top_k`, `bottom_k`, `sum`, `mean`, `median`, `min`, `max`,
+      `select`, `drop`, `sql`. A column (Series): the same without the last three, plus `value_counts`,
+      `to_list`, `n_unique`. A new one is a name in `CALLS`.
+    - Arguments are plain values (text, numbers, `True` / `False`, lists of those); they are read, never
+      evaluated. `@q1.filter(pl.col("wins") > 3)` is refused: use `.sql("select * from self where wins > 3")`.
+    - One call, last: `@q1.head(5).tail(1)` is refused (use `.sql(...)`, or `/assign`).
+    - A call that is refused or fails sends nothing: a `not sent` row says why (and which methods exist), and
+      the message is put back in the box to fix.
+    - `@` never makes a variable on its own: `@q1.describe()` alone prints the result (`↗ tab` on it, or
+      `/assign`, is how it gets a name).
+    - Brackets after a variable or a column are not a call: `@q1 (the saved one)` is `@q1`.
   - **Where**: the chat box, a tool form's Ask AI row (so `/usage the top player in @q1` too) and the inline
     chat in a cell or SQL box.
-  - **Colour**: a mention is purple where a slash command is blue, in the chat box as you type and in the
+  - **Colour**: a mention is purple (its whole path, a call through its closing bracket) where a slash command
+    is blue, in the chat box as you type, in the message once sent, and in the
     chat's `@q1 ...` row under your message. (The two single-line boxes list and complete, without colour.)
     That row is a fold when there is text to show: `▸` opens what the AI was given for the mentions (the same
     text is in the debug log, on the turn's record, as `added to the prompt`).
-  - **`@q1` alone prints it**: the variable unfolds in the chat as a result does, with no AI call; a part
-    (`@q1.char`) or a value with no view shows as text. The agent never gets these rows.
+  - **`@q1` alone prints it, as the Python console would** (the same text without the `@`, run in a cell), with
+    no AI call. A variable unfolds in the chat as a result does. A part or a call's result
+    (`@q1.char`, `@q1.describe()`) shows as a cell's result: the same grid, with `↗ tab` to keep it as
+    `out<n>`. A value with no view (a number, text, a list) shows as its repr. The agent never gets these
+    rows. Only the output is the console's: what may be called is still the list below.
   - **What the AI gets** (`mentions.describe`): added to the end of your message, as text. A table of at most
     50 rows and 4,000 characters goes whole, as CSV. A bigger one goes as its shape, columns and first 5 rows,
     and says it isn't all there. VODs / player usage go as JSON, a console as its query and result, anything
     else as its repr (each cut at 4,000 characters, with a note).
   - **Big tables in the chat**: the chat agent gets a tool, `query_variable(name, sql)`, to run SQL on the
-    variable (the table is `self`); what it returns is a new `r<n>`, at most 200 rows. The app adds the tool on
+    variable, or on a mention with a call (the table is `self`); what it returns is a new `r<n>`, at most 200 rows. The app adds the tool on
     each run (`Session.ask(toolsets=...)`), so `pkgs/ds/ai` and `ds ai eval` are unchanged; the debug panel's
     Agents tab says so. The inline AIs have no tools: there a big table is only its summary.
   - **A snapshot**: the AI gets the value as it is when you send. The text stays in the chat history; no object
@@ -344,7 +373,9 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
 - **`/assign`** (`reflex_kernel/assign.py`, `assets/assign.js`; what must hold is in
   `spec/experimental/reflex-kernel/variables.md`, "/assign"): a new variable whose code the AI writes.
   - **Use**: `/assign top5 = the five best players in @q1`, or without a name (`/assign the date Ultimate came
-    out`) and the AI picks one. Under the command a box shows the code, eg
+    out`) and the AI picks one, by Python's naming conventions for its type (`assign.NAMING`): `top_players_df`
+    for a DataFrame, `release_date` for a date, `started_at` for a datetime, `is_offline` for a bool, a plural
+    for a list (`player_tags`), `n_sets` for a count. A name you give is kept as it is. Under the command a box shows the code, eg
     `top5 = q1.sort("wins", descending=True)["player"].head(5).to_list()`. Change it if you like (also the
     name), then Enter (or Run) runs it; Esc (or Drop) runs nothing. Shift+Enter is a new line.
   - **Computed or known**: the AI computes from what the session has when it can (your variables, `db`); what
@@ -379,18 +410,26 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   Omarchy, where `SUPER+P` / `SUPER+J` are window layout actions with nothing comparable here.) Only the chat
   shows at first (results also unfold inline in it, and `open →` brings up Results); a pane
   whose neighbour is hidden takes the freed space. Hidden cells keep their text.
+  Default widths with Results, Python and Variables all open: Variables is a narrow column (22% of the
+  width, between 240 and 340 px: `--vars-width` in `assets/app.css`) and Results and Python share the rest,
+  half each. Dragging Results' corner still resizes it.
 - **Variables** (`Alt+V`, the bottom bar's fourth toggle; `reflex_kernel/variables.py`; what must hold is in
   `spec/experimental/reflex-kernel/variables.md`): a pane at the right of Results / Python listing the
   session's Python names that are data: the agent's results (`r1`, …), a SmashDb console's saves (`q1`, …),
   cell results opened as tabs (`out3`) and whatever your cells assign. Each row has its type, shape, rough
   size and where it came from (the tool, `SmashDb console`, `cell [3]`, `python`). Modules, functions and
-  classes are left out unless `show all` is on; `pl`, `db` and `_names` never show.
+  classes are left out unless `All` (in the panel's head) is on; `pl`, `db` and `_names` never show.
   - Click a name to open its Results tab (again, if you closed it); a value with no view unfolds its details
     instead. `▸` unfolds the details of any row: the tool inputs that made it, other names bound to the same
     object, a table's columns and types, or the value's repr.
-  - **Clearing**: the `×` on a row, `Clear selected` (row checkboxes; the header's checkbox selects all or
-    none; the title line then says what the ticked rows hold together, eg `selected 2 · 81 KB`) or `Clear all` removes the names from Python, as `del` would: `r1` is a `NameError`, its tab closes.
-    The palette has `Variables: Clear all` and `Variables: Undo the last clear`.
+  - **The head is one line**, also in the narrow column it is beside Results and Python: the name, a summary
+    (cut with an ellipsis when there is no room), `All`, `Clear` and the full screen arrows.
+  - **Clearing**: the `×` on a row, or `Clear` for the ticked rows (row checkboxes; the header's checkbox
+    ticks all or none; the head then says what the ticked rows hold together, eg `selected 2 · 81 KB`, and
+    the button `Clear (2)`). It removes the names from Python, as `del` would: `r1` is a `NameError`, its tab
+    closes. There is one `Clear`, no `Clear all` button: everything at once is the header checkbox then
+    `Clear`, `/clear-variables`, or the palette's `Variables: Clear all` (which also has
+    `Variables: Undo the last clear`).
   - **Undo, then really gone**: after a clear the pane's bottom line says what was cleared, with an `Undo`
     button whose bottom edge is a bar that runs down over 3 seconds (`variables.UNDO_SECONDS`). `Undo`
     puts the batch back; a name you bound again in that time is left as it is and named. When the bar is

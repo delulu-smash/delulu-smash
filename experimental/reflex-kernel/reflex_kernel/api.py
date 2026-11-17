@@ -3,6 +3,7 @@
 # Purpose: Extra backend route for reflex-kernel. POST /complete returns Python
 #          completions for a cell, called straight from the editor so typing
 #          doesn't go through Reflex state. POST /inline_edit: Alt+A inline chat (inline_edit.py).
+#          POST /mention_complete: what can follow the dot in an "@" mention (mentions.py).
 #          GET /char_icons/<file>.png serves the character stock icons (ds.data.CHAR_ICON_DIR)
 #          for views that show them (render.ICON_URL).
 # Usage: mounted by reflex_kernel.py via rx.App(api_transformer=api).
@@ -21,8 +22,10 @@ from starlette.staticfiles import StaticFiles
 
 from ds.data import CHAR_ICON_DIR
 
+from . import mentions
 from .inline_edit import edit
 from .session import complete as complete_code
+from .session import find_session
 
 if TYPE_CHECKING:
     from starlette.requests import Request
@@ -45,11 +48,21 @@ async def inline_edit(request: Request) -> JSONResponse:
     return JSONResponse(await edit(await request.json()))
 
 
+async def mention_complete(request: Request) -> JSONResponse:
+    """What can follow the dot in an "@" mention being typed (mentions.complete), asked by
+    assets/mentions.js on each keystroke after a dot, as the cell editor asks /complete."""
+    body = await request.json()
+    session = find_session(str(body.get("token", "")))
+    # off the event loop: it reads a value's attributes, which can take a moment
+    return JSONResponse(await asyncio.to_thread(mentions.complete, session, str(body.get("text", ""))))
+
+
 # The frontend (port 3000) calls the backend (port 8000), so the browser needs CORS headers.
 api = Starlette(
     routes=[
         Route("/complete", complete, methods=["POST"]),
         Route("/inline_edit", inline_edit, methods=["POST"]),
+        Route("/mention_complete", mention_complete, methods=["POST"]),
         # the folder's name is the url prefix, so ds.data.char_icon's value is the path
         Mount(f"/{CHAR_ICON_DIR.name}", StaticFiles(directory=CHAR_ICON_DIR), name="char_icons"),
     ],

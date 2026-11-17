@@ -20,7 +20,7 @@ from ds.util.logging import logger
 from . import agents, assign, logs, mentions, perf, spend, variables
 from .commands import SLASH, parse_slash
 from .inline_fill import fill as fill_inputs
-from .render import ASK_FIELD, Ui, ViewData, apply_event, drop_proposal, fill_defaults, rerun_inputs
+from .render import ASK_FIELD, Ui, ViewData, apply_event, drop_proposal, fill_defaults, rerun_inputs, to_view
 from .tool_forms import ToolRequest
 from .db_console import DbConsole, clean_sql
 from .widgets import form_for, widget_of
@@ -73,7 +73,9 @@ class ChatItem:
     did, drawn as a tool call's row; a widget it added follows as a ref) | mention (variables
     mentioned with "@", mentions.py: its name is the mentions, detail what folds open under it) |
     assign (a "/assign" proposal, assign.py: text is its code, name the variable, status where it
-    is). None of the last four is sent to the agent."""
+    is) | output (the result of a message that was only an "@" mention, shown as a cell shows its
+    result: its key is the id it is kept under in Session.outputs, slot "cell:<key>"). None of
+    the last five is sent to the agent."""
 
     kind: str
     name: str = ""
@@ -96,6 +98,9 @@ class ChatItem:
     done (run, the variable is bound) | dropped | failed (no code came back)."""
     error: str = ""
     """assign only: why the last run bound nothing, as plain text (its traceback is in trace)."""
+    pieces: list[dict[str, str]] = dataclasses.field(default_factory=list)
+    """user only: its text cut at the "@" mentions in it (mentions.pieces), to colour them as the
+    chat box did; [] when it has none (the text is then drawn as it is)."""
     view: ViewData = dataclasses.field(default_factory=ViewData)
     """ref only: the result's view at slot chat:<name> while open; empty when collapsed."""
     # error only: the traceback as styled parts, as on a cell (see Cell); text keeps the plain text
@@ -149,6 +154,15 @@ def _trace_fields(parts: list[dict[str, str]]) -> dict[str, Any]:
     return {"trace": shown, "trace_hidden": hidden, "trace_more": label or "full traceback"}
 
 
+# a repr shown in the chat is cut here (a cell shows all of it; the chat is kept in the state)
+MAX_REPR_CHARS = 20_000
+
+
+def _short_repr(value: Any) -> str:
+    text = repr(value)
+    return text if len(text) <= MAX_REPR_CHARS else f"{text[:MAX_REPR_CHARS]}… ({len(text):,} characters in all)"
+
+
 def event(fn: Any) -> Any:
     """`rx.event` for this app's handlers: each run is also timed (perf.timed), for the debug
     panel's System tab. Background events keep plain `rx.event(background=True)`."""
@@ -182,6 +196,8 @@ class State(rx.State):
     cell_seq: int = 1
     # agent turns so far: the n of a user row's key 'turn-<n>'
     turn_seq: int = 0
+    # numbers the results of printed "@" mentions kept in Session.outputs ("m<n>", kind output)
+    output_seq: int = 0
     exec_count: int = 0
     running: bool = False
 
@@ -394,6 +410,12 @@ class State(rx.State):
                     self.chat[index] = dataclasses.replace(item, view=view)
         elif (index := self._cell_index(key)) >= 0:
             self._update(index, view=self._session().show(slot, compact=True))
+        else:
+            # a printed "@" mention's result in the chat (kind output): kept as a cell's result is
+            view = self._session().show(slot, compact=True)
+            for index, item in enumerate(self.chat):
+                if item.kind == "output" and item.key == key:
+                    self.chat[index] = dataclasses.replace(item, view=view)
 
     @rx.var
     def token(self) -> str:
@@ -581,6 +603,8 @@ class State(rx.State):
         for cell_id in self._session().purge():
             if (index := self._cell_index(cell_id)) >= 0:
                 self._update(index, text="", view=ViewData())
+            else:
+                self._show(f"cell:{cell_id}")  # a printed mention's result in the chat: now gone
         self._sync()
         self._refresh_debug()
 
@@ -1279,9 +1303,24 @@ class State(rx.State):
         followed it and what it did, and, for one that adds a widget, the widget under it."""
         prompt = str(form.get("prompt", "")).strip()
         parsed = parse_slash(prompt)
+        session = self._session()
+        # a method call in an "@" mention that is refused or failed (mentions.problems): nothing is
+        # sent or run, and the message goes back in the box to fix
+        if problem := mentions.problems(prompt if parsed is None else parsed[1], session):
+            self.chat.append(
+                ChatItem(
+                    kind="mention",
+                    name="not sent",
+                    text="a method call in an @ mention can't be used: fix it in the box",
+                    key=f"mention-{len(self.chat)}",
+                    detail=problem,
+                    open=True,
+                )
+            )
+            return rx.call_script(f"window.restoreChatBox && window.restoreChatBox({json.dumps(prompt)})")
         if parsed is None:
             # only "@" mentions of variables (mentions.py): print them, no turn
-            if mentions.bare(prompt, self._session()) is not None:
+            if mentions.bare(prompt, session) is not None:
                 return State.show_mentions(prompt)
             return State.send_chat(form)
         name, rest = parsed
@@ -1334,20 +1373,49 @@ class State(rx.State):
         self._sync()
 
     def _printed(self, mention: mentions.Mention, note: str) -> list[ChatItem]:
-        """A variable printed in the chat, as rows to add: its "@name · type · shape · note" row,
-        then the value. One with a view shows as a result does, unfolded (its own row is what
-        folds); any other as text under the row, whose caret folds it."""
+        """A mention printed in the chat, as rows to add: its "@name · type · shape · note" row,
+        then the value, shown as the Python console shows the result of a cell holding the same
+        text without the "@". A variable with a view shows as a result does, unfolded (its own
+        row is what folds). A part of one or a call's result with a view ("@q1.describe()")
+        shows as a cell's result: the same grid, with "open as tab". Anything else is its repr,
+        under the row, whose caret folds it."""
         session = self._session()
         views = session.views()
         about = " · ".join(filter(None, [type(mention.value).__name__, perf.shape_text(mention.value), note]))
-        row = ChatItem(
-            kind="mention", name=f"@{mention.path}", text=about, key=f"mention-{len(self.chat)}-{mention.path}"
-        )
-        if mention.path not in views:
-            return [dataclasses.replace(row, detail=mentions.describe(mention), open=True)]
-        session.ui.setdefault(f"chat:{mention.path}", Ui())
-        label = " · ".join(filter(None, [session.sources.get(mention.path, ""), views[mention.path].summary]))
-        return [row, ChatItem(kind="ref", name=mention.path, text=label, open=True)]
+        row = ChatItem(kind="mention", name=f"@{mention.path}", text=about, key=f"mention-{len(self.chat)}")
+        if mention.path in views:
+            session.ui.setdefault(f"chat:{mention.path}", Ui())
+            label = " · ".join(filter(None, [session.sources.get(mention.path, ""), views[mention.path].summary]))
+            return [row, ChatItem(kind="ref", name=mention.path, text=label, open=True)]
+        view = to_view(mention.value)
+        if view is None:
+            # no view: its repr, as under a cell
+            return [dataclasses.replace(row, detail=_short_repr(mention.value), open=True)]
+        # kept where a cell's result is (Session.outputs), under an id of its own
+        self.output_seq += 1
+        key = f"m{self.output_seq}"
+        session.outputs[key] = view
+        shown = session.show(f"cell:{key}", compact=True)
+        return [row, ChatItem(kind="output", key=key, name=f"@{mention.path}", view=shown)]
+
+    @event
+    def open_chat_output(self, key: str):
+        """ "open as tab" on a printed mention's result: bind it to the next free out<n>, as a
+        cell's result is (open_output), so it gets a tab and a name to mention."""
+        session = self._session()
+        view = session.outputs.get(key)
+        item = next((item for item in self.chat if item.kind == "output" and item.key == key), None)
+        if view is None or item is None:
+            return
+        name = session.next_free_name("out")
+        session.namespace[name] = view.value
+        session.closed.pop(name, None)
+        session.sources[name] = item.name
+        self._reveal_results()
+        self._sync(prefer=name)
+
+    def chat_outputs(self) -> list[ChatItem]:
+        return [item for item in self.chat if item.kind == "output"]
 
     def _chat_index(self, key: str) -> int:
         return next((index for index, item in enumerate(self.chat) if item.key == key), -1)
@@ -1434,10 +1502,16 @@ class State(rx.State):
             self.chat.append(ChatItem(kind="note", text="The agent is still working: clear the chat once it is done."))
             return
         session = self._session()
+        # results unfolded in the chat are gone with their rows, and the printed mentions' results
+        printed = {item.key for item in self.chat_outputs()}
         self.chat, self.streaming = [], ""
         session.ai_history, session.chat_tokens = [], 0
-        # results unfolded in the chat are gone with their rows
-        session.ui = {slot: ui for slot, ui in session.ui.items() if not slot.startswith("chat:")}
+        session.outputs = {key: view for key, view in session.outputs.items() if key not in printed}
+        session.ui = {
+            slot: ui
+            for slot, ui in session.ui.items()
+            if not slot.startswith("chat:") and slot.removeprefix("cell:") not in printed
+        }
         self._sync_usage()
         self._refresh_debug()
 
@@ -1451,11 +1525,13 @@ class State(rx.State):
             self.streaming = ""
             self.turn_seq += 1
             turn = f"turn-{self.turn_seq}"
-            self.chat.append(ChatItem(kind="user", text=prompt, key=turn))
             session = self._session()
+            self.chat.append(ChatItem(kind="user", text=prompt, key=turn, pieces=mentions.pieces(prompt, session)))
             log_context = self._log_context("chat", turn=turn)
             # "@q1" in the message: the model also gets what the variable holds (mentions.py)
-            sent = mentions.with_context(prompt, session, tool=True)
+            # built once: a call such as "@q1.sample(5)" gives other rows each time it runs
+            block = mentions.context(prompt, session, tool=True)
+            sent = "\n\n".join(filter(None, [prompt, block]))
             mentioned = [f"@{mention.path}" for mention in mentions.find(prompt, session)]
             if mentioned:
                 # folded: what the AI was given for them
@@ -1465,7 +1541,7 @@ class State(rx.State):
                         name=" ".join(mentioned),
                         text="sent to the AI as they are now",
                         key=f"mention-{len(self.chat)}",
-                        detail=mentions.context(prompt, session, tool=True),
+                        detail=block,
                     )
                 )
 

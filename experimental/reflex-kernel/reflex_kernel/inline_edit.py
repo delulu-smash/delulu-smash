@@ -230,10 +230,12 @@ async def edit(body: dict[str, Any]) -> dict[str, str]:
         return {"error": "Type what to change first."}
     request = prompt(before, selected, after, instruction, str(body.get("previous") or ""))
     session = find_session(token)
-    # "@q1" in the instruction: what the variable holds goes along (mentions.py; no tools here)
-    text = "\n\n".join(
-        filter(None, [context(language, token, body.get("schema")), request, mentions.context(instruction, session)])
-    )
+    if problem := mentions.problems(instruction, session):
+        return {"error": problem}
+    # "@q1" in the instruction: what the variable holds goes along (mentions.py; no tools here).
+    # Built once: a call such as "@q1.sample(5)" gives other rows each time it runs
+    mentioned = mentions.context(instruction, session)
+    text = "\n\n".join(filter(None, [context(language, token, body.get("schema")), request, mentioned]))
     # the chat so far goes along (read only: the inline call is not added to the chat)
     history = list(session.ai_history) if session else []
     run = EditRun(language=language, whole=not selected, db=session.db if session else None)
@@ -244,7 +246,7 @@ async def edit(body: dict[str, Any]) -> dict[str, str]:
         capture_run_messages() as captured,
     ):
         answer: dict[str, str] = {}
-        call["added"] = mentions.context(instruction, session)
+        call["added"] = mentioned
         try:
             result = await edit_agent.run(text, message_history=history, deps=run)
             answer["code"] = result.output.code
