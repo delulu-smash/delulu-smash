@@ -61,7 +61,7 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   Requests tab. The cost is what the Pydantic AI Gateway reported
   (pydantic-ai falls back to its bundled genai-prices data; `$?` when neither knows). Input counts each request's
   whole prompt, so a turn with tool calls counts the history once per request.
-  The window's title bar (beside `delulu-smash`, so it shows whichever panels are open) has a context
+  The window's title bar (beside the app's mark at its left: the GitHub profile picture as a 22 px circle, `assets/avatar.png`; so it shows whichever panels are open) has a context
   meter, eg `context 4% · this session $0.0001` (hovering it shows the tokens in place of the percent, eg `43k / 1M tokens`): the conversation's size (the last request's input + output, what the next
   turn sends again) against the model's context window (from pydantic-ai's model profile), as tokens and a whole
   percent, and what the AI cost so far (chat turns and inline chats). It turns yellow past half full: answers there are slower and dearer, and a new chat starts small.
@@ -307,6 +307,22 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   the keyboard shortcuts in a box that scrolls (a few rows at a time; `Alt+K` is the searchable list), and an
   FAQ of fixes for common errors (`FAQ`: question, answer, commands to run). It is as tall as the window
   allows, then scrolls. How the app works lives here in the README, not in the panel.
+- **App guide: the chat can explain the app** (`ui/app_guide.py`, `guide.md`): ask the chat how to use
+  something, eg "show me how to use the script slash command" or "what key opens Python?". The chat agent
+  gets a deferred capability, `app_guide`, with no tools: until an app question comes up the model sees one
+  line; `load_capability` then brings in the whole of `services/ui/guide.md` (the words, written for the
+  user: what to type and what shows; under 160 lines), plus every slash command and every key, added from
+  `commands.SLASH` and `Shortcut` so those lists can't go stale. About 3k tokens, in that chat from then
+  on (cached), and one extra model request for the load.
+  - The guide is read from disk on each load (no cache), minus its HTML comments: an edit applies to the
+    next chat that loads it. A missing file leaves the two lists and says so.
+  - The model is told to answer app questions from the guide only and to say when it doesn't cover
+    something. It can't run a slash command or press a key: it shows what to type.
+  - The app adds it on each chat run (`Session.ask(capabilities=...)`), so `pkgs/ds/ai` and `ds ai eval`
+    are unchanged; the debug panel's Agents tab lists it with the agent's own capabilities and says so
+    (its instructions there are as read when the app started). The inline AIs and `/assign` don't have it.
+  - **A new user-visible feature gets its lines in `guide.md`**; a slash command without any fails
+    `tests/services/ui/test_app_guide.py`. The help panel (`Alt+H`) keeps its own examples.
 - **Command palette** (`Alt+P`, `Shortcut.PALETTE`; as VS Code's Ctrl+Shift+P and Omarchy's menu): a search
   box over every action of the app, one row each: icon, `Group: name`, its shortcut. Type to filter (a
   group name or other words work too, eg `view`, `jupyter`), arrows move, Enter runs, Esc or `Alt+P` closes. It always opens on top, as Omarchy's launcher does

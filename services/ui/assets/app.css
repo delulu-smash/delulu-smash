@@ -33,9 +33,14 @@ button { font: inherit; color: inherit; }
 .empty p { margin: 0 0 8px; }
 .empty code { font-family: var(--mono); color: var(--fg); background: var(--bg1); padding: 1px 6px; border-radius: 4px; }
 
-.titlebar { display: flex; align-items: center; gap: 16px; padding: 0 12px; height: 34px; flex: none; background: var(--bg-dim);
+/* compact, as Zed's title bar: a low strip, flat icon buttons, the mark small */
+.titlebar { display: flex; align-items: center; gap: 12px; padding: 0 10px; height: 28px; flex: none; background: var(--bg-dim);
   border-bottom: 1px solid var(--bg2); font-size: 12.5px; }
-.titlebar .title { font-weight: 600; }
+.titlebar .avatar { width: 18px; height: 18px; border-radius: 50%; object-fit: cover; flex: none; }
+.titlebar .help-btn { width: 20px; height: 20px; border-color: transparent; border-radius: 4px; }
+.titlebar .help-btn:hover, .titlebar .help-btn.is-on { border-color: transparent; background: var(--bg1); }
+.titlebar .help-btn + .help-btn { margin-left: -6px; }
+.titlebar .spend-box { padding: 0 6px; }
 .split-main { flex: 1; display: flex; flex-direction: column; min-height: 0; }
 /* below the chat strip: tables | notebook; drag the tables pane's corner to resize */
 .bottom-split { flex: 1; display: flex; min-height: 0; }
@@ -228,7 +233,7 @@ button { font: inherit; color: inherit; }
   color: var(--grey2); cursor: pointer; font-size: 12px; font-weight: 600; padding: 0; }
 .help-btn:hover, .help-btn.is-on { color: var(--fg); border-color: var(--blue); }
 /* as tall as the window allows, then it scrolls (the shortcut list outgrew the window once) */
-.help-panel { position: fixed; z-index: 51; top: 38px; right: 10px; width: min(560px, calc(100vw - 20px)); padding: 10px 12px;
+.help-panel { position: fixed; z-index: 51; top: 32px; right: 10px; width: min(560px, calc(100vw - 20px)); padding: 10px 12px;
   max-height: calc(100vh - 48px); overflow-y: auto;
   background: var(--bg1); border: 1px solid var(--bg3); border-radius: 8px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4); font-size: 12.5px; }
 .help-title { font-weight: 600; margin: 10px 0 6px; }
@@ -399,11 +404,12 @@ details[open] > .tb-toggle::before { content: "▾ "; }
 .act:disabled:hover { border-color: var(--bg3); }
 a.act { text-decoration: none; color: var(--fg); }
 
-/* bottom bar (as in Zed): one toggle per pane */
-.statusbar { display: flex; align-items: center; gap: 4px; height: 26px; flex: none; padding: 0 8px; background: var(--bg-dim);
+/* bottom bar (as in Zed): one toggle per pane. Compact as the title bar: a low strip, the
+   toggles the same flat 20 px squares as its buttons */
+.statusbar { display: flex; align-items: center; gap: 2px; height: 24px; flex: none; padding: 0 10px; background: var(--bg-dim);
   border-top: 1px solid var(--bg2); font-size: 12px; }
-.pane-toggle { font-size: 15px; line-height: 20px; border: 0; border-radius: 4px; padding: 0 7px; background: transparent; color: var(--grey1);
-  cursor: pointer; }
+.pane-toggle { flex: none; width: 22px; height: 20px; font-size: 13px; line-height: 20px; border: 0; border-radius: 4px; padding: 0;
+  background: transparent; color: var(--grey1); cursor: pointer; }
 .pane-toggle:hover { color: var(--fg); background: var(--bg1); }
 .pane-toggle.is-on { color: var(--green); background: var(--bg1); }
 .statusbar .dim { margin-left: 12px; }
@@ -579,7 +585,7 @@ select.form-input { width: auto; }
 .copy-btn.is-copied .when-copied { display: inline; color: var(--green); }
 /* the debug log (debug_panel in ui.py, logs.py): a right-hand panel over the page */
 .debug-btn { font-size: 13px; font-weight: 400; }
-.debug-panel { position: fixed; z-index: 51; top: 38px; right: 10px; bottom: 34px; width: min(720px, calc(100vw - 20px));
+.debug-panel { position: fixed; z-index: 51; top: 32px; right: 10px; bottom: 28px; width: min(720px, calc(100vw - 20px));
   display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; background: var(--bg1); border: 1px solid var(--bg3);
   border-radius: 8px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4); font-size: 12.5px; }
 /* full screen (its button, Alt+F while it is open), as a floated view */

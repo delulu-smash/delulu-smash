@@ -12,3 +12,4 @@ Short notes the AI added, not confirmed todos. Triage: move one to a todo file, 
 - (2026-11-17) `summarization-pydantic-ai` installed but doesn't import.
 - (2026-11-17) Spend tiles assume UTC limit windows; unverified.
 - (2026-11-17) Paused POC on branch `poc-omarchy`: panels tiled like Hyprland's dwindle layout with Omarchy's animations. Details: `spec/services/ui/poc_omarchy.md` (on that branch).
+- (2026-11-17) App guide (`services/ui/guide.md`) is hand-written, so it can fall behind the app: make more of it dynamic (built from the code, as the slash and key lists are), or add a skill that updates it whenever the app changes.

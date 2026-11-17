@@ -64,6 +64,15 @@ Choosing a letter: Omarchy's own letter for the same action first (see [omarchy.
 first letter that says what it is and is free (`J` for Jupyter because `P` is the palette), or the key
 another tool the user knows uses for it (``Alt+` `` for the Terminal, from VS Code's Ctrl+\`).
 
+## The app explains itself
+
+The chat can answer how to use the app (`services/ui/guide.md`, loaded by the chat agent on demand). So:
+
+- **A user-visible feature gets its lines in `guide.md`** in the same change: what to type and what shows,
+  no file or function names. Short: the guide is sent whole to the model.
+- Lists that exist as data (slash commands, keys) are added from the code, never retyped in the guide.
+- The agent answers app questions from the guide only, and says when the guide doesn't cover something.
+
 - [omarchy.md](omarchy.md): navigation, keys and many other parts of the app follow Omarchy, the desktop
   it runs on.
 - [inline_ai.md](inline_ai.md): `Alt+I`, the AI that changes what you are in. A widget with a tool is a

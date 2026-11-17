@@ -66,7 +66,8 @@ def test_how_it_loads_says_what_is_hidden_in_pydantic_ais_words() -> None:
     loading = {row["label"]: row["value"] for row in CHAT.loading}
     assert loading["Agent(instructions=...)"] == "sent on every request"
     assert loading["tools available from the first request"] == "none"
-    assert "`id` and `description`" in loading["capabilities with defer_loading=True (7)"]
+    # the agent's own 7, and the app's guide (app_guide.py), added on every run
+    assert "`id` and `description`" in loading["capabilities with defer_loading=True (8)"]
     assert "(15 tools in all)" in loading["hidden until loaded"]
     assert "load_capability" in loading["loading"]
     # an agent with nothing deferred says so instead

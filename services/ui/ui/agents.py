@@ -20,6 +20,7 @@ from pydantic_ai import Agent
 from pydantic_ai.messages import ToolCallPart, ToolReturnPart
 from pydantic_ai.models import infer_model
 
+from ui.app_guide import app_guide_capability
 from ui.assign import assign_agent
 from ui.inline_edit import edit_agent
 from ui.inline_fill import fill_agent
@@ -156,26 +157,26 @@ def _instructions(sourced: Any) -> str:
     return "\n\n".join(text.strip() for text in texts if text and text.strip())
 
 
+def _capability(capability: Any) -> CapabilityInfo:
+    """One capability as the model is told of it."""
+    own_id = getattr(capability, "id", None)
+    kind = type(capability).__name__
+    return CapabilityInfo(
+        name=str(own_id) if own_id and kind == "Capability" else kind,
+        loads=DEFERRED if getattr(capability, "defer_loading", False) else ALWAYS_ON,
+        about=str(getattr(capability, "description", "") or ""),
+        # the plain Capability class is how this repo's own are made (given an id)
+        builtin=kind != "Capability" and type(capability).__module__.startswith("pydantic_ai"),
+        instructions=_instructions(getattr(capability, "_instructions", None)),
+        tools=_tools(getattr(capability, "_function_toolset", None)),
+    )
+
+
 def _capabilities(agent: Agent[Any, Any]) -> list[CapabilityInfo]:
     """The agent's capabilities in order; pydantic-ai's
     built-ins (eg ToolSearch) marked as such.
     """
-    found = []
-    for capability in getattr(agent.root_capability, "capabilities", None) or []:
-        own_id = getattr(capability, "id", None)
-        kind = type(capability).__name__
-        found.append(
-            CapabilityInfo(
-                name=str(own_id) if own_id and kind == "Capability" else kind,
-                loads=DEFERRED if getattr(capability, "defer_loading", False) else ALWAYS_ON,
-                about=str(getattr(capability, "description", "") or ""),
-                # the plain Capability class is how this repo's own are made (given an id)
-                builtin=kind != "Capability" and type(capability).__module__.startswith("pydantic_ai"),
-                instructions=_instructions(getattr(capability, "_instructions", None)),
-                tools=_tools(getattr(capability, "_function_toolset", None)),
-            )
-        )
-    return found
+    return [_capability(capability) for capability in getattr(agent.root_capability, "capabilities", None) or []]
 
 
 def _loading(capabilities: list[CapabilityInfo], own_tools: list[ToolInfo]) -> list[dict[str, str]]:
@@ -324,14 +325,19 @@ AGENTS: list[AgentInfo] = [
         "services/ui/ui/assign.py",
     ),
 ]
-# "@" mentions (mentions.py, EXPERIMENTAL): the app gives the chat agent one more tool on each
-# run, which the Agent object (read above) doesn't know of
+# What the app gives the chat agent on each run, which the Agent object (read above) doesn't
+# know of: the app's guide (app_guide.py, a deferred capability: listed with the agent's own,
+# so the "how it loads" rows count it) and the "@" mentions tool (mentions.py, EXPERIMENTAL).
+AGENTS[0].capabilities.append(_capability(app_guide_capability))
+AGENTS[0].loading = _loading(AGENTS[0].capabilities, AGENTS[0].tools)
 AGENTS[0].loading.append(
     {
         "label": "added by this app on every run (not in pkgs/ds/ai)",
         "value": " ".join(
             [
-                "the tool `query_variable`: SQL on a variable mentioned with @ that was too big to send whole",
+                "the capability `app_guide`: how to use this app, from services/ui/guide.md plus every slash",
+                "command and key (ui/app_guide.py; shown here as read when the app started).",
+                "The tool `query_variable`: SQL on a variable mentioned with @ that was too big to send whole",
                 "(ui/mentions.py); a message with @ mentions also ends with what those variables hold",
             ]
         ),

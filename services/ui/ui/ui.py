@@ -1978,7 +1978,9 @@ def statusbar() -> rx.Component:
 def index() -> rx.Component:
     return rx.el.div(
         rx.el.div(
-            rx.el.span("delulu-smash", class_name="title"),
+            # the app's mark: the user's GitHub profile picture (assets/avatar.png, 96 px),
+            # drawn as a small circle in place of the name
+            rx.el.img(src="/avatar.png", alt="delulu-smash", title="delulu-smash", class_name="avatar"),
             # the chat agent's model (agents.py; every agent's
             # setup is in the debug panel's Agents tab)
             rx.el.span(AGENTS[0].model_name, title=f"Chat model: {AGENTS[0].model}", class_name="chat-model mono"),

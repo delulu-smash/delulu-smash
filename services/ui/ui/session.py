@@ -33,6 +33,7 @@ from pydantic_ai.messages import ModelResponse, ToolCallPart, ToolReturnPart
 from pydantic_ai.models import infer_model
 
 from ui import perf
+from ui.app_guide import app_guide_capability
 from ui.render import Ui, View, ViewData, to_view
 from ui.typeinfo import keep_class_sources
 
@@ -686,7 +687,8 @@ class Session:
 
         sent: the message as the model gets it, when that is more than what the user typed (the
         variables it mentions, mentions.with_context). toolsets: tools the app adds for this
-        run (mentions.toolset), on top of the agent's own.
+        run (mentions.toolset), on top of the agent's own. The app's guide
+        (app_guide_capability) is added to every run too.
         """
         result = AiResult()
         # one "agent" record per turn (the debug panel, logs.py); each tool call logs its own
@@ -698,7 +700,12 @@ class Session:
                 call["added"] = sent.removeprefix(prompt).strip()
             try:
                 async with ds.ai.agent.run_stream(
-                    sent or prompt, message_history=self.ai_history, toolsets=toolsets
+                    sent or prompt,
+                    message_history=self.ai_history,
+                    toolsets=toolsets,
+                    # how to use this app (app_guide.py): deferred, added here on every run
+                    # so the agent in pkgs/ds/ai and `ds ai eval` don't have it
+                    capabilities=[app_guide_capability],
                 ) as stream:
                     async for delta in stream.stream_text(delta=True):
                         await on_delta(delta)
