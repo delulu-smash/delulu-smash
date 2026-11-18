@@ -3,7 +3,7 @@
 
 # AI Ideas
 
-Brief backlog for Copilot or repo-organization ideas that seem useful, but are not approved for implementation yet.
+Brief backlog for AI or repo-organization ideas that seem useful, but are not approved for implementation yet.
 
 ## Current Ideas
 

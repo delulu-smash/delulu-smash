@@ -6,7 +6,7 @@ This folder holds the "database" for `ds` data: each parquet file in `smash_db/p
 `ds data <command>` and the current source of truth for its domain. `raw/` holds the scripts (and any hand-copied
 source data) used to produce them. Code gets the folder from `ds.data.paths.PARQUET_DIR`.
 
-**AI/Copilot instructions:** whenever you add/rename/remove a column produced by `ds/data/raw/*.py` or change what
+**AI instructions:** whenever you add/rename/remove a column produced by `ds/data/raw/*.py` or change what
 a `ds data <command>` writes, update the matching table below in the same change. Keep this file in sync with the
 actual parquet schemas — treat a schema change without a README update as an incomplete task.
 

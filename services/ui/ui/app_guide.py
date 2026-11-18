@@ -29,8 +29,7 @@ _RULES = clean_f_str("""
     results, Python cells, variables). Use it for questions about using the app, not about Smash the game.
     - Answer from this guide only. If it doesn't cover something, say the guide doesn't cover it; never
       invent a command, key or feature.
-    - Show what to type as code, as the guide does: the exact command or key, then what the user will see.
-      Keep it short: the steps for what was asked, not the whole section.
+    - How to shape an answer is the guide's first section ("How to answer"): follow it.
     - You can't run slash commands, press keys or change the app: the user types them in the chat box.
     """)
 MISSING = "(The guide file is missing: only the lists below are known. Say so if they don't answer the question.)"

@@ -96,6 +96,17 @@ COMPLETE_URL = rx.config.get_config().api_url + "/complete"
 MENTION_COMPLETE_URL = rx.config.get_config().api_url + "/mention_complete"
 # EXPERIMENT: the Terminal pane's page (terminal.py, served by the backend)
 TERMINAL_URL = rx.config.get_config().api_url + "/terminal"
+# this machine's wallpaper (api.py, desktop.py): behind the window when no panel is open
+BACKGROUND_URL = rx.config.get_config().api_url + "/background"
+# The help panel's first section: each panel with the key that shows or hides it and the one
+# that fills the window with it, then the palette for everything else.
+PANELS: tuple[tuple[str, Shortcut, Shortcut], ...] = (
+    ("Chat", Shortcut.TOGGLE_CHAT, Shortcut.ZOOM_CHAT),
+    ("Results", Shortcut.TOGGLE_RESULTS, Shortcut.ZOOM_RESULTS),
+    ("Python", Shortcut.TOGGLE_PYTHON, Shortcut.ZOOM_PYTHON),
+    ("Variables", Shortcut.TOGGLE_VARIABLES, Shortcut.ZOOM_VARIABLES),
+    ("Terminal", Shortcut.TOGGLE_TERMINAL, Shortcut.ZOOM_TERMINAL),
+)
 # assets/panes.js asks it whether a clicked link's site can be framed (api.py, web.frameable)
 FRAMEABLE_URL = rx.config.get_config().api_url + "/frameable"
 
@@ -257,6 +268,20 @@ def chat_item(item: rx.Var) -> rx.Component:
     )
 
 
+def markdown_code(text: rx.Var[str], **props) -> rx.Component:
+    """A fenced code block in an agent message: the app's own dark block (as a cell's code and
+    the help panel's snippets, not rx.markdown's light highlighter) with a copy button for the
+    code alone (top right, on hover). `props` has the fence's language: not used, the text is
+    drawn plain.
+    """
+    del props
+    return rx.el.div(
+        rx.el.pre(rx.el.code(text)),
+        copy_button(text, "the code"),
+        class_name="md-code mono",
+    )
+
+
 @rx.memo
 def markdown_bubble(text: rx.Var[str]) -> rx.Component:
     """An agent message. A memo component, so each bubble is its own React component:
@@ -265,7 +290,7 @@ def markdown_bubble(text: rx.Var[str]) -> rx.Component:
     with every answer (React's hook-order warning).
     """
     return rx.el.div(
-        rx.markdown(text),
+        rx.markdown(text, component_map={"pre": markdown_code}),
         # top-right, on hover: copy the reply as written (its markdown)
         rx.el.div(copy_button(text, "the reply"), class_name="bubble-actions"),
         class_name="bubble md",
@@ -1468,11 +1493,39 @@ def help_examples(title: str, lines: list[tuple[str, str]]) -> rx.Component:
     )
 
 
+def help_panels() -> rx.Component:
+    """The help panel's first section: the panels and their keys (show or hide, full screen),
+    then the palette. What to press when the window is empty (the desktop).
+    """
+    rows = [(name, toggle.keys, f"full screen {zoom.keys}") for name, toggle, zoom in PANELS]
+    rows.append(("Everything else", Shortcut.PALETTE.keys, "the command palette"))
+    return rx.el.div(
+        rx.el.div(
+            "Panels",
+            rx.el.span("a key shows or hides each one", class_name="help-hint dim"),
+            class_name="help-title",
+        ),
+        rx.el.div(
+            *[
+                rx.el.div(
+                    rx.el.span(rx.el.kbd(keys), rx.el.span(name, class_name="help-panel-name")),
+                    rx.el.span(about, class_name="help-about dim"),
+                    class_name="help-example",
+                )
+                for name, keys, about in rows
+            ],
+            class_name="help-snippet mono",
+        ),
+    )
+
+
 def help_panel() -> rx.Component:
-    """Short on purpose: examples first, then the keys in a box that scrolls (Shortcut.KEYS is
-    the searchable list of them), then fixes. How the app works is in the README.
+    """Short on purpose: the panels and their keys first, then examples, then every key in a
+    box that scrolls (Shortcut.KEYS is the searchable list of them), then fixes. How the app
+    works is in the README.
     """
     return rx.el.div(
+        help_panels(),
         *[help_examples(title, lines) for title, lines in HELP_EXAMPLES],
         rx.el.div(
             "Keyboard shortcuts",
@@ -1975,6 +2028,17 @@ def statusbar() -> rx.Component:
     )
 
 
+def desktop() -> rx.Component:
+    """What the window shows when no panel does, as a desktop: this machine's wallpaper
+    (BACKGROUND_URL; none on a machine without one, so the plain background stays). Nothing
+    else: the keys that bring the panels back are the help panel's first section (help_panels).
+    """
+    return rx.cond(
+        State.no_panels,
+        rx.el.div(style={"background_image": f"url({BACKGROUND_URL})"}, class_name="desktop"),
+    )
+
+
 def index() -> rx.Component:
     return rx.el.div(
         rx.el.div(
@@ -2016,6 +2080,7 @@ def index() -> rx.Component:
                 class_name=rx.cond(State.bottom_on, "bottom-split", "bottom-split is-hidden"),
             ),
             terminal_pane(),
+            desktop(),
             class_name="split-main",
         ),
         statusbar(),

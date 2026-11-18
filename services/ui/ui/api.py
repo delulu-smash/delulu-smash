@@ -24,7 +24,7 @@ from starlette.responses import JSONResponse
 from starlette.routing import Mount, Route, WebSocketRoute
 from starlette.staticfiles import StaticFiles
 
-from ui import mentions, terminal
+from ui import desktop, mentions, terminal
 from ui.inline_edit import edit
 from ui.session import complete as complete_code
 from ui.session import find_session
@@ -76,6 +76,8 @@ api = Starlette(
         Route("/inline_edit", inline_edit, methods=["POST"]),
         Route("/mention_complete", mention_complete, methods=["POST"]),
         Route("/frameable", frameable, methods=["GET"]),
+        # this machine's wallpaper, behind the window when no panel is open (desktop.py)
+        Route("/background", desktop.background, methods=["GET"]),
         # EXPERIMENT: the Terminal widget's page and its shell (terminal.py; this machine only)
         Route("/terminal", terminal.page, methods=["GET"]),
         WebSocketRoute("/terminal/ws", terminal.shell_socket),

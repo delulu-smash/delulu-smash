@@ -560,6 +560,11 @@ class State(rx.State):
         return self.results_on or self.python_on or self.variables_on
 
     @rx.var
+    def no_panels(self) -> bool:
+        """Whether no panel is shown at all: the window is then the desktop (ui.desktop)."""
+        return not (self.chat_on or self.bottom_on or self.terminal_on)
+
+    @rx.var
     def var_selected_summary(self) -> str:
         """What the ticked rows hold together, eg 'selected
         2 · 81 KB' ("" when none is ticked).

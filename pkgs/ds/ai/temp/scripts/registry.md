@@ -9,3 +9,4 @@ the user first; commit them as any code.
 
 | id | description | signature | bytes |
 | --- | --- | --- | --- |
+| `aapl_closes` | Daily closing prices of a stock ticker over the past year, from Google Finance. | `aapl_closes(ticker: str='AAPL:NASDAQ') -> list[DailyClose]` | 1,186 |

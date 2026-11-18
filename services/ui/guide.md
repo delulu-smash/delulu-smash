@@ -6,6 +6,16 @@
 
 # Using delulu-smash
 
+## How to answer (for the AI)
+
+- Lead with the answer in a line, then the steps for what was asked. Not the whole section.
+- Show examples as the guide does: what to type, then what the user will see.
+- **End with one thing to paste, when there is one**: a code block holding exactly one command, ready to
+  run as it is. Real values, not placeholders (`/vods mkleo vs sparg0`, not `/vods <text>`), using the
+  user's own variables and names from the chat when they fit. No comment or second line in that block:
+  its copy button copies everything in it.
+- Leave that block out when nothing can be pasted (a key press, a click, a "the guide doesn't cover it").
+
 ## The window
 
 Five panels. Each has an `Alt` key that shows or hides it; add `Shift` for full screen (again to go back).
@@ -21,6 +31,7 @@ Five panels. Each has an `Alt` key that shows or hides it; add `Shift` for full 
 - Only the chat shows at first. The bottom bar has a toggle per panel; `/results`, `/python`, `/variables`
   and `/terminal` do the same from the chat.
 - Each panel's top right has ⤢ (full screen) and × (hide). Hiding keeps what is in it.
+- With every panel hidden the window shows your desktop wallpaper; the panel keys are first in `Alt+H`.
 - `Alt+F` floats the result you are in over the page, or fills the window with your panel. Esc puts it back.
 
 ## Chat

@@ -73,6 +73,8 @@
   const menu = document.createElement("div");
   menu.className = "mention-menu mono";
   let box = null;
+  // the list's one line when the session has no variables to mention
+  const NONE = "No variables";
   // numbers the questions asked of the backend: an answer to an older one is dropped
   let asked = 0;
   const isOpen = () => menu.classList.contains("is-open");
@@ -122,11 +124,13 @@
     }
   };
 
-  const draw = (target, found) => {
-    if (!found.length) return close();
+  // note: a line shown in place of the rows when there are none (nothing to pick), eg NONE
+  const draw = (target, found, note = "") => {
+    if (!found.length && !note) return close();
     const active = menu.querySelector(".is-active");
-    const keep = active && found.some((item) => item.insert === active.dataset.insert) ? active.dataset.insert : found[0].insert;
-    menu.replaceChildren(...found.map((item) => {
+    const keep = active && found.some((item) => item.insert === active.dataset.insert) ? active.dataset.insert : found[0]?.insert;
+    if (!found.length) menu.replaceChildren(span("mention-none dim", note));
+    else menu.replaceChildren(...found.map((item) => {
       const row = document.createElement("button");
       row.type = "button";
       row.className = `menu-item mention-item is-${item.kind}`;
@@ -151,7 +155,9 @@
   const update = async (target) => {
     const now = typing(target);
     if (!now) return close();
-    if (!now.typed.includes(".")) return draw(target, names(now.typed));
+    // a bare "@" with nothing to mention yet still opens the list, saying so (it goes as you
+    // type on: an "@name" that isn't a variable is plain text)
+    if (!now.typed.includes(".")) return draw(target, names(now.typed), !now.typed && !variables().length ? NONE : "");
     asked += 1;
     const mine = asked;
     const found = await parts(now.typed);
@@ -196,6 +202,8 @@
       stop();
       close();
     } else if (event.key === "Tab" || (event.key === "Enter" && !event.shiftKey)) {
+      // only the "no variables" line: nothing to complete, the key is the box's own
+      if (!shown.length) return close();
       const now = typing(box);
       // Enter on a name already typed in full is the box's own Enter (send)
       if (event.key === "Enter" && now && active && now.typed === active.dataset.insert) return close();

@@ -51,6 +51,9 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   light sweeps across the chat box (as over the code in an inline chat).
   Scroll up and a round ↓ button appears over the bottom of the chat: it jumps back to the newest message.
   Hover a message for its copy button on the top-right corner (a reply copies as its markdown source).
+  A code block in a reply is the app's own dark block (`ui.markdown_code`, `.md-code`: as the help panel's
+  snippets, not `rx.markdown`'s light highlighter; plain text, no syntax colours), with its own copy button
+  on hover that copies the code alone.
   A failed turn (the model or a tool raised) shows its traceback in the same component a Python cell uses
   (`render.traceback_view`): the frame that raised and the error, the rest folded, and a copy button (top right,
   on hover) that copies the full plain-text traceback.
@@ -302,7 +305,8 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   bound to something new or the result is opened again from the chat (`Session.closed` / `tabs()`).
   A result the agent returned has `↖ chat` in its bar (and Show in Chat in the right-click menu): it
   scrolls the chat to that tool call's row and flashes it.
-- **Help**: the ? at the top right (Alt+H), kept short: examples of slash commands and `@` mentions as code
+- **Help**: the ? at the top right (Alt+H), kept short: first **Panels** (`ui.PANELS`: each panel with the key
+  that shows or hides it and its full-screen key, then the palette for everything else), then examples of slash commands and `@` mentions as code
   snippets (`HELP_EXAMPLES` in `ui.py`: what to type and what it does, coloured as in the chat box),
   the keyboard shortcuts in a box that scrolls (a few rows at a time; `Alt+K` is the searchable list), and an
   FAQ of fixes for common errors (`FAQ`: question, answer, commands to run). It is as tall as the window
@@ -372,6 +376,8 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   - **Typing `@`** lists the variables at the box (name, type, shape, where it came from): type to filter,
     Up / Down, Tab or Enter completes, Esc closes. A name that isn't a variable (`@someone`, an email) is
     plain text.
+    With no variables yet, a bare `@` still opens the list with one small line, "No variables";
+    it goes as you type on, and Enter / Tab are the box's own then.
   - **After a name, `.` lists what can follow, as the Python console does** (`mentions.complete`, asked from
     the backend on each keystroke: `POST /mention_complete`): first its columns (`@q1.char`), a model's fields
     or a console's `df` and `sql` (`@r3.df`), then its attributes (`@q1.shape`, `@q1.columns`), then the
@@ -499,6 +505,17 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   Default widths with Results, Python and Variables all open: Variables is a narrow column (22% of the
   width, between 240 and 340 px: `--vars-width` in `assets/app.css`) and Results and Python share the rest,
   half each. Dragging Results' corner still resizes it.
+- **Bars as Omarchy's**: the title bar and the bottom bar have the colour of Omarchy's own bar (`--bar` in
+  `assets/app.css`: the theme's `background`, Everforest's `#2d353b`) and no dividing line, so they read as
+  part of the desktop. The value is written in the CSS, not read from the theme: another Omarchy theme
+  needs it changed there.
+- **Desktop** (`ui/desktop.py`, `ui.desktop`): with every panel hidden (`State.no_panels`) the window shows
+  this machine's wallpaper, as a desktop does, and nothing else: the keys that bring the panels back are
+  the first section of the help panel (`?`, `Alt+H`). The picture is `desktop.BACKGROUND`, the one place that says which file:
+  Omarchy's `~/.local/state/omarchy/current/background`, a link it repoints to the current theme's
+  background. The backend serves it at `GET /background`, read from disk on each request and sent with
+  `Cache-Control: no-store` (no cache), so a theme change shows on the next reload. A machine without the
+  file gets a 404 and the plain dark background. Nothing shows behind an open panel.
 - **Variables** (`Alt+V`, the bottom bar's fourth toggle; `ui/variables.py`; what must hold is in
   `spec/services/ui/variables.md`): a pane at the right of Results / Python listing the
   session's Python names that are data: the agent's results (`r1`, …), a SmashDb console's saves (`q1`, …),
