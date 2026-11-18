@@ -149,7 +149,6 @@ os save webapp:Twitch setting:theme toggle:window-no-gaps
 - `.os/rc`: bashrc additions (`os` / `ds` aliases, start in this repo).
 - `.os/scripts/keybindings/`: scripts called by keybindings:
   - `screenrecord.sh`: region recording toggle (`SUPER + SHIFT + Q`, `--save` on `SUPER + SHIFT + ALT + Q`).
-  - `textual-kernel.sh`: launches the `experimental/textual-kernel` TUI (`SUPER + SHIFT + J`).
   - `claude-delulu.sh`: Claude Code in this repo, continuing the last session (`SUPER + SHIFT + A`).
   - `pwd-copy.sh`: copies the 1Password master password via `os pwd-copy` (`SUPER + SHIFT + P`).
 - `.os/scripts/hooks/`: scripts called by AI agent hooks:
