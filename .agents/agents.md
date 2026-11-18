@@ -245,10 +245,10 @@ every section, approved by the user as models, are in `personal/ai/plan_examples
      `-> NoReturn` for one that execs or exits), with a short docstring or `# ...` comment saying what it
      does. High-level details like these help most; anything more is extra.
    - **Show the workflows**: when functions work together, add a short pseudo code use of them for each
-     flow, so it's clear how they compose (eg what SUPER+SHIFT+I does on a cold start):
+     flow, so it's clear how they compose (eg what SUPER+SHIFT+J does on a cold start):
 
      ```python
-     # SUPER+SHIFT+I, server down
+     # SUPER+SHIFT+J, server down
      open_window()                    # delulu-smash.py, the keybinding's target
        ds_ui("status")  -> False      #   not answering
        notify("Starting…")

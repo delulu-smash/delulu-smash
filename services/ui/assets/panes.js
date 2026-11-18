@@ -299,16 +299,21 @@
     const pane = paneOf(event.target);
     if (!pane) return;
     mark(pane);
-    if (!event.target.closest("button")) lastIn.set(pane.dataset.pane, event.target);
+    // a place of yours: not a button, nor the view or pane itself (where activate falls back to)
+    if (!event.target.closest("button") && !event.target.matches(".widget, [data-pane]")) lastIn.set(pane.dataset.pane, event.target);
   });
 
   // The active pane ([data-active], not shown on screen: the cursor is the only sign): where the cursor is. NEXT_PANE / PREV_PANE
   // move it between the panes shown; a pane you open (key, click, palette) becomes it, as does
   // a Results tab you open; the first pane shown when the active one closes. Something the AI
   // opens never moves the cursor: only what follows your own key or click (YOURS_MS) does.
-  // HOME: where the cursor goes in a pane with no place of yours to come back to; none (or
-  // not there): the pane itself, eg Variables.
-  const HOME = { chat: ".composer textarea", python: ".cm-content", terminal: "iframe", results: ".widget" };
+  // HOME: where the cursor goes in a pane with no place of yours to come back to, the first
+  // of its selectors that is shown (Results: a SmashDb console's query box, else the view
+  // itself); none (or not there): the pane itself, eg Variables.
+  const HOME = {
+    chat: [".composer textarea"], python: [".cm-content"], terminal: ["iframe"],
+    results: [".db-editor .cm-content", ".widget"],
+  };
   const YOURS_MS = 1000;
   const lastIn = new Map();  // pane name -> the element last focused in it
   let acted = 0;  // when you last clicked, or pressed a key that can open something
@@ -325,12 +330,16 @@
     mark(pane);
     const name = pane.dataset.pane;
     const last = lastIn.get(name);
-    const spot = shown(last) && pane.contains(last) ? last : [...pane.querySelectorAll(HOME[name] || ":not(*)")].find(shown);
-    // not there yet (the Terminal's frame mounts when it first shows): once more, if still wanted
-    if (!spot && HOME[name] && retry) setTimeout(() => activePane() === pane && shown(pane) && activate(pane, false), 400);
+    const homes = (HOME[name] || []).map((selector) => [...pane.querySelectorAll(selector)].find(shown));
+    const spot = shown(last) && pane.contains(last) ? last : homes.find(Boolean);
     const target = spot || pane;
     if (target.tabIndex < 0) target.tabIndex = -1;  // a pane or a view takes the focus only this way
     target.focus({ preventScroll: true });
+    // the best place may not be there yet (the Terminal's frame, a console's editor: they mount
+    // a moment after the pane shows): once more, if you are still where this put you
+    if (retry && !(spot && spot === last) && HOME[name] && !homes[0]) {
+      setTimeout(() => activePane() === pane && shown(pane) && document.activeElement === target && activate(pane, false), 400);
+    }
   };
   const cycle = (step) => {
     const panes = shownPanes();

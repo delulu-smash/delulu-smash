@@ -19,7 +19,7 @@ design choice gets checked against all five parts. When one is traded off for an
 | **Exploration of Jupyter** | Every result is a live value you can keep, poke at and build on, in the AI chat or in code. Asking a question and working on the answer are one flow | results as `r1`, `r2`, … ; Python cells; Variables panel; `@name` mentions ([variables.md](variables.md)) |
 | **Composability of VS Code** | Pieces combine and rearrange instead of each living in one fixed place: panels are shown, hidden, split and zoomed to fit the task; a widget is the same wherever it is put (a Results tab, the chat, under a cell, floating); one value flows between the chat, the cells and the widgets; every action, whatever adds it, sits in the same palette and keys | panels with `Alt` keys and ⤢ / ×; widgets in tabs, chat, cells, Alt+F floating; `r1` used in cells and `@r1` in the chat; the `Alt+P` palette and slash commands |
 | **Extensibility & flexibility of Pi** | As with the Pi coding agent: a small core that grows by adding pieces (widgets, tools, commands) as data, not by editing the core. The user shapes it to their own workflow, and the AI helps build the new pieces | `WIDGETS` rows, the palette / slash commands made from them, inline AI filling any widget's inputs ([inline_ai.md](inline_ai.md)) |
-| **Your desktop hub** | One place for Smash work (data, VODs, AI, code), always running as a desktop app and not a site you visit | `SUPER+SHIFT+I`, `delulu-smash.service` |
+| **Your desktop hub** | One place for Smash work (data, VODs, AI, code), always running as a desktop app and not a site you visit | `SUPER+SHIFT+J`, `delulu-smash.service` |
 
 ## Words: panel and widget
 
@@ -43,6 +43,20 @@ Design rules that follow from the difference:
   it keeps its own frame and brings its controls with it. See the README's "Rendering" design rule.
 - A new region of the window is a panel; a new way to show a value is a widget. Don't give a panel a widget's
   frame, or build a widget that only works in one panel.
+
+## Words: one word per action
+
+The same action has the same word everywhere it appears: a button, a slash command, a palette entry, a form's
+label and the docs. Learn the word once and it works in every place (the user's rule, Nov 2026).
+
+- **A slash command's name is the word.** When an action already has one, the buttons and labels for that
+  action use it. Eg binding a result to a Python name is `/assign`, so the SmashDb console's button is
+  `Assign ▸` (it was "Save as"), its row reads "Assign result to" and its submit button "Assign".
+- **Before naming a new control**, look for the action under another name (`ui/commands.py`, the slash
+  commands, the other widgets' bars) and reuse that word. If nothing fits, the new word becomes the one to
+  reuse.
+- **Short**: one word where it can be ("Assign", not "Assign variable").
+- Two controls that do different things don't share a word, even when they look alike.
 
 ## Panels: what every panel has
 

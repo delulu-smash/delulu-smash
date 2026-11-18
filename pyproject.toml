@@ -28,6 +28,7 @@ dependencies = [
     "pydantic-ai-harness[coder,playwright]>=0.68.0",
     "pydantic-deep[browser]>=0.3.43",
     "reflex>=0.8.28",
+    "ruff>=0.17.5",
     "typer>=0.21.1",
 ]
 

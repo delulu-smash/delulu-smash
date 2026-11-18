@@ -60,3 +60,8 @@ myst parser and writer in the app, so i can write notes in here (the docs are My
 claude code hand off integration
 
 have code be c style struct nd function based (onllly use oop when absolutely necessary, more functional style)
+
+in refactor, have an agent that is good at digging inot performance/memory concerns, especially from arch standpoint
+
+i noticed this jsut work and had no @q1 (perhaps need to do quick santization/validation fucntion) "/assign
+top5 = the five best players in @q1 "

@@ -25,7 +25,7 @@ Omarchy (`spec/services/ui/omarchy.md`).
 
 ## Desktop app
 
-On Omarchy this app is **delulu-smash**: `SUPER+SHIFT+I` opens it in its own web app window, or focuses
+On Omarchy this app is **delulu-smash**: `SUPER+SHIFT+J` opens it in its own web app window, or focuses
 the one already open (`.os/scripts/keybindings/delulu-smash.sh`). The server runs as a systemd user
 service, `~/.config/systemd/user/delulu-smash.service`, started at login by `~/.config/hypr/autostart.lua`;
 if it isn't up, the shortcut starts it and opens the window once it answers (cold start up to about
@@ -272,8 +272,8 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   - It queries the session's `db`, the one the Python cells have, so `create table x as select ...` in the
     console is there in a cell and the other way round (in memory only; the parquet files are never written).
   - The tab's name is bound to the console: `r3.df` is the result DataFrame, `r3.sql` its query.
-  - **Save as ▸** (in the bar, once a query has run) keeps the result under a name of your own: the next free
-    `q1`, `q2`, ... is filled in, so Enter alone saves, or type one. It is bound in Python like `q1 = <result>`
+  - **Assign ▸** (in the bar, once a query has run) keeps the result under a name of your own: the next free
+    `q1`, `q2`, ... is filled in, so Enter alone assigns it, or type one. It is bound in Python like `q1 = <result>`
     and gets its own tab; you stay in the console. It is the query's result, without the bar's row filter, sort
     or `SQL ▸`. A name that isn't a Python name, starts with `_`, is `pl` / `db` or is the console itself is
     refused; an existing name is replaced, as in Python.

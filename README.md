@@ -56,7 +56,7 @@ uv lock --upgrade
 ## How to run the delulu-smash app locally
 
 ```bash
-cd services/ui && uv run reflex run   # or SUPER+SHIFT+I, which runs it as a service
+cd services/ui && uv run reflex run   # or SUPER+SHIFT+J, which runs it as a service
 ```
 
 ## How to run docs

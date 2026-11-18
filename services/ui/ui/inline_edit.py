@@ -27,6 +27,7 @@ from pydantic import BaseModel, Field
 from pydantic_ai import Agent, ModelRetry, RunContext, capture_run_messages
 
 from ui import logs, mentions
+from ui.format import format_python
 from ui.session import BUILTIN_NAMES, find_session, log_usage
 
 # Context sent to the model is capped, so a namespace full of tables can't blow up the prompt.
@@ -49,11 +50,34 @@ _INSTRUCTIONS = clean_f_str("""
     You edit code inside a small editor in a Super Smash Bros. Ultimate data app, as an inline code
     assistant (like Copilot's inline chat). You get the editor's code, the user's instruction and the
     data the code can use. Return only the code that replaces the target: the selected part when one is
-    marked, else the editor's whole content. Keep the user's code and style where the instruction doesn't
-    ask to change it, and use only tables, columns and variables that are listed. Write values as the
+    marked, else the editor's whole content. Keep the user's code where the instruction doesn't ask to
+    change it, and use only tables, columns and variables that are listed. Write values as the
     data has them (see the first rows and the notes), not as the user's shorthand. Earlier messages,
     when there are any, are the user's chat with the app's assistant (its answers and tool results): use
     them to understand what the user means, eg "the players we just looked at".
+    """)
+
+
+# How a query is laid out (the user's pick, 2026-11-18): told to the model, not done by a SQL
+# formatter (no dependency for it). Python is formatted after the answer, by ruff (format.py).
+SQL_FORMAT = clean_f_str("""
+    Format SQL like this, also when the user's own query is laid out differently: keywords in
+    UPPERCASE, each clause on its own line, one selected column per line (indented two spaces) when
+    there is more than one, and AND / OR conditions on their own indented lines. Names of tables and
+    columns stay as the data has them. Keep every line under 88 columns. Example:
+
+    SELECT
+      character,
+      move,
+      damage
+    FROM framedata
+    WHERE character = 'mario'
+      AND damage > 10
+    ORDER BY damage DESC
+    LIMIT 5
+
+    A short query with one column and no conditions can stay on one line:
+    SELECT * FROM framedata LIMIT 5
     """)
 
 
@@ -109,6 +133,12 @@ def proposal_problem(run: EditRun, code: str) -> str:
             "That query runs but returns no rows. If that is not what the user wants, check the values it filters on."
         )
     return ""
+
+
+@edit_agent.instructions
+def sql_format(ctx: RunContext[EditRun]) -> str:
+    """The query layout, for a SQL editor only (SQL_FORMAT)."""
+    return SQL_FORMAT if ctx.deps.language == "sql" else ""
 
 
 @edit_agent.output_validator
@@ -268,7 +298,9 @@ async def edit(body: dict[str, Any]) -> dict[str, str]:
         call["added"] = mentioned
         try:
             result = await edit_agent.run(text, message_history=history, deps=run)
-            answer["code"] = result.output.code
+            code = result.output.code
+            # Python comes back as ruff formats it (off the event loop: it runs ruff)
+            answer["code"] = await asyncio.to_thread(format_python, code) if language == "python" else code
         except Exception as error:  # noqa: BLE001  # shown in the inline box, not raised into the request
             call["error"] = answer["error"] = f"{type(error).__name__}: {error}"
         # from the messages, as a chat turn does (Session.ask),

@@ -567,7 +567,7 @@ class Session:
 
     def next_free_name(self, prefix: str) -> str:
         """The first of prefix1, prefix2, ... not bound in
-        Python (eg a SmashDb console's Save as).
+        Python (eg a SmashDb console's Assign).
         """
         return next(f"{prefix}{n}" for n in itertools.count(1) if f"{prefix}{n}" not in self.namespace)
 

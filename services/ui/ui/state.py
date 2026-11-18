@@ -1096,7 +1096,7 @@ class State(rx.State):
                 self._show(slot)
             return
         if action == "db_save":
-            name = arg.get("var_name", "") if isinstance(arg, dict) else arg  # the Save as form
+            name = arg.get("var_name", "") if isinstance(arg, dict) else arg  # the Assign form
             self._save_query_result(slot, view, ui, str(name or "").strip())
             return
         if action in ("db_run", "db_open"):
@@ -1190,7 +1190,7 @@ class State(rx.State):
         self._refresh_debug()
 
     def _save_query_result(self, slot: str, view: Any, ui: Ui, name: str) -> None:
-        """A SmashDb console's Save as: bind its query's result to `name` in Python (it gets a
+        """A SmashDb console's Assign: bind its query's result to `name` in Python (it gets a
         tab, as any DataFrame bound to a name), staying in the console.
         """
         console = view.value

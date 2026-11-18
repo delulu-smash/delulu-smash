@@ -36,6 +36,10 @@ three by its row in `WIDGETS`.
 - **One key.** `Alt+I` means "inline AI here" everywhere: code in an editor, inputs in a widget, a command
   in the Terminal. An editor
   inside a widget (the SmashDb console's SQL box) keeps the editor meaning.
+- **Proposed code comes formatted.** Python is run through `ruff format` at 88 columns after the model
+  answers (`ui/format.py`; what ruff can't format, eg part of a statement, is shown as written). SQL has no
+  formatter: the model is told the layout (UPPERCASE keywords, a clause per line; `SQL_FORMAT` in
+  `ui/inline_edit.py`), so it is a request and not a guarantee.
 - **It reads the chat and adds nothing to it.** Each call is logged and costed like a chat turn.
 - **No tools.** The inline AI answers in one request from what it is given. Looking things up is the chat's job.
 

@@ -234,7 +234,7 @@ class ViewData:
     """A query has run: there is a result table to show."""
     db_history: list[str] = dataclasses.field(default_factory=list)
     db_history_open: bool = False
-    # Save as: the query's result bound to a Python name (State.view_event "db_save")
+    # Assign: the query's result bound to a Python name (State.view_event "db_save")
     db_save_open: bool = False
     db_save_name: str = ""
     """The suggested name, the next free q1, q2, ... (Session.show fills it)."""
@@ -1127,11 +1127,12 @@ def _db_table(table: rx.Var[DbTable], send: Any) -> rx.Component:
 
 
 def _db_save_row(view: rx.Var[ViewData], send: Any) -> rx.Component:
-    """Save as: a name for the query's result (the next free q<n> filled in and selected, so
-    Enter alone saves), bound in Python like `q1 = <result>`; Esc folds it.
+    """Assign (was "Save as"): a name for the query's result (the next free q<n>
+    filled in and selected, so Enter alone saves), bound in Python like
+    `q1 = <result>`; Esc folds it.
     """
     return rx.el.form(
-        rx.el.span("Save result as", class_name="dim sans"),
+        rx.el.span("Assign result to", class_name="dim sans"),
         rx.el.input(
             key=view.db_save_key,
             name="var_name",  # not "name": password managers read that as an identity field
@@ -1143,7 +1144,7 @@ def _db_save_row(view: rx.Var[ViewData], send: Any) -> rx.Component:
             on_key_down=lambda key: rx.cond(key == "Escape", send("db_save_toggle"), rx.noop()),
             class_name="viewer-filter mono db-save-name",
         ),
-        rx.el.button("Save", type="submit", class_name="act"),
+        rx.el.button("Assign", type="submit", class_name="act"),
         rx.cond(view.db_save_error != "", rx.el.span(view.db_save_error, class_name="db-save-error sans")),
         rx.cond(view.db_save_note != "", rx.el.span(view.db_save_note, class_name="dim sans")),
         # the whole form (its "var_name"): a form var has no typed items to pick from here
@@ -1175,7 +1176,7 @@ def db_console_widget(
                 class_name="act",
             ),
             rx.el.button(
-                rx.cond(view.db_save_open, "Save as ▾", "Save as ▸"),
+                rx.cond(view.db_save_open, "Assign ▾", "Assign ▸"),
                 title="Keep the query's result as a Python variable (a DataFrame, with its own tab)",
                 on_click=send("db_save_toggle"),
                 disabled=~view.db_ran,
@@ -1189,61 +1190,72 @@ def db_console_widget(
                 class_name="db-tree",
             ),
             rx.el.div(
+                # the query, with what belongs to it: Run, Assign, History, an error
                 rx.el.div(
                     rx.el.div(
-                        sql_editor(
-                            key=view.db_key,
-                            initial_sql=view.db_sql,
-                            schema=view.db_schema,
-                            placeholder="select * from framedata",
-                            keys=sql_keys(),
-                            edit_url=INLINE_EDIT_URL,
-                            # the base state's var: no app State import
-                            # here (state.py imports this file)
-                            token=rx.State.router.session.client_token,
-                            on_run=lambda query: send("db_run", query),
-                            on_save=lambda text: send("db_draft", text),
-                        ),
-                        class_name="sql-editor db-editor",
-                    ),
-                    rx.el.div(
-                        rx.el.button(
-                            rx.cond(view.running, "Running…", "Run"),
-                            title=Shortcut.RUN_SQL.hint("Run the query (a selection runs alone)"),
-                            on_click=send("db_run", ""),
-                            disabled=view.running,
-                            class_name="act",
-                        ),
-                        rx.el.span(Shortcut.RUN_SQL.keys, class_name="sql-hint dim mono"),
-                        class_name="db-run",
-                    ),
-                    class_name="db-editor-row",
-                ),
-                rx.cond(view.db_save_open, _db_save_row(view, send)),
-                rx.cond(
-                    view.db_history_open,
-                    rx.el.div(
-                        rx.foreach(
-                            view.db_history,
-                            lambda query: rx.el.button(
-                                query, title=query, on_click=send("db_pick", query), class_name="db-history-row mono"
+                        rx.el.div(
+                            sql_editor(
+                                key=view.db_key,
+                                initial_sql=view.db_sql,
+                                schema=view.db_schema,
+                                placeholder="select * from framedata",
+                                keys=sql_keys(),
+                                edit_url=INLINE_EDIT_URL,
+                                # the base state's var: no app State import
+                                # here (state.py imports this file)
+                                token=rx.State.router.session.client_token,
+                                on_run=lambda query: send("db_run", query),
+                                on_save=lambda text: send("db_draft", text),
                             ),
+                            class_name="sql-editor db-editor",
                         ),
-                        class_name="db-history",
+                        rx.el.div(
+                            rx.el.button(
+                                rx.cond(view.running, "Running…", "Run"),
+                                title=Shortcut.RUN_SQL.hint("Run the query (a selection runs alone)"),
+                                on_click=send("db_run", ""),
+                                disabled=view.running,
+                                class_name="act",
+                            ),
+                            rx.el.span(Shortcut.RUN_SQL.keys, class_name="sql-hint dim mono"),
+                            class_name="db-run",
+                        ),
+                        class_name="db-editor-row",
                     ),
-                ),
-                rx.cond(
-                    view.trace_text != "",
-                    traceback_view(view.trace, view.trace_hidden, view.trace_more, view.trace_text, "db-trace"),
-                ),
-                rx.cond(
-                    view.db_ran,
-                    _table_body(view, send, grid),
-                    rx.el.div(
-                        "Write a query and run it, or press ▶ on a table. ",
-                        "Results can be filtered, sorted and queried again (SQL ▸) like any table.",
-                        class_name="empty sans",
+                    rx.cond(view.db_save_open, _db_save_row(view, send)),
+                    rx.cond(
+                        view.db_history_open,
+                        rx.el.div(
+                            rx.foreach(
+                                view.db_history,
+                                lambda query: rx.el.button(
+                                    query,
+                                    title=query,
+                                    on_click=send("db_pick", query),
+                                    class_name="db-history-row mono",
+                                ),
+                            ),
+                            class_name="db-history",
+                        ),
                     ),
+                    rx.cond(
+                        view.trace_text != "",
+                        traceback_view(view.trace, view.trace_hidden, view.trace_more, view.trace_text, "db-trace"),
+                    ),
+                    class_name="db-query",
+                ),
+                # right of the query (under it when the view is narrow): the result
+                rx.el.div(
+                    rx.cond(
+                        view.db_ran,
+                        _table_body(view, send, grid),
+                        rx.el.div(
+                            "Write a query and run it, or press ▶ on a table. ",
+                            "Results can be filtered, sorted and queried again (SQL ▸) like any table.",
+                            class_name="empty sans",
+                        ),
+                    ),
+                    class_name="db-result",
                 ),
                 class_name="db-main",
             ),
