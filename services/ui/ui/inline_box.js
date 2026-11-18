@@ -9,9 +9,8 @@
 //        box.say("Thinking…"); box.thinking(true); box.say("failed", "error");
 // ---------------------------------------------------------------------------
 
-// The robot the bottom bar's Chat toggle shows (commands.ICON_AI, a Nerd Font glyph): one icon
-// for "the AI" everywhere.
-export const ICON_AI = "\u{F06A9}";
+// The AI's icon is .ai-icon (sparkles, a Nerd Font glyph in a box its own size): the rule below is a copy of the one in
+// assets/app.css (render.ai_icon), for the Terminal's page, which has no app.css.
 
 // Everforest, as assets/app.css: its variables where the page has them (the app), else the
 // same colours written out (the Terminal's page has no app.css)
@@ -20,8 +19,10 @@ const CSS = `
   border: 1px solid var(--green, #a7c080); border-radius: 6px; font: 13px var(--sans, sans-serif);
   color: var(--fg, #d3c6aa); box-shadow: 0 4px 14px rgba(0, 0, 0, .35); }
 .inline-box[hidden] { display: none; }
-.inline-box-icon { color: var(--green, #a7c080); font-size: 14px;
-  font-family: var(--mono, "JetBrainsMono Nerd Font", "JetBrainsMono NF", monospace); }
+.ai-icon { display: inline-block; flex: none; width: 0.915em; height: 1em; font: 12.5px/1 var(--mono, "JetBrainsMono Nerd Font", "JetBrainsMono NF", monospace);
+  text-align: left; text-indent: 0; white-space: nowrap; vertical-align: -0.12em; }
+.ai-icon::before { content: "\\F0674"; }
+.inline-box-icon { color: var(--green, #a7c080); }
 .inline-box-input { flex: 1; min-width: 120px; background: none; border: 0; outline: 0; color: inherit; font: inherit; }
 .inline-box-input:disabled { opacity: .6; }
 .inline-box-status { color: var(--grey1, #859289); font-size: 12px; max-width: 60%; }
@@ -57,7 +58,7 @@ export function inlineBox({ placeholder, hint }) {
   input.spellcheck = false;
   input.autocomplete = "off";
   const status = el("span", "inline-box-status", hint);
-  dom.append(el("span", "inline-box-icon", ICON_AI), input, status);
+  dom.append(el("span", "inline-box-icon ai-icon", ""), input, status);
   return {
     dom,
     input,

@@ -21,7 +21,7 @@ from ui.widgets import ADDABLE
 # Nerd Font glyphs (JetBrainsMono Nerd Font), as in the bottom bar: robot = the AI, table =
 # results, python = the Python console.
 ICON_PY = ""
-ICON_AI, ICON_TABLE = "\U000f06a9", "\U000f04eb"
+ICON_AI, ICON_TABLE = "\U000f0674", "\U000f04eb"
 ICON_TERMINAL = "\U000f018d"  # nf-md-console
 ICON_BUG, ICON_HELP, ICON_KEYBOARD = "\U000f00e4", "\U000f02d7", "\U000f030c"
 ICON_FULL_SCREEN, ICON_PLUS, ICON_PLAY, ICON_ERASER, ICON_CLOSE = (

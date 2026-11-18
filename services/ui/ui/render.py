@@ -49,9 +49,24 @@ MAX_GRID_ROWS = 2000
 # Two diagonal arrows pointing apart / together, as
 # on Zed's zoom button (JetBrainsMono Nerd Font).
 ICON_EXPAND, ICON_COLLAPSE = "\U000f0616", "\U000f0615"
-# The robot the bottom bar's Chat toggle shows (commands.ICON_AI):
-# one icon for "the AI" everywhere.
-ICON_AI = "\U000f06a9"
+# commands.ICON_AI, the name of "the AI" icon in a command's row: never drawn as text, always
+# as ai_icon() (use icon(), which draws any other glyph as it is)
+ICON_AI = "\U000f0674"  # nf-md-creation
+
+
+def ai_icon() -> rx.Component:
+    """The one icon for "the AI" everywhere (the Chat toggle, the inline AI buttons, the "Ask
+    AI" row): sparkles (Nerd Font nf-md-creation), drawn by .ai-icon in assets/app.css in a
+    box the size of the drawing, so it is centred wherever it is put.
+    """
+    return rx.el.span(aria_hidden="true", class_name="ai-icon")
+
+
+def icon(glyph: str) -> rx.Component | str:
+    """A command's or toggle's icon: its Nerd Font glyph, or ai_icon() for ICON_AI."""
+    return ai_icon() if glyph == ICON_AI else glyph
+
+
 # The name of a tool form's "Ask AI" box in the submitted form (no tool parameter starts with
 # "_"): filled = ask the AI for inputs (inline_fill.py), empty = run the tool.
 ASK_FIELD = "__ask"
@@ -1307,7 +1322,7 @@ def ai_toggle(view: rx.Var[ViewData], send: Any) -> rx.Component:
     you are in (assets/panes.js, by data-ai-toggle).
     """
     return rx.el.button(
-        ICON_AI,
+        ai_icon(),
         title=Shortcut.INLINE_EDIT.hint("Ask AI to fill these inputs (you run them)"),
         aria_label="Ask AI to fill the inputs",
         on_click=send("ai_toggle"),
@@ -1324,7 +1339,7 @@ def inline_ai_button(target: str, what: str, flat: bool = False) -> rx.Component
     of where the chat opens: its code editor(s), or the Terminal's frame.
     """
     return rx.el.button(
-        ICON_AI,
+        ai_icon(),
         title=Shortcut.INLINE_EDIT.hint(what),
         aria_label=what,
         type="button",
@@ -1456,7 +1471,7 @@ def _ask_row(
     proposal (the form remounts), so Enter again, with the box empty, runs the proposal.
     """
     return rx.el.div(
-        rx.el.span(ICON_AI, class_name="ask-icon mono"),
+        rx.el.span(ai_icon(), class_name="ask-icon"),
         rx.el.input(
             name=ASK_FIELD,
             placeholder=rx.cond(

@@ -65,3 +65,5 @@ in refactor, have an agent that is good at digging inot performance/memory conce
 
 i noticed this jsut work and had no @q1 (perhaps need to do quick santization/validation fucntion) "/assign
 top5 = the five best players in @q1 "
+
+skills on how to communicate ideas (3 different proposals that significantly different approaches, examples use cases, short condesned info, tables/code snippet when possible)

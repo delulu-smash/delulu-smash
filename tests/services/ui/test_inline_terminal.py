@@ -15,7 +15,7 @@ from ds.util.logging import logger
 from pydantic_ai.messages import ModelRequest, ModelResponse, TextPart, UserPromptPart
 from pydantic_ai.models.test import TestModel
 from starlette.testclient import TestClient
-from ui import agents, commands, inline_terminal, terminal
+from ui import agents, inline_terminal, terminal
 from ui.api import api
 
 if TYPE_CHECKING:
@@ -106,6 +106,11 @@ def test_the_terminal_gets_the_same_box_as_a_cell() -> None:
     assert served.headers["cache-control"] == "no-store"
     assert served.text == terminal.INLINE_BOX.read_text()
     assert "export function inlineBox" in served.text
-    # one robot for the AI everywhere: the box's is the bottom bar's (commands.ICON_AI)
-    assert f"\\u{{{ord(commands.ICON_AI):X}}}" in served.text
+    # one icon for the AI everywhere: the box's .ai-icon rule is app.css's, word for word
+    # (the Terminal's page has no app.css, so the box carries a copy)
+    css = terminal.INLINE_BOX.parents[1].joinpath("assets", "app.css").read_text()
+    rule = css[css.index(".ai-icon {") : css.index("}", css.index(".ai-icon::before")) + 1]
+    # a JS template string needs the glyph's backslash doubled
+    assert rule.replace("\\", "\\\\") in served.text
+    assert '"inline-box-icon ai-icon"' in served.text
     assert 'from "./inline_box.js"' in terminal.INLINE_BOX.with_name("inline_edit.jsx").read_text()

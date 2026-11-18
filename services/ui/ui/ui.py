@@ -44,13 +44,16 @@ from ui.render import (
     type_label,
     typed_text,
 )
+from ui.render import (
+    icon as draw_icon,
+)
 from ui.shortcuts import Shortcut, codemirror_keys, shortcuts_script
 from ui.state import State
 from ui.variables import UNDO_SECONDS
 from ui.widgets import ADDABLE
 
 # Nerd Font glyphs come from commands.py (the palette draws the same ones). ICON_CHAT (the
-# robot) is also the inline chat's icon: inline_edit.jsx ICON_AI.
+# AI's icon) is never drawn as a glyph: draw_icon turns it into render.ai_icon (sparkles).
 # The help panel's FAQ: (question, answer, commands to run in a terminal). How the app works is
 # in the README (services/ui/README.md); the panel keeps to keys and fixes.
 FAQ = [
@@ -572,7 +575,7 @@ def slash_menu() -> rx.Component:
     return rx.el.div(
         *[
             rx.el.button(
-                rx.el.span(command.icon, class_name="palette-icon mono"),
+                rx.el.span(draw_icon(command.icon), class_name="palette-icon mono"),
                 rx.el.span(
                     f"/{name}",
                     rx.el.span(" <text>", class_name="dim") if command.takes else "",
@@ -762,7 +765,7 @@ def palette_row(command: Command) -> rx.Component:
     if command.shown:
         title = rx.fragment(rx.cond(getattr(State, command.shown), "Hide ", "Show "), command.title)
     return rx.el.button(
-        rx.el.span(command.icon, class_name="palette-icon mono"),
+        rx.el.span(draw_icon(command.icon), class_name="palette-icon mono"),
         rx.el.span(rx.el.span(command.group + ": ", class_name="dim"), title, class_name="palette-title"),
         rx.el.span(command.keys, class_name="palette-keys mono dim"),
         on_click=[State.close_palette, run],
@@ -2085,7 +2088,7 @@ def pane_toggle(
     """A bottom-bar toggle; assets/panes.js clicks it (data-toggle) on its shortcut."""
     title = f"Show or hide {label}"
     return rx.el.button(
-        icon,
+        draw_icon(icon),
         title=shortcut.hint(title) if shortcut else title,
         custom_attrs={"data-toggle": pane},
         aria_label=f"Show or hide {label}",

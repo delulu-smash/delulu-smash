@@ -58,6 +58,38 @@ label and the docs. Learn the word once and it works in every place (the user's 
 - **Short**: one word where it can be ("Assign", not "Assign variable").
 - Two controls that do different things don't share a word, even when they look alike.
 
+## Icons: Nerd Font glyphs
+
+Every icon in the app is a Nerd Font glyph: a character of the app's own mono font (JetBrainsMono Nerd
+Font). **Don't use an SVG for an icon** (nor a PNG, nor an icon from another library such as Lucide), even
+when it would be easier to centre (the user's rule, Nov 2026, after the AI icon was tried as an SVG and
+taken out again).
+
+Why:
+
+- **One look.** The glyphs come from one family (mostly its Material Design set, `nf-md-*`), so they share
+  a weight and a style. An icon from another library stands out beside them, in size and in line weight.
+- **They line up.** A glyph is sized by the font size, like the text beside it.
+- **They are text, so text effects work on them.** An icon takes the colour of what it is in (green for a
+  panel that is open, grey for one that isn't), and an animation on the text applies to it too: the inline
+  chat's icon pulses while the AI is working, after Enter, with no code for the icon itself.
+
+Rules:
+
+- **A new icon is a Nerd Font glyph**, from the Material set (`nf-md-*`) when it has one, so it matches the
+  others. Look it up on the Nerd Fonts cheat sheet and name it in a comment next to its code point.
+- **Defined once, by name**, in `ui/commands.py` (`ICON_TABLE`, `ICON_TERMINAL`, ...): the palette, the
+  bottom bar and the buttons all draw the same constant.
+- **One icon per meaning.** "The AI" is one icon everywhere it appears (`render.ai_icon`: the Chat toggle,
+  the inline AI buttons, the "Ask AI" row, the inline chat box).
+- **Centre it by its drawing, not its text cell.** A glyph is drawn from the left of its cell and is wider
+  than it, so centred as text it hangs to the right. Put it in a box as wide as its drawing (as `.ai-icon`
+  in `assets/app.css` does, with the measured width), so whatever centres the box centres the icon at any
+  size. Don't nudge it per button: that is what kept breaking.
+- **If no glyph fits, ask** before using anything else.
+
+Not icons, so not covered: pictures of things (the app's mark, character portraits, video thumbnails).
+
 ## Panels: what every panel has
 
 The same controls on every panel, so learning one teaches all of them (Omarchy's "one pattern everywhere").
