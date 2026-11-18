@@ -50,3 +50,11 @@ log as close to the source of the request as possible (the http call itself, etc
   skills to train tot write as short and information dense as possible. too verbose leads to less reading actual thing (beteter off less detail and ask if want detail for higher chance of reading information). perhaps can go through exercise with AI where we learn together. first we just gather information in markdown file of examples AI did and what want wrong. once have enough data we sifth through and come up with strategy of improvement (lets us quickly gather info in the moment but not break flow and learn via exmaple in additon to just aprior instruction)
 
 pagination as a real input: the vods widget (match videos list) hides `page` today (`Widget("vods", ..., hide=("page",))` in `services/ui/ui/widgets.py`; `find_match_videos(page: int = 1)` in `pkgs/ds/ai/smashtube.py`), so next/prev lives only in the view, not as an input i can set. want it as an input parameter, and generalized: sources paginate differently (smash-tube `page_id` 1..50 with 10 per page, start.gg `page`/`perPage`, others cursor or offset/limit), so have one `page: Page` parameter type that each source's function implements/translates to its own api params, and results report where they are (current, total/has_next) the same way. the page widget is interesting as an input: some functions get the whole list in one response, others are paginated by the api, but to the user the interface should be the same (same prev/next/page controls, same `page: Page` input for the AI and manual add), with slicing done locally when the source returns everything
+
+chat history collection: keep the chats (the app's, and claude code's) so i can write a blog from them, summarize them, and study how i learned. a big area: seeing how i prompt and work with AI over time helps me improve it, and lets others see how i prompt. id want to see the whole didnt have ida, pocing, exploration, to refactor mature fine domain (especially space when not matured)
+
+myst parser and writer in the app, so i can write notes in here (the docs are MyST already)
+
+/tutorial in the chat, with /tutorial-next etc to step through it
+
+claude code hand off integration

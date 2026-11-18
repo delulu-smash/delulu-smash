@@ -220,7 +220,7 @@ export function CellEditor({ initialCode, completeUrl, editUrl, token, keys, onR
           // Shortcut.RUN_ALL / CLEAR_OUTPUTS / CELL_BELOW / DELETE_CELL / CELL_UP / CELL_DOWN
           { key: keys?.runAll || "Mod-Shift-Enter", run: runAll },
           { key: keys?.clearOutputs || "Alt-z", run: clearOutputs },
-          { key: keys?.cellBelow || "Alt-Enter", run: addBelow },
+          { key: keys?.cellBelow || "Alt-n", run: addBelow },
           { key: keys?.deleteCell || "Alt-Backspace", run: deleteCell },
           { key: keys?.cellUp || "Alt-ArrowUp", run: (view) => moveCell(view, -1) },
           { key: keys?.cellDown || "Alt-ArrowDown", run: (view) => moveCell(view, 1) },

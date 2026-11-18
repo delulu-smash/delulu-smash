@@ -33,6 +33,10 @@
     return KEY_CODES[key] ? event.code === KEY_CODES[key] : event.key === key;
   };
 
+  // a shortcut's key or its second one (Binding.also in shortcuts.py)
+  const ALSO = window.SHORTCUTS_ALSO || {};
+  const pressed = (event, name) => Boolean(SHORTCUTS[name] && matches(event, SHORTCUTS[name])) || Boolean(ALSO[name] && matches(event, ALSO[name]));
+
   let lastTarget = null;
   const paneOf = (node) => (node instanceof Element ? node.closest("[data-pane]") : null);
   const visible = (node) => node && node.isConnected && node.offsetParent !== null;
@@ -233,7 +237,9 @@
   // a menu with a search box (ui.menu_search): typing keeps the rows that have every
   // word and highlights the first; it starts with all rows, when the box takes focus on opening
   // The palette's "recently used": the ids of the last commands run (data-command), newest first,
-  // kept in this browser. They are listed first, by CSS order (the rows themselves are React's).
+  // kept in this browser. They are listed after the fixed first rows (data-pinned: help and the
+  // panels, commands.PALETTE_FIRST, which keep their place), by CSS order (the rows are React's).
+  const PINNED_ORDER = "-100";
   const RECENT_KEY = "delulu-smash.palette.recent";
   const MAX_RECENT = 5;
   const recent = () => {
@@ -244,7 +250,7 @@
       localStorage.setItem(RECENT_KEY, JSON.stringify([id, ...recent().filter((other) => other !== id)].slice(0, MAX_RECENT)));
     } catch { /* storage blocked: no recents */ }
   };
-  // rows as shown: recently used first, then as written
+  // rows as shown: the fixed first rows, recently used, then as written
   const menuRows = (search) => {
     const rows = [...search.closest(".menu").querySelectorAll(".menu-item")];
     return rows.sort((a, b) => Number(a.style.order || 0) - Number(b.style.order || 0));
@@ -258,8 +264,9 @@
     if (menu.matches("[data-palette]")) {
       const ids = recent();
       menu.querySelectorAll(".menu-item").forEach((row) => {
-        const at = ids.indexOf(row.dataset.command);
-        row.style.order = at < 0 ? "" : String(at - MAX_RECENT);
+        const pinned = !!row.dataset.pinned;
+        const at = pinned ? -1 : ids.indexOf(row.dataset.command);
+        row.style.order = pinned ? PINNED_ORDER : at < 0 ? "" : String(at - MAX_RECENT);
         row.classList.toggle("is-recent", at >= 0);
       });
     }
@@ -322,18 +329,18 @@
 
   // The Terminal pane (terminal.py) frames a page on the backend's origin, so its keys don't
   // reach this page: it sends its own pane keys here instead, to run as if pressed here.
-  const TERMINAL_KEYS = new Set([SHORTCUTS.TOGGLE_TERMINAL, SHORTCUTS.ZOOM_TERMINAL].filter(Boolean));
+  const TERMINAL_KEYS = new Set([SHORTCUTS.TOGGLE_TERMINAL, SHORTCUTS.ZOOM_TERMINAL, SHORTCUTS.CLOSE_ALL].filter(Boolean));
   window.addEventListener("message", (event) => {
     const data = event.data;
     if (!data || data.type !== "delulu-press" || !TERMINAL_KEYS.has(data.keys)) return;
-    const name = data.keys === SHORTCUTS.ZOOM_TERMINAL ? "zoom-terminal" : "terminal";
+    const name = { [SHORTCUTS.ZOOM_TERMINAL]: "zoom-terminal", [SHORTCUTS.CLOSE_ALL]: "close-all" }[data.keys] || "terminal";
     document.querySelector(`[data-toggle="${name}"]`)?.click();
-    focusTerminalSoon(name === "terminal" ? "TOGGLE_TERMINAL" : "ZOOM_TERMINAL");
+    focusTerminalSoon({ terminal: "TOGGLE_TERMINAL", "zoom-terminal": "ZOOM_TERMINAL", "close-all": "CLOSE_ALL" }[name]);
   });
   // after a key shows the Terminal: put the cursor in it (its page focuses the shell); after one
   // hides it: back to the page, so the app's keys work again
   function focusTerminalSoon(name) {
-    if (name !== "TOGGLE_TERMINAL" && name !== "ZOOM_TERMINAL") return;
+    if (name !== "TOGGLE_TERMINAL" && name !== "ZOOM_TERMINAL" && name !== "CLOSE_ALL") return;
     setTimeout(() => {
       const frame = document.querySelector('[data-pane="terminal"] iframe');
       if (frame && visible(frame)) frame.focus();
@@ -402,10 +409,10 @@
       items[(next + items.length) % items.length].focus();
       return;
     }
-    const toggle = [["TOGGLE_CHAT", "chat"], ["TOGGLE_RESULTS", "results"], ["TOGGLE_PYTHON", "python"], ["TOGGLE_VARIABLES", "variables"], ["TOGGLE_TERMINAL", "terminal"], ["TOGGLE_PYTHON_VARIABLES", "python-variables"],
+    const toggle = [["TOGGLE_CHAT", "chat"], ["TOGGLE_RESULTS", "results"], ["TOGGLE_PYTHON", "python"], ["TOGGLE_VARIABLES", "variables"], ["TOGGLE_TERMINAL", "terminal"], ["TOGGLE_PYTHON_VARIABLES", "python-variables"], ["CLOSE_ALL", "close-all"],
       ["ZOOM_CHAT", "zoom-chat"], ["ZOOM_RESULTS", "zoom-results"], ["ZOOM_PYTHON", "zoom-python"], ["ZOOM_VARIABLES", "zoom-variables"], ["ZOOM_TERMINAL", "zoom-terminal"],
       ["HELP", "help"], ["DEBUG", "debug"], ["PALETTE", "palette"]]
-      .find(([name]) => SHORTCUTS[name] && matches(event, SHORTCUTS[name]));
+      .find(([name]) => pressed(event, name));
     if (toggle) {
       const button = document.querySelector(`[data-toggle="${toggle[1]}"]`);
       if (button) {

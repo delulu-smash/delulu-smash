@@ -17,7 +17,7 @@ import pytest
 APP_DIR = Path(__file__).resolve().parents[3] / "services" / "ui"
 sys.path.insert(0, str(APP_DIR))
 
-from ui import session  # noqa: E402
+from ui import commands, session  # noqa: E402
 from ui import state as state_module  # noqa: E402
 from ui.commands import COMMANDS, RUNNABLE, SLASH, Command, parse_slash  # noqa: E402
 from ui.inline_fill import Fill  # noqa: E402
@@ -296,3 +296,10 @@ def test_a_refused_call_is_not_sent_and_goes_back_in_the_box():
     assert "restoreChatBox" in str(back)
     assert [(item.kind, item.name) for item in made.chat] == [("mention", "not sent")]
     assert "write_csv() isn't allowed" in made.chat[0].detail
+
+
+def test_the_palette_starts_with_help_and_the_panels() -> None:
+    first = [command.title for command in commands.PALETTE[: len(commands.PALETTE_FIRST)]]
+    assert first == ["Help", "Chat", "Python console", "Terminal", "Results", "Variables"]
+    # every command is still listed, once
+    assert sorted(c.id for c in commands.PALETTE) == sorted(c.id for c in commands.COMMANDS)

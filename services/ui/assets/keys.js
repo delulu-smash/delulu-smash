@@ -46,10 +46,11 @@
     setActive(shown()[0] || null);
   };
 
-  const open = () => {
+  // text: what the search box starts with (a panel's "?" button: that panel's keys)
+  const open = (text = "") => {
     before = document.activeElement;
     const search = palette().querySelector("[data-keys-search]");
-    search.value = "";
+    search.value = text;
     palette().classList.add("is-open");
     filter();
     search.focus();
@@ -93,6 +94,9 @@
     if (event.target.matches?.("[data-keys-search]")) filter();
   });
   document.addEventListener("click", (event) => {
-    if (event.target.closest?.("[data-keys-close]")) close();
+    if (event.target.closest?.("[data-keys-close]")) return close();
+    // a panel's "?" button (ui.keys_button): the list, filtered to that panel's keys
+    const button = event.target.closest?.("[data-keys-open]");
+    if (button && palette()) open(`${button.dataset.keysOpen} `);
   });
 })();

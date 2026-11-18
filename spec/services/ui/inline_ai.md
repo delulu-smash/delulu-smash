@@ -31,7 +31,10 @@ three by its row in `WIDGETS`.
 - **The AI works on what is on screen**: the inputs as typed, run or not, and its own last proposal.
 - **And on the variables the instruction mentions** (`@q1`, experimental: `variables.md`, "Mentions"): it is
   told what they hold, as text. It still has no tools, so a big one is a summary.
-- **One key.** `Alt+I` means "inline AI here" everywhere: code in an editor, inputs in a widget. An editor
+- **In the Terminal it writes the command and never runs it**: the command is typed at the prompt, from the
+  ask and the text on screen; Enter is the user's.
+- **One key.** `Alt+I` means "inline AI here" everywhere: code in an editor, inputs in a widget, a command
+  in the Terminal. An editor
   inside a widget (the SmashDb console's SQL box) keeps the editor meaning.
 - **It reads the chat and adds nothing to it.** Each call is logged and costed like a chat turn.
 - **No tools.** The inline AI answers in one request from what it is given. Looking things up is the chat's job.

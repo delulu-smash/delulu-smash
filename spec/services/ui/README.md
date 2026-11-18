@@ -51,8 +51,8 @@ A new panel gets all of these; a panel missing one is a bug.
 
 | | Rule | Today |
 | --- | --- | --- |
-| **Key** | `Alt+<letter>` shows or hides it, from anywhere, **including from inside it**: a panel whose content takes the keyboard (the Terminal's shell) hands its own keys back to the app. Showing it by its key puts the cursor in it | `Alt+A` chat (AI), `Alt+R` Results, `Alt+J` Python (Jupyter), `Alt+V` Variables, ``Alt+` `` Terminal (VS Code's terminal key, Ctrl+\`, with the app's Alt) |
-| **Full screen** | `Alt+Shift+<the same letter>` fills the window with it, from anywhere, even when hidden; the same key again puts the layout back. `Alt+F` does it for the panel you are in | `Alt+Shift+A` / `R` / `J` / `V` / `` ` `` |
+| **Key** | `Alt+<letter>` shows or hides it, from anywhere, **including from inside it**: a panel whose content takes the keyboard (the Terminal's shell) hands its own keys back to the app. Showing it by its key puts the cursor in it | `Alt+A` chat (AI), `Alt+R` Results, `Alt+J` Python (Jupyter), `Alt+V` Variables, ``Alt+` `` Terminal (VS Code's terminal key, Ctrl+\`, with the app's Alt), also `Alt+Enter` (Omarchy's `SUPER+Enter` opens a terminal) |
+| **Full screen** | `Alt+Shift+<the same letter>` fills the window with it, from anywhere, even when hidden; the same key again puts the layout back. `Alt+F` does it for the panel you are in | `Alt+Shift+A` / `R` / `J` / `V` / `` ` `` (Terminal also `Alt+Shift+Enter`) |
 | **Title strip** | the same height on every panel (`--panel-head`), flush with its neighbours; it ends with ⤢ (full screen) and × (close: the same as its key). Its title may be left out to keep the panel bare (the chat has none; its model is in the window's title bar) | `zoom_button`, `close_button` in `ui/ui.py` |
 | **Bottom bar** | one toggle per panel, lit while it is shown, in panel order | 🤖 ▦ 🐍 ⚙ >_ |
 | **Palette** | a "Show / Hide <panel>" row and a "Full screen: <panel>" row in `Alt+P` | `commands.py` |
@@ -72,6 +72,17 @@ The chat can answer how to use the app (`services/ui/guide.md`, loaded by the ch
   no file or function names. Short: the guide is sent whole to the model.
 - Lists that exist as data (slash commands, keys) are added from the code, never retyped in the guide.
 - The agent answers app questions from the guide only, and says when the guide doesn't cover something.
+
+## Settings
+
+The app's settings are one `Config` class (`services/ui/ui/config.py`) read from `services/ui/config.toml`.
+
+- **A setting is a private variable plus a property that holds its default.** Adding one is those lines:
+  its inputs, form, file key, `set_<name>` and Config tab row are derived, never written per setting.
+- **Changed through `set_config`**, a function like any widget's tool: the Config widget's form and inline AI
+  come from it. The user runs a change; the chat agent has no tool for it.
+- **Hot reload, no cache**: a setting is read from the file on each use; a change shows without a restart.
+- **A bad value changes nothing**, and a file that can't be used leaves the defaults and says why.
 
 - [omarchy.md](omarchy.md): navigation, keys and many other parts of the app follow Omarchy, the desktop
   it runs on.

@@ -11,10 +11,8 @@ import { Compartment, Prec, StateEffect, StateField } from "@codemirror/state";
 import { Decoration, EditorView, keymap, showPanel } from "@codemirror/view";
 import { isolateHistory, undo } from "@codemirror/commands";
 import { unifiedMergeView } from "@codemirror/merge";
-
-// The robot the bottom bar's Chat toggle shows (ui.py ICON_CHAT, a Nerd Font glyph): one icon
-// for "the AI" everywhere.
-const ICON_AI = "\u{F06A9}";
+// the box itself (robot, input, status, its look): the same one the Terminal's inline chat shows
+import { inlineBox } from "./inline_box.js";
 
 // the open box's controls, by editor, for the editor's own Tab / Esc
 const boxes = new WeakMap();
@@ -42,6 +40,13 @@ const setText = (view, next, effects) => {
 };
 
 export function inlineEdit(config) {
+  // whether a key press is the inline chat's key (config().key, as CodeMirror spells it: "Alt-i")
+  const isKey = (event) => {
+    const parts = (config().key || "Alt-i").split("-");
+    const letter = parts.pop();
+    return event.code === `Key${letter.toUpperCase()}` && event.altKey === parts.includes("Alt")
+      && event.ctrlKey === parts.includes("Ctrl") && event.shiftKey === parts.includes("Shift") && !event.metaKey;
+  };
   // {from, to}: open on that range (the selection when the key was pressed); null: close
   const toggle = StateEffect.define();
   const diff = new Compartment();
@@ -91,15 +96,15 @@ export function inlineEdit(config) {
       const at = view.state.field(range);
       return at && at.from < at.to;
     };
-    const dom = el("div", "cm-inline-edit");
-    const input = el("input", "cm-inline-edit-input");
-    input.placeholder = selected() ? "Change the selection…" : "Write or change this code…";
-    input.spellcheck = false;
-    const status = el("span", "cm-inline-edit-status", "Enter asks AI · Esc closes");
+    const shell = inlineBox({
+      placeholder: selected() ? "Change the selection…" : "Write or change this code…",
+      hint: "Enter asks AI · Esc closes",
+    });
+    const { dom, input, status } = shell;
     const accept = el("button", "act", "Accept");
     const discard = el("button", "act", "Discard");
     accept.hidden = true;
-    dom.append(el("span", "cm-inline-edit-icon", ICON_AI), input, status, accept, discard);
+    dom.append(accept, discard);
 
     /** Take the proposal back out: an undo when the text is still as proposed (so the undo history
      *  is as before), else a change back to the text it was made from. */
@@ -126,9 +131,8 @@ export function inlineEdit(config) {
       const instruction = input.value.trim();
       if (!instruction) return;
       const id = ++asked;
-      status.textContent = "Thinking…";
-      status.classList.remove("is-error");
-      dom.classList.add("is-thinking"); // the icon and status pulse (app.css)
+      shell.say("Thinking…");
+      shell.thinking(true); // the icon and status pulse (inline_box.js)
       // the first ask fixes what is being changed; refining asks again about the same text
       const code = proposal === null ? view.state.doc.toString() : base;
       // nothing selected: the whole text is the target (the answer replaces it, not "insert at the cursor")
@@ -156,30 +160,35 @@ export function inlineEdit(config) {
       // the title bar's context meter adds this call's cost (State.refresh_usage), even when the box was closed
       document.querySelector("[data-usage-refresh]")?.click();
       if (closed || id !== asked) return;
-      dom.classList.remove("is-thinking");
+      shell.thinking(false);
       // what the call used (session.TurnUsage.summary), also on a failure
       const used = answer.usage ? ` · ${answer.usage}` : "";
       view.dispatch({ effects: thinking.of(null) });
       if (answer.error) {
-        status.textContent = answer.error + used;
-        status.classList.add("is-error");
+        shell.say(answer.error + used, "error");
         return;
       }
       if (proposal !== null) revert([]); // one proposal at a time: the last one goes first
       [base, target, proposal] = [code, at, answer.code];
       shown = code.slice(0, at.from) + proposal + code.slice(at.to);
       setText(view, shown, diff.reconfigure(unifiedMergeView({ original: base, mergeControls: false })));
-      status.textContent = `Tab accepts · Esc discards · Enter refines${used}`;
+      shell.say(`Tab accepts · Esc discards · Enter refines${used}`);
       status.title = "This call: cost · input tokens · output tokens · model requests (details in the debug log)";
       accept.hidden = false;
     };
 
-    const controls = { accept: () => close(true), discard: () => close(false), focus: () => input.focus(),
+    const controls = { accept: () => close(true), discard: () => close(false),
       pending: () => proposal !== null };
     boxes.set(view, controls);
     accept.addEventListener("click", controls.accept);
     discard.addEventListener("click", controls.discard);
     input.addEventListener("keydown", (event) => {
+      // the key that opened the box closes it too (as Esc)
+      if (isKey(event)) {
+        event.preventDefault();
+        event.stopPropagation();
+        return controls.discard();
+      }
       const handled = { Enter: ask, Escape: controls.discard, Tab: proposal !== null ? controls.accept : null }[event.key];
       if (!handled) return;
       // stop it here: the page's Esc (panes.js) would also close a floating view
@@ -203,7 +212,7 @@ export function inlineEdit(config) {
     if (!config().url) return false;
     const current = boxes.get(view);
     if (current) {
-      current.focus();
+      current.discard(); // the key again closes the box (as Esc)
       return true;
     }
     const { from, to } = view.state.selection.main;

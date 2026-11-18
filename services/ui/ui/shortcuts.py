@@ -19,6 +19,8 @@ class Binding:
     by "+", eg "Alt+F", "Ctrl+Enter", "Escape"."""
     where: str
     what: str
+    also: str = ""
+    """A second key for the same thing, matched as `keys` is (panes.js), eg "Alt+Enter"."""
 
 
 class Shortcut(Enum):
@@ -33,7 +35,10 @@ class Shortcut(Enum):
     TOGGLE_RESULTS = Binding("Alt+R", "anywhere", "Show or hide the Results pane")
     TOGGLE_PYTHON = Binding("Alt+J", "anywhere", "Show or hide the Python (Jupyter) pane")
     # Alt+` as VS Code's Ctrl+` (the app's keys are Alt); matched by position: Shift makes it ~
-    TOGGLE_TERMINAL = Binding("Alt+`", "anywhere", "Show or hide the Terminal pane: a shell on this machine")
+    # also Alt+Enter, as Omarchy's SUPER+Enter opens a terminal (with Shift: full screen)
+    TOGGLE_TERMINAL = Binding(
+        "Alt+`", "anywhere", "Show or hide the Terminal pane: a shell on this machine", also="Alt+Enter"
+    )
     TOGGLE_VARIABLES = Binding(
         "Alt+V",
         "anywhere",
@@ -44,13 +49,19 @@ class Shortcut(Enum):
         "anywhere",
         "Show the Python and Variables panes together (opens whichever is hidden); hide both when both are open",
     )
+    # Alt+W as Omarchy's SUPER+W closes a window; also from inside the Terminal (terminal.py)
+    CLOSE_ALL = Binding(
+        "Alt+W", "anywhere", "Close every panel (and the help or debug panel): only the desktop's background shows"
+    )
     # One pane full screen, from anywhere (shown even if hidden); the same key
     # again restores the layout. Alt+F does it for the pane (or result) you are in.
     ZOOM_CHAT = Binding("Alt+Shift+A", "anywhere", "Full screen the AI chat pane (again: restore panes)")
     ZOOM_RESULTS = Binding("Alt+Shift+R", "anywhere", "Full screen the Results pane (again: restore panes)")
     ZOOM_PYTHON = Binding("Alt+Shift+J", "anywhere", "Full screen the Python pane (again: restore panes)")
     ZOOM_VARIABLES = Binding("Alt+Shift+V", "anywhere", "Full screen the Variables pane (again: restore panes)")
-    ZOOM_TERMINAL = Binding("Alt+Shift+`", "anywhere", "Full screen the Terminal pane (again: restore panes)")
+    ZOOM_TERMINAL = Binding(
+        "Alt+Shift+`", "anywhere", "Full screen the Terminal pane (again: restore panes)", also="Alt+Shift+Enter"
+    )
     HELP = Binding("Alt+H", "anywhere", "Show or hide this help")
     PALETTE = Binding(
         "Alt+P", "anywhere", "Command palette: run anything by name, eg add a widget (type to filter, arrows, Enter)"
@@ -76,7 +87,8 @@ class Shortcut(Enum):
     # outputs / New cell for when it is in none).
     RUN_ALL = Binding("Ctrl+Shift+Enter", "cell", "Run all cells, top to bottom")
     CLEAR_OUTPUTS = Binding("Alt+Z", "cell", "Clear every cell's output")
-    CELL_BELOW = Binding("Alt+Enter", "cell", "Add a cell below this one and go to it")
+    # Alt+N (new); it was Alt+Enter until that became the Terminal's second key
+    CELL_BELOW = Binding("Alt+N", "cell", "Add a cell below this one and go to it")
     DELETE_CELL = Binding("Alt+Backspace", "cell", "Delete this cell (the cursor goes to the one above)")
     CELL_UP = Binding("Alt+ArrowUp", "cell", "Go to the cell above")
     CELL_DOWN = Binding("Alt+ArrowDown", "cell", "Go to the cell below")
@@ -85,12 +97,13 @@ class Shortcut(Enum):
     # clicks the result's AI button, render.ai_toggle).
     INLINE_EDIT = Binding(
         "Alt+I",
-        "cell, SmashDb console, result with inputs",
+        "cell, SmashDb console, result with inputs, terminal",
         " ".join(
             [
                 "Inline chat, knowing the chat so far: ask AI to write or change the code",
-                "(the selection, else all; Tab accepts, Esc discards), or to fill a result's inputs",
-                "(you run them; Esc puts the old ones back)",
+                "(the selection, else all; Tab accepts, Esc discards), to fill a result's inputs",
+                "(you run them; Esc puts the old ones back), or to write a command at the",
+                "Terminal's prompt (you run it). The key again closes it",
             ]
         ),
     )
@@ -107,6 +120,11 @@ class Shortcut(Enum):
     def keys(self) -> str:
         return self.value.keys
 
+    @property
+    def shown(self) -> str:
+        """Its keys as listed for people: both when it has two, eg "Alt+` / Alt+Enter"."""
+        return f"{self.keys} / {self.value.also}" if self.value.also else self.keys
+
     def hint(self, text: str) -> str:
         """A tooltip with the shortcut, eg "Full screen (Alt+F)"."""
         return f"{text} ({self.keys})"
@@ -122,6 +140,7 @@ BROWSER_SHORTCUTS = (
     Shortcut.TOGGLE_VARIABLES,
     Shortcut.TOGGLE_TERMINAL,
     Shortcut.TOGGLE_PYTHON_VARIABLES,
+    Shortcut.CLOSE_ALL,
     Shortcut.ZOOM_CHAT,
     Shortcut.ZOOM_RESULTS,
     Shortcut.ZOOM_PYTHON,
@@ -141,7 +160,14 @@ def shortcuts_script() -> str:
     """JS that sets window.SHORTCUTS for panes.js, eg {"FULL_SCREEN":
     "Alt+F", "CLOSE": "Escape"}.
     """
-    return f"window.SHORTCUTS = {json.dumps({s.name: s.keys for s in BROWSER_SHORTCUTS})};"
+    also = {s.name: s.value.also for s in BROWSER_SHORTCUTS if s.value.also}
+    return " ".join(
+        [
+            f"window.SHORTCUTS = {json.dumps({s.name: s.keys for s in BROWSER_SHORTCUTS})};",
+            # second keys (Binding.also), by the same names: panes.js matches either
+            f"window.SHORTCUTS_ALSO = {json.dumps(also)};",
+        ]
+    )
 
 
 def codemirror_key(shortcut: Shortcut) -> str:

@@ -17,18 +17,26 @@ from starlette.testclient import TestClient
 APP_DIR = Path(__file__).resolve().parents[3] / "services" / "ui"
 sys.path.insert(0, str(APP_DIR))
 
-from ui import desktop  # noqa: E402
+from ui import config as config_module  # noqa: E402
 from ui.api import api  # noqa: E402
 from ui.state import PANES, State  # noqa: E402
 from ui.ui import PANELS  # noqa: E402
 
 
-def test_the_wallpaper_is_served_as_it_is_now(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+@pytest.fixture
+def config_file(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Path:
+    """A settings file of the test's own: the real services/ui/config.toml is never touched."""
+    file = tmp_path / "config.toml"
+    monkeypatch.setattr(config_module, "CONFIG_FILE", file)
+    return file
+
+
+def test_the_background_is_served_as_it_is_now(config_file: Path, tmp_path: Path) -> None:
     picture = tmp_path / "tree-tops.webp"
     picture.write_bytes(b"first")
     link = tmp_path / "background"  # as Omarchy's: a link with no extension
     link.symlink_to(picture)
-    monkeypatch.setattr(desktop, "BACKGROUND", link)
+    config_file.write_text(f'background = "{link}"\n', encoding="utf-8")
     client = TestClient(api)
     response = client.get("/background")
     assert response.status_code == 200
@@ -38,15 +46,19 @@ def test_the_wallpaper_is_served_as_it_is_now(monkeypatch: pytest.MonkeyPatch, t
     # the theme changed: the next request has the new picture
     picture.write_bytes(b"second")
     assert client.get("/background").content == b"second"
+    # the setting changed by hand: the next request follows it, with no restart
+    other = tmp_path / "other.png"
+    other.write_bytes(b"third")
+    config_file.write_text(f'background = "{other}"\n', encoding="utf-8")
+    assert client.get("/background").content == b"third"
 
 
-def test_a_machine_without_a_wallpaper_gets_a_404(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    monkeypatch.setattr(desktop, "BACKGROUND", tmp_path / "none")
+def test_a_machine_without_a_wallpaper_gets_a_404(
+    config_file: Path, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    assert not config_file.exists()
+    monkeypatch.setattr(config_module, "OMARCHY_BACKGROUND", tmp_path / "none")
     assert TestClient(api).get("/background").status_code == 404
-
-
-def test_the_default_is_omarchys_current_background() -> None:
-    assert Path.home() / ".local/state/omarchy/current/background" == desktop.BACKGROUND
 
 
 @pytest.mark.parametrize(

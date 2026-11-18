@@ -24,6 +24,7 @@ from ui.app_guide import app_guide_capability
 from ui.assign import assign_agent
 from ui.inline_edit import edit_agent
 from ui.inline_fill import fill_agent
+from ui.inline_terminal import command_agent
 from ui.session import tokens_text
 
 if TYPE_CHECKING:
@@ -318,6 +319,11 @@ AGENTS: list[AgentInfo] = [
         fill_agent,
         "Inline chat in a widget's tool form: fills its inputs (Alt+I)",
         "services/ui/ui/inline_fill.py",
+    ),
+    _info(
+        command_agent,
+        "Inline chat in the Terminal: writes a command at your prompt (Alt+I)",
+        "services/ui/ui/inline_terminal.py",
     ),
     _info(
         assign_agent,

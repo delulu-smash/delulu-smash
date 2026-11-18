@@ -16,20 +16,22 @@ import reflex as rx
 
 from ui.agents import AGENTS, DEFERRED, LOAD_TOOL, AgentInfo, CapabilityInfo, ToolInfo
 from ui.api import api
+from ui.commands import ICON_AI as ICON_CHAT
 from ui.commands import (
-    COMMANDS,
     ICON_BUG,
     ICON_CLOSE,
     ICON_PY,
     ICON_TERMINAL,
     ICON_VARIABLE,
+    PALETTE,
+    PALETTE_FIRST,
     RUNNABLE,
     SLASH,
     Command,
     slash_about,
 )
-from ui.commands import ICON_AI as ICON_CHAT
 from ui.commands import ICON_TABLE as ICON_RESULTS
+from ui.config import CONFIG_FILE
 from ui.editor import cell_editor
 from ui.render import (
     ICON_COLLAPSE,
@@ -157,6 +159,19 @@ def zoom_button(pane: str) -> rx.Component:
         title=rx.cond(State.zoomed == pane, key.hint("Restore panes"), key.hint("Full screen")),
         on_click=State.toggle_zoom(pane),
         class_name=rx.cond(State.zoomed == pane, "zoom-btn mono is-on", "zoom-btn mono"),
+    )
+
+
+def keys_button(search: str, what: str) -> rx.Component:
+    """A panel's "?": opens the keybindings list (Shortcut.KEYS) already filtered to that
+    panel's keys (assets/keys.js; search is what its box starts with, eg "cell").
+    """
+    return rx.el.button(
+        "?",
+        title=f"Keys of {what} ({Shortcut.KEYS.keys}: all keys)",
+        aria_label=f"Keys of {what}",
+        custom_attrs={"data-keys-open": search},
+        class_name="keys-btn mono",
     )
 
 
@@ -741,7 +756,12 @@ def palette_row(command: Command) -> rx.Component:
         on_click=[State.close_palette, run],
         # data-command: what "recently used" remembers;
         # data-words: found by these too (panes.js)
-        custom_attrs={"data-command": command.id, "data-words": command.words},
+        # data-pinned: one of the fixed first rows (commands.PALETTE_FIRST), never reordered
+        custom_attrs={
+            "data-command": command.id,
+            "data-words": command.words,
+            "data-pinned": "1" if command.id in PALETTE_FIRST else "",
+        },
         class_name="menu-item palette-item",
     )
 
@@ -755,7 +775,7 @@ def palette() -> rx.Component:
     """
     menu = rx.el.div(
         menu_search("Run a command…"),
-        *[palette_row(command) for command in COMMANDS],
+        *[palette_row(command) for command in PALETTE],
         rx.foreach(
             State.objects,
             lambda obj: rx.el.button(
@@ -892,10 +912,20 @@ def debug_panel() -> rx.Component:
                 "Agents",
                 "How each AI agent is set up: its prompt, capabilities and tools, and what this chat used",
             ),
+            debug_tab("config", "Config", "The app's settings: what each is now, and whether it is set or its default"),
             rx.el.span(class_name="spacer"),
             rx.match(
                 State.debug_tab,
                 ("agents", rx.fragment()),
+                (
+                    "config",
+                    rx.el.button(
+                        "Edit",
+                        on_click=State.add_widget("config"),
+                        title="Open the Config widget (also /config, or + in Results): change a setting and run",
+                        class_name="act",
+                    ),
+                ),
                 (
                     "spend",
                     rx.el.button(
@@ -942,11 +972,45 @@ def debug_panel() -> rx.Component:
         rx.match(
             State.debug_tab,
             ("agents", agents_view()),
+            ("config", config_view()),
             ("spend", spend_view()),
             ("system", system_view()),
             requests_view(),
         ),
         class_name=rx.cond(State.debug_full, "debug-panel sans is-full", "debug-panel sans"),
+    )
+
+
+def config_view() -> rx.Component:
+    """The Config tab (config.py): every setting with the value in use and whether it is set
+    or on its default. Read-only: Edit opens the Config widget, where a setting is changed.
+    """
+    return rx.el.div(
+        rx.cond(State.config_problem != "", rx.el.div(State.config_problem, class_name="config-problem")),
+        rx.el.table(
+            rx.el.thead(rx.el.tr(*[rx.el.th(head) for head in ("setting", "value", "", "type", "what it is")])),
+            rx.el.tbody(
+                rx.foreach(
+                    State.config_rows,
+                    lambda row: rx.el.tr(
+                        rx.el.td(row["name"], class_name="mono"),
+                        rx.el.td(row["value"], class_name="mono config-value"),
+                        rx.el.td(
+                            row["state"],
+                            class_name=rx.cond(row["state"] == "set", "config-state is-set", "config-state dim"),
+                        ),
+                        rx.el.td(row["type"], class_name="mono dim"),
+                        rx.el.td(row["about"], class_name="dim"),
+                    ),
+                )
+            ),
+            class_name="config-table",
+        ),
+        rx.el.div(
+            f"Kept in services/ui/{CONFIG_FILE.name}: a setting left out of it is on its default.",
+            class_name="dim perf-hint",
+        ),
+        class_name="config-view",
     )
 
 
@@ -1497,7 +1561,7 @@ def help_panels() -> rx.Component:
     """The help panel's first section: the panels and their keys (show or hide, full screen),
     then the palette. What to press when the window is empty (the desktop).
     """
-    rows = [(name, toggle.keys, f"full screen {zoom.keys}") for name, toggle, zoom in PANELS]
+    rows = [(name, toggle.shown, f"full screen {zoom.shown}") for name, toggle, zoom in PANELS]
     rows.append(("Everything else", Shortcut.PALETTE.keys, "the command palette"))
     return rx.el.div(
         rx.el.div(
@@ -1537,7 +1601,7 @@ def help_panel() -> rx.Component:
                 rx.el.tbody(
                     *[
                         rx.el.tr(
-                            rx.el.td(rx.el.kbd(shortcut.keys), class_name="help-keys"),
+                            rx.el.td(rx.el.kbd(shortcut.shown), class_name="help-keys"),
                             rx.el.td(shortcut.value.what),
                             rx.el.td(shortcut.value.where, class_name="help-where dim"),
                         )
@@ -1585,13 +1649,13 @@ def keys_palette() -> rx.Component:
             rx.el.div(
                 *[
                     rx.el.div(
-                        rx.el.kbd(shortcut.keys, class_name="keys-combo"),
+                        rx.el.kbd(shortcut.shown, class_name="keys-combo"),
                         rx.el.span("→", class_name="keys-arrow dim"),
                         rx.el.span(shortcut.value.what, class_name="keys-what"),
                         rx.el.span(shortcut.value.where, class_name="keys-where dim"),
                         class_name="keys-row",
                         custom_attrs={
-                            "data-keys-row": f"{shortcut.keys} {shortcut.value.what} {shortcut.value.where}".lower(),
+                            "data-keys-row": f"{shortcut.shown} {shortcut.value.what} {shortcut.value.where}".lower(),
                             # Enter runs it, as in Omarchy's list (""
                             # = not one a key press alone can run)
                             "data-keys-run": shortcut.keys if shortcut in RUNNABLE else "",
@@ -1700,13 +1764,15 @@ def terminal_pane() -> rx.Component:
         rx.el.div(
             rx.el.span(rx.el.span(ICON_TERMINAL, class_name="mono accent-green icon"), "Terminal"),
             rx.el.span(class_name="spacer"),
+            keys_button("terminal", "the Terminal"),
             zoom_button("terminal"),
             close_button("terminal"),
             class_name="console-head sans",
         ),
         rx.cond(
             State.terminal_started,
-            rx.el.iframe(src=TERMINAL_URL, title="Terminal", class_name="terminal-frame"),
+            # the token: its Alt+I inline chat's calls are this session's (inline_terminal.py)
+            rx.el.iframe(src=TERMINAL_URL + "?token=" + State.token, title="Terminal", class_name="terminal-frame"),
         ),
         class_name=rx.match(
             State.terminal_layout,
@@ -1742,6 +1808,7 @@ def notebook() -> rx.Component:
             ),
             rx.el.span(class_name="spacer"),
             rx.cond(State.running, rx.el.span("running…", class_name="dim")),
+            keys_button("cell", "the Python console"),
             zoom_button("python"),
             close_button("python"),
             class_name="console-head sans",
@@ -2029,13 +2096,18 @@ def statusbar() -> rx.Component:
 
 
 def desktop() -> rx.Component:
-    """What the window shows when no panel does, as a desktop: this machine's wallpaper
-    (BACKGROUND_URL; none on a machine without one, so the plain background stays). Nothing
-    else: the keys that bring the panels back are the help panel's first section (help_panels).
+    """What the window shows when no panel does, as a desktop: the background setting's
+    picture (config.background, by default this machine's wallpaper; none on a machine
+    without one, so the plain background stays). Nothing else: the keys that bring the panels
+    back are the help panel's first section (help_panels).
     """
     return rx.cond(
         State.no_panels,
-        rx.el.div(style={"background_image": f"url({BACKGROUND_URL})"}, class_name="desktop"),
+        # ?v=<the setting>: a new background setting is a new url, so it is fetched again
+        rx.el.div(
+            style={"background_image": "url(" + BACKGROUND_URL + "?v=" + State.config["background"] + ")"},
+            class_name="desktop",
+        ),
     )
 
 
@@ -2044,7 +2116,14 @@ def index() -> rx.Component:
         rx.el.div(
             # the app's mark: the user's GitHub profile picture (assets/avatar.png, 96 px),
             # drawn as a small circle in place of the name
-            rx.el.img(src="/avatar.png", alt="delulu-smash", title="delulu-smash", class_name="avatar"),
+            # a click opens the command palette (as Shortcut.PALETTE)
+            rx.el.button(
+                rx.el.img(src="/avatar.png", alt="delulu-smash", class_name="avatar"),
+                title=Shortcut.PALETTE.hint("delulu-smash: command palette"),
+                aria_label="Command palette",
+                on_click=State.toggle_palette,
+                class_name="avatar-btn",
+            ),
             # the chat agent's model (agents.py; every agent's
             # setup is in the debug panel's Agents tab)
             rx.el.span(AGENTS[0].model_name, title=f"Chat model: {AGENTS[0].model}", class_name="chat-model mono"),
@@ -2093,6 +2172,8 @@ def index() -> rx.Component:
         rx.el.button(
             on_click=State.toggle_python_variables, hidden=True, custom_attrs={"data-toggle": "python-variables"}
         ),
+        # ... and on Shortcut.CLOSE_ALL
+        rx.el.button(on_click=State.close_all, hidden=True, custom_attrs={"data-toggle": "close-all"}),
         # ... and on Shortcut.ZOOM_CHAT / ZOOM_RESULTS / ZOOM_PYTHON / ZOOM_VARIABLES
         *[
             rx.el.button(on_click=State.toggle_zoom(pane), hidden=True, custom_attrs={"data-toggle": f"zoom-{pane}"})

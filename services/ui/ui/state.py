@@ -19,6 +19,7 @@ from ds.util.logging import logger
 
 from ui import agents, assign, logs, mentions, perf, spend, variables
 from ui.commands import SLASH, parse_slash
+from ui.config import config as app_config
 from ui.db_console import DbConsole, clean_sql
 from ui.inline_fill import fill as fill_inputs
 from ui.render import ASK_FIELD, Ui, ViewData, apply_event, drop_proposal, fill_defaults, rerun_inputs, to_view
@@ -282,6 +283,14 @@ class State(rx.State):
     # agents.py). The panel opens on Requests; Logfire is only queried when the Spend tab is
     # clicked or its Refresh pressed (the agents' info needs no request).
     debug_tab: str = "requests"
+    # the app's settings in use, as text by name (config.py): what the page reads a setting
+    # from (eg the desktop's picture), re-read whenever the session is (State._sync), so a
+    # change made in the Config widget or a cell shows at once
+    config: dict[str, str] = {}
+    # the debug panel's Config tab: every setting (name, type, value, state, about), and why
+    # the file couldn't be used as it is ("" = fine)
+    config_rows: list[dict[str, str]] = []
+    config_problem: str = ""
     # the panel fills the window (its button, Shortcut.FULL_SCREEN
     # while it is open); kept when it closes
     debug_full: bool = False
@@ -380,6 +389,23 @@ class State(rx.State):
             self._load_debug()
             if self.debug_tab == "agents":
                 self._load_agents()
+            self._load_config()
+
+    def _load_config(self) -> None:
+        """The settings as they are now: for the page (State.config) and the Config tab."""
+        settings = app_config.settings()
+        self.config = {setting.name: setting.value for setting in settings}
+        self.config_problem = app_config.problem
+        self.config_rows = [
+            {
+                "name": setting.name,
+                "type": setting.type,
+                "value": setting.value,
+                "state": "default" if setting.is_default else "set",
+                "about": setting.about,
+            }
+            for setting in settings
+        ]
 
     def _load_agents(self) -> None:
         """The Agents tab's live part: what this chat's model
@@ -393,6 +419,7 @@ class State(rx.State):
         """
         with perf.span("sync tabs"):  # timed (the System tab): it makes a view of every variable
             self._sync_now(prefer)
+        self._load_config()
 
     def _sync_now(self, prefer: str) -> None:
         session = self._session()
@@ -901,6 +928,8 @@ class State(rx.State):
         self.debug_tab = tab
         if tab == "agents":
             self._load_agents()
+        if tab == "config":
+            self._load_config()
         if tab == "spend":
             return State.load_spend
         if tab == "system":
@@ -1123,6 +1152,7 @@ class State(rx.State):
             drop_proposal(ui)
         ui.running = False
         self._new_result(slot, ui, replaced=not ui.error)
+        self._load_config()  # the form may be the Config widget's: the page reads its settings
         self._refresh_debug()
 
     async def _ask_ai(self, slot: str, view: Any, ui: Ui, inputs: dict[str, Any], instruction: str):
@@ -1428,6 +1458,16 @@ class State(rx.State):
         self.show_python = self.show_variables = not both
         if self._vars_on():
             self._sync_vars()  # not kept current while hidden
+
+    @event
+    def close_all(self):
+        """Shortcut.CLOSE_ALL: hide every pane, the help and the debug panel (and leave full
+        screen), so the window is the desktop (no_panels, ui.desktop).
+        """
+        self.zoomed = ""
+        for pane in PANES:
+            setattr(self, f"show_{pane}", False)
+        self.show_help = self.show_debug = False
 
     def _new_cell(self) -> Cell:
         self.cell_seq += 1

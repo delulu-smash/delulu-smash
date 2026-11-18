@@ -336,8 +336,9 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
     and full screen, `Python:` new cell / run all / clear outputs, `Results:` close all tabs, `AI:` the two
     inline chats, `App:` keybindings, help, debug log. A new command is one row there.
   - `Go to: r1` rows list the open results: the palette is also a tab switcher.
-  - The commands you ran last come first, marked "recent" (the last 5, remembered in this browser's
-    localStorage by `assets/panes.js`).
+  - The first rows are fixed (`commands.PALETTE_FIRST`): Help, then Chat, Python, Terminal, Results, Variables.
+    After them come the commands you ran last, marked "recent" (the last 5, remembered in this browser's
+    localStorage by `assets/panes.js`), then the rest as written.
   - A command that acts where you are (full screen, inline chat) uses where you were before the palette
     opened: the result or pane, or the editor you were last in.
 - **Slash commands** (`Command.slash` in `ui/commands.py`, `assets/slash.js`): a palette command
@@ -494,11 +495,15 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   its top right that floats it over the page, nearly full screen; click it again, press Esc or click
   outside to put it back. It is the same component, only restyled in the browser (`.is-floating`,
   `assets/panes.js`), so its sort, filter and playing video carry on.
+- **A second key** (`Binding.also`): a shortcut can have one more key for the same thing, matched wherever
+  the first is and listed beside it (`Alt+\` / Alt+Enter`). Today the Terminal's two: `Alt+Enter` shows or
+  hides it, as Omarchy's `SUPER+Enter` opens a terminal, and `Alt+Shift+Enter` is its full screen. Both work
+  from anywhere, also from inside the shell and a Python cell.
 - **Keyboard shortcuts** are all defined once, in `ui/shortcuts.py`, as the `Shortcut` enum named
   by what they do (`Shortcut.FULL_SCREEN`, `Shortcut.RUN`, …). The help panel, tooltips, the cell editor's
   keymap (`codemirror_keys`) and `assets/panes.js` (`window.SHORTCUTS`) all read it: change a key there only.
 - **Panes**: each pane's title has an expand arrow (full screen) and a × that closes it (as its toggle; closing a
-  full-screen pane goes back to the layout without it). The bottom bar toggles Chat (Alt+A, A for AI), Results (Alt+R), Python (Alt+J, J for Jupyter; Alt+P is the command palette), Variables (Alt+V) and the Terminal (``Alt+` ``, as VS Code's Ctrl+\`; an experiment), as in Zed. What every panel has is in `spec/services/ui/README.md` ("Panels"). Add Shift to make that pane full screen, from anywhere and even when it is hidden (`Alt+Shift+A` / `R` / `J` / `V`; the same key again restores the panes; `Alt+F` does it for the pane you are in). `Alt+Ctrl+J` works the Python and Variables panes as a pair: it shows both (so with one open it opens the other), and hides both only when both are open. (Neither letter follows
+  full-screen pane goes back to the layout without it). The bottom bar toggles Chat (Alt+A, A for AI), Results (Alt+R), Python (Alt+J, J for Jupyter; Alt+P is the command palette), Variables (Alt+V) and the Terminal (``Alt+` ``, as VS Code's Ctrl+\`; an experiment), as in Zed. What every panel has is in `spec/services/ui/README.md` ("Panels"). Add Shift to make that pane full screen, from anywhere and even when it is hidden (`Alt+Shift+A` / `R` / `J` / `V`; the same key again restores the panes; `Alt+F` does it for the pane you are in). `Alt+W` closes every panel (as Omarchy's `SUPER+W` closes a window), so only the desktop's background shows. `Alt+Ctrl+J` works the Python and Variables panes as a pair: it shows both (so with one open it opens the other), and hides both only when both are open. (Neither letter follows
   Omarchy, where `SUPER+P` / `SUPER+J` are window layout actions with nothing comparable here.) Only the chat
   shows at first (results also unfold inline in it, and `open →` brings up Results); a pane
   whose neighbour is hidden takes the freed space. Hidden cells keep their text.
@@ -510,12 +515,35 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   part of the desktop. The value is written in the CSS, not read from the theme: another Omarchy theme
   needs it changed there.
 - **Desktop** (`ui/desktop.py`, `ui.desktop`): with every panel hidden (`State.no_panels`) the window shows
-  this machine's wallpaper, as a desktop does, and nothing else: the keys that bring the panels back are
-  the first section of the help panel (`?`, `Alt+H`). The picture is `desktop.BACKGROUND`, the one place that says which file:
-  Omarchy's `~/.local/state/omarchy/current/background`, a link it repoints to the current theme's
-  background. The backend serves it at `GET /background`, read from disk on each request and sent with
-  `Cache-Control: no-store` (no cache), so a theme change shows on the next reload. A machine without the
+  the `background` setting's picture (see Config; by default this machine's wallpaper), as a desktop does, and nothing else: the keys that bring the panels back are
+  the first section of the help panel (`?`, `Alt+H`). The default is Omarchy's `~/.local/state/omarchy/current/background`, a link it repoints to the
+  current theme's background. The backend serves it at `GET /background`, read from disk on each request and
+  sent with `Cache-Control: no-store` (no cache); the page asks for `/background?v=<the setting>`, so a new
+  setting is fetched at once and a theme change shows on the next reload. A machine without the
   file gets a 404 and the plain dark background. Nothing shows behind an open panel.
+- **Config: the app's settings** (`ui/config.py`, `services/ui/config.toml`): a `Config` class read from a
+  TOML file in the repo, changed while the app runs. Today one setting, `background`.
+  - **A setting is a private variable and a property**: `self.__background: Path | None = None` (None = not
+    set) and `@property def background(self) -> Path`, which returns it or its default. The property's
+    return type is the input's type and its docstring the help text. An optional `check_<name>(value)`
+    refuses a value (`background`: the file must exist).
+  - **Everything else is derived from the properties**, so a new setting is those lines and nothing more:
+    `set_config(...)`'s parameters (its signature is built at import), `config.set_<name>(value)`, the
+    file's keys, the Config widget's form and the Config tab.
+  - **Changing one**: the **Config widget** (`/config`, `+` → Config, or `Edit` in the debug panel's Config
+    tab) is a tool form on `set_config`, as VODs is on its tool: its inputs start as what is set now, an
+    emptied input means "back to the default", Run applies it, and `Alt+I` has the AI fill the inputs (you
+    run them). In a Python cell, `config` is predefined: `config.background`, `config.set_background("~/x.png")`.
+    The chat agent has no tool for it.
+  - **Hot reload**: a setting is read from the file each time it is used (no cache, no watcher), so a hand
+    edit applies on the next request. A change made in the app is written to the file and the page's copy
+    (`State.config`, re-read with the session) updates at once; what shows a setting references
+    `State.config["<name>"]`.
+  - **The file** holds only what is set (a missing key = the default); a path under `$HOME` is written with
+    `~` so it works on every machine. A value that is refused changes nothing. A file that can't be read, a
+    refused value in it or an unknown key leaves the defaults in use, and the Config tab says why.
+  - **Debug panel → Config** (`Alt+D`): every setting with its value in use, `set` or `default`, type and
+    what it is. Read-only; `Edit` opens the widget.
 - **Variables** (`Alt+V`, the bottom bar's fourth toggle; `ui/variables.py`; what must hold is in
   `spec/services/ui/variables.md`): a pane at the right of Results / Python listing the
   session's Python names that are data: the agent's results (`r1`, …), a SmashDb console's saves (`q1`, …),
@@ -561,13 +589,28 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   video. Leaving a tab stops its video; it is back, paused, when you return. Prev / Next fetch the search's other
   pages. Videos whose uploader disabled embedding show YouTube's own message; use the "Open ↗" button.
   The player is the Browser widget's frame (`render.web_frame`) with the list's own button added.
+- **A panel's `?`** (`ui.keys_button`; today the Python console and the Terminal): opens the keybindings list
+  (`Alt+K`) with its search box already holding that panel's word (`cell`, `terminal`), so only its keys show.
+  The picture in the title bar's left corner is a button too: a click opens the command palette (`Alt+P`).
 - **Terminal** (EXPERIMENT, branch `exp/ghostty-terminal`; a **panel**, ``Alt+` ``, full screen ``Alt+Shift+` ``; `ui/terminal.py`):
   a shell on this machine in [ghostty-web](https://github.com/coder/ghostty-web) (Ghostty's terminal in the
   browser, 0.4.0 from jsdelivr), in a strip under the bottom row as VS Code's (alone, it takes the height under
   the chat). The panel frames the backend's `GET /terminal` page, which talks to `/terminal/ws`: `$SHELL -l` in
   a pseudo-terminal, started through util-linux's `setsid --ctty` (no fork of the threaded server). Only this
   machine's pages may connect (localhost client and origin). One shell, started the first time the panel shows
-  and kept while it is hidden; a page reload starts a new one.
+  and kept while it is hidden; a page reload starts a new one. When the shell ends (`exit`, or a backend
+  restart: every code change while developing) the page says so at the bottom right, and Enter starts a new one.
+  - **Inline chat (`Alt+I` in the Terminal; `ui/inline_terminal.py`)**: the same inline AI as a cell's, for
+    the shell. A box over the bottom lines; Enter sends what you typed and the text of the visible screen to
+    `POST /inline_terminal` (agent `inline-terminal`: no tools, one request, knowing the chat so far and adding
+    nothing to it). The command is pasted at the prompt and **never run**: you press Enter. Nothing is typed,
+    and the box says why, when the ask was not for a command (the AI's short answer shows in the box), the
+    command has several lines, the call failed, or a full-screen program (vim, less) has the terminal. Esc
+    closes the box. Each call is an "agent" record in the debug log (origin "inline terminal") and is added to
+    the session's cost and to Spend, as the other inline chats. Only this machine's pages may call the route.
+    `Alt+I` again closes the box, in a cell too (as Esc: a proposal is discarded, a late answer is dropped).
+    The box is the one a cell's inline chat shows (`ui/inline_box.js`: the robot, the input, the status text
+    and its look, in one file); the Terminal's page gets it from the backend (`GET /inline_box.js`).
 - **Browser** (kind `browser`, `ui/web.py`; `+` → Browser): a web page in a frame, under an address box
   (Enter loads what you type; `https://` is added when missing), `Alt+← Back · Alt+→ Forward` (the browser's own keys:
   they step through pages followed by clicking inside the page) and "Open ↗" (a real browser tab). A link
@@ -589,7 +632,7 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   place, Tab indents. **The console has no buttons of its own: it is worked from the keyboard**, from the
   cell the cursor is in (the keys are `Shortcut.RUN_ALL` ... `CELL_DOWN` in `shortcuts.py`, handled by
   `cell_editor.jsx`): `Ctrl+Shift+Enter` runs all cells (this cell as typed), `Alt+Z` clears every output,
-  `Alt+Enter` adds a cell under this one and goes to it, `Alt+Backspace` deletes this cell (the cursor goes to
+  `Alt+N` adds a cell under this one and goes to it (it was `Alt+Enter` until that became the Terminal's second key), `Alt+Backspace` deletes this cell (the cursor goes to
   the one above; not while cells run; no undo), `Alt+ArrowUp` / `Alt+ArrowDown` go to the cell above / below
   (these two replace CodeMirror's "move line up / down"). The title line names the main ones; hover it for
   all. Each cell keeps its own ▶ and × (and the bug, on hover). With the cursor in no cell, the command palette

@@ -21,6 +21,7 @@ from typing import TYPE_CHECKING, Any
 from ds.ai.smashtube import find_match_videos
 from ds.ai.startgg import get_player_usage
 
+from ui.config import config, set_config
 from ui.db_console import DbConsole
 from ui.tool_forms import ToolForm, ToolRequest
 from ui.web import WebPage
@@ -82,6 +83,16 @@ WIDGETS: list[Widget] = [
     # a web page in a frame (web.py): what a clicked link opens in; "+" adds a blank one. No
     # tool, so no inline AI. The VODs player is built on the same component (render.web_frame)
     Widget("browser", "Browser", new=lambda _session: WebPage(), addable=True),
+    # the app's settings (config.py): set_config is no agent tool, but it is a function, so it
+    # gets the form and the inline AI as one. Its form starts with what is set now, so running
+    # it untouched changes nothing. Its result is a model: shown as Fields
+    Widget(
+        "config",
+        "Config",
+        tool=set_config,
+        new=lambda _session: ToolRequest("set_config", inputs=config.stored()),
+        addable=True,
+    ),
     # a tool form added with "+", before its first run
     Widget("tool", "Tool form"),
 ]

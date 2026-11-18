@@ -26,6 +26,7 @@ from starlette.staticfiles import StaticFiles
 
 from ui import desktop, mentions, terminal
 from ui.inline_edit import edit
+from ui.inline_terminal import ask as terminal_ask
 from ui.session import complete as complete_code
 from ui.session import find_session
 from ui.web import frameable as frameable_check
@@ -51,6 +52,16 @@ async def inline_edit(request: Request) -> JSONResponse:
     return JSONResponse(await edit(await request.json()))
 
 
+async def inline_terminal(request: Request) -> JSONResponse:
+    """The Terminal's Alt+I inline chat (inline_terminal.py). It turns what is on the user's
+    terminal screen into a model request, so only this machine's pages may ask (as the shell).
+    """
+    client = request.client.host if request.client else ""
+    if not terminal.allowed_origin(request.headers.get("origin", ""), client):
+        return JSONResponse({"error": "only this machine's pages may ask"}, status_code=403)
+    return JSONResponse(await terminal_ask(await request.json()))
+
+
 async def mention_complete(request: Request) -> JSONResponse:
     """What can follow the dot in an "@" mention being typed (mentions.complete), asked by
     assets/mentions.js on each keystroke after a dot, as the cell editor asks /complete.
@@ -74,12 +85,14 @@ api = Starlette(
     routes=[
         Route("/complete", complete, methods=["POST"]),
         Route("/inline_edit", inline_edit, methods=["POST"]),
+        Route("/inline_terminal", inline_terminal, methods=["POST"]),
         Route("/mention_complete", mention_complete, methods=["POST"]),
         Route("/frameable", frameable, methods=["GET"]),
         # this machine's wallpaper, behind the window when no panel is open (desktop.py)
         Route("/background", desktop.background, methods=["GET"]),
         # EXPERIMENT: the Terminal widget's page and its shell (terminal.py; this machine only)
         Route("/terminal", terminal.page, methods=["GET"]),
+        Route("/inline_box.js", terminal.inline_box, methods=["GET"]),
         WebSocketRoute("/terminal/ws", terminal.shell_socket),
         # the folder's name is the url prefix, so ds.data.char_icon's value is the path
         Mount(f"/{CHAR_ICON_DIR.name}", StaticFiles(directory=CHAR_ICON_DIR), name="char_icons"),

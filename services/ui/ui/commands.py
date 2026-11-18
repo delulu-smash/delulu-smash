@@ -177,6 +177,15 @@ COMMANDS: list[Command] = [
         shortcut=Shortcut.TOGGLE_PYTHON_VARIABLES,
         words="toggle both jupyter notebook cells names memory",
     ),  # fmt: skip
+    Command(
+        "view.close_all",
+        "View",
+        "Close all panels (only the background shows)",
+        ICON_CLOSE,
+        event=("close_all",),
+        shortcut=Shortcut.CLOSE_ALL,
+        words="hide everything desktop clear background",
+    ),  # fmt: skip
     *[
         Command(
             f"view.zoom_{pane}",
@@ -296,6 +305,7 @@ RUNNABLE: tuple[Shortcut, ...] = (
     Shortcut.TOGGLE_VARIABLES,
     Shortcut.TOGGLE_TERMINAL,
     Shortcut.TOGGLE_PYTHON_VARIABLES,
+    Shortcut.CLOSE_ALL,
     Shortcut.ZOOM_CHAT,
     Shortcut.ZOOM_RESULTS,
     Shortcut.ZOOM_PYTHON,
@@ -306,6 +316,22 @@ RUNNABLE: tuple[Shortcut, ...] = (
     Shortcut.DEBUG,
     Shortcut.INLINE_EDIT,
 )
+
+# The palette's first rows, in this order (the user's pick): help and the panels. They stay
+# first; the commands run last come after them (assets/panes.js), then the rest as written.
+PALETTE_FIRST: tuple[str, ...] = (
+    "app.help",
+    "view.chat",
+    "view.python",
+    "view.terminal",
+    "view.results",
+    "view.variables",
+)
+_BY_ID = {command.id: command for command in COMMANDS}
+PALETTE: list[Command] = [
+    *[_BY_ID[name] for name in PALETTE_FIRST],
+    *[command for command in COMMANDS if command.id not in PALETTE_FIRST],
+]
 
 # The slash commands listed first when "/" is typed: the most used ones (the user's pick).
 SLASH_FIRST: tuple[str, ...] = ("clear-chat", "clear-variables")

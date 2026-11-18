@@ -26,12 +26,13 @@ Five panels. Each has an `Alt` key that shows or hides it; add `Shift` for full 
 | Results | `Alt+R` | what tools returned, one tab each (`r1`, `r2`, ...) |
 | Python | `Alt+J` | Jupyter-style cells; the same names are Python objects |
 | Variables | `Alt+V` | every name you have, with type and size; clear them here |
-| Terminal | ``Alt+` `` | a shell on this machine (experiment) |
+| Terminal | ``Alt+` `` or `Alt+Enter` | a shell on this machine (experiment). `Alt+I` in it: ask AI for a command; it is typed at your prompt, not run |
 
 - Only the chat shows at first. The bottom bar has a toggle per panel; `/results`, `/python`, `/variables`
   and `/terminal` do the same from the chat.
 - Each panel's top right has ⤢ (full screen) and × (hide). Hiding keeps what is in it.
 - With every panel hidden the window shows your desktop wallpaper; the panel keys are first in `Alt+H`.
+- `/config` opens the app's settings (today: `background`, that picture). Empty = default; Run applies it.
 - `Alt+F` floats the result you are in over the page, or fills the window with your panel. Esc puts it back.
 
 ## Chat
@@ -128,7 +129,7 @@ After an `/assign ... from <url>` that needed the browser, its row ends with "/s
 `pl` (polars) and `db` (SmashDb) are there already; `r1`, `q1`, ... are real objects (tables are DataFrames).
 
 - Shift+Enter runs and moves on, Ctrl+Enter runs in place, Ctrl+Shift+Enter runs all.
-- `Alt+Enter` new cell below, `Alt+Backspace` delete this one, `Alt+↑` / `Alt+↓` move between cells,
+- `Alt+N` new cell below, `Alt+Backspace` delete this one, `Alt+↑` / `Alt+↓` move between cells,
   `Alt+Z` clears every output.
 - Tab completes from the live variables (`r1.` lists real methods).
 - `Alt+I` in a cell: say what you want, the AI's change shows as a diff. Tab accepts, Esc discards.

@@ -7,6 +7,8 @@
 # Safety: the WebSocket starts a real shell, so it only takes connections from this machine
 #          and from the app's own pages (allowed_origin), as ghostty-web's own demo does.
 # Usage: Alt+` shows / hides the Terminal pane (as VS Code's Ctrl+`), Alt+Shift+` full screen.
+#          Alt+I in it is the inline chat (inline_terminal.py): the AI's command is typed at
+#          the prompt, not run.
 # ---------------------------------------------------------------------------
 from __future__ import annotations
 
@@ -24,12 +26,20 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 from urllib.parse import urlsplit
 
-from starlette.responses import HTMLResponse
+from starlette.responses import HTMLResponse, Response
 
 if TYPE_CHECKING:
     from starlette.websockets import WebSocket
 
-__all__ = ["GHOSTTY_WEB", "PAGE", "allowed_origin", "page", "shell_command", "shell_socket"]
+__all__ = [
+    "GHOSTTY_WEB",
+    "PAGE",
+    "allowed_origin",
+    "inline_box",
+    "page",
+    "shell_command",
+    "shell_socket",
+]
 
 # ds::external-source: checked 2026-11-17 https://github.com/coder/ghostty-web
 #   (README, demo/index.html) taken from it: `init()` then `new Terminal({...})`, `open(el)`,
@@ -56,6 +66,8 @@ PAGE = """<!doctype html>
   html, body { margin: 0; height: 100%; background: #2d353b; overflow: hidden; }
   #term { position: absolute; inset: 4px 0 0 6px; }
   #note { position: absolute; bottom: 6px; right: 10px; font: 12px sans-serif; color: #e67e80; }
+  /* Alt+I: where the inline chat's box sits, over the bottom lines (the box: inline_box.js) */
+  #ask { position: absolute; left: 8px; right: 8px; bottom: 8px; }
 </style>
 </head>
 <body>
@@ -63,6 +75,7 @@ PAGE = """<!doctype html>
 <div id="note"></div>
 <script type="module">
   import { init, Terminal, FitAddon } from "GHOSTTY_WEB";
+  import { inlineBox } from "/inline_box.js";
   const note = document.getElementById("note");
   await init();
   // Sharp text at the size your own terminal uses (FONT_PT points, at SCREEN_SCALE). The app's
@@ -86,17 +99,121 @@ PAGE = """<!doctype html>
   term.open(document.getElementById("term"));
   fit.fit();
   fit.observeResize();
-  const ws = new WebSocket(`${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/terminal/ws?cols=${term.cols}&rows=${term.rows}`);
-  ws.onmessage = (event) => term.write(event.data);
-  ws.onclose = () => { note.textContent = "shell ended: close this or open a new Terminal"; };
-  term.onData((data) => ws.readyState === 1 && ws.send(data));
+  // One shell per connection. It ends when you exit it, or when the backend restarts (it does
+  // on every code change while developing): the note says so, and Enter starts a new one.
+  const ENDED = "shell ended: press Enter for a new one";
+  let ws = null;
+  function connect() {
+    note.textContent = "";
+    const scheme = location.protocol === "https:" ? "wss" : "ws";
+    const socket = new WebSocket(`${scheme}://${location.host}/terminal/ws?cols=${term.cols}&rows=${term.rows}`);
+    socket.onmessage = (event) => term.write(event.data);
+    socket.onclose = () => { if (ws === socket) note.textContent = ENDED; };
+    ws = socket;
+  }
+  connect();
+  term.onData((data) => {
+    if (ws.readyState === 1) return ws.send(data);
+    // the shell is gone: Enter starts a new one, under what the old one left on screen
+    if (ws.readyState === 3 && data === "\\r") { term.write("\\r\\n"); connect(); }
+  });
   term.onResize(({ cols, rows }) => ws.readyState === 1 && ws.send(JSON.stringify({ type: "resize", cols, rows })));
   term.focus();
-  window.addEventListener("focus", () => term.focus());  // the app focuses this frame on Alt+`
-  // The pane's own keys (Alt+` hide, Alt+Shift+` full screen) work from inside it too: the
-  // shell would get them otherwise. Sent to the app, which runs them (assets/panes.js).
+  // Alt+I: the inline chat (inline_terminal.py, POST /inline_terminal). The ask and the
+  // screen's text go to the AI; its command is pasted at the prompt, never run (you press
+  // Enter). Not part of the chat: the call shows in the debug log, as a cell's inline chat.
+  const TOKEN = new URLSearchParams(location.search).get("token") || "";
+  // the same box as under a cell (inline_box.js), placed over the bottom lines
+  const HINT = "Enter asks AI · Esc closes";
+  const shell = inlineBox({ placeholder: "Ask for a command…", hint: HINT });
+  const { dom: box, input, say } = shell;
+  box.id = "ask";
+  input.id = "ask-input";
+  shell.status.id = "ask-said";
+  box.hidden = true;
+  document.body.append(box);
+  let waiting = false;
+  let asked = 0;  // a request id: the answer to an ask whose box was closed is dropped
+  const fullScreenProgram = () => term.buffer.active.type === "alternate";
+  function screenText() {
+    const buffer = term.buffer.active, lines = [];
+    for (let y = Math.max(0, buffer.length - term.rows); y < buffer.length; y++) {
+      lines.push(buffer.getLine(y)?.translateToString(true) ?? "");
+    }
+    return lines.join("\\n").replace(/\\n+$/, "");
+  }
+  function openAsk() {
+    box.hidden = false;
+    if (!waiting) { input.disabled = false; input.value = ""; say(HINT); }
+    input.focus();
+  }
+  function closeAsk() {
+    box.hidden = true;
+    if (waiting) { asked++; waiting = false; shell.thinking(false); }
+    term.focus();
+  }
+  async function sendAsk() {
+    const ask = input.value.trim();
+    if (!ask || waiting) return;
+    // a paste would go into the program (vim, less), not to a prompt
+    if (fullScreenProgram()) return say("a full-screen program is running: go back to a prompt first", "error");
+    waiting = true;
+    const id = ++asked;
+    input.disabled = true;
+    say("Thinking…");
+    shell.thinking(true);
+    let answer;
+    try {
+      const response = await fetch("/inline_terminal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: TOKEN, instruction: ask, screen: screenText() }),
+      });
+      answer = await response.json();
+    } catch (error) {
+      answer = { error: `the request failed: ${error}` };
+    }
+    if (id !== asked) return;
+    waiting = false;
+    input.disabled = false;
+    shell.thinking(false);
+    if (answer.command && !fullScreenProgram()) {
+      closeAsk();
+      term.paste(answer.command);
+      return;
+    }
+    box.hidden = false;
+    if (answer.command) say(`a full-screen program is running; the command was: ${answer.command}`, "error");
+    else say(answer.error || answer.note || "no answer", answer.error ? "error" : "note");
+    input.focus();
+    input.select();
+  }
+  input.addEventListener("keydown", (event) => {
+    if (event.altKey || event.ctrlKey || event.metaKey) return;
+    if (event.key === "Enter") { event.preventDefault(); sendAsk(); }
+    if (event.key === "Escape") { event.preventDefault(); closeAsk(); }
+  });
+  // the app focuses this frame on Alt+`
+  window.addEventListener("focus", () => (box.hidden ? term : input).focus());
+  // The pane's own keys (Alt+` or Alt+Enter hide, with Shift full screen) work from inside it
+  // too: the shell would get them otherwise. Sent to the app, which runs them (assets/panes.js).
   document.addEventListener("keydown", (event) => {
-    if (!event.altKey || event.ctrlKey || event.metaKey || event.code !== "Backquote") return;
+    if (!event.altKey || event.ctrlKey || event.metaKey) return;
+    if (event.code === "KeyI" && !event.shiftKey) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      // Shortcut.INLINE_EDIT: the inline chat's key everywhere in the app; again closes it
+      if (box.hidden) openAsk(); else closeAsk();
+      return;
+    }
+    if (event.code === "KeyW" && !event.shiftKey) {
+      // Shortcut.CLOSE_ALL: every panel closes, this one too
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      parent.postMessage({ type: "delulu-press", keys: "Alt+W" }, "*");
+      return;
+    }
+    if (event.code !== "Backquote" && event.key !== "Enter") return;
     event.preventDefault();
     event.stopImmediatePropagation();
     parent.postMessage({ type: "delulu-press", keys: event.shiftKey ? "Alt+Shift+`" : "Alt+`" }, "*");
@@ -147,6 +264,17 @@ async def page(_request: object) -> HTMLResponse:
     for name, value in sizes.items():
         html = html.replace(name, value)
     return HTMLResponse(html)
+
+
+# the inline chat's box (the one a cell's shows, editor.py): the Terminal's page imports it
+INLINE_BOX = Path(__file__).with_name("inline_box.js")
+
+
+async def inline_box(_request: object) -> Response:
+    """GET /inline_box.js: the inline chat's box, for the Terminal's page. Read on each
+    request (no cache), so an edit shows on the next reload.
+    """
+    return Response(INLINE_BOX.read_text(), media_type="text/javascript", headers={"Cache-Control": "no-store"})
 
 
 def allowed_origin(origin: str, client_host: str) -> bool:
@@ -200,25 +328,46 @@ async def shell_socket(ws: WebSocket) -> None:
 
     loop.add_reader(fd, readable)
 
+    ended = asyncio.Event()  # the shell is gone and all it printed was sent
+
     async def pump_out() -> None:
         decoder = codecs.getincrementaldecoder("utf-8")(errors="replace")
         while chunk := await output.get():
             await ws.send_text(decoder.decode(chunk))
-        await ws.close()
+        ended.set()
+
+    async def shell_exit() -> None:
+        # the shell itself ended (eg `exit`): say so now. The pty alone doesn't tell while
+        # something the shell started still holds it open
+        await proc.wait()
+        output.put_nowait(b"")
 
     sender = asyncio.create_task(pump_out())
+    waiter = asyncio.create_task(shell_exit())
+    gone = asyncio.create_task(ended.wait())
     try:
         while True:
-            message = await ws.receive_text()
+            # also wake when the shell ends: the socket is closed by returning from here (a
+            # close sent from another task, while this one waits for a message, is not sent
+            # by the app's server until then)
+            receive = asyncio.create_task(ws.receive_text())
+            await asyncio.wait({receive, gone}, return_when=asyncio.FIRST_COMPLETED)
+            if not receive.done():
+                receive.cancel()
+                break
+            message = receive.result()
             if message.startswith('{"type":"resize"'):
                 size = json.loads(message)
                 _set_size(fd, int(size["cols"]), int(size["rows"]))
             else:
                 os.write(fd, message.encode())
+        with contextlib.suppress(Exception):
+            await ws.close()
     except Exception:  # noqa: BLE001, S110  # the page went away (a disconnect): hang up below
         pass
     finally:
-        sender.cancel()
+        for task in (sender, waiter, gone):
+            task.cancel()
         loop.remove_reader(fd)
         with contextlib.suppress(ProcessLookupError):
             os.killpg(proc.pid, signal.SIGHUP)  # the shell's session: it and what it started

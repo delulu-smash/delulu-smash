@@ -11,7 +11,7 @@
 //          nothing is kept here.
 (() => {
   // the chat box, a form's Ask AI row (render.ASK_FIELD), an editor's inline chat (inline_edit.jsx)
-  const BOXES = 'textarea[name="prompt"], input[name="__ask"], input.cm-inline-edit-input';
+  const BOXES = 'textarea[name="prompt"], input[name="__ask"], input.inline-box-input';
   const NAME = "[A-Za-z_]\\w*(?:\\.[A-Za-z_]\\w*)*";
   // the mention being typed, up to the caret: "@", "@q", "@q1.", "@q1.ch" (not inside a word: an email)
   const TYPING = new RegExp(`(?:^|[^\\w@])@((?:${NAME})?\\.?)$`);

@@ -34,6 +34,7 @@ from pydantic_ai.models import infer_model
 
 from ui import perf
 from ui.app_guide import app_guide_capability
+from ui.config import config
 from ui.render import Ui, View, ViewData, to_view
 from ui.typeinfo import keep_class_sources
 
@@ -47,7 +48,7 @@ MAX_REPEATED_FRAMES = 3
 REPO_DIR = Path(__file__).resolve().parents[3]
 MAX_ARGS_CHARS = 160
 # Names put in the namespace up front; never listed as data objects.
-BUILTIN_NAMES = ("pl", "db", "to_df")
+BUILTIN_NAMES = ("pl", "db", "to_df", "config")
 
 
 @dataclass
@@ -362,7 +363,13 @@ class Session:
         self.db = ds.data.init_db()
         # to_df: models (what "/assign" makes) as a typed DataFrame,
         # eg `df = to_df(aapl_daily_closes)`
-        self.namespace: dict[str, Any] = {"__name__": "__main__", "pl": pl, "db": self.db, "to_df": to_df}
+        self.namespace: dict[str, Any] = {
+            "__name__": "__main__",
+            "pl": pl,
+            "db": self.db,
+            "to_df": to_df,
+            "config": config,
+        }
         self.ai_history: list[Any] = []
         # what the AI cost so far, chat turns and inline chats, in US dollars (TurnUsage.cost;
         # unpriced requests left out)
