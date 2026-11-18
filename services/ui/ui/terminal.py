@@ -193,6 +193,11 @@ PAGE = """<!doctype html>
     if (event.key === "Enter") { event.preventDefault(); sendAsk(); }
     if (event.key === "Escape") { event.preventDefault(); closeAsk(); }
   });
+  // the pane's robot button (assets/panes.js): the inline chat, as Alt+I here
+  window.addEventListener("message", (event) => {
+    if (event.source !== parent || !event.data || event.data.type !== "delulu-ask") return;
+    if (box.hidden) openAsk(); else closeAsk();
+  });
   // the app focuses this frame on Alt+`
   window.addEventListener("focus", () => (box.hidden ? term : input).focus());
   // The pane's own keys (Alt+` or Alt+Enter hide, with Shift full screen) work from inside it
@@ -211,6 +216,13 @@ PAGE = """<!doctype html>
       event.preventDefault();
       event.stopImmediatePropagation();
       parent.postMessage({ type: "delulu-press", keys: "Alt+W" }, "*");
+      return;
+    }
+    if ((event.key === "ArrowLeft" || event.key === "ArrowRight") && !event.shiftKey) {
+      // Shortcut.NEXT_PANE / PREV_PANE: out of the shell, to the pane beside it
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      parent.postMessage({ type: "delulu-press", keys: `Alt+${event.key}` }, "*");
       return;
     }
     if (event.code !== "Backquote" && event.key !== "Enter") return;

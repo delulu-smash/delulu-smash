@@ -38,6 +38,7 @@ from ui.render import (
     ICON_EXPAND,
     INLINE_EDIT_URL,
     copy_button,
+    inline_ai_button,
     render_component,
     traceback_view,
     type_label,
@@ -146,6 +147,17 @@ def close_button(pane: str) -> rx.Component:
         aria_label="Close",
         on_click=State.hide_pane(pane),
         class_name="zoom-btn pane-close mono",
+    )
+
+
+def side_close(toggle: Any, shortcut: Shortcut) -> rx.Component:
+    """The × of a side panel (help, debug), as a pane's close_button: the same as its key."""
+    return rx.el.button(
+        ICON_CLOSE,
+        title=shortcut.hint("Close"),
+        aria_label="Close",
+        on_click=toggle,
+        class_name="zoom-btn pane-close side-close mono",
     )
 
 
@@ -796,11 +808,11 @@ def palette() -> rx.Component:
 
 
 def overlays() -> rx.Component:
-    """What floats over the page: a tab's right-click menu and the help panel. Clicking outside
+    """What floats over the page: a tab's right-click menu and the "+" menu. Clicking outside
     (or Esc, assets/panes.js) closes them.
     """
     return rx.cond(
-        (State.menu_tab != "") | State.show_help | State.add_menu | State.show_debug,
+        (State.menu_tab != "") | State.add_menu,
         rx.fragment(
             rx.el.div(
                 on_click=State.close_menus,
@@ -841,8 +853,6 @@ def overlays() -> rx.Component:
                     class_name="menu sans",
                 ),
             ),
-            rx.cond(State.show_help, help_panel()),
-            rx.cond(State.show_debug, debug_panel()),
         ),
     )
 
@@ -967,6 +977,7 @@ def debug_panel() -> rx.Component:
                 on_click=State.toggle_debug_full,
                 class_name=rx.cond(State.debug_full, "float-btn mono is-on", "float-btn mono"),
             ),
+            side_close(State.toggle_debug, Shortcut.DEBUG),
             class_name="dbg-head",
         ),
         rx.match(
@@ -1589,6 +1600,7 @@ def help_panel() -> rx.Component:
     works is in the README.
     """
     return rx.el.div(
+        side_close(State.toggle_help, Shortcut.HELP),
         help_panels(),
         *[help_examples(title, lines) for title, lines in HELP_EXAMPLES],
         rx.el.div(
@@ -1764,6 +1776,7 @@ def terminal_pane() -> rx.Component:
         rx.el.div(
             rx.el.span(rx.el.span(ICON_TERMINAL, class_name="mono accent-green icon"), "Terminal"),
             rx.el.span(class_name="spacer"),
+            inline_ai_button("iframe", "Ask AI for a command (typed at your prompt, not run)", flat=True),
             keys_button("terminal", "the Terminal"),
             zoom_button("terminal"),
             close_button("terminal"),
@@ -1808,6 +1821,7 @@ def notebook() -> rx.Component:
             ),
             rx.el.span(class_name="spacer"),
             rx.cond(State.running, rx.el.span("running…", class_name="dim")),
+            inline_ai_button(".cell .cm-content", "Ask AI to write or change the cell you are in", flat=True),
             keys_button("cell", "the Python console"),
             zoom_button("python"),
             close_button("python"),
@@ -2096,18 +2110,17 @@ def statusbar() -> rx.Component:
 
 
 def desktop() -> rx.Component:
-    """What the window shows when no panel does, as a desktop: the background setting's
-    picture (config.background, by default this machine's wallpaper; none on a machine
-    without one, so the plain background stays). Nothing else: the keys that bring the panels
-    back are the help panel's first section (help_panels).
+    """The window's background, as a desktop's: the background setting's picture
+    (config.background, by default this machine's wallpaper; none on a machine without one, so
+    the plain background stays). Always there, the size of the whole area between the bars,
+    and never moving: the panes and the help / debug side panel lie over it, so it shows
+    where nothing does (all of it when no panel is open). The keys that bring the panels back
+    are the help panel's first section (help_panels).
     """
-    return rx.cond(
-        State.no_panels,
-        # ?v=<the setting>: a new background setting is a new url, so it is fetched again
-        rx.el.div(
-            style={"background_image": "url(" + BACKGROUND_URL + "?v=" + State.config["background"] + ")"},
-            class_name="desktop",
-        ),
+    # ?v=<the setting>: a new background setting is a new url, so it is fetched again
+    return rx.el.div(
+        style={"background_image": "url(" + BACKGROUND_URL + "?v=" + State.config["background"] + ")"},
+        class_name="desktop",
     )
 
 
@@ -2151,16 +2164,24 @@ def index() -> rx.Component:
             class_name="titlebar sans",
         ),
         rx.el.div(
-            chat_pane(),
-            rx.el.div(
-                tables_pane(),
-                notebook(),
-                variables_pane(),
-                class_name=rx.cond(State.bottom_on, "bottom-split", "bottom-split is-hidden"),
-            ),
-            terminal_pane(),
             desktop(),
-            class_name="split-main",
+            rx.el.div(
+                chat_pane(),
+                rx.el.div(
+                    tables_pane(),
+                    notebook(),
+                    variables_pane(),
+                    class_name=rx.cond(State.bottom_on, "bottom-split", "bottom-split is-hidden"),
+                ),
+                terminal_pane(),
+                # see-through with no panel open: the desktop behind shows
+                class_name=rx.cond(State.no_panels, "split-main is-empty", "split-main"),
+            ),
+            # the help or the debug panel (one at a time): a side panel on the right, at its
+            # own width; the panes take what is left
+            rx.cond(State.show_help, help_panel()),
+            rx.cond(State.show_debug, debug_panel()),
+            class_name="split-row",
         ),
         statusbar(),
         overlays(),

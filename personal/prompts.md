@@ -58,3 +58,5 @@ myst parser and writer in the app, so i can write notes in here (the docs are My
 /tutorial in the chat, with /tutorial-next etc to step through it
 
 claude code hand off integration
+
+have code be c style struct nd function based (onllly use oop when absolutely necessary, more functional style)

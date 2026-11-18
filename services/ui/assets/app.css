@@ -5,7 +5,7 @@
 :root {
   /* the strip at the top of every panel (Chat's title, Results' tab bar, Python's and Variables' heads): one
      height, so the panels line up when several are open */
-  --panel-head: 24px;  /* as the bottom bar (.statusbar) */
+  --panel-head: 24px;
   /* the Variables panel beside another one: a narrow column (a list of names needs less room than a table
      or code) */
   --vars-width: clamp(240px, 22%, 340px);
@@ -37,22 +37,38 @@ button { font: inherit; color: inherit; }
 .empty p { margin: 0 0 8px; }
 .empty code { font-family: var(--mono); color: var(--fg); background: var(--bg1); padding: 1px 6px; border-radius: 4px; }
 
-/* compact, as Zed's title bar: a low strip, flat icon buttons, the mark small */
-.titlebar { display: flex; align-items: center; gap: 12px; padding: 0 10px; height: 28px; flex: none; background: var(--bar);
-  font-size: 12.5px; }
+/* As Zed's title bar, measured beside it: 34px high, flat icon buttons, the mark small. Its text
+   is mono at 12px, which measures as Zed's 14px sans (JetBrains Mono's letters are taller); one
+   line only, cut at the window's edge when it is narrow (it wrapped out of the bar before). */
+.titlebar { display: flex; align-items: center; gap: 12px; padding: 0 10px; height: 34px; flex: none; background: var(--bar);
+  font-size: 12px; white-space: nowrap; overflow: hidden; }
+.titlebar > * { flex: none; }
+.titlebar > .spacer { flex: 1; }
+/* the meters give way first: the help and debug icons stay in the window */
+.titlebar > .ctx-meter, .titlebar > .spend-box { flex: 0 1 auto; min-width: 0; overflow: hidden; }
+.titlebar .chat-model, .titlebar .spend-as-of, .titlebar .ctx-meter { font-size: 12px; }
+.titlebar .ctx-bar { flex: none; }
 .titlebar .avatar { width: 18px; height: 18px; border-radius: 50%; object-fit: cover; flex: none; }
 /* the mark is a button: a click opens the command palette */
 .titlebar .avatar-btn { display: flex; flex: none; padding: 0; border: 0; border-radius: 50%; background: none; cursor: pointer; }
 .titlebar .avatar-btn:hover .avatar { box-shadow: 0 0 0 2px var(--bg3); }
-.titlebar .help-btn { width: 20px; height: 20px; border-color: transparent; border-radius: 4px; }
+.titlebar .help-btn { width: 24px; height: 24px; font-size: 13px; border-color: transparent; border-radius: 4px; }
+.titlebar .debug-btn { font-size: 14px; }
 .titlebar .help-btn:hover, .titlebar .help-btn.is-on { border-color: transparent; background: var(--bg2); }
 .titlebar .help-btn + .help-btn { margin-left: -6px; }
 .titlebar .spend-box { padding: 0 6px; }
-.split-main { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+/* the panes, and right of them the help or debug panel when one is open (a side panel at its
+   own width: the panes take the rest) */
+.split-row { flex: 1; display: flex; min-height: 0; position: relative; }
+.split-main { flex: 1; display: flex; flex-direction: column; min-height: 0; min-width: 0; position: relative; background: var(--bg0); }
+.split-main.is-empty { background: transparent; }
+.split-row > .help-panel, .split-row > .debug-panel:not(.is-full) { position: relative; }
 /* below the chat strip: tables | notebook; drag the tables pane's corner to resize */
 .bottom-split { flex: 1; display: flex; min-height: 0; }
-/* the desktop (ui.desktop): no panel is open, so the window shows this machine's wallpaper */
-.desktop { flex: 1; min-height: 0; background: var(--bg-dim) center / cover no-repeat; }
+/* the desktop (ui.desktop): this machine's wallpaper behind everything between the bars. It
+   never moves or resizes with the panels: they lie over it (.split-main is see-through only
+   when no panel is open, .is-empty) */
+.desktop { position: absolute; inset: 0; background: var(--bg-dim) center / cover no-repeat; }
 
 .handle { display: inline-block; padding: 0 6px; border-radius: 4px; background: rgba(127, 187, 179, 0.16); color: var(--blue);
   font-size: 12px; line-height: 18px; }
@@ -250,9 +266,9 @@ button { font: inherit; color: inherit; }
   color: var(--grey2); cursor: pointer; font-size: 12px; font-weight: 600; padding: 0; }
 .help-btn:hover, .help-btn.is-on { color: var(--fg); border-color: var(--blue); }
 /* as tall as the window allows, then it scrolls (the shortcut list outgrew the window once) */
-.help-panel { position: fixed; z-index: 51; top: 32px; right: 10px; width: min(560px, calc(100vw - 20px)); padding: 10px 12px;
-  max-height: calc(100vh - 48px); overflow-y: auto;
-  background: var(--bg1); border: 1px solid var(--bg3); border-radius: 8px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4); font-size: 12.5px; }
+.help-panel { flex: none; width: min(560px, 60vw); padding: 10px 12px; overflow-y: auto; background: var(--bg1);
+  border-left: 1px solid var(--bg3); font-size: 12.5px; }
+.help-panel > .side-close { float: right; }
 .help-title { font-weight: 600; margin: 10px 0 6px; }
 .help-title:first-child { margin-top: 0; }
 .help-faq { margin-bottom: 10px; line-height: 1.45; }
@@ -425,14 +441,21 @@ a.act { text-decoration: none; color: var(--fg); }
 
 /* bottom bar (as in Zed): one toggle per pane. Compact as the title bar: a low strip, the
    toggles the same flat 20 px squares as its buttons */
-.statusbar { display: flex; align-items: center; gap: 2px; height: 24px; flex: none; padding: 0 10px; background: var(--bar);
-  font-size: 12px; }
-.pane-toggle { flex: none; width: 22px; height: 20px; font-size: 13px; line-height: 20px; border: 0; border-radius: 4px; padding: 0;
+/* as Zed's status bar, measured beside it: 30px high, 14px text, icons drawn about 11 to 12px */
+.statusbar { display: flex; align-items: center; gap: 2px; height: 30px; flex: none; padding: 0 10px; background: var(--bar);
+  font-size: 14px; }
+.pane-toggle { flex: none; width: 26px; height: 24px; font-size: 14px; line-height: 24px; border: 0; border-radius: 4px; padding: 0;
   background: transparent; color: var(--grey1); cursor: pointer; }
+/* A Nerd Font glyph is drawn from the left of its 0.6em text cell and wider than it (the robot
+   about 0.92em, the others 0.74 to 0.83em), so centred as text it hangs to the right: the glyph
+   is pushed in by half of what its drawing leaves instead (see .act.ai-toggle too). */
+.pane-toggle { text-align: left; text-indent: calc((26px - 0.78em) / 2); }
+.pane-toggle[data-toggle="chat"] { font-size: 13px; text-indent: calc((26px - 0.92em) / 2); }  /* the widest glyph */
 .pane-toggle:hover { color: var(--fg); background: var(--bg2); }
 .pane-toggle.is-on { color: var(--green); background: var(--bg2); }
 .statusbar .dim { margin-left: 12px; }
 .is-hidden { display: none !important; }
+[data-pane]:focus, .widget:focus { outline: none; }
 /* a pane with its neighbour hidden takes the whole row / column (and stops being resizable) */
 /* !important: a pane resized by dragging has an inline size, which would otherwise win */
 .ws-pane.is-alone { width: auto !important; max-width: none; flex: 1; resize: none; border-right: 0; }
@@ -538,7 +561,13 @@ select.form-input { width: auto; }
 .tool-form .act { font-size: 11px; padding: 0 8px; }
 /* a form's inline chat (inline_fill.py, render._ask_row): the "Ask AI" row on top of the inputs; the
    inputs the AI changed are outlined until they are run or put back */
-.act.ai-toggle { font-family: var(--mono); font-size: 13px; padding: 0 6px; }
+/* The robot (a Nerd Font glyph) is drawn about 0.92em wide from the left of a 0.6em text cell,
+   so centred as text it hangs to the right: the buttons are a fixed width instead, with the
+   glyph pushed in by half of what its drawing leaves. .ai-btn: the flat one in a pane's head
+   (render.inline_ai_button). */
+.act.ai-toggle { font-family: var(--mono); font-size: 13px; box-sizing: border-box; width: 26px; padding: 0; text-align: left;
+  text-indent: calc((24px - 0.92em) / 2); }
+.zoom-btn.ai-btn { font-size: 13px; box-sizing: border-box; width: 22px; padding: 0; text-align: left; text-indent: calc((22px - 0.92em) / 2); }
 .ai-toggle.is-active { color: var(--purple); border-color: var(--purple); }
 .ask-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; flex: 0 0 100%; }
 .ask-icon { color: var(--purple); font-size: 13px; }
@@ -602,13 +631,12 @@ select.form-input { width: auto; }
 .copy-btn:hover { color: var(--fg); border-color: var(--blue); }
 .copy-btn .when-copied, .copy-btn.is-copied .when-idle { display: none; }
 .copy-btn.is-copied .when-copied { display: inline; color: var(--green); }
-/* the debug log (debug_panel in ui.py, logs.py): a right-hand panel over the page */
+/* the debug log (debug_panel in ui.py, logs.py): a side panel on the right, as the help panel */
 .debug-btn { font-size: 13px; font-weight: 400; }
-.debug-panel { position: fixed; z-index: 51; top: 32px; right: 10px; bottom: 28px; width: min(720px, calc(100vw - 20px));
-  display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; background: var(--bg1); border: 1px solid var(--bg3);
-  border-radius: 8px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4); font-size: 12.5px; }
+.debug-panel { flex: none; width: min(720px, 60vw); min-height: 0; display: flex; flex-direction: column; gap: 6px; padding: 10px 12px;
+  background: var(--bg1); border-left: 1px solid var(--bg3); font-size: 12.5px; }
 /* full screen (its button, Alt+F while it is open), as a floated view */
-.debug-panel.is-full { top: 24px; right: 24px; bottom: 24px; left: 24px; width: auto; border-color: var(--bg4);
+.debug-panel.is-full { position: fixed; z-index: 51; border: 1px solid var(--bg3); border-radius: 8px; top: 24px; right: 24px; bottom: 24px; left: 24px; width: auto; border-color: var(--bg4);
   box-shadow: 0 0 0 100vmax rgba(20, 24, 26, 0.6), 0 12px 40px rgba(0, 0, 0, 0.5); }
 .debug-panel .float-btn.is-on { color: var(--green); }
 .debug-panel.is-full .tool-about { max-width: none; }

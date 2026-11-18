@@ -30,7 +30,7 @@ class Shortcut(Enum):
         "result, pane",
         "Full screen: float the result you are in, else fill with your pane; the debug panel while it is open",
     )
-    CLOSE = Binding("Escape", "floating result, menu, help, debug log, keybindings", "Close it")
+    CLOSE = Binding("Escape", "floating result, menu, keybindings, full-screen debug log", "Close it")
     TOGGLE_CHAT = Binding("Alt+A", "anywhere", "Show or hide the AI chat pane")
     TOGGLE_RESULTS = Binding("Alt+R", "anywhere", "Show or hide the Results pane")
     TOGGLE_PYTHON = Binding("Alt+J", "anywhere", "Show or hide the Python (Jupyter) pane")
@@ -53,6 +53,10 @@ class Shortcut(Enum):
     CLOSE_ALL = Binding(
         "Alt+W", "anywhere", "Close every panel (and the help or debug panel): only the desktop's background shows"
     )
+    # Between the panes shown, as Omarchy's SUPER+arrows move between windows. The active pane
+    # (assets/panes.js) is where the cursor is; opening a pane makes it the active one.
+    NEXT_PANE = Binding("Alt+ArrowRight", "anywhere", "Go to the next pane shown: the cursor moves into it")
+    PREV_PANE = Binding("Alt+ArrowLeft", "anywhere", "Go to the previous pane shown: the cursor moves into it")
     # One pane full screen, from anywhere (shown even if hidden); the same key
     # again restores the layout. Alt+F does it for the pane (or result) you are in.
     ZOOM_CHAT = Binding("Alt+Shift+A", "anywhere", "Full screen the AI chat pane (again: restore panes)")
@@ -141,6 +145,8 @@ BROWSER_SHORTCUTS = (
     Shortcut.TOGGLE_TERMINAL,
     Shortcut.TOGGLE_PYTHON_VARIABLES,
     Shortcut.CLOSE_ALL,
+    Shortcut.NEXT_PANE,
+    Shortcut.PREV_PANE,
     Shortcut.ZOOM_CHAT,
     Shortcut.ZOOM_RESULTS,
     Shortcut.ZOOM_PYTHON,

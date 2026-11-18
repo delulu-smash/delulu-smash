@@ -786,12 +786,12 @@ class State(rx.State):
 
     @event
     def close_menus(self):
-        """Close the tab menu, the "+" menu and the help panel (click outside, Escape)."""
+        """Close the tab menu and the "+" menu (click outside, Escape). The help and debug
+        panels are side panels, not menus: their own key, icon or × closes them.
+        """
         self.menu_tab = ""
         self.add_menu = False
         self.palette = False
-        self.show_help = False
-        self.show_debug = False
 
     @event
     def show_in_chat(self, name: str):
@@ -810,7 +810,8 @@ class State(rx.State):
         target: a chat row's id ('ref-<name>', 'call-<tool_call_id>', 'turn-<n>'), a result's
         tab ('tab:<name>', opened again if it was closed) or a cell ('cell:<id>').
         """
-        self.menu_tab, self.add_menu, self.show_help, self.show_debug = "", False, False, False
+        # the help or debug panel stays, beside what is shown; full screen would cover it
+        self.menu_tab, self.add_menu, self.debug_full = "", False, False
         kind, _, key = target.partition(":")
         if kind == "tab":
             if key not in self._session().views():

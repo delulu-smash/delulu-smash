@@ -3,8 +3,8 @@
 // Purpose: page-wide keys, view floating and copy buttons for delulu-smash. Keys come from window.SHORTCUTS
 //          (set from ui/shortcuts.py, the one place they are defined):
 //          FULL_SCREEN floats the view (.widget) you are in nearly full screen, or, outside a view,
-//          fills the window with your pane (clicks its zoom button). CLOSE (Esc) closes a menu or
-//          the help or debug panel (a full-screen debug panel first goes back to the side), then a floating view. PALETTE clicks the hidden button that shows or hides the
+//          fills the window with your pane (clicks its zoom button). CLOSE (Esc) closes a menu
+//          (a full-screen debug panel goes back to the side; the help and debug side panels stay), then a floating view. PALETTE clicks the hidden button that shows or hides the
 //          command palette (a search box over every command: type to filter, arrows, Enter; the ones run last come
 //          first); in a menu, arrows move between its rows. window.smashPress(keys) runs a shortcut as if its key
 //          were pressed where you were (the palette's and the keybindings list's way to run one). TOGGLE_CHAT / TOGGLE_RESULTS / TOGGLE_PYTHON / TOGGLE_VARIABLES / HELP / DEBUG click the
@@ -113,6 +113,8 @@
 
   document.addEventListener("pointerdown", (event) => {
     if (paneOf(event.target)) lastTarget = event.target;
+    if (paneOf(event.target)) mark(paneOf(event.target));
+    acted = performance.now();
     // a click outside the floating view puts it back (menus and popups float above it, so not those)
     const current = floating();
     if (current && !current.contains(event.target)
@@ -293,7 +295,69 @@
     if (!(event.target instanceof Element)) return;
     if (event.target.closest(".cm-editor")) lastEditor = event.target;
     if (event.target.matches("[data-menu-search]") && event.relatedTarget instanceof Element) origin = event.relatedTarget;
+    // the pane the cursor is in is the active one; where in it is kept for coming back
+    const pane = paneOf(event.target);
+    if (!pane) return;
+    mark(pane);
+    if (!event.target.closest("button")) lastIn.set(pane.dataset.pane, event.target);
   });
+
+  // The active pane ([data-active], not shown on screen: the cursor is the only sign): where the cursor is. NEXT_PANE / PREV_PANE
+  // move it between the panes shown; a pane you open (key, click, palette) becomes it, as does
+  // a Results tab you open; the first pane shown when the active one closes. Something the AI
+  // opens never moves the cursor: only what follows your own key or click (YOURS_MS) does.
+  // HOME: where the cursor goes in a pane with no place of yours to come back to; none (or
+  // not there): the pane itself, eg Variables.
+  const HOME = { chat: ".composer textarea", python: ".cm-content", terminal: "iframe", results: ".widget" };
+  const YOURS_MS = 1000;
+  const lastIn = new Map();  // pane name -> the element last focused in it
+  let acted = 0;  // when you last clicked, or pressed a key that can open something
+  const shown = (node) => Boolean(node && node.isConnected && node.getClientRects().length);
+  const shownPanes = () => [...document.querySelectorAll("[data-pane]")].filter(shown).sort((a, b) => {
+    const [p, q] = [a.getBoundingClientRect(), b.getBoundingClientRect()];
+    return p.top - q.top || p.left - q.left;
+  });
+  const activePane = () => document.querySelector("[data-pane][data-active]");
+  function mark(pane) {
+    document.querySelectorAll("[data-pane]").forEach((other) => other.toggleAttribute("data-active", other === pane));
+  }
+  const activate = (pane, retry = true) => {
+    mark(pane);
+    const name = pane.dataset.pane;
+    const last = lastIn.get(name);
+    const spot = shown(last) && pane.contains(last) ? last : [...pane.querySelectorAll(HOME[name] || ":not(*)")].find(shown);
+    // not there yet (the Terminal's frame mounts when it first shows): once more, if still wanted
+    if (!spot && HOME[name] && retry) setTimeout(() => activePane() === pane && shown(pane) && activate(pane, false), 400);
+    const target = spot || pane;
+    if (target.tabIndex < 0) target.tabIndex = -1;  // a pane or a view takes the focus only this way
+    target.focus({ preventScroll: true });
+  };
+  const cycle = (step) => {
+    const panes = shownPanes();
+    if (panes.length) activate(panes[(panes.indexOf(activePane()) + step + panes.length) % panes.length]);
+  };
+  const resultSlot = () => ([...document.querySelectorAll('[data-pane="results"] .widget')].find(shown) || { dataset: {} }).dataset.slot || "";
+  let before = new Set();
+  let slot = "";
+  let queued = false;
+  const panesChanged = () => {
+    queued = false;
+    const now = shownPanes();
+    const opened = now.filter((pane) => !before.has(pane));
+    const tab = resultSlot();
+    const newTab = tab && tab !== slot;
+    before = new Set(now);
+    slot = tab;
+    const yours = performance.now() - acted < YOURS_MS;
+    if (yours && opened.length) return activate(opened[0]);
+    if (yours && newTab) return activate(document.querySelector('[data-pane="results"]'));
+    if (now.length && !now.includes(activePane())) activate(now[0]);
+  };
+  new MutationObserver(() => {
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(panesChanged);
+  }).observe(document.documentElement, { subtree: true, childList: true, attributes: true, attributeFilter: ["class"] });
 
   // Run a shortcut by its keys ("Alt+F"), as if pressed where you were. Waits a moment, for the
   // menu that asked to be gone and the focus to be back.
@@ -320,6 +384,20 @@
       bubbles: true, cancelable: true,
     }));
   }, 80);
+  // A robot button (render.inline_ai_button; data-inline-ai: where, inside its pane or view):
+  // the inline chat there, as INLINE_EDIT pressed in it. In the editor you were last in when
+  // it is one of them, else the first shown; the Terminal's page opens its own (terminal.py).
+  document.addEventListener("click", (event) => {
+    const button = event.target.closest?.("[data-inline-ai]");
+    const scope = button && button.closest(".widget, [data-pane]");
+    if (!scope) return;
+    const spots = [...scope.querySelectorAll(button.dataset.inlineAi)].filter(visible);
+    const spot = spots.includes(lastEditor) ? lastEditor : spots[0];
+    if (!spot) return;
+    if (spot.tagName !== "IFRAME") return window.smashPress(SHORTCUTS.INLINE_EDIT, spot);
+    spot.focus();
+    spot.contentWindow.postMessage({ type: "delulu-ask" }, "*");
+  });
   document.addEventListener("input", (event) => {
     if (event.target.matches?.("[data-menu-search]")) filterMenu(event.target);
   });
@@ -329,10 +407,12 @@
 
   // The Terminal pane (terminal.py) frames a page on the backend's origin, so its keys don't
   // reach this page: it sends its own pane keys here instead, to run as if pressed here.
-  const TERMINAL_KEYS = new Set([SHORTCUTS.TOGGLE_TERMINAL, SHORTCUTS.ZOOM_TERMINAL, SHORTCUTS.CLOSE_ALL].filter(Boolean));
+  const TERMINAL_KEYS = new Set([SHORTCUTS.TOGGLE_TERMINAL, SHORTCUTS.ZOOM_TERMINAL, SHORTCUTS.CLOSE_ALL, SHORTCUTS.NEXT_PANE, SHORTCUTS.PREV_PANE].filter(Boolean));
   window.addEventListener("message", (event) => {
     const data = event.data;
     if (!data || data.type !== "delulu-press" || !TERMINAL_KEYS.has(data.keys)) return;
+    acted = performance.now();
+    if (data.keys === SHORTCUTS.NEXT_PANE || data.keys === SHORTCUTS.PREV_PANE) return cycle(data.keys === SHORTCUTS.NEXT_PANE ? 1 : -1);
     const name = { [SHORTCUTS.ZOOM_TERMINAL]: "zoom-terminal", [SHORTCUTS.CLOSE_ALL]: "close-all" }[data.keys] || "terminal";
     document.querySelector(`[data-toggle="${name}"]`)?.click();
     focusTerminalSoon({ terminal: "TOGGLE_TERMINAL", "zoom-terminal": "ZOOM_TERMINAL", "close-all": "CLOSE_ALL" }[name]);
@@ -350,6 +430,8 @@
 
   // capture phase, so it also works while typing in a code cell or the chat box
   document.addEventListener("keydown", (event) => {
+    // a key that can open something (not plain typing): what it opens gets the cursor
+    if (event.altKey || event.ctrlKey || event.metaKey || event.key === "Enter") acted = performance.now();
     if (matches(event, SHORTCUTS.CLOSE)) {
       // the top layer only: the palette (above everything), then a menu or panel
       const palette = document.querySelector(".palette-backdrop");
@@ -408,6 +490,12 @@
       const next = items.indexOf(item) + (event.key === "ArrowDown" ? 1 : -1);
       items[(next + items.length) % items.length].focus();
       return;
+    }
+    const step = pressed(event, "NEXT_PANE") ? 1 : pressed(event, "PREV_PANE") ? -1 : 0;
+    if (step) {
+      event.preventDefault();
+      event.stopPropagation();
+      return cycle(step);
     }
     const toggle = [["TOGGLE_CHAT", "chat"], ["TOGGLE_RESULTS", "results"], ["TOGGLE_PYTHON", "python"], ["TOGGLE_VARIABLES", "variables"], ["TOGGLE_TERMINAL", "terminal"], ["TOGGLE_PYTHON_VARIABLES", "python-variables"], ["CLOSE_ALL", "close-all"],
       ["ZOOM_CHAT", "zoom-chat"], ["ZOOM_RESULTS", "zoom-results"], ["ZOOM_PYTHON", "zoom-python"], ["ZOOM_VARIABLES", "zoom-variables"], ["ZOOM_TERMINAL", "zoom-terminal"],

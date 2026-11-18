@@ -1166,6 +1166,7 @@ def db_console_widget(
             view,
             send,
             actions,
+            inline_ai_button(".db-editor .cm-content", "Ask AI to write or change the query"),
             rx.el.button(
                 rx.cond(view.db_history_open, "History ▾", "History ▸"),
                 title="The queries run in this console",
@@ -1300,6 +1301,23 @@ def ai_toggle(view: rx.Var[ViewData], send: Any) -> rx.Component:
         on_click=send("ai_toggle"),
         custom_attrs={"data-ai-toggle": ""},
         class_name=rx.cond(view.ai_open, "act ai-toggle mono is-active", "act ai-toggle mono"),
+    )
+
+
+def inline_ai_button(target: str, what: str, flat: bool = False) -> rx.Component:
+    """The robot of anything with an inline chat (Shortcut.INLINE_EDIT) that has no AI button
+    of its own (a result with inputs has ai_toggle): a pane's head (flat, as its other icon
+    buttons) or a view's bar. A click opens the inline chat there, as the key does
+    (assets/panes.js, by data-inline-ai). target: the CSS selector, inside that pane or view,
+    of where the chat opens: its code editor(s), or the Terminal's frame.
+    """
+    return rx.el.button(
+        ICON_AI,
+        title=Shortcut.INLINE_EDIT.hint(what),
+        aria_label=what,
+        type="button",
+        custom_attrs={"data-inline-ai": target},
+        class_name="zoom-btn ai-btn mono" if flat else "act ai-toggle mono",
     )
 
 

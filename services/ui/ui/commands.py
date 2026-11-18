@@ -205,6 +205,22 @@ COMMANDS: list[Command] = [
         )
     ],
     Command(
+        "view.next_pane",
+        "View",
+        "Go to the next pane",
+        ICON_FULL_SCREEN,
+        press=Shortcut.NEXT_PANE,
+        words="focus active move cursor",
+    ),  # fmt: skip
+    Command(
+        "view.prev_pane",
+        "View",
+        "Go to the previous pane",
+        ICON_FULL_SCREEN,
+        press=Shortcut.PREV_PANE,
+        words="focus active move cursor",
+    ),  # fmt: skip
+    Command(
         "view.full_screen",
         "View",
         "Full screen (the result or pane you were in)",
@@ -306,6 +322,8 @@ RUNNABLE: tuple[Shortcut, ...] = (
     Shortcut.TOGGLE_TERMINAL,
     Shortcut.TOGGLE_PYTHON_VARIABLES,
     Shortcut.CLOSE_ALL,
+    Shortcut.NEXT_PANE,
+    Shortcut.PREV_PANE,
     Shortcut.ZOOM_CHAT,
     Shortcut.ZOOM_RESULTS,
     Shortcut.ZOOM_PYTHON,
