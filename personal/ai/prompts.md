@@ -69,3 +69,16 @@ top5 = the five best players in @q1 "
 skills on how to communicate ideas (3 different proposals that significantly different approaches, examples use cases, short condesned info, tables/code snippet when possible)
 
 terminal ai safety: look at the pydantic-ai shell (pydantic-ai-harness `Shell`) for how it limits which commands are allowed, and use that for the Terminal's inline AI (`Alt+I`, `services/ui/ui/inline_terminal.py`) so what it writes is safe. today it only types the command at the prompt and never runs it; nothing checks the command itself
+
+ask ai for interesting ideas (especially with smash, eg when i said "suprise me" it started to do smash framedata quiz, there could be interesting ways of using teach me skill and wyas to test knowledge and learn for little mac). 
+
+
+have AI think through features vscode, omarchy, etc have that I dont and think throw if want. also have it innovate and think of interesting ideas
+
+
+anything that has tab use alt+shift+left right arrow to toggle between
+
+
+adding excel import and edit tool/component
+
+adding @file:<path> as convention to reference an actual file (color code the drop down better, only auot complete when hit colon, tab to get that )

@@ -4,7 +4,7 @@
 //          for polars SQL (PostgreSQL syntax, own short keyword list so column names like id or name
 //          aren't keywords), Everforest colors, column completion for the table "self" (Tab completes,
 //          as in a cell), and the run key from shortcuts.py (Shortcut.RUN_SQL). Usually one line; grows if you add more.
-//          Also a SmashDb console's query editor (render.db_console_widget): given `schema`
+//          Also a SmashDb console's query editor (render.db_console_parts): given `schema`
 //          ({table: columns}) instead of `columns`, it completes every table. Run sends the
 //          selection when there is one, else the whole text. With editUrl: Alt+I inline chat (inline_edit.jsx).
 // Usage: wrapped for Reflex by ui/editor.py (SqlEditor).

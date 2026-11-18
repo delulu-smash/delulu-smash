@@ -1090,6 +1090,10 @@ class State(rx.State):
                 with self._log_context("view", slot=slot):
                     ok, why = await frameable(url)
             session.put(slot, WebPage(url=url, frameable=ok, why=why))
+            # its address is its Inputs (render.browser_parts): they fold once a page is
+            # loaded, so the page gets the room (Inputs brings them back; a blank one is open)
+            if url:
+                ui.form_open = False
             if slot.startswith(("tab:", "chat:")):
                 self._sync()  # the tab's label is the page's host
             else:

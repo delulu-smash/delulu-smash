@@ -24,7 +24,7 @@ from __future__ import annotations
 import contextlib
 import dataclasses
 import json
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import polars as pl
 import reflex as rx
@@ -44,6 +44,9 @@ from ui.tool_forms import FormField, ToolForm, ToolRequest
 from ui.typeinfo import NO_TYPE, type_parts, type_text
 from ui.web import WebPage
 from ui.widgets import form_for
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 MAX_GRID_ROWS = 2000
 # Two diagonal arrows pointing apart / together, as
@@ -479,8 +482,11 @@ class View:
         )
         if form := form_for(self.value):
             if isinstance(self.value, ToolRequest):
-                inputs, data.label, data.note = self.value.inputs, form.title, "not run yet"
+                # not run yet: the display says what to do (tool_parts), so no status
+                inputs, data.label, data.note = self.value.inputs, form.title, ""
             data.form, data.form_open, data.running = form.fields(inputs or {}), ui.form_open, ui.running
+            # nothing to show but its Inputs yet, so they are open
+            data.form_open = data.form_open or isinstance(self.value, ToolRequest)
             data.form_key, data.form_changed = f"{slot}#{ui.runs}.{ui.proposals}", can_restore
             data.ai_open, data.ai_busy, data.ai_note, data.ai_error = ui.ai_open, ui.ai_busy, ui.ai_note, ui.ai_error
             if ui.proposed:
@@ -488,6 +494,8 @@ class View:
         if isinstance(self.value, PlayerUsage):
             _usage_data(self.value, ui, data)
         if isinstance(self.value, WebPage):
+            # its address is its Inputs (browser_parts): open while there is no page yet
+            data.label, data.form_open = "Browser", ui.form_open or not self.value.url
             verdict = {True: "yes", False: "no", None: "unknown"}[self.value.frameable]
             data.web = {
                 "url": self.value.url,
@@ -595,19 +603,12 @@ def _table_view(value: Any, frame: pl.DataFrame) -> View:
 
 
 def _videos_view(value: MatchVideos) -> View:
-    query = value.query
-    versus = " vs ".join(
-        " ".join(part for part in side if part)
-        for side in [(query.player_1, query.char_1), (query.player_2, query.char_2)]
-        if any(side)
-    )
-    what = " · ".join(part for part in [versus, query.search_term, query.region] if part)
-    found = [what, f"{value.total} found", f"page {value.page} of {value.pages}"]
     return View(
         kind="vods",
         value=value,
         summary=f"{len(value.videos)} VOD{'' if len(value.videos) == 1 else 's'}",
-        note=" · ".join(part for part in found if part),
+        # what was searched for is in its Inputs: the status is only what came back
+        note=f"{value.total} found · page {value.page} of {value.pages}",
         videos=[
             {
                 "id": video.video_id,
@@ -939,27 +940,7 @@ def render_component(
     else:
         grid = full_grid(view, on_sort)
     return rx.el.div(
-        rx.match(
-            view.kind,
-            ("vods", video_widget(view, send, actions)),
-            ("usage", usage_widget(view, send, actions)),
-            # a tool form added by hand, before its first run: just the form
-            (
-                "tool",
-                rx.fragment(
-                    # closer: only the close button (send= would add a second AI button)
-                    _bar(view, actions, ai_toggle(view, send), closer=send),
-                    form_section(view, send),
-                    _error(view),
-                    rx.el.div("Fill in the inputs and press Enter to run it.", class_name="empty sans"),
-                ),
-            ),
-            ("fields", rx.fragment(_bar(view, actions, send=send), model_fields(view.fields, view.sections))),
-            ("table", table_widget(view, send, grid, actions)),
-            ("smashdb", db_console_widget(view, send, grid, actions)),
-            ("browser", browser_widget(view, send, actions)),
-            rx.fragment(),
-        ),
+        widget_frame(view, send, grid, actions),
         # a compact table is only as wide as its columns
         style={"width": rx.cond(view.kind == "table", view.width, "auto")} if compact else {},
         # where it is shown: assets/panes.js finds the glance's Browser by it (tab:web)
@@ -1024,18 +1005,31 @@ def typed_text(parts: rx.Var, text: rx.Var) -> rx.Component:
     return rx.fragment(type_label(parts), rx.cond(has_type & (text != ""), " · ", ""), text)
 
 
-def _bar(
-    view: rx.Var[ViewData],
-    actions: tuple[rx.Component, ...],
-    *controls: rx.Component,
-    hidden: Any = False,
-    send: Any = None,
-    closer: Any = None,
-) -> rx.Component:
-    """The component's top bar: what the value is, the kind's own controls, the host's actions.
-    With send (the view's event sender), a view that has a tool form gets its Inputs button;
-    send (or closer, for the close alone) also gives the bar its × (close_view_button).
+@dataclasses.dataclass(frozen=True)
+class WidgetParts:
+    """What a widget supplies; the frame (widget_frame) draws everything around it. The three
+    regions of spec/services/ui/README.md, "Widgets: three regions": a widget can't put
+    anything in its bar, since it never draws one.
     """
+
+    display: rx.Component
+    """Region 3: its output, its own design."""
+    line: tuple[rx.Component, ...] = ()
+    """Its own controls for the display's bottom line (eg a table's SQL toggle and filter)."""
+    inputs: rx.Component | None = None
+    """Region 2 for a widget whose parameters are no tool form (the Browser's address). A
+    widget with a tool (widgets.py) gets its Inputs from the tool; it leaves this out."""
+    ai: rx.Component | None = None
+    """Its ✨ when it has inline AI without a tool form (a SmashDb console's query editor)."""
+
+
+def widget_bar(view: rx.Var[ViewData], send: Any, ai: rx.Component, own_inputs: Any) -> rx.Component:
+    """Region 1, every widget's bar and nothing else: its name, the inline AI where it has it
+    (the box in the free width while open, then ✨), Inputs where it takes parameters, ⤢, ×.
+    ai: the widget's own ✨ (WidgetParts.ai) when it has no tool form; own_inputs: whether it
+    has Inputs of its own (WidgetParts.inputs).
+    """
+    has_form = view.form.length() > 0
     return rx.el.div(
         rx.el.span(
             rx.cond(
@@ -1045,20 +1039,65 @@ def _bar(
             ),
             class_name="out-kind",
         ),
-        rx.cond(view.note != view.label, rx.el.span(view.note, class_name="dim")),
-        # the free width: the form's inline AI box while it is open, so the inputs below never
-        # move (spec/services/ui/README.md, "Toggles don't move the content")
-        rx.cond(view.ai_open & (view.form.length() > 0), strip_ask_box(view), rx.el.span(class_name="spacer")),
-        *controls,
-        # every view with a tool form (widgets.py) gets
-        # its Inputs button and the AI that fills it
-        rx.cond(view.form.length() > 0, rx.fragment(ai_toggle(view, send), form_toggle(view, send)))
-        if send
-        else rx.fragment(),
-        *actions,
+        # the free width: the form's inline AI box while it is open, so nothing below moves
+        # (spec/services/ui/README.md, "Toggles don't move the content")
+        rx.cond(view.ai_open & has_form, strip_ask_box(view), rx.el.span(class_name="spacer")),
+        # a widget with a tool form (widgets.py): the AI that fills it; else its own, if any
+        rx.cond(has_form, ai_toggle(view, send), ai),
+        rx.cond(has_form | own_inputs, form_toggle(view, send)),
         float_button(),
-        close_view_button(closer or send) if (closer or send) else rx.fragment(),
-        class_name=rx.cond(hidden, "viewer-bar sans is-hidden", "viewer-bar sans"),
+        close_view_button(send),
+        class_name="viewer-bar sans",
+    )
+
+
+def widget_line(view: rx.Var[ViewData], controls: rx.Component, links: tuple[rx.Component, ...]) -> rx.Component:
+    """The display's bottom line, on every widget (empty when it has nothing to say): its
+    status (view.note), then its own controls, then the links of the place showing it
+    (↗ tab, ↖ chat).
+    """
+    return rx.el.div(
+        rx.cond(
+            (view.note != view.label) & (view.note != ""),
+            rx.el.span(view.note, title=view.note, class_name="widget-note dim"),
+        ),
+        rx.el.span(class_name="spacer"),
+        controls,
+        *links,
+        class_name="widget-line sans",
+    )
+
+
+def widget_frame(
+    view: rx.Var[ViewData], send: Any, grid: rx.Component, links: tuple[rx.Component, ...]
+) -> rx.Component:
+    """The one frame every widget is drawn in: the bar, the Inputs panel (folded under the bar)
+    when it takes parameters, an error, then the widget's display with its bottom line. The
+    only place a bar, an Inputs panel or a bottom line is drawn (tests/services/ui/
+    test_widget_frame.py); a widget supplies its WidgetParts (PARTS, by kind).
+    """
+    parts = {kind: make(view, send, grid) for kind, make in PARTS.items()}
+
+    def pick(part: Callable[[WidgetParts], rx.Component]) -> rx.Component:
+        return rx.match(view.kind, *[(kind, part(found)) for kind, found in parts.items()], rx.fragment())
+
+    # the kinds with Inputs of their own (no tool form): they get the Inputs button too
+    has_own_inputs = rx.Var.create([kind for kind, found in parts.items() if found.inputs is not None]).contains(
+        view.kind
+    )
+    return rx.fragment(
+        widget_bar(view, send, pick(lambda found: found.ai or rx.fragment()), has_own_inputs),
+        rx.cond(
+            view.form_open,
+            rx.cond(
+                view.form.length() > 0,
+                form_section(view, send),
+                pick(lambda found: found.inputs or rx.fragment()),
+            ),
+        ),
+        _error(view),
+        rx.el.div(pick(lambda found: found.display), class_name="widget-display"),
+        widget_line(view, pick(lambda found: rx.fragment(*found.line)), links),
     )
 
 
@@ -1066,16 +1105,9 @@ def _error(view: rx.Var[ViewData]) -> rx.Component:
     return rx.cond(view.error != "", rx.el.div(view.error, class_name="view-error sans"))
 
 
-def _table_bar(
-    view: rx.Var[ViewData], send: Any, actions: tuple[rx.Component, ...], *controls: rx.Component
-) -> rx.Component:
-    """A table's bar: the SQL toggle and the row filter
-    (after the host widget's own controls).
-    """
-    return _bar(
-        view,
-        actions,
-        *controls,
+def _table_line(view: rx.Var[ViewData], send: Any) -> tuple[rx.Component, ...]:
+    """A table's own controls, for its bottom line: the SQL toggle and the row filter."""
+    return (
         rx.el.button(
             rx.cond(view.sql_open, "SQL ▾", "SQL ▸"),
             title=rx.cond(view.sql_active, "A SQL query is applied: show or hide it", "Query this table with SQL"),
@@ -1088,22 +1120,27 @@ def _table_bar(
             on_change=lambda value: send("query", value),
             class_name="viewer-filter",
         ),
-        send=send,
     )
 
 
-def _table_body(view: rx.Var[ViewData], send: Any, grid: rx.Component) -> rx.Component:
-    """Under a table's bar: the SQL box (folded by default), an error, then the grid."""
-    return rx.fragment(rx.cond(view.sql_open, table_sql(view, send)), _error(view), grid)
-
-
-def table_widget(
-    view: rx.Var[ViewData], send: Any, grid: rx.Component, actions: tuple[rx.Component, ...]
-) -> rx.Component:
-    """A table: row filter and SQL toggle, the SQL box (folded by default), then the grid.
-    The two halves are also a SmashDb console's result (db_console_widget).
+def table_parts(view: rx.Var[ViewData], send: Any, grid: rx.Component) -> WidgetParts:
+    """A table: the SQL box (folded by default) over the grid; its SQL toggle and row filter
+    are in its bottom line.
     """
-    return rx.fragment(_table_bar(view, send, actions), _table_body(view, send, grid))
+    return WidgetParts(
+        display=rx.fragment(rx.cond(view.sql_open, table_sql(view, send)), grid),
+        line=_table_line(view, send),
+    )
+
+
+def fields_parts(view: rx.Var[ViewData], _send: Any, _grid: rx.Component) -> WidgetParts:
+    """A model's fields (eg a tool's result that is no table)."""
+    return WidgetParts(display=model_fields(view.fields, view.sections))
+
+
+def tool_parts(_view: rx.Var[ViewData], _send: Any, _grid: rx.Component) -> WidgetParts:
+    """A tool form added by hand, before its first run: its Inputs panel is all there is."""
+    return WidgetParts(display=rx.el.div("Fill in the inputs and press Enter to run it.", class_name="empty sans"))
 
 
 def _db_table(table: rx.Var[DbTable], send: Any) -> rx.Component:
@@ -1171,36 +1208,17 @@ def _db_save_row(view: rx.Var[ViewData], send: Any) -> rx.Component:
     )
 
 
-def db_console_widget(
-    view: rx.Var[ViewData], send: Any, grid: rx.Component, actions: tuple[rx.Component, ...]
-) -> rx.Component:
+def db_console_parts(view: rx.Var[ViewData], send: Any, grid: rx.Component) -> WidgetParts:
     """A SmashDb console (db_console.py), as in DataGrip: the schema tree on the left; on the
-    right the query editor (Shortcut.RUN_SQL or Run; a selection runs alone), then the result,
-    which is the table widget itself (its bar on top, its SQL box and grid below). A failed
-    query shows its traceback with traceback_view, as a Python cell does, over the last result.
+    right the query editor with what belongs to it (Run, History, Assign; Shortcut.RUN_SQL
+    runs, a selection runs alone), then the result, which is a table's display (its SQL box
+    and grid; its SQL toggle and filter in the bottom line). A failed query shows its
+    traceback with traceback_view, as a Python cell does, over the last result.
     """
-    return rx.fragment(
-        _table_bar(
-            view,
-            send,
-            actions,
-            inline_ai_button(".db-editor .cm-content", "Ask AI to write or change the query"),
-            rx.el.button(
-                rx.cond(view.db_history_open, "History ▾", "History ▸"),
-                title="The queries run in this console",
-                on_click=send("db_history"),
-                disabled=view.db_history.length() == 0,
-                class_name="act",
-            ),
-            rx.el.button(
-                rx.cond(view.db_save_open, "Assign ▾", "Assign ▸"),
-                title="Keep the query's result as a Python variable (a DataFrame, with its own tab)",
-                on_click=send("db_save_toggle"),
-                disabled=~view.db_ran,
-                class_name="act",
-            ),
-        ),
-        rx.el.div(
+    return WidgetParts(
+        ai=inline_ai_button(".db-editor .cm-content", "Ask AI to write or change the query"),
+        line=_table_line(view, send),
+        display=rx.el.div(
             rx.el.div(
                 rx.el.div("Tables", class_name="db-tree-head sans"),
                 rx.foreach(view.db_tables, lambda table: _db_table(table, send)),
@@ -1235,6 +1253,20 @@ def db_console_widget(
                                 class_name="act",
                             ),
                             rx.el.span(Shortcut.RUN_SQL.keys, class_name="sql-hint dim mono"),
+                            rx.el.button(
+                                rx.cond(view.db_history_open, "History ▾", "History ▸"),
+                                title="The queries run in this console",
+                                on_click=send("db_history"),
+                                disabled=view.db_history.length() == 0,
+                                class_name="act",
+                            ),
+                            rx.el.button(
+                                rx.cond(view.db_save_open, "Assign ▾", "Assign ▸"),
+                                title="Keep the query's result as a Python variable (a DataFrame, with its own tab)",
+                                on_click=send("db_save_toggle"),
+                                disabled=~view.db_ran,
+                                class_name="act",
+                            ),
                             class_name="db-run",
                         ),
                         class_name="db-editor-row",
@@ -1265,7 +1297,7 @@ def db_console_widget(
                 rx.el.div(
                     rx.cond(
                         view.db_ran,
-                        _table_body(view, send, grid),
+                        rx.fragment(rx.cond(view.sql_open, table_sql(view, send)), grid),
                         rx.el.div(
                             "Write a query and run it, or press ▶ on a table. ",
                             "Results can be filtered, sorted and queried again (SQL ▸) like any table.",
@@ -1691,7 +1723,7 @@ def bar_group(group: rx.Var[BarGroup], *head: rx.Component) -> rx.Component:
     )
 
 
-def usage_widget(view: rx.Var[ViewData], send: Any, actions: tuple[rx.Component, ...]) -> rx.Component:
+def usage_parts(view: rx.Var[ViewData], send: Any, _grid: rx.Component) -> WidgetParts:
     """A player's usage at a glance (start.gg sets): characters for a picked window, stages by
     who picked them, a line on character changes, and
     the characters at each of the last events.
@@ -1756,11 +1788,8 @@ def usage_widget(view: rx.Var[ViewData], send: Any, actions: tuple[rx.Component,
             class_name="event-row",
         )
 
-    return rx.fragment(
-        _bar(view, actions, send=send),
-        rx.cond(view.form_open, form_section(view, send)),
-        _error(view),
-        rx.el.div(
+    return WidgetParts(
+        display=rx.el.div(
             rx.el.div(
                 rx.el.span("Events counted", class_name="dim"),
                 settings,
@@ -1789,20 +1818,9 @@ def usage_widget(view: rx.Var[ViewData], send: Any, actions: tuple[rx.Component,
     )
 
 
-def web_frame(
-    title: rx.Component,
-    src: Any,
-    url: Any,
-    key: Any = "",
-    extra: tuple[rx.Component, ...] = (),
-    after: tuple[rx.Component, ...] = (),
-    blocked: Any = False,
-    body: rx.Component | None = None,
-    class_name: Any = "player",
-) -> rx.Component:
-    """A web page in a frame, under a bar: title (or an address box), the caller's extra
-    buttons, Open ↗ (a real browser tab), then `after` (eg close, float). The Browser widget
-    is this alone; the VODs player is this with its list button. One look for both.
+def web_page(src: Any, key: Any = "", blocked: Any = False, body: rx.Component | None = None) -> rx.Component:
+    """A web page in a frame. While `blocked`, `body` (eg the Browser's refused card) takes the
+    frame's place.
     """
     frame = rx.el.iframe(
         src=src,
@@ -1812,41 +1830,49 @@ def web_frame(
         key=key,
         class_name="player-frame",
     )
-    return rx.el.div(
-        rx.el.div(
-            title,
-            *extra,
-            rx.el.a("Open ↗", href=url, target="_blank", rel="noreferrer", title=url, class_name="act"),
-            *after,
-            class_name="player-bar sans",
+    return rx.cond(blocked, body if body is not None else rx.fragment(), frame)
+
+
+def open_link(url: Any) -> rx.Component:
+    """Open ↗: the page in a real browser tab."""
+    return rx.el.a("Open ↗", href=url, target="_blank", rel="noreferrer", title=url, class_name="act")
+
+
+@rx.memo
+def address_form(url: rx.Var[str], on_load: rx.EventHandler[passthrough_event_spec(dict[str, Any])]) -> rx.Component:
+    """The Browser's Inputs: its address (Enter or Load loads it). A memo component, as
+    tool_form is: a form's submit handler is generated outside any loop the view sits in
+    (chat items, cells) and couldn't see the loop item otherwise.
+    """
+    return rx.el.form(
+        rx.el.label(
+            rx.el.span("address", class_name="form-label"),
+            rx.el.input(
+                key=url,
+                name="url",
+                default_value=url,
+                placeholder="Type a web address, Enter to load",
+                auto_complete="off",
+                spell_check=False,
+                class_name="form-input mono browser-url",
+            ),
+            class_name="form-field browser-address",
         ),
-        # while `blocked`, `body` (eg the Browser's refused card) takes the frame's place
-        rx.cond(blocked, body if body is not None else rx.fragment(), frame),
-        class_name=class_name,
+        rx.el.button("Load", type="submit", title="Load the address (Enter)", class_name="act"),
+        on_submit=on_load,
+        reset_on_submit=False,
+        class_name="tool-form sans",
     )
 
 
-def browser_widget(view: rx.Var[ViewData], send: Any, actions: tuple[rx.Component, ...]) -> rx.Component:
-    """The Browser: an address box (Enter loads it) over the page (web_frame). A site the
-    check found refusing (web.frameable) gets an 'Open in new tab' card instead of a blank
-    frame; when the check had no answer the page is framed with a hint, as a refused frame
-    looks blank and the page itself can't tell.
+def browser_parts(view: rx.Var[ViewData], send: Any, _grid: rx.Component) -> WidgetParts:
+    """The Browser: its address is its Inputs (Enter or Load loads it; open while the page is
+    blank), its display the page (web_page). A site the check found refusing (web.frameable)
+    gets an 'Open in new tab' card instead of a blank frame; when the check had no answer the
+    page is framed with a hint, as a refused frame looks blank and the page itself can't tell.
     """
     web = view.web
-    address = rx.el.form(
-        rx.el.input(
-            key=web["url"],
-            name="url",
-            default_value=web["url"],
-            placeholder="Type a web address, Enter to load",
-            auto_complete="off",
-            spell_check=False,
-            class_name="viewer-filter mono browser-url",
-        ),
-        on_submit=lambda form: send("navigate", form),
-        reset_on_submit=False,
-        class_name="browser-address",
-    )
+    address = address_form(url=web["url"], on_load=lambda form: send("navigate", form))
     refused = rx.el.div(
         rx.el.div(web["host"], " can't be shown here", class_name="browser-refused-title"),
         rx.el.div(
@@ -1865,64 +1891,59 @@ def browser_widget(view: rx.Var[ViewData], send: Any, actions: tuple[rx.Componen
         title="Go back or forward through pages you opened by clicking links inside this page",
         class_name="browser-keys dim mono",
     )
-    frame = web_frame(
-        address,
-        src=web["src"],
-        url=web["url"],
-        key=web["src"],
-        extra=(keys,),
-        after=(*actions, float_button(), close_view_button(send)),
-        blocked=web["frameable"] == "no",
-        body=refused,
-        class_name="player is-full browser",
-    )
-    return rx.fragment(
-        frame,
-        rx.cond(
-            (web["url"] != "") & (web["frameable"] == "unknown"),
-            rx.el.div(
-                "Blank? This site may not allow being shown here: use Open ↗.", class_name="browser-hint dim sans"
+    return WidgetParts(
+        inputs=address,
+        display=rx.el.div(
+            web_page(web["src"], key=web["src"], blocked=web["frameable"] == "no", body=refused),
+            rx.cond(
+                (web["url"] != "") & (web["frameable"] == "unknown"),
+                rx.el.div(
+                    "Blank? This site may not allow being shown here: use Open ↗.",
+                    class_name="browser-hint dim sans",
+                ),
             ),
+            class_name="player is-full browser",
         ),
+        line=(keys, rx.cond(web["url"] != "", open_link(web["url"]))),
     )
 
 
-def video_widget(view: rx.Var[ViewData], send: Any, actions: tuple[rx.Component, ...]) -> rx.Component:
-    """VODs (match videos): the list, and the video picked from it playing above the list.
-
-    Picking a video folds the list away (view.list_hidden) so the video fills the component;
-    the player's bar brings the list back.
+def vods_parts(view: rx.Var[ViewData], send: Any, _grid: rx.Component) -> WidgetParts:
+    """VODs (match videos): the list, and the video picked from it playing above the list,
+    inside the display. Picking a video folds the list away (view.list_hidden) so the video
+    fills the display; the player's own bar brings the list back. Paging is in the bottom line.
     """
     playing = view.playing
     hidden = view.list_hidden
-    # the Browser widget's frame (web_frame), with the list's own button and close
     player = rx.cond(
         playing["id"],
-        web_frame(
-            rx.el.span(playing["title"], class_name="player-title"),
-            src=rx.cond(view.autoplay, f"{playing['embed']}?autoplay=1", playing["embed"]),
-            url=playing["url"],
-            key=playing["id"],
-            extra=(
+        rx.el.div(
+            # the player's own bar, part of the display: what plays, the list, Open ↗, close
+            rx.el.div(
+                rx.el.span(playing["title"], class_name="player-title"),
                 rx.el.button(
                     rx.cond(hidden, "Show list ▾", "Hide list ▴"),
                     title="Show or hide the video list under the player",
                     on_click=send("toggle_list"),
                     class_name="act",
                 ),
-            ),
-            # the list's bar (with its float button) is hidden while the video fills the view
-            after=(
+                open_link(playing["url"]),
                 rx.el.button("×", title="Close the player", on_click=send("stop"), class_name="act"),
-                rx.cond(hidden, rx.fragment(float_button(), close_view_button(send))),
+                class_name="player-bar sans",
             ),
+            web_page(rx.cond(view.autoplay, f"{playing['embed']}?autoplay=1", playing["embed"]), key=playing["id"]),
             class_name=rx.cond(hidden, "player is-full", "player"),
         ),
     )
-    return rx.fragment(
-        _bar(
-            view,
-            actions,
+    return WidgetParts(
+        display=rx.fragment(
+            player,
+            rx.el.div(
+                video_gallery(view.videos, lambda video: send("play", video), playing["id"]),
+                class_name=rx.cond(hidden, "video-list is-hidden", "video-list"),
+            ),
+        ),
+        line=(
             rx.cond(view.paging, rx.el.span("loading…", class_name="dim")),
             rx.el.button(
                 "‹ Prev",
@@ -1936,17 +1957,21 @@ def video_widget(view: rx.Var[ViewData], send: Any, actions: tuple[rx.Component,
                 disabled=view.paging | (view.page >= view.pages),
                 class_name="act",
             ),
-            hidden=hidden,
-            send=send,
-        ),
-        rx.cond(view.form_open & ~hidden, form_section(view, send)),
-        _error(view),
-        player,
-        rx.el.div(
-            video_gallery(view.videos, lambda video: send("play", video), playing["id"]),
-            class_name=rx.cond(hidden, "video-list is-hidden", "video-list"),
         ),
     )
+
+
+# Every widget's parts, by ViewData.kind: what widget_frame draws inside its frame. A new
+# widget is a row here (and in widgets.WIDGETS), never a bar of its own.
+PARTS: dict[str, Callable[[rx.Var[ViewData], Any, rx.Component], WidgetParts]] = {
+    "table": table_parts,
+    "vods": vods_parts,
+    "usage": usage_parts,
+    "fields": fields_parts,
+    "smashdb": db_console_parts,
+    "browser": browser_parts,
+    "tool": tool_parts,
+}
 
 
 GRID_THEME = {

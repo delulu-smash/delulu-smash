@@ -81,7 +81,7 @@ WIDGETS: list[Widget] = [
     # a query console on the session's db (db_console.py): schema tree, SQL editor, result grid
     Widget("smashdb", "SmashDb console", new=lambda session: DbConsole(session.db), addable=True),
     # a web page in a frame (web.py): what a clicked link opens in; "+" adds a blank one. No
-    # tool, so no inline AI. The VODs player is built on the same component (render.web_frame)
+    # tool, so no inline AI. The VODs player is built on the same component (render.web_page)
     Widget("browser", "Browser", new=lambda _session: WebPage(), addable=True),
     # the app's settings (config.py): set_config is no agent tool, but it is a function, so it
     # gets the form and the inline AI as one. Its form starts with what is set now, so running

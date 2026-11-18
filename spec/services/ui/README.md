@@ -83,9 +83,10 @@ exceptions** (not the Browser, not a playing video). As with panels, learning on
   its parameters, its display); the one shared frame (`render.py`) draws the bar and the Inputs panel from
   them, so a widget can't put anything else in its bar or skip a region.
 - **A new widget** is a new display (and parameters, if it takes any) plugged into that frame, never a new bar.
-- Today (Nov 2026) the code doesn't follow this yet: bars carry notes, paging, filters and host links, the
-  Browser has its own bar, and a playing video with its list folded hides the bar. Bringing it in line is
-  planned work.
+- In the code: `render.widget_frame` is that frame (`widget_bar`, the Inputs panel, `widget_line`); a widget is
+  a `WidgetParts` (display, its bottom line's controls, its own Inputs or ✨ when it has no tool form) under its
+  kind in `render.PARTS`. `tests/services/ui/test_widget_frame.py` fails when a bar, an Inputs panel or a
+  bottom line is drawn anywhere else, or a kind has no parts.
 
 ## Words: one word per action
 

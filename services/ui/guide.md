@@ -140,7 +140,7 @@ After an `/assign ... from <url>` that needed the browser, its row ends with "/s
 
 - Click a tab to switch; × or right-click closes (Close Others, Close All, Show in Chat).
 - A table: type in the filter box, click a header to sort. The grid shows at most 2000 rows.
-- `SQL ▸` in a table's bar: a query box on that table (it is `self`), Ctrl+Enter runs, × goes back.
+- `SQL ▸` in a table's bottom line: a query box on that table (it is `self`), Ctrl+Enter runs, × goes back.
 - VODs: click a card to play it; "Show list" brings the list back.
 
 ## Finding things

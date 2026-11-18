@@ -245,7 +245,7 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   - **Values** go through the validator pydantic-ai uses for the model's calls, then the same tool function.
   - **Which inputs made a result** is recorded by the session (`Session.calls`): the agent's tool-call
     arguments, or the form as run. Paging keeps them; a value made in Python has none (an empty form).
-    The form shows what the tool was called with (eg `player_1=Joker`), the bar what was really searched.
+    The form shows what the tool was called with (eg `player_1=Joker`).
   - **Back to the original**: for a result the agent made, the session also keeps the agent's own call
     (`Call.original`: its inputs and result). Once the form is re-run, `Inputs` turns green and an × in
     the form puts both back, without fetching again (`Session.restore_original`). A form added by hand
@@ -253,8 +253,8 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   - `tests/services/ui/test_tool_forms.py` checks every tool form; `test_widgets.py` the registry.
 
   Which widgets have one is `Widget.tool` in `widgets.py`; `_bar` adds the `Inputs` button to any view with
-  a form, and the widget's component places `form_section` under its bar.
-- **Table SQL** (as in DBeaver): `SQL ▸` in a table's bar unfolds a one-line SQL box under it, starting
+  a form, and the shared frame (`render.widget_frame`) draws `form_section` under the bar.
+- **Table SQL** (as in DBeaver): `SQL ▸` in a table's bottom line unfolds a one-line SQL box under it, starting
   as `select * from self`. Ctrl+Enter (`Shortcut.RUN_SQL`) runs it on the table with polars' `df.sql`
   (PostgreSQL syntax, the table is `self`), and the grid shows the result, still filtered and sorted by
   the bar; `SQL` turns green while a query is applied, and × goes back to the whole table. A bad query
@@ -265,16 +265,16 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   dtypes, `▶` (on hover) selects everything from it. Right, the query editor (the table SQL box's CodeMirror,
   completing every table and column): Ctrl+Enter (`Shortcut.RUN_SQL`) or Run runs it; with text selected only
   the selection runs, so several queries can sit in the box. Under it the result, which is the table widget
-  itself (`render._table_bar` / `_table_body`): the same grid, header sort, row filter and `SQL ▸` on `self`
-  as any DataFrame; the bar's note adds the time the query took. A failed query keeps the last result and
+  itself (`render.table_parts`): the same grid, header sort, row filter and `SQL ▸` on `self`
+  as any DataFrame; the bottom line's status adds the time the query took. A failed query keeps the last result and
   shows its traceback in the component a Python cell and the chat use (`render.traceback_view`). `History ▸`
   lists this console's queries that ran (newest first, 20, each once); click one to put it back in the editor.
   - It queries the session's `db`, the one the Python cells have, so `create table x as select ...` in the
     console is there in a cell and the other way round (in memory only; the parquet files are never written).
   - The tab's name is bound to the console: `r3.df` is the result DataFrame, `r3.sql` its query.
-  - **Assign ▸** (in the bar, once a query has run) keeps the result under a name of your own: the next free
+  - **Assign ▸** (beside the query's Run, once a query has run) keeps the result under a name of your own: the next free
     `q1`, `q2`, ... is filled in, so Enter alone assigns it, or type one. It is bound in Python like `q1 = <result>`
-    and gets its own tab; you stay in the console. It is the query's result, without the bar's row filter, sort
+    and gets its own tab; you stay in the console. It is the query's result, without the row filter, sort
     or `SQL ▸`. A name that isn't a Python name, starts with `_`, is `pl` / `db` or is the console itself is
     refused; an existing name is replaced, as in Python.
   - Running a query makes a new `DbConsole` that replaces the old one at its slot, as a tool form's run does.
@@ -284,13 +284,19 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   -> grid; `MatchVideos` (the agent's `find_match_videos`, smash-tube.com) -> thumbnail gallery; any other
   pydantic model -> its fields, with lists of models as small tables; `DbConsole` -> the SmashDb console;
   everything else -> its repr.
+  **Every widget is drawn in one shared frame** (`render.widget_frame`; the rule is in
+  `spec/services/ui/README.md`, "Widgets: three regions"): the bar (only its name, ✨ and the Ask AI box,
+  Inputs, ⤢, ×), the Inputs panel when it takes parameters, then its display with a bottom line (its status,
+  its own controls such as paging or a table's `SQL ▸` and filter, and the place's `↗ tab` / `↖ chat`). A
+  widget only supplies its parts (`render.WidgetParts`, by kind in `render.PARTS`) and can't draw a bar of
+  its own (`tests/services/ui/test_widget_frame.py`).
   Every widget's bar ends with its float button (⤢, Alt+F) and a × (`render.close_view_button`), which
   closes it as fits where it is shown (`State._close_view`): a Results tab closes, a glance closes (the
   layout goes back), a chat row folds (the row stays), a cell's output is hidden.
   It is two matches, because Reflex compiles components ahead of time and the browser never sees the
   Python object: `to_view(value)` is a Python `match` on the value's type (run when a cell or tool
   returns), and `render_component(view)` picks the component for the view's kind. To add a type, add a
-  `case` to `to_view`; a new kind of view also needs a `case` (and its component) in `render_component`.
+  `case` to `to_view`; a new kind of view also needs its parts function and a row in `render.PARTS`.
   **Design rule: a value renders as one contained component, the same wherever it is placed** (a tab,
   a cell output, later a popup or anything else). Everything that belongs to the view is inside what
   `render_component` returns: a table's filter and sort, a video list's player and paging. Its state
@@ -303,7 +309,7 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
 - **Result tabs**: the x on a tab (or right-click: Close, Close Others, Close to the Right, Close All, as
   in VS Code) closes it. Only the tab goes: the name stays in Python, and the tab comes back when the name is
   bound to something new or the result is opened again from the chat (`Session.closed` / `tabs()`).
-  A result the agent returned has `↖ chat` in its bar (and Show in Chat in the right-click menu): it
+  A result the agent returned has `↖ chat` at the end of its bottom line (and Show in Chat in the right-click menu): it
   scrolls the chat to that tool call's row and flashes it.
 - **Help**: the ? at the top right (Alt+H), kept short: first **Panels** (`ui.PANELS`: each panel with the key
   that shows or hides it and its full-screen key, then the palette for everything else), then examples of slash commands and `@` mentions as code
@@ -591,7 +597,7 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   back under the player. It works the same in a tab and in a cell's result, each with its own picked
   video. Leaving a tab stops its video; it is back, paused, when you return. Prev / Next fetch the search's other
   pages. Videos whose uploader disabled embedding show YouTube's own message; use the "Open ↗" button.
-  The player is the Browser widget's frame (`render.web_frame`) with the list's own button added.
+  The player shows the video in the same frame the Browser widget uses (`render.web_page`), under its own small bar (title, list, Open ↗, close).
 - **A panel's `?`** (`ui.keys_button`; today the Python console and the Terminal): opens the keybindings list
   (`Alt+K`) with its search box already holding that panel's word (`cell`, `terminal`), so only its keys show.
   The picture in the title bar's left corner is a button too: a click opens the command palette (`Alt+P`).
@@ -622,7 +628,7 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
     `ui.strip_ask` is its spot in the strip). The Terminal's page does the shell's part (reads the screen,
     asks the route, pastes the command); the two talk by `postMessage` (the message types are listed at the
     top of `frame_ask.js`).
-- **Browser** (kind `browser`, `ui/web.py`; `+` → Browser): a web page in a frame, under an address box
+- **Browser** (kind `browser`, `ui/web.py`; `+` → Browser): a web page in a frame; its address is its Inputs panel
   (Enter loads what you type; `https://` is added when missing), `Alt+← Back · Alt+→ Forward` (the browser's own keys:
   they step through pages followed by clicking inside the page) and "Open ↗" (a real browser tab). A link
   clicked in a widget (`render.link`) or in the AI's answer opens here, **as a glance** (as in Zen): the one
