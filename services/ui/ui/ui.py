@@ -497,12 +497,14 @@ def assign_item(item: rx.Var) -> rx.Component:
 
 
 def agent_progress() -> rx.Component:
-    """The one "agent is working" status, at the end of the chat:
-    a pulsing 3x3 dot square, as in Zed's agent panel.
+    """The one "agent is working" status, at the end of the chat: the AI's icon with its three
+    stars popping one after another, and a light sweeping across the word (.ai-twinkle and
+    .thinking-word in assets/app.css). /assign's own progress lines keep Zed's dot square.
     """
     return rx.el.div(
-        rx.el.span(*[rx.el.i() for _ in range(9)], class_name="dot-square"),
-        rx.el.span(rx.cond(State.streaming == "", "Thinking…", "Generating…")),
+        # the same glyph three times, each showing one star (clipped), so each fades on its own
+        rx.el.span(rx.el.b(), rx.el.b(), rx.el.b(), aria_hidden="true", class_name="ai-icon ai-twinkle"),
+        rx.el.span(rx.cond(State.streaming == "", "Thinking…", "Generating…"), class_name="thinking-word"),
         class_name="agent-progress",
     )
 

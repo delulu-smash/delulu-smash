@@ -129,6 +129,23 @@ button { font: inherit; color: inherit; }
 .dot-square i:nth-child(6), .dot-square i:nth-child(8) { animation-delay: 0.45s; }
 .dot-square i:nth-child(9) { animation-delay: 0.6s; }
 @keyframes dot-pulse { 0%, 100% { opacity: 0.2; } 50% { opacity: 1; } }
+/* The chat's "Thinking…" line (ui.agent_progress): the AI's icon (.ai-icon) at 16px, its three
+   stars popping one after another (each grows and flashes purple), and a light sweeping across
+   the word. One glyph can only move as a whole, so it is drawn three times, each copy clipped
+   to one star (measured on the glyph: the small stars are right of 63%, above 40% and below
+   60%) and scaled from that star's own centre, each with its own delay. A plain fade was too
+   faint to see at this size. */
+.ai-twinkle { position: relative; font-size: 16px; color: var(--green); }
+.ai-twinkle::before { content: none; }
+.ai-twinkle b { position: absolute; inset: 0; font-weight: normal; animation: star-pop 1.2s ease-in-out infinite; }
+.ai-twinkle b::before { content: "\F0674"; }
+.ai-twinkle b:nth-child(1) { clip-path: polygon(0 0, 63% 0, 63% 40%, 100% 40%, 100% 60%, 63% 60%, 63% 100%, 0 100%);
+  transform-origin: 32% 50%; }
+.ai-twinkle b:nth-child(2) { clip-path: inset(0 0 60% 63%); transform-origin: 82% 19%; animation-delay: 0.2s; }
+.ai-twinkle b:nth-child(3) { clip-path: inset(60% 0 0 63%); transform-origin: 82% 81%; animation-delay: 0.4s; }
+@keyframes star-pop { 0%, 60%, 100% { transform: scale(0.55); opacity: 0.3; } 30% { transform: scale(1.15); opacity: 1; color: var(--purple); } }
+.thinking-word { color: transparent; background: linear-gradient(100deg, var(--grey1) 35%, var(--fg) 50%, var(--grey1) 65%) 0 0 / 250% 100%;
+  -webkit-background-clip: text; background-clip: text; animation: inline-edit-sweep 1.6s linear infinite; }
 
 .composer { border: 1px solid var(--bg4); border-radius: 8px; background: var(--bg0); padding: 8px 10px 4px; flex: none; }
 .composer:focus-within, .console-input:focus-within { border-color: var(--blue); }
@@ -819,7 +836,7 @@ select.form-input { width: auto; }
   background-image: linear-gradient(100deg, transparent 30%, rgba(127, 187, 179, 0.22) 45%, rgba(214, 153, 182, 0.22) 55%, transparent 70%);
   background-size: 250% 100%; background-repeat: no-repeat; animation: inline-edit-sweep 1.8s linear infinite; }
 @media (prefers-reduced-motion: reduce) {
-  .cm-editor .cm-inline-thinking-line, .composer.is-thinking,
+  .cm-editor .cm-inline-thinking-line, .composer.is-thinking, .ai-twinkle b, .thinking-word,
   .ask-row.is-thinking .ask-input, .ask-row.is-thinking .ask-icon, .ask-row.is-thinking .ask-note { animation: none; }
 }
 
