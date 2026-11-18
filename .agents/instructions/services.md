@@ -6,7 +6,8 @@
 - `services/` holds the repo's official apps: code that runs all the time, not scratch space. Prototypes
   start in `experimental/` and move here once they're official.
 - `services/ui/` is the delulu-smash Reflex app (`SUPER+SHIFT+J`, run by `delulu-smash.service`). Its
-  Python package is `services/ui/ui/`, its specs are in `spec/services/ui/`, its tests in `tests/services/ui/`.
+  Python package is `services/ui/ui/`, its specs are in `spec/services/ui/`, its tests in `tests/services/ui/` (its browser tests in
+  `tests/services/ui/e2e/`, run with `uv run ds test smoke` / `e2e`: see "Testing" in `.agents/agents.md`).
   What is built is documented in `services/ui/README.md`.
 - How the app runs is `ds ui` (`pkgs/ds/cli/ui.py`): `run` (the server, what the service runs), `restart`,
   `status`. The Omarchy window (SUPER+SHIFT+J) is `.os/scripts/keybindings/delulu-smash.py`, which calls

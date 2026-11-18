@@ -5,10 +5,28 @@
 # keeps every normal run offline, so tests never spend real requests or rate limit.
 # Re-record (needs a stored token, makes real requests; only vcr tests get the network):
 #   uv run pytest tests/ds/data/test_startgg_api.py --record-mode=rewrite
+# Tiers (.agents/agents.md, "Testing"): browser tests (any test under an `e2e/` folder) are
+# left out of a plain run by pyproject's default `-m "not e2e"`; ask for them by marker:
+#   uv run pytest -m smoke   |   uv run pytest -m e2e      (or: ds test smoke, ds test e2e)
 # ---------------------------------------------------------------------------
 from __future__ import annotations
 
 import pytest
+
+# an e2e test may reach this machine only: the app, and pages its own test serves
+LOCAL_HOSTS = ["localhost", r"127\.0\.0\.\d+", "::1"]
+
+
+@pytest.hookimpl(tryfirst=True)
+def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
+    """Every test under an `e2e/` folder is an e2e test: marked so (before pytest applies
+    `-m`, hence tryfirst), and allowed to reach this machine. pyproject's default
+    `-m "not e2e"` then leaves it out of a plain run.
+    """
+    for item in items:
+        if "e2e" in item.path.parts:
+            item.add_marker(pytest.mark.e2e)
+            item.add_marker(pytest.mark.block_network(allowed_hosts=LOCAL_HOSTS))
 
 
 @pytest.fixture(scope="session")

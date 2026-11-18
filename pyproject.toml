@@ -84,10 +84,23 @@ xfail_strict=true
 # 1. ensuring debugger is the more user friendly ipdb (instead of default)
 # 2. --block-network (pytest-recording): no test reaches the internet; tests against outside
 #    APIs replay recorded cassettes (see tests/conftest.py for how to re-record)
+# 3. -m "not e2e": a plain `pytest` leaves the e2e (browser) tests out, so it stays fast. They
+#    run only when asked for by marker on the command line, which replaces this default:
+#      ds test          unit                     uv run pytest
+#      ds test smoke    the short browser run    uv run pytest -m smoke
+#      ds test e2e      every browser test       uv run pytest -m e2e
+#    (the tiers: .agents/agents.md, "Testing"; a test under an e2e/ folder is marked e2e by
+#    tests/conftest.py)
 addopts = """
 --pdbcls=IPython.terminal.debugger:Pdb
 --block-network
+--strict-markers
+-m "not e2e"
 """
+markers = [
+    "e2e: drives the running delulu-smash app in a real browser; left out unless asked for (-m e2e)",
+    "smoke: the short subset of e2e for what must never break (about a minute)",
+]
 
 ###############################################################################################
 # LINTER & FORMATTER CONFIGURATION

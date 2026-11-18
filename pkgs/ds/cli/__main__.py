@@ -13,6 +13,7 @@ from ds.cli.docs import docs_app
 from ds.cli.lint import lint_app
 from ds.cli.publish import publish_cmd
 from ds.cli.settings import settings_app
+from ds.cli.test import test_app
 from ds.cli.ui import ui_app
 
 # polars (imported by ds.cli.data) installs a native SIGINT handler that restarts blocking
@@ -33,3 +34,4 @@ app.add_typer(settings_app, name="settings")
 app.add_typer(data_app, name="data")
 app.add_typer(ai_app, name="ai")
 app.add_typer(lint_app, name="lint")
+app.add_typer(test_app, name="test")

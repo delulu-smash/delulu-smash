@@ -141,6 +141,13 @@ PAGE = """<!doctype html>
     }
     return lines.join("\\n").replace(/\\n+$/, "");
   }
+  // for the e2e tests (tests/services/ui/e2e): what the shell shows and how its cursor is
+  // drawn, read from this page itself (another site can't reach into it)
+  window.smashTerminal = {
+    text: screenText,
+    cursor: () => ({ blink: term.options.cursorBlink, style: term.options.cursorStyle }),
+    theme: () => term.options.theme,
+  };
   const FULL_SCREEN = "a full-screen program is running: go back to a prompt first";
   async function ask(id, instruction) {
     // a paste would go into the program (vim, less), not to a prompt

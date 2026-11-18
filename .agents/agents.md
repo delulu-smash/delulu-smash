@@ -478,6 +478,36 @@ Lint rules live in root `pyproject.toml` (`[tool.ruff]`) and run through the pre
     per line with a trailing comma (a missing comma there is still caught by `ISC`).
   - Don't use `# noqa: ISC002` to keep implicit concatenation.
 
+## Testing
+
+Adopted 2026-11-18, after a session's browser checks were thrown away as scratch scripts. Tests come in
+tiers, so **a test being slow is never a reason not to write it**: it goes in the tier that isn't run by
+default.
+
+| Tier | What | Run with | When |
+|---|---|---|---|
+| **Unit** | no browser, no app, no network; seconds | `uv run ds test` (a plain `uv run pytest`) | always, before finishing work that changed code |
+| **Smoke** | the short subset of e2e: what must never break; about a minute | `uv run ds test smoke` | after a change to the app's JS, CSS, layout, keys or focus; when asked |
+| **E2E** | every browser test: they drive the **running** app (`ds ui status`) in headless Chromium | `uv run ds test e2e` | when asked; before and after a large refactor of `services/ui` |
+
+- **How the tiers are kept apart:** a test under an `e2e/` folder is marked `e2e` (`tests/conftest.py`), and
+  pytest's default options in `pyproject.toml` include `-m "not e2e"`, so a plain `pytest` leaves them out
+  (they show as "deselected"). They run only when asked for by marker: `uv run pytest -m e2e` or `-m smoke`
+  (what `ds test e2e` / `ds test smoke` run). Because of that default, naming an e2e file alone selects
+  nothing: add `-m e2e`. `@pytest.mark.smoke` puts an e2e test in the short run. Markers are registered in
+  `pyproject.toml` (`--strict-markers`).
+- **Keep the checks.** When you check a change in a browser (Playwright, a screenshot, reading the page),
+  write the check as an e2e test under `tests/services/ui/e2e/` (fixtures and helpers: its `conftest.py`),
+  not as a throwaway script in `/tmp`. If it was worth running once, it is worth keeping. A check that can't be
+  a test yet (it needs the AI or an outside service) is said so in the summary.
+- **E2E rules:** a test never asks the AI and never calls an outside service (no spend, no rate limits),
+  makes no lasting change (eg never runs Config), and works in its own fresh browser session. It asserts;
+  it doesn't print for someone to read. It waits for a condition, not a fixed sleep. File names are
+  `test_e2e_<area>.py` (pytest here needs unique names).
+- **Say which tiers ran** in the summary of finished work (eg "unit and smoke pass; full e2e not run"), and
+  which of the "things to try" an e2e test now covers.
+- Tests against outside APIs replay recordings: `.agents/instructions/pkgs.md` ("Tests Against External APIs").
+
 ## Repo Tag Prefix (`ds::`)
 
 Every machine-readable tag created for this repo (comments that AI and tools search for) starts with `ds::`, so
