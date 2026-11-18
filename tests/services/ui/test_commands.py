@@ -99,7 +99,8 @@ def test_slash_commands_are_palette_commands_with_a_name():
 
 
 def test_the_clear_commands_are_listed_first():
-    assert list(SLASH)[:2] == ["clear-chat", "clear-variables"]
+    # /clear-all third: "/cl" + Enter picks the first, the usual /clear-chat, not everything
+    assert list(SLASH)[:3] == ["clear-chat", "clear-variables", "clear-all"]
     assert len(SLASH) == sum(bool(command.slash) for command in COMMANDS)
 
 
@@ -133,6 +134,32 @@ def test_a_slash_command_runs_what_its_palette_row_runs_and_shows_in_the_chat():
 
 def test_clearing_the_chat_leaves_its_row_in_the_new_chat():
     assert [name for name, _ in ran(submit(state(), "/clear-chat"))] == ["clear_chat", "slash_ran"]
+
+
+def test_clear_all_clears_the_chat_and_the_variables():
+    made = state()
+    made._session().namespace["n"] = 1
+    events = ran(submit(made, "/clear-all"))
+    assert events == [("clear_all", []), ("slash_ran", ["/clear-all", "a new conversation · cleared 1 variable"])]
+    made.chat = [ChatItem(kind="note", text="hi")]
+    made._session().ai_history = ["remembered"]
+    State.clear_all.fn(made)
+    assert made.chat == []
+    assert made._session().ai_history == []
+    assert "n" not in made._session().namespace
+
+
+def test_clear_all_does_nothing_while_the_agent_works():
+    made = state()
+    made._session().namespace["n"] = 1
+    made.busy = True
+    # its row in the chat doesn't claim a clear that didn't happen (nor /clear-chat's)
+    for name in ("clear-all", "clear-chat"):
+        row = dict(ran(submit(made, f"/{name}")))["slash_ran"]
+        assert row == [f"/{name}", "not run: the agent is still working"]
+    State.clear_all.fn(made)
+    assert "n" in made._session().namespace
+    assert made.chat[-1].text.startswith("The agent is still working")
 
 
 def test_a_pane_command_says_whether_it_showed_or_hid():

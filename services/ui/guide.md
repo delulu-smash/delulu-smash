@@ -43,6 +43,7 @@ Five panels. Each has an `Alt` key that shows or hides it; add `Shift` for full 
 - The title bar shows how full the conversation is (`context 4%`) and the spend: this session and this month.
   Yellow past half full: `/clear-chat` starts a new, small conversation.
 - `/clear-chat` can't be undone. It drops the chat and what the AI remembers; variables and spend stay.
+- `/clear-all`: `/clear-chat` and `/clear-variables` at once (only the variables can be undone, for 3 s).
 
 ## Slash commands
 
@@ -68,7 +69,7 @@ A widget is a view you add: `/vods`, `/usage`, `/smashdb`, `/browser`. It shows 
 ```
 
 - **The AI only fills the inputs; you run them.** Change any input first, or type a new instruction to refine.
-- In a result that has inputs, `Alt+I` (or the robot button by `Inputs`) opens the same Ask AI row.
+- In a result that has inputs, `Alt+I` (or the robot button by `Inputs`) opens the Ask AI box in its bar.
 - SmashDb console: tables on the left, query on the right, Ctrl+Enter runs (a selection runs alone).
 - A link clicked in an answer opens in the Browser as a glance over the app; Esc closes it. Sites that
   refuse to be framed (GitHub, start.gg) open in a real browser tab.

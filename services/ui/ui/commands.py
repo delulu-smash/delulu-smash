@@ -259,6 +259,15 @@ COMMANDS: list[Command] = [
         slash="clear-variables",
     ),  # fmt: skip
     Command(
+        "app.clear_all",
+        "Chat",
+        "Clear all: the chat and every variable (variables can be undone for a few seconds)",
+        ICON_ERASER,
+        event=("clear_all",),
+        words="new reset forget everything start over",
+        slash="clear-all",
+    ),  # fmt: skip
+    Command(
         "variables.undo", "Variables", "Undo the last clear", ICON_UNDO, event=("undo_clear_vars",), words="restore"
     ),
     # "/assign [name =] <text>" (assign.py): the AI writes the code of a new variable, the user
@@ -352,7 +361,9 @@ PALETTE: list[Command] = [
 ]
 
 # The slash commands listed first when "/" is typed: the most used ones (the user's pick).
-SLASH_FIRST: tuple[str, ...] = ("clear-chat", "clear-variables")
+# /clear-all third, after the two it combines: typing "/cl" then Enter picks /clear-chat (the
+# usual one), never everything by accident.
+SLASH_FIRST: tuple[str, ...] = ("clear-chat", "clear-variables", "clear-all")
 # Slash commands, by name (no slash): the commands that have one, SLASH_FIRST then as written.
 _BY_SLASH = {command.slash: command for command in COMMANDS if command.slash}
 if len(_BY_SLASH) != sum(bool(command.slash) for command in COMMANDS):

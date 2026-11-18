@@ -92,7 +92,6 @@ api = Starlette(
         Route("/background", desktop.background, methods=["GET"]),
         # EXPERIMENT: the Terminal widget's page and its shell (terminal.py; this machine only)
         Route("/terminal", terminal.page, methods=["GET"]),
-        Route("/inline_box.js", terminal.inline_box, methods=["GET"]),
         WebSocketRoute("/terminal/ws", terminal.shell_socket),
         # the folder's name is the url prefix, so ds.data.char_icon's value is the path
         Mount(f"/{CHAR_ICON_DIR.name}", StaticFiles(directory=CHAR_ICON_DIR), name="char_icons"),

@@ -227,7 +227,7 @@ class ViewData:
     """The form was re-run on an agent's result: the original call can be put back."""
     # the form's inline chat (inline_fill.py): the AI fills the inputs, the user runs them
     ai_open: bool = False
-    """The form shows its "Ask AI" row."""
+    """The form's Ask AI box shows, in the bar (strip_ask_box)."""
     ai_busy: bool = False
     ai_proposed: bool = False
     """The inputs shown are the AI's proposal, not run yet (changed ones are highlighted)."""
@@ -376,7 +376,7 @@ def apply_event(view: View, ui: Ui, action: str, arg: Any) -> None:
             if not ui.form_open:
                 drop_proposal(ui)
         case "ai_toggle":
-            # the "Ask AI" row lives in the form: opening it unfolds the form
+            # the Ask AI box (in the bar) belongs to the form: opening it unfolds the form
             if ui.ai_open:
                 drop_proposal(ui)
             else:
@@ -1046,7 +1046,9 @@ def _bar(
             class_name="out-kind",
         ),
         rx.cond(view.note != view.label, rx.el.span(view.note, class_name="dim")),
-        rx.el.span(class_name="spacer"),
+        # the free width: the form's inline AI box while it is open, so the inputs below never
+        # move (spec/services/ui/README.md, "Toggles don't move the content")
+        rx.cond(view.ai_open & (view.form.length() > 0), strip_ask_box(view), rx.el.span(class_name="spacer")),
         *controls,
         # every view with a tool form (widgets.py) gets
         # its Inputs button and the AI that fills it
@@ -1317,9 +1319,9 @@ def form_toggle(view: rx.Var[ViewData], send: Any) -> rx.Component:
 
 
 def ai_toggle(view: rx.Var[ViewData], send: Any) -> rx.Component:
-    """The bar's button for the form's inline chat (inline_fill.py): opens the "Ask AI" row in
-    the form, or closes it and drops a proposal. Shortcut.INLINE_EDIT clicks it for the view
-    you are in (assets/panes.js, by data-ai-toggle).
+    """The bar's button for the form's inline chat (inline_fill.py): opens its box in the bar
+    (strip_ask_box), or closes it and drops a proposal. Shortcut.INLINE_EDIT clicks it for the
+    view you are in (assets/panes.js, by data-ai-toggle).
     """
     return rx.el.button(
         ai_icon(),
@@ -1350,8 +1352,8 @@ def inline_ai_button(target: str, what: str, flat: bool = False) -> rx.Component
 
 def form_section(view: rx.Var[ViewData], send: Any) -> rx.Component:
     """The tool form, folded under the bar: one compact row of the tool's inputs; Enter or Run
-    runs it. With its inline chat open it starts with an "Ask AI" row: Enter there asks the AI
-    for new inputs (State.view_event gets the row's text as ASK_FIELD,
+    runs it. Its inline chat's box is in the bar (strip_ask_box) but belongs to this form:
+    Enter there asks the AI for new inputs (State.view_event gets the box's text as ASK_FIELD,
     with the inputs as they are on screen).
     """
     return tool_form(
@@ -1361,12 +1363,8 @@ def form_section(view: rx.Var[ViewData], send: Any) -> rx.Component:
         on_run=lambda form: send("form_run", form),
         on_reset=send("form_reset"),
         remount=view.form_key,
-        ai_open=view.ai_open,
         ai_busy=view.ai_busy,
-        ai_proposed=view.ai_proposed,
-        ai_note=view.ai_note,
-        ai_error=view.ai_error,
-        on_ai_close=send("ai_discard"),
+        form_id=form_id(view),
     )
 
 
@@ -1462,48 +1460,58 @@ def _form_field(item: rx.Var[FormField]) -> rx.Component:
     )
 
 
-def _ask_row(
-    busy: rx.Var[bool], proposed: rx.Var[bool], note: rx.Var[str], error: rx.Var[str], on_close: Any
-) -> rx.Component:
-    """A form's inline chat: the box to tell the AI what the inputs should be, and under it
-    what the last call used or why it failed. Part of the form, so Enter here submits the form
-    with the inputs as they are on screen. It takes the focus when it appears and after each
-    proposal (the form remounts), so Enter again, with the box empty, runs the proposal.
+def form_id(view: rx.Var[ViewData]) -> rx.Var[str]:
+    """The id of a view's tool form: its bar's Ask AI box belongs to that form (the HTML form=
+    attribute), though it is drawn outside it, in the bar.
     """
-    return rx.el.div(
-        rx.el.span(ai_icon(), class_name="ask-icon"),
-        rx.el.input(
-            name=ASK_FIELD,
-            placeholder=rx.cond(
-                proposed,
-                "Enter runs these inputs · or say what else to change · Esc puts the old ones back",
-                "Say what the inputs should be, eg: sparg0 vs steve, offline, last 90 sets",
-            ),
-            auto_focus=True,
-            auto_complete="off",
-            spell_check=False,
-            read_only=busy,
-            class_name="form-input ask-input",
-            custom_attrs={"data-ask": ""},
-        ),
-        rx.el.button(
-            "×",
-            type="button",
-            title=Shortcut.CLOSE.hint("Close: the inputs go back to the ones that made this"),
-            on_click=on_close,
-            class_name="act",
-            custom_attrs={"data-ask-close": ""},
-        ),
+    return "form-" + view.slot.to(str)
+
+
+def strip_ask_box(view: rx.Var[ViewData]) -> rx.Component:
+    """A form's inline chat, in the widget's bar (the free width left of its buttons): the box
+    to tell the AI what the inputs should be, and at its right what the last call used, why it
+    failed, or "Thinking…". The same markup as every inline AI box (ui/inline_box.js;
+    assets/app.css). It belongs to the form, so Enter here submits the form with the inputs as
+    they are on screen. It remounts with the form (form_key), so it takes the focus when it
+    appears and after each proposal, and Enter again, with the box empty, runs the proposal.
+    Esc, Alt+I or the lit ✨ close it (and drop a proposal).
+    """
+    status = rx.cond(
+        view.ai_busy,
+        rx.el.span("Thinking…", class_name="inline-box-status"),
         rx.cond(
-            busy,
-            rx.el.span("Thinking…", class_name="ask-note dim"),
-            rx.cond(
-                error != "",
-                rx.el.span(error, class_name="ask-note is-error"),
-                rx.cond(note != "", rx.el.span(note, class_name="ask-note dim")),
+            view.ai_error != "",
+            rx.el.span(view.ai_error, title=view.ai_error, class_name="inline-box-status is-error"),
+            rx.el.span(
+                rx.cond(view.ai_note != "", view.ai_note, "Enter asks AI · Esc closes"),
+                title=view.ai_note,
+                class_name="inline-box-status",
             ),
         ),
-        class_name=rx.cond(busy, "ask-row is-thinking", "ask-row"),
+    )
+    return rx.el.div(
+        rx.el.div(
+            rx.el.span(ai_icon(), class_name="inline-box-icon"),
+            rx.el.input(
+                name=ASK_FIELD,
+                placeholder=rx.cond(
+                    view.ai_proposed,
+                    "Enter runs these inputs · or say what else to change · Esc puts the old ones back",
+                    "Say what the inputs should be, eg: sparg0 vs steve, offline, last 90 sets",
+                ),
+                auto_focus=True,
+                auto_complete="off",
+                spell_check=False,
+                read_only=view.ai_busy,
+                key=view.form_key,
+                class_name="inline-box-input",
+                custom_attrs={"form": form_id(view)},
+            ),
+            status,
+            class_name=rx.cond(view.ai_busy, "inline-box is-thinking", "inline-box"),
+        ),
+        class_name="strip-ask",
+        custom_attrs={"data-ask-box": ""},
     )
 
 
@@ -1515,19 +1523,14 @@ def tool_form(
     remount: rx.Var[str],
     on_run: rx.EventHandler[passthrough_event_spec(dict[str, Any])],
     on_reset: rx.EventHandler[no_args_event_spec],
-    ai_open: rx.Var[bool],
     ai_busy: rx.Var[bool],
-    ai_proposed: rx.Var[bool],
-    ai_note: rx.Var[str],
-    ai_error: rx.Var[str],
-    on_ai_close: rx.EventHandler[no_args_event_spec],
+    form_id: rx.Var[str],
 ) -> rx.Component:
     """The form itself. A memo component, as compact_grid is: a form's submit handler is
     generated outside any loop the view sits in (chat items, cells)
     and couldn't see the loop item otherwise.
     """
     return rx.el.form(
-        rx.cond(ai_open, _ask_row(ai_busy, ai_proposed, ai_note, ai_error, on_ai_close)),
         rx.foreach(fields, _form_field),
         rx.el.button(
             rx.cond(running, "Running…", "Run"),
@@ -1549,6 +1552,8 @@ def tool_form(
         # a new key remounts the inputs, so they show a new result's values
         key=remount,
         on_submit=on_run,
+        # the bar's Ask AI box submits with it (strip_ask_box, form=)
+        id=form_id,
         class_name="tool-form sans",
     )
 

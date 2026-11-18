@@ -26,7 +26,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 from urllib.parse import urlsplit
 
-from starlette.responses import HTMLResponse, Response
+from starlette.responses import HTMLResponse
 
 if TYPE_CHECKING:
     from starlette.websockets import WebSocket
@@ -35,7 +35,6 @@ __all__ = [
     "GHOSTTY_WEB",
     "PAGE",
     "allowed_origin",
-    "inline_box",
     "page",
     "shell_command",
     "shell_socket",
@@ -48,6 +47,15 @@ __all__ = [
 #   file is all the page loads
 GHOSTTY_WEB = "https://cdn.jsdelivr.net/npm/ghostty-web@0.4.0/dist/ghostty-web.js"
 LOCAL_HOSTS = {"localhost", "127.0.0.1", "::1"}
+# Who may frame the Terminal's page: pages on this machine only (the app). A site that framed
+# it could otherwise show your shell inside its own page and send it messages.
+FRAME_ANCESTORS = " ".join(
+    [
+        "frame-ancestors",
+        "'self'",
+        *(f"{scheme}://{host}:*" for scheme in ("http", "https") for host in ("localhost", "127.0.0.1", "[::1]")),
+    ]
+)
 READ_SIZE = 65536
 
 
@@ -63,11 +71,11 @@ PAGE = """<!doctype html>
 <meta charset="utf-8">
 <title>Terminal</title>
 <style>
-  html, body { margin: 0; height: 100%; background: #2d353b; overflow: hidden; }
-  #term { position: absolute; inset: 4px 0 0 6px; }
+  html, body { margin: 0; height: 100%; background: THEME_BACKGROUND; overflow: hidden; }
+  /* ghostty-web makes #term contenteditable: focused by a key (Alt+Right), not a click, the
+     browser drew its own black text caret at the top left. The cursor is ghostty's block */
+  #term { position: absolute; inset: 4px 0 0 6px; caret-color: transparent; outline: none; }
   #note { position: absolute; bottom: 6px; right: 10px; font: 12px sans-serif; color: #e67e80; }
-  /* Alt+I: where the inline chat's box sits, over the bottom lines (the box: inline_box.js) */
-  #ask { position: absolute; left: 8px; right: 8px; bottom: 8px; }
 </style>
 </head>
 <body>
@@ -75,7 +83,6 @@ PAGE = """<!doctype html>
 <div id="note"></div>
 <script type="module">
   import { init, Terminal, FitAddon } from "GHOSTTY_WEB";
-  import { inlineBox } from "/inline_box.js";
   const note = document.getElementById("note");
   await init();
   // Sharp text at the size your own terminal uses (FONT_PT points, at SCREEN_SCALE). The app's
@@ -92,7 +99,8 @@ PAGE = """<!doctype html>
     fontFamily: '"JetBrainsMono Nerd Font", "JetBrains Mono", monospace',
     cursorBlink: true,
     scrollback: 10000,
-    theme: { background: "#2d353b", foreground: "#d3c6aa", cursor: "#d3c6aa" },
+    // your Omarchy theme's terminal colours, all 16 (terminal_theme(), read per page load)
+    theme: THEME_JSON,
   });
   const fit = new FitAddon();
   term.loadAddon(fit);
@@ -119,21 +127,12 @@ PAGE = """<!doctype html>
   });
   term.onResize(({ cols, rows }) => ws.readyState === 1 && ws.send(JSON.stringify({ type: "resize", cols, rows })));
   term.focus();
-  // Alt+I: the inline chat (inline_terminal.py, POST /inline_terminal). The ask and the
-  // screen's text go to the AI; its command is pasted at the prompt, never run (you press
-  // Enter). Not part of the chat: the call shows in the debug log, as a cell's inline chat.
+  // Alt+I: the inline chat (inline_terminal.py, POST /inline_terminal). Its box is in the
+  // app's page, in this pane's title strip (assets/frame_ask.js), so it never covers the
+  // shell; this page does the shell's part: the screen's text and the ask go to the AI, and its
+  // command is pasted at the prompt, never run (you press Enter). Not part of the chat: the call
+  // shows in the debug log, as a cell's inline chat.
   const TOKEN = new URLSearchParams(location.search).get("token") || "";
-  // the same box as under a cell (inline_box.js), placed over the bottom lines
-  const HINT = "Enter asks AI · Esc closes";
-  const shell = inlineBox({ placeholder: "Ask for a command…", hint: HINT });
-  const { dom: box, input, say } = shell;
-  box.id = "ask";
-  input.id = "ask-input";
-  shell.status.id = "ask-said";
-  box.hidden = true;
-  document.body.append(box);
-  let waiting = false;
-  let asked = 0;  // a request id: the answer to an ask whose box was closed is dropped
   const fullScreenProgram = () => term.buffer.active.type === "alternate";
   function screenText() {
     const buffer = term.buffer.active, lines = [];
@@ -142,64 +141,62 @@ PAGE = """<!doctype html>
     }
     return lines.join("\\n").replace(/\\n+$/, "");
   }
-  function openAsk() {
-    box.hidden = false;
-    if (!waiting) { input.disabled = false; input.value = ""; say(HINT); }
-    input.focus();
-  }
-  function closeAsk() {
-    box.hidden = true;
-    if (waiting) { asked++; waiting = false; shell.thinking(false); }
-    term.focus();
-  }
-  async function sendAsk() {
-    const ask = input.value.trim();
-    if (!ask || waiting) return;
+  const FULL_SCREEN = "a full-screen program is running: go back to a prompt first";
+  async function ask(id, instruction) {
     // a paste would go into the program (vim, less), not to a prompt
-    if (fullScreenProgram()) return say("a full-screen program is running: go back to a prompt first", "error");
-    waiting = true;
-    const id = ++asked;
-    input.disabled = true;
-    say("Thinking…");
-    shell.thinking(true);
-    let answer;
+    if (fullScreenProgram()) return { id, error: FULL_SCREEN };
     try {
       const response = await fetch("/inline_terminal", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token: TOKEN, instruction: ask, screen: screenText() }),
+        body: JSON.stringify({ token: TOKEN, instruction, screen: screenText() }),
       });
-      answer = await response.json();
+      return { id, ...(await response.json()) };
     } catch (error) {
-      answer = { error: `the request failed: ${error}` };
+      return { id, error: `the request failed: ${error}` };
     }
-    if (id !== asked) return;
-    waiting = false;
-    input.disabled = false;
-    shell.thinking(false);
-    if (answer.command && !fullScreenProgram()) {
-      closeAsk();
-      term.paste(answer.command);
-      return;
-    }
-    box.hidden = false;
-    if (answer.command) say(`a full-screen program is running; the command was: ${answer.command}`, "error");
-    else say(answer.error || answer.note || "no answer", answer.error ? "error" : "note");
-    input.focus();
-    input.select();
   }
-  input.addEventListener("keydown", (event) => {
-    if (event.altKey || event.ctrlKey || event.metaKey) return;
-    if (event.key === "Enter") { event.preventDefault(); sendAsk(); }
-    if (event.key === "Escape") { event.preventDefault(); closeAsk(); }
-  });
-  // the pane's robot button (assets/panes.js): the inline chat, as Alt+I here
-  window.addEventListener("message", (event) => {
-    if (event.source !== parent || !event.data || event.data.type !== "delulu-ask") return;
-    if (box.hidden) openAsk(); else closeAsk();
+  // the app's messages (assets/panes.js, assets/frame_ask.js). Only from the app: the page
+  // framing this one, on this machine. Any site may try to frame this page; without the
+  // origin check its messages could type into the shell (the response's frame-ancestors
+  // refuses the framing too, page())
+  const LOCAL = new Set(LOCAL_HOSTS_JSON);
+  const fromApp = (event) => {
+    if (event.source !== parent || !event.data) return false;
+    try { return LOCAL.has(new URL(event.origin).hostname.replace(/^\\[|\\]$/g, "")); } catch { return false; }
+  };
+  window.addEventListener("message", async (event) => {
+    if (!fromApp(event)) return;
+    const data = event.data;
+    // the app moved the cursor here (Alt+Left / Alt+Right, Alt+`, the ask box closed)
+    if (data.type === "delulu-focus") {
+      cursorActive(true);
+      term.focus();
+    }
+    if (data.type === "delulu-ask-send") {
+      parent.postMessage({ type: "delulu-ask-answer", ...(await ask(data.id, data.ask)) }, event.origin);
+    }
+    if (data.type === "delulu-ask-paste") {
+      // a full-screen program started meanwhile: say so, with the command, and type nothing
+      if (fullScreenProgram()) {
+        const error = `a full-screen program is running; the command was: ${data.command}`;
+        return parent.postMessage({ type: "delulu-ask-answer", id: data.id, error }, event.origin);
+      }
+      term.paste(data.command);
+      parent.postMessage({ type: "delulu-ask-answer", id: data.id, pasted: true }, event.origin);
+    }
   });
   // the app focuses this frame on Alt+`
-  window.addEventListener("focus", () => (box.hidden ? term : input).focus());
+  window.addEventListener("focus", () => term.focus());
+  // the cursor: a blinking block while this pane has the keys; when you are in another pane, a
+  // steady underline (ghostty-web 0.4 draws no hollow block), so it stops catching the eye
+  const cursorActive = (on) => {
+    term.options.cursorBlink = on;
+    term.options.cursorStyle = on ? "block" : "underline";
+  };
+  window.addEventListener("focus", () => cursorActive(true));
+  window.addEventListener("blur", () => cursorActive(false));
+  cursorActive(document.hasFocus());
   // The pane's own keys (Alt+` or Alt+Enter hide, with Shift full screen) work from inside it
   // too: the shell would get them otherwise. Sent to the app, which runs them (assets/panes.js).
   document.addEventListener("keydown", (event) => {
@@ -207,8 +204,9 @@ PAGE = """<!doctype html>
     if (event.code === "KeyI" && !event.shiftKey) {
       event.preventDefault();
       event.stopImmediatePropagation();
-      // Shortcut.INLINE_EDIT: the inline chat's key everywhere in the app; again closes it
-      if (box.hidden) openAsk(); else closeAsk();
+      // Shortcut.INLINE_EDIT: the inline chat's key everywhere in the app; its box is the
+      // app's (assets/frame_ask.js), so the app opens it (again: closes it)
+      parent.postMessage({ type: "delulu-ask-toggle" }, "*");
       return;
     }
     if (event.code === "KeyW" && !event.shiftKey) {
@@ -233,7 +231,7 @@ PAGE = """<!doctype html>
 </script>
 </body>
 </html>
-""".replace("GHOSTTY_WEB", GHOSTTY_WEB)
+""".replace("GHOSTTY_WEB", GHOSTTY_WEB).replace("LOCAL_HOSTS_JSON", json.dumps(sorted(LOCAL_HOSTS)))
 
 # where the font size of the terminal you use outside the app is read, first found wins:
 # (config file under ~/.config, the line's key)
@@ -255,6 +253,53 @@ def terminal_font_pt() -> float:
     return DEFAULT_FONT_PT
 
 
+# Your terminal's colours: the ghostty theme of the Omarchy theme you are on (it changes with
+# `omarchy theme`), else the repo's copy of Everforest, the app's own (a machine without
+# Omarchy)
+OMARCHY_GHOSTTY_THEME = Path.home() / ".local/state/omarchy/current/theme/ghostty.conf"
+EVERFOREST_THEME = Path(__file__).parents[1] / "ghostty-everforest.conf"
+# ghostty's palette = N=#rrggbb, as ghostty-web's theme keys (0 to 15)
+ANSI = [
+    *("black", "red", "green", "yellow", "blue", "magenta", "cyan", "white"),
+    *("brightBlack", "brightRed", "brightGreen", "brightYellow"),
+    *("brightBlue", "brightMagenta", "brightCyan", "brightWhite"),
+]
+# ghostty's own keys for the rest
+GHOSTTY_KEYS = {
+    "background": "background",
+    "foreground": "foreground",
+    "cursor-color": "cursor",
+    "cursor-text": "cursorAccent",
+    "selection-background": "selectionBackground",
+    "selection-foreground": "selectionForeground",
+}
+
+
+def read_ghostty_theme(path: Path) -> dict[str, str]:
+    """A ghostty theme file's colours, as ghostty-web's theme keys ({} if there is no file)."""
+    theme: dict[str, str] = {}
+    if not path.is_file():
+        return theme
+    for line in path.read_text(errors="replace").splitlines():
+        key, _, value = (part.strip() for part in line.partition("="))
+        if key == "palette":
+            index, _, color = value.partition("=")
+            if index.strip().isdigit() and int(index) < len(ANSI):
+                theme[ANSI[int(index)]] = color.strip()
+        elif key in GHOSTTY_KEYS and value:
+            color = value.strip('"')
+            theme[GHOSTTY_KEYS[key]] = color if color.startswith("#") else f"#{color}"
+    return theme
+
+
+def terminal_theme(path: Path = OMARCHY_GHOSTTY_THEME) -> dict[str, str]:
+    """The Terminal pane's colours as ghostty-web's theme: your Omarchy ghostty theme's
+    (background, text, cursor, selection and the 16 ANSI colours), the repo's Everforest
+    (ghostty-everforest.conf) for any it lacks, or all of them without Omarchy.
+    """
+    return read_ghostty_theme(EVERFOREST_THEME) | read_ghostty_theme(path)
+
+
 async def screen_scale() -> float:
     """The focused monitor's scale (Hyprland), so a scaled display gets the same size; 1 if
     it can't be read (not Hyprland, or hyprctl is slow).
@@ -270,23 +315,20 @@ async def screen_scale() -> float:
 
 
 async def page(_request: object) -> HTMLResponse:
-    """GET /terminal: the page the Terminal pane frames, its text sized as your terminal."""
-    sizes = {"FONT_PT": str(terminal_font_pt()), "SCREEN_SCALE": str(await screen_scale())}
+    """GET /terminal: the page the Terminal pane frames, its text sized and coloured as your
+    terminal.
+    """
+    theme = terminal_theme()
+    sizes = {
+        "FONT_PT": str(terminal_font_pt()),
+        "SCREEN_SCALE": str(await screen_scale()),
+        "THEME_JSON": json.dumps(theme),
+        "THEME_BACKGROUND": theme["background"],
+    }
     html = PAGE
     for name, value in sizes.items():
         html = html.replace(name, value)
-    return HTMLResponse(html)
-
-
-# the inline chat's box (the one a cell's shows, editor.py): the Terminal's page imports it
-INLINE_BOX = Path(__file__).with_name("inline_box.js")
-
-
-async def inline_box(_request: object) -> Response:
-    """GET /inline_box.js: the inline chat's box, for the Terminal's page. Read on each
-    request (no cache), so an edit shows on the next reload.
-    """
-    return Response(INLINE_BOX.read_text(), media_type="text/javascript", headers={"Cache-Control": "no-store"})
+    return HTMLResponse(html, headers={"Content-Security-Policy": FRAME_ANCESTORS})
 
 
 def allowed_origin(origin: str, client_host: str) -> bool:

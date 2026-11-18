@@ -69,3 +69,41 @@ def test_the_font_size_is_read_from_your_own_terminal(tmp_path: Path, monkeypatc
     (tmp_path / ".config" / "ghostty").mkdir()
     (tmp_path / ".config" / "ghostty" / "config").write_text("font-family = JetBrainsMono\nfont-size = 11\n")
     assert terminal.terminal_font_pt() == 11  # ghostty first
+
+
+def test_the_colours_are_your_omarchy_ghostty_theme(tmp_path: Path) -> None:
+    conf = tmp_path / "ghostty.conf"
+    conf.write_text(
+        "\n".join(
+            [
+                "background = #2d353b",
+                "cursor-color = d3c6aa",
+                "palette = 1=#e67e80",
+                "palette = 12=#7fbbb3",
+            ]
+        )
+    )
+    theme = terminal.terminal_theme(conf)
+    assert theme["red"] == "#e67e80"
+    assert theme["brightBlue"] == "#7fbbb3"
+    assert theme["cursor"] == "#d3c6aa"  # a colour without its "#" still works
+
+
+def test_without_an_omarchy_theme_the_colours_are_the_repos_everforest(tmp_path: Path) -> None:
+    theme = terminal.terminal_theme(tmp_path / "missing.conf")
+    assert theme["background"] == "#2d353b"
+    assert theme["cyan"] == "#83c092"  # all 16 colours, not only the background
+    assert len(theme) == 5 + 16
+
+
+def test_only_this_machine_may_frame_the_page_or_message_it() -> None:
+    # a site that framed the Terminal could otherwise send its page messages, eg the
+    # inline chat's paste, which types into the shell
+    assert terminal.FRAME_ANCESTORS.startswith("frame-ancestors 'self' http://localhost:*")
+    assert "*" not in terminal.FRAME_ANCESTORS.replace(":*", "")
+    assert "if (!fromApp(event)) return;" in terminal.PAGE
+    assert 'new Set(["127.0.0.1", "::1", "localhost"])' in terminal.PAGE
+    # no message is handled before the check: one listener, and it starts with it
+    handler = terminal.PAGE[terminal.PAGE.index('window.addEventListener("message"') :]
+    assert handler.index("fromApp(event)") < handler.index("delulu-ask-paste")
+    assert terminal.PAGE.count('addEventListener("message"') == 1

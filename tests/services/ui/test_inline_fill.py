@@ -150,7 +150,7 @@ def test_a_proposal_remounts_the_form_and_closing_puts_the_inputs_back():
     ui = Ui()
     apply_event(view, ui, "ai_toggle", "")
     assert ui.ai_open
-    assert ui.form_open  # the Ask AI row lives in the form
+    assert ui.form_open  # the Ask AI box belongs to the form
     before = view.data("tab:r1", ui).form_key
     ui.proposed, ui.proposals = {"player": "Sparg0"}, ui.proposals + 1
     shown = view.data("tab:r1", ui).form_key

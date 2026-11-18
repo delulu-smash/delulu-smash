@@ -335,6 +335,7 @@
     const target = spot || pane;
     if (target.tabIndex < 0) target.tabIndex = -1;  // a pane or a view takes the focus only this way
     target.focus({ preventScroll: true });
+    if (target.tagName === "IFRAME") focusFrame(target);
     // the best place may not be there yet (the Terminal's frame, a console's editor: they mount
     // a moment after the pane shows): once more, if you are still where this put you
     if (retry && !(spot && spot === last) && HOME[name] && !homes[0]) {
@@ -395,7 +396,7 @@
   }, 80);
   // A robot button (render.inline_ai_button; data-inline-ai: where, inside its pane or view):
   // the inline chat there, as INLINE_EDIT pressed in it. In the editor you were last in when
-  // it is one of them, else the first shown; the Terminal's page opens its own (terminal.py).
+  // it is one of them, else the first shown; a framed pane's is in its strip (frame_ask.js).
   document.addEventListener("click", (event) => {
     const button = event.target.closest?.("[data-inline-ai]");
     const scope = button && button.closest(".widget, [data-pane]");
@@ -404,8 +405,8 @@
     const spot = spots.includes(lastEditor) ? lastEditor : spots[0];
     if (!spot) return;
     if (spot.tagName !== "IFRAME") return window.smashPress(SHORTCUTS.INLINE_EDIT, spot);
-    spot.focus();
-    spot.contentWindow.postMessage({ type: "delulu-ask" }, "*");
+    // a framed pane (the Terminal): its box is in the pane's title strip (assets/frame_ask.js)
+    window.smashFrameAsk?.toggle(spot.closest("[data-pane]"));
   });
   document.addEventListener("input", (event) => {
     if (event.target.matches?.("[data-menu-search]")) filterMenu(event.target);
@@ -426,13 +427,20 @@
     document.querySelector(`[data-toggle="${name}"]`)?.click();
     focusTerminalSoon({ terminal: "TOGGLE_TERMINAL", "zoom-terminal": "ZOOM_TERMINAL", "close-all": "CLOSE_ALL" }[name]);
   });
+  // The Terminal's frame: focusing the iframe alone may leave its page's shell without the
+  // keys (its window's focus event doesn't always fire), so ask its page to focus it (terminal.py)
+  function focusFrame(frame) {
+    frame.contentWindow?.postMessage({ type: "delulu-focus" }, "*");
+  }
+  // the cursor into a framed pane's page (frame_ask.js uses it too)
+  window.smashFocusFrame = (frame) => { frame.focus(); focusFrame(frame); };
   // after a key shows the Terminal: put the cursor in it (its page focuses the shell); after one
   // hides it: back to the page, so the app's keys work again
   function focusTerminalSoon(name) {
     if (name !== "TOGGLE_TERMINAL" && name !== "ZOOM_TERMINAL" && name !== "CLOSE_ALL") return;
     setTimeout(() => {
       const frame = document.querySelector('[data-pane="terminal"] iframe');
-      if (frame && visible(frame)) frame.focus();
+      if (frame && visible(frame)) { frame.focus(); focusFrame(frame); }
       else if (document.activeElement && document.activeElement.tagName === "IFRAME") document.activeElement.blur();
     }, 400);
   }
@@ -454,11 +462,11 @@
       }
       const backdrop = palette || document.querySelector(".overlay-backdrop");
       const current = floating();
-      // in a tool form with its "Ask AI" row open: close the row first (an open choice list
-      // closes itself, assets/choice.js)
-      const form = !backdrop && event.target instanceof Element && !event.target.closest(".choice")
-        && event.target.closest(".tool-form");
-      const askClose = form && form.querySelector("[data-ask-close]");
+      // in a widget with its Ask AI box open (in its bar, render.strip_ask_box): close it first,
+      // as its lit ✨ does (an open choice list closes itself, assets/choice.js)
+      const widget = !backdrop && event.target instanceof Element && !event.target.closest(".choice")
+        && event.target.closest(".widget");
+      const askClose = widget && widget.querySelector("[data-ask-box]") && aiToggleOf(event.target);
       if (askClose) {
         event.preventDefault();
         event.stopPropagation();

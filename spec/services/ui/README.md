@@ -43,6 +43,49 @@ Design rules that follow from the difference:
   it keeps its own frame and brings its controls with it. See the README's "Rendering" design rule.
 - A new region of the window is a panel; a new way to show a value is a widget. Don't give a panel a widget's
   frame, or build a widget that only works in one panel.
+- **Toggles don't move the content.** Opening or closing something (a box, a row, a status) never shifts what
+  is already on screen. So the inline AI box (`Alt+I`, or the strip's ✨) opens in the title strip of the panel
+  or widget it acts on, in the strip's free width left of its buttons; Esc, `Alt+I` again or the lit ✨ close
+  it and put the cursor back. **Exception: a console**: a Python cell's box opens under the cell it edits (the
+  cell is its place). Today: a widget's inputs (`render.strip_ask_box`, in its bar), the Terminal
+  (`ui.strip_ask` + `assets/frame_ask.js`: a framed page has no place of its own, so the app draws the box and
+  the page only does its part, eg reading the screen and pasting the command); one look for all
+  (`.inline-box` in `assets/app.css`).
+
+## Widgets: three regions, the same for every widget
+
+The user's rule (Nov 2026): every widget is built from the same three regions, top to bottom, **with no
+exceptions** (not the Browser, not a playing video). As with panels, learning one widget teaches all of them.
+
+> **Consistency beats a widget's own optimizations.** A few simple, fixed design and visual expectations make
+> the app easy to find your way around, and matter more as widgets become dynamic and differ more. When a
+> widget would be a little better with its own layout, it still follows the shared one.
+
+```
+│ MatchVideos  [✨ Ask AI box, when open]                       ✨  Inputs ▾  ⤢  × │  1. the bar
+│ player 1 [DeLulu]  player 2 [   ]  char 1 [any ▾] …                         Run   │  2. the Inputs panel
+│ [video] [video]                                                                   │  3. the display
+│ … the widget's own design: results, its pager, its filters, a playing video …     │
+```
+
+| Region | Holds | Never |
+| --- | --- | --- |
+| **1. The bar** (the widget's top border) | only, in this order: its **name** (the tool's or the value's type, eg `MatchVideos`, `DataFrame`, `SmashDb`, `Browser`); the **inline AI** where the widget has it (✨, and its box in the bar's free width while open: "Toggles don't move the content" above); **Inputs ▸/▾** where it takes parameters; **⤢** (float / put back); **×** (close). The same height and look on every widget, always shown | anything else: no counts or status ("2 found", "120 rows", "not run yet"), no paging, filters, toggles or links of the widget's own |
+| **2. The Inputs panel** | the widget's **parameters**, if it takes any: what it is run or loaded with, and Run. Folds under the bar (Inputs ▸/▾). A widget without parameters has no Inputs button and no panel | view controls (a table's row filter, sort, SQL): those aren't inputs ([inline_ai.md](inline_ai.md), "View controls are not inputs"), they belong to the display |
+| **3. The display** | the widget's output, **designed and rendered by the widget itself**: its results and everything about them (counts and status, paging, a table's filter and SQL, a SmashDb console's History and Assign, the video player when a video is picked). Whatever it shows or opens stays inside this region | reaching outside its region: a picked video plays inside the display, it never replaces or hides the bar or the Inputs panel |
+
+- **The display's own line is at its bottom.** A widget's status and its own controls (eg `2 found · page 1 of 1`
+  with ‹ Prev / Next ›, a table's filter, SQL ▸ and `120 rows`), when it has them, sit in one line at the
+  bottom of the display, like a status bar; the results start right under the bar (or the Inputs panel).
+  The links of the place showing it (`↗ tab` in the chat and under a cell, `↖ chat` in a Results tab) end
+  that line, after the widget's own controls.
+- **Enforced in code, not by convention.** A widget supplies only its parts (its name, whether it has inline AI,
+  its parameters, its display); the one shared frame (`render.py`) draws the bar and the Inputs panel from
+  them, so a widget can't put anything else in its bar or skip a region.
+- **A new widget** is a new display (and parameters, if it takes any) plugged into that frame, never a new bar.
+- Today (Nov 2026) the code doesn't follow this yet: bars carry notes, paging, filters and host links, the
+  Browser has its own bar, and a playing video with its list folded hides the bar. Bringing it in line is
+  planned work.
 
 ## Words: one word per action
 

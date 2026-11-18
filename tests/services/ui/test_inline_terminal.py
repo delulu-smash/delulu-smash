@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import asyncio
+from pathlib import Path
 from types import SimpleNamespace
 from typing import TYPE_CHECKING
 
@@ -95,22 +96,27 @@ def test_only_this_machines_pages_may_ask() -> None:
     assert allowed.json() == {"error": "Type what you want first."}
 
 
-def test_the_page_has_the_box_and_calls_the_route() -> None:
-    for piece in ("inlineBox(", '"KeyI"', 'fetch("/inline_terminal"', "term.paste(answer.command)"):
+UI = Path(terminal.__file__).parents[1]
+
+
+def test_the_page_asks_the_route_and_pastes_for_the_app() -> None:
+    # the box is the app's (assets/frame_ask.js, in the pane's strip); the page does the
+    # shell's part
+    for piece in ('"KeyI"', "delulu-ask-toggle", 'fetch("/inline_terminal"', "term.paste(data.command)"):
         assert piece in terminal.PAGE
+    assert "inlineBox(" not in terminal.PAGE
 
 
 def test_the_terminal_gets_the_same_box_as_a_cell() -> None:
-    served = TestClient(api).get("/inline_box.js")
-    assert served.headers["content-type"].startswith("text/javascript")
-    assert served.headers["cache-control"] == "no-store"
-    assert served.text == terminal.INLINE_BOX.read_text()
-    assert "export function inlineBox" in served.text
-    # one icon for the AI everywhere: the box's .ai-icon rule is app.css's, word for word
-    # (the Terminal's page has no app.css, so the box carries a copy)
-    css = terminal.INLINE_BOX.parents[1].joinpath("assets", "app.css").read_text()
-    rule = css[css.index(".ai-icon {") : css.index("}", css.index(".ai-icon::before")) + 1]
-    # a JS template string needs the glyph's backslash doubled
-    assert rule.replace("\\", "\\\\") in served.text
-    assert '"inline-box-icon ai-icon"' in served.text
-    assert 'from "./inline_box.js"' in terminal.INLINE_BOX.with_name("inline_edit.jsx").read_text()
+    # a framed pane's box (the Terminal's, in its strip) is the shared one a cell's inline
+    # chat shows
+    script = (UI / "assets" / "frame_ask.js").read_text()
+    assert 'import("/external/ui/editor/inline_box.js")' in script
+    assert (UI / "assets" / "external" / "ui" / "editor" / "inline_box.js").exists()
+    assert 'from "./inline_box.js"' in (UI / "ui" / "inline_edit.jsx").read_text()
+    box = (UI / "ui" / "inline_box.js").read_text()
+    assert '"inline-box-icon ai-icon"' in box
+    # one look for every box (a cell's, a framed pane's, a widget's bar): app.css only
+    assert "<style" not in box
+    assert "const CSS" not in box
+    assert ".inline-box {" in (UI / "assets" / "app.css").read_text()

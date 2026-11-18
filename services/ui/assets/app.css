@@ -147,8 +147,13 @@ button { font: inherit; color: inherit; }
 .thinking-word { color: transparent; background: linear-gradient(100deg, var(--grey1) 35%, var(--fg) 50%, var(--grey1) 65%) 0 0 / 250% 100%;
   -webkit-background-clip: text; background-clip: text; animation: inline-edit-sweep 1.6s linear infinite; }
 
-.composer { border: 1px solid var(--bg4); border-radius: 8px; background: var(--bg0); padding: 8px 10px 4px; flex: none; }
-.composer:focus-within, .console-input:focus-within { border-color: var(--blue); }
+/* the chat box: the inline chat's look (ui/inline_box.js): one line, the AI's icon and the border purple;
+   the full width of the chat, and it grows with what is typed (Shift+Enter) up to a third of the window */
+.composer { display: flex; align-items: flex-start; gap: 8px; border: 1px solid var(--purple); border-radius: 6px;
+  background: var(--bg1); padding: 5px 9px; flex: none; }
+.composer-icon { flex: none; color: var(--purple); display: inline-flex; line-height: 1.5; padding-top: 0.2em; }
+.composer .input { font-size: 13px; field-sizing: content; min-height: 1.5em; max-height: 33vh; overflow-y: auto; }
+.console-input:focus-within { border-color: var(--blue); }
 /* slash commands, listed over the chat box while it holds "/name" (ui.slash_menu, assets/slash.js) */
 .composer { position: relative; }
 .slash-menu { display: none; position: absolute; left: 0; right: 0; bottom: calc(100% + 4px); z-index: 30; max-height: 240px;
@@ -490,6 +495,33 @@ a.act { text-decoration: none; color: var(--fg); }
 /* !important: a pane resized by dragging has an inline size, which would otherwise win */
 .ws-pane.is-alone { width: auto !important; max-width: none; flex: 1; resize: none; border-right: 0; }
 .chat-pane.is-alone { height: auto !important; max-height: none; flex: 1; resize: none; border-bottom: 0; }
+/* the inline AI box (Alt+I), one look everywhere: under a cell (ui/inline_box.js, via inline_edit.jsx), in a
+   framed panel's strip (assets/frame_ask.js, ui.strip_ask; the Terminal) and in a widget's bar
+   (render.strip_ask_box, the same markup) */
+.inline-box { display: flex; align-items: center; gap: 8px; padding: 5px 9px; background: var(--bg1);
+  border: 1px solid var(--purple); border-radius: 6px; font: 13px var(--sans); color: var(--fg);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, .35); }
+.inline-box[hidden] { display: none; }
+.inline-box-icon { color: var(--purple); }
+.inline-box-input { flex: 1; min-width: 120px; background: none; border: 0; outline: 0; color: inherit; font: inherit; }
+.inline-box-input:disabled, .inline-box-input:read-only { opacity: .6; }
+.inline-box-status { color: var(--grey1); font-size: 12px; max-width: 60%; }
+.inline-box-status.is-error { color: var(--red); }
+.inline-box-status.is-note { color: var(--fg); }
+/* while the AI is thinking: the icon and the status text pulse */
+@keyframes inline-box-pulse { 50% { opacity: .45; } }
+.inline-box.is-thinking .inline-box-icon { animation: inline-box-pulse 1.1s ease-in-out infinite; }
+.inline-box.is-thinking .inline-box-status { color: var(--fg); animation: inline-box-pulse 1.1s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .inline-box.is-thinking .inline-box-icon, .inline-box.is-thinking .inline-box-status { animation: none; }
+}
+/* in a strip (a panel's title strip, a widget's bar): its free width, left of the buttons (it is the strip's
+   spacer when closed), sized to the strip, flat; opening it moves nothing (spec: "Toggles don't move the content") */
+.strip-ask { flex: 1; min-width: 0; display: flex; align-items: center; }
+.strip-ask .inline-box { flex: 1; min-width: 0; height: calc(var(--panel-head) - 6px); box-sizing: border-box;
+  padding: 0 8px; border-radius: 4px; box-shadow: none; font-size: 12.5px; }
+.strip-ask .inline-box-input { min-width: 60px; }
+.strip-ask .inline-box-status { font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* EXPERIMENT: the Terminal pane, a strip under the bottom row (as VS Code's); alone (no bottom
    row) it takes the height under the chat */
 .terminal-pane { flex: none; height: 32%; min-height: 120px; display: flex; flex-direction: column;
@@ -590,18 +622,13 @@ a.act { text-decoration: none; color: var(--fg); }
 .form-input:focus { outline: none; border-color: var(--blue); }
 select.form-input { width: auto; }
 .tool-form .act { font-size: 11px; padding: 0 8px; }
-/* a form's inline chat (inline_fill.py, render._ask_row): the "Ask AI" row on top of the inputs; the
+/* a form's inline chat (inline_fill.py): its box is in the widget's bar (render.strip_ask_box); the
    inputs the AI changed are outlined until they are run or put back */
 /* the AI buttons: a fixed width around the icon (.ai-icon); .ai-btn is the flat one in a pane's
    head (render.inline_ai_button) */
 .act.ai-toggle { box-sizing: border-box; width: 26px; height: 20px; vertical-align: middle; }
 .zoom-btn.ai-btn { box-sizing: border-box; width: 22px; height: 18px; }
 .ai-toggle.is-active { color: var(--purple); border-color: var(--purple); }
-.ask-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; flex: 0 0 100%; }
-.ask-icon { color: var(--purple); display: inline-flex; }
-.form-input.ask-input { flex: 1 1 240px; width: auto; min-width: 0; }
-.ask-note { flex: 0 0 100%; font-size: 10.5px; }
-.ask-note.is-error { color: var(--red); white-space: pre-wrap; }
 .form-field.is-changed .form-label { color: var(--purple); }
 .form-field.is-changed .form-input, .form-field.is-changed input[type="checkbox"] { border-color: var(--purple);
   outline: 1px solid var(--purple); outline-offset: 0; background: rgba(214, 153, 182, 0.08); }
@@ -826,18 +853,17 @@ select.form-input { width: auto; }
 .cm-editor .cm-inline-thinking-line { background-color: rgba(127, 187, 179, 0.07);
   background-image: linear-gradient(100deg, transparent 30%, rgba(127, 187, 179, 0.28) 45%, rgba(214, 153, 182, 0.28) 55%, transparent 70%);
   background-size: 250% 100%; background-repeat: no-repeat; animation: inline-edit-sweep 1.5s linear infinite; }
-/* a tool form's Ask AI row while the AI fills the inputs: the same sweep over its box, the icon pulses */
-.ask-row.is-thinking .ask-input { border-color: var(--blue);
-  background-image: linear-gradient(100deg, transparent 30%, rgba(127, 187, 179, 0.28) 45%, rgba(214, 153, 182, 0.28) 55%, transparent 70%);
-  background-size: 250% 100%; background-repeat: no-repeat; animation: inline-edit-sweep 1.5s linear infinite; }
-.ask-row.is-thinking .ask-icon, .ask-row.is-thinking .ask-note { animation: inline-edit-pulse 1.1s ease-in-out infinite; }
+/* an inline AI box while the AI works (a widget's inputs, the Terminal's command): the same sweep over it */
+.inline-box.is-thinking {
+  background-image: linear-gradient(100deg, transparent 30%, rgba(127, 187, 179, 0.22) 45%, rgba(214, 153, 182, 0.22) 55%, transparent 70%);
+  background-size: 250% 100%; background-repeat: no-repeat; animation: inline-edit-sweep 1.8s linear infinite; }
 /* the chat box while the agent works: the same sweep, and its border lit */
-.composer.is-thinking { border-color: var(--blue); background-color: var(--bg0);
+.composer.is-thinking { border-color: var(--purple); background-color: var(--bg1);
   background-image: linear-gradient(100deg, transparent 30%, rgba(127, 187, 179, 0.22) 45%, rgba(214, 153, 182, 0.22) 55%, transparent 70%);
   background-size: 250% 100%; background-repeat: no-repeat; animation: inline-edit-sweep 1.8s linear infinite; }
 @media (prefers-reduced-motion: reduce) {
   .cm-editor .cm-inline-thinking-line, .composer.is-thinking, .ai-twinkle b, .thinking-word,
-  .ask-row.is-thinking .ask-input, .ask-row.is-thinking .ask-icon, .ask-row.is-thinking .ask-note { animation: none; }
+  .inline-box.is-thinking { animation: none; }
 }
 
 /* "you are typing here": a thicker caret in the focus color in every text box and editor (the

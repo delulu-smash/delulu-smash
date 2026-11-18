@@ -350,7 +350,8 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   variables`, `▸ /python  Python console: shown`), and a widget it added unfolded under that row, as a
   tool's result is (`State.slash_ran`, chat kind `slash`). These rows are the app's: the agent never gets them.
   A new slash command is the `slash=` field on its row. The list starts with the most used ones
-  (`commands.SLASH_FIRST`: the two clears), then the rest as written. A slash command is coloured where
+  (`commands.SLASH_FIRST`: the three clears, `/clear-all` last of them so `/cl` + Enter is never
+  everything), then the rest as written. A slash command is coloured where
   you type it (blue if it exists, orange if not; hovering the box says what it does, the same line the list
   shows beside it) and in the chat line of what ran. A textarea can't colour part of its text, so
   `assets/slash.js` draws the box's text again in a layer under it while it starts with `/`. Today:
@@ -358,6 +359,8 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
     variables it made (`r1`, ...) and the spend so far stay. Not undoable, and not while a turn is running.
   - `/clear-variables` (`Variables: Clear all`): every listed variable at once (as ticking them all and
     `Clear` in the Variables panel), with its 3 s Undo.
+  - `/clear-all` (`Chat: Clear all`): both of the above at once (`State.clear_all`); the variables keep
+    their 3 s Undo, the chat can't be undone. Not while a turn is running: then nothing is cleared.
   - `/results`, `/python`, `/variables` (show or hide the pane), `/new-cell`, `/close-tabs`, `/help`,
     `/keys`, `/debug`.
   - **A widget is its kind**: `/vods`, `/usage`, `/smashdb` add it and show it in the chat, under the
@@ -600,8 +603,13 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   machine's pages may connect (localhost client and origin). One shell, started the first time the panel shows
   and kept while it is hidden; a page reload starts a new one. When the shell ends (`exit`, or a backend
   restart: every code change while developing) the page says so at the bottom right, and Enter starts a new one.
+  - **Colours**: your Omarchy theme's ghostty colours (`~/.local/state/omarchy/current/theme/ghostty.conf`, all
+    16), read each time the page loads; without Omarchy, the repo's copy of Everforest,
+    `services/ui/ghostty-everforest.conf` (`terminal.terminal_theme`).
   - **Inline chat (`Alt+I` in the Terminal; `ui/inline_terminal.py`)**: the same inline AI as a cell's, for
-    the shell. A box over the bottom lines; Enter sends what you typed and the text of the visible screen to
+    the shell. The box is in the pane's title strip, left of its buttons, so it never covers the shell (the
+    "Inline AI" rule for a framed pane, `spec/services/ui/README.md`); Enter sends what you typed and the text
+    of the visible screen to
     `POST /inline_terminal` (agent `inline-terminal`: no tools, one request, knowing the chat so far and adding
     nothing to it). The command is pasted at the prompt and **never run**: you press Enter. Nothing is typed,
     and the box says why, when the ask was not for a command (the AI's short answer shows in the box), the
@@ -610,7 +618,10 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
     the session's cost and to Spend, as the other inline chats. Only this machine's pages may call the route.
     `Alt+I` again closes the box, in a cell too (as Esc: a proposal is discarded, a late answer is dropped).
     The box is the one a cell's inline chat shows (`ui/inline_box.js`: the robot, the input, the status text
-    and its look, in one file); the Terminal's page gets it from the backend (`GET /inline_box.js`).
+    and its look, in one file), drawn by the app's page (`assets/frame_ask.js`, any framed pane's box;
+    `ui.strip_ask` is its spot in the strip). The Terminal's page does the shell's part (reads the screen,
+    asks the route, pastes the command); the two talk by `postMessage` (the message types are listed at the
+    top of `frame_ask.js`).
 - **Browser** (kind `browser`, `ui/web.py`; `+` → Browser): a web page in a frame, under an address box
   (Enter loads what you type; `https://` is added when missing), `Alt+← Back · Alt+→ Forward` (the browser's own keys:
   they step through pages followed by clicking inside the page) and "Open ↗" (a real browser tab). A link
@@ -667,9 +678,9 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
 - **Inline chat in a widget** (`ui/inline_fill.py`; what must hold is in
   `spec/services/ui/inline_ai.md`): a widget with a tool form works like a function, inputs in
   and a result out, so there the same `Alt+I` (or the robot button next to `Inputs`) asks the AI for the
-  **inputs**. The form unfolds with an Ask AI row on top: type `sparg0 vs steve, offline, last 90 sets`, Enter.
-  The form then shows the AI's inputs, the changed ones outlined (hover one for its old value), and a line with
-  what the call used (`2 changed · $0.0003 · 2.4k in · 40 out · 1 request`).
+  **inputs**. The form unfolds and the Ask AI box opens in the widget's bar (the inputs don't move): type `sparg0 vs steve,
+  offline, last 90 sets`, Enter. The form then shows the AI's inputs, the changed ones outlined (hover one for
+  its old value), and the box says what the call used (`2 changed · $0.0003 · 2.4k in · 40 out · 1 request`).
   - **The AI never runs the tool; you do.** The box takes the focus back after a proposal, so Enter again (the
     box empty) or Run runs it. Text in the box means "ask", so a new instruction refines the proposal.
   - Esc, the row's × or the robot button closes the row, and the inputs go back to the ones that made the result.

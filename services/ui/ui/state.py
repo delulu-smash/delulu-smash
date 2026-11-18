@@ -1656,16 +1656,19 @@ class State(rx.State):
         handler, *args = command.event
         run = getattr(State, handler)(*args) if args else getattr(State, handler)
         # clearing the chat takes its rows: the command's row comes after, in the new chat
-        return [run, row] if handler == "clear_chat" else [row, run]
+        return [run, row] if handler in ("clear_chat", "clear_all") else [row, run]
 
     def _slash_outcome(self, command: Any) -> str:
         """What a slash command is about to do, for its row in the chat: what it changes where
         that is known (how many variables go, a pane shown or hidden), else what it is.
         """
         handler = command.event[0] if command.event else ""
-        if handler == "clear_all_vars":
+        if self.busy and handler in ("clear_chat", "clear_all"):
+            return "not run: the agent is still working"
+        if handler in ("clear_all_vars", "clear_all"):
             count = len(variables.names(self._session(), self.var_show_all))
-            return f"cleared {count} variable{'s' if count != 1 else ''}" if count else "no variables to clear"
+            cleared = f"cleared {count} variable{'s' if count != 1 else ''}" if count else "no variables to clear"
+            return f"a new conversation · {cleared}" if handler == "clear_all" else cleared
         if handler == "clear_chat":
             return "cleared: a new conversation"
         if handler == "assign_ask":
@@ -1940,6 +1943,22 @@ class State(rx.State):
         if self.busy:
             self.chat.append(ChatItem(kind="note", text="The agent is still working: clear the chat once it is done."))
             return
+        self._clear_chat()
+
+    @event
+    def clear_all(self):
+        """/clear-all: a new conversation and every listed variable cleared, as /clear-chat
+        then /clear-variables (the variables with their Undo; the chat can't be undone). Not
+        while a turn is running: then nothing is cleared.
+        """
+        if self.busy:
+            self.chat.append(ChatItem(kind="note", text="The agent is still working: clear all once it is done."))
+            return None
+        self._clear_chat()
+        return self._clear_vars(variables.names(self._session(), self.var_show_all))
+
+    def _clear_chat(self) -> None:
+        """The chat's rows, what the agent remembers and the results printed in it go."""
         session = self._session()
         # results unfolded in the chat are gone with their
         # rows, and the printed mentions' results

@@ -18,8 +18,8 @@ _SOURCE = rx.asset("./cell_editor.jsx", shared=True)
 _SQL_SOURCE = rx.asset("./sql_editor.jsx", shared=True)
 # Both import the Alt+I inline chat from it; linked into the same folder.
 _INLINE_SOURCE = rx.asset("./inline_edit.jsx", shared=True)
-# The inline chat's box, imported by inline_edit.jsx; the Terminal's page shows the same one
-# (terminal.inline_box serves this file to it).
+# The inline chat's box, imported by inline_edit.jsx; the Terminal's box is the same one
+# (assets/frame_ask.js imports it from /external/ui/editor/inline_box.js).
 _INLINE_BOX_SOURCE = rx.asset("./inline_box.js", shared=True)
 _INLINE_DEPENDENCIES = ["@codemirror/merge", "@codemirror/commands"]
 

@@ -37,6 +37,7 @@ from ui.render import (
     ICON_COLLAPSE,
     ICON_EXPAND,
     INLINE_EDIT_URL,
+    ai_icon,
     copy_button,
     inline_ai_button,
     render_component,
@@ -175,6 +176,16 @@ def zoom_button(pane: str) -> rx.Component:
         on_click=State.toggle_zoom(pane),
         class_name=rx.cond(State.zoomed == pane, "zoom-btn mono is-on", "zoom-btn mono"),
     )
+
+
+def strip_ask(placeholder: str) -> rx.Component:
+    """The spot in a pane's title strip where its inline AI box shows (Alt+I, the strip's ✨),
+    for a pane whose content is a framed page with no place of its own for it (the
+    Terminal). It takes the strip's free width (it is the spacer before the buttons);
+    assets/frame_ask.js puts the box in it (spec/services/ui/README.md, "Toggles don't move
+    the content").
+    """
+    return rx.el.div(custom_attrs={"data-strip-ask": "", "data-placeholder": placeholder}, class_name="strip-ask")
 
 
 def keys_button(search: str, what: str) -> rx.Component:
@@ -682,6 +693,8 @@ def chat_pane() -> rx.Component:
             mention_data(),
             # the box's text drawn again under it, to colour a slash command (assets/slash.js)
             rx.el.div(aria_hidden="true", custom_attrs={"data-slash-mirror": ""}, class_name="slash-mirror"),
+            # the AI's icon, purple, as on every inline chat box (inline_box.js)
+            rx.el.span(ai_icon(), class_name="composer-icon"),
             rx.el.textarea(
                 name="prompt",
                 placeholder=" ".join(
@@ -693,7 +706,8 @@ def chat_pane() -> rx.Component:
                 enter_key_submit=True,
                 # the cursor starts here when the app opens
                 auto_focus=True,
-                rows=2,
+                # one line, as the inline chat's box; it grows with what is typed (app.css)
+                rows=1,
                 class_name="input sans",
             ),
             on_submit=State.submit_chat,
@@ -1779,8 +1793,9 @@ def terminal_pane() -> rx.Component:
     """
     return rx.el.div(
         rx.el.div(
-            rx.el.span(rx.el.span(ICON_TERMINAL, class_name="mono accent-green icon"), "Terminal"),
-            rx.el.span(class_name="spacer"),
+            # no title: kept bare, as the chat (the bottom bar's toggle names it). Its free
+            # width is where Alt+I's box shows, so it never covers the shell
+            strip_ask("Ask for a command…"),
             inline_ai_button("iframe", "Ask AI for a command (typed at your prompt, not run)", flat=True),
             keys_button("terminal", "the Terminal"),
             zoom_button("terminal"),
@@ -2238,6 +2253,8 @@ app = rx.App(
         rx.el.script(src="/panes.js", defer=True),
         # the keybindings list, Alt+K (keys_palette)
         rx.el.script(src="/keys.js", defer=True),
+        # a framed pane's Alt+I box, in its title strip (strip_ask; the Terminal)
+        rx.el.script(src="/frame_ask.js", defer=True),
         # slash commands in the chat box (slash_menu)
         rx.el.script(src="/slash.js", defer=True),
         # "@" mentions of variables in the chat boxes (mention_data; EXPERIMENTAL)
