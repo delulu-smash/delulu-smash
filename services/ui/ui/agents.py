@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING, Any
 import ds.ai
 from genai_prices import Usage, calc_price
 from pydantic_ai import Agent
+from pydantic_ai.exceptions import UserError
 from pydantic_ai.messages import ToolCallPart, ToolReturnPart
 from pydantic_ai.models import infer_model
 
@@ -274,15 +275,22 @@ def activity(messages: Iterable[Any]) -> tuple[list[str], list[dict[str, str]]]:
 
 def _info(agent: Agent[Any, Any], role: str, defined_in: str) -> AgentInfo:
     model = str(agent.model)
-    resolved = infer_model(agent.model)
-    provider = resolved.system
     via = " (via the Pydantic AI Gateway)" if model.startswith("gateway/") else ""
-    window = resolved.context_window
+    try:
+        resolved = infer_model(agent.model)
+    except UserError:
+        # a gateway/ model can't be made without its key: the app still starts
+        # (ai_switch.ai_problem names the key), with what the setting itself says, eg
+        # gateway/anthropic:claude-haiku-5-5
+        provider, _, model_name = model.removeprefix("gateway/").partition(":")
+        window = None
+    else:
+        provider, model_name, window = resolved.system, resolved.model_name, resolved.context_window
     output = getattr(agent.output_type, "__name__", str(agent.output_type))
     details = [
         {"label": "provider", "value": f"{provider}{via}"},
         {"label": "context window", "value": f"{tokens_text(window)} tokens" if window else "unknown"},
-        {"label": "price", "value": _price(resolved.model_name, provider)},
+        {"label": "price", "value": _price(model_name, provider)},
         {"label": "model settings", "value": str(agent.model_settings or "defaults")},
         {"label": "output", "value": "text" if output == "str" else output},
         {
@@ -297,7 +305,7 @@ def _info(agent: Agent[Any, Any], role: str, defined_in: str) -> AgentInfo:
         role=role,
         defined_in=defined_in,
         model=model,
-        model_name=resolved.model_name,
+        model_name=model_name,
         details=details,
         instructions=_instructions(getattr(agent, "_instructions", None)),
         capabilities=capabilities,

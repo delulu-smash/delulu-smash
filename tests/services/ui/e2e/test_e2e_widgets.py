@@ -5,6 +5,9 @@
 #          things, the Inputs panel when it takes parameters, the display with its bottom
 #          line. And the Ask AI box opens in the bar without moving the inputs. Nothing is
 #          run that asks the AI or an outside service (a VODs search isn't run: see the todo).
+#          A SmashDb tab keeps a 2000-row result inside its pane (a blank grid otherwise), and
+#          widgets are flush and square (no border where they fill a Results tab). The Config
+#          tab's Edit shows the Config widget in the debug panel.
 # Usage: ds test e2e -k e2e_widgets   (needs the app running; see conftest.py)
 # ---------------------------------------------------------------------------
 from __future__ import annotations
@@ -31,6 +34,7 @@ def test_a_tool_widget_has_the_three_regions_and_a_bar_of_only_its_five_things(a
 
 
 @pytest.mark.smoke
+@pytest.mark.usefixtures("ai_controls")
 def test_the_ask_ai_box_opens_in_the_bar_and_the_inputs_dont_move(app: App) -> None:
     app.slash("/vods")
     vods = app.widget("chat:r1")
@@ -98,3 +102,57 @@ def test_every_widget_added_by_hand_has_the_same_bar_shape(app: App) -> None:
         assert bar[0] == "name", command
         assert bar[-2:] == ["float", "close"], command
         assert set(bar) <= {"name", "space", "ai", "inputs", "float", "close"}, command
+
+
+@pytest.mark.smoke
+def test_a_smashdb_tab_keeps_a_big_result_inside_its_pane(app: App) -> None:
+    # 2000 rows (the grid's cap) at 28px is a 56,000px canvas when the grid is sized by its
+    # rows: past the browser's limit it draws blank, and nothing scrolls. It must fill the
+    # pane.
+    app.show("results")
+    app.page.click(".tab-add")
+    app.page.click(".menu .menu-item:has-text('SmashDb')")
+    console = app.page.locator('[data-pane="results"] .widget')
+    console.locator(".cm-content").click()
+    app.page.keyboard.type("select * from char_ranking order by rank desc")
+    app.page.keyboard.press("Control+Enter")
+    grid_canvas = console.locator(".viewer-grid canvas").first  # Glide's second canvas is its overlay
+    grid_canvas.wait_for()
+    grid = grid_canvas.bounding_box()
+    pane = console.bounding_box()
+    assert grid is not None
+    assert pane is not None
+    assert grid["height"] <= pane["height"], f"the grid is {grid['height']:.0f}px tall in a {pane['height']:.0f}px tab"
+
+
+def test_widgets_are_flush_and_square_with_no_border_where_they_fill_a_tab(app: App) -> None:
+    # spec/services/ui/README.md, "Widgets are flush and square too": as the Omarchy desktop
+    app.slash("/vods")
+    in_chat = app.widget("chat:r1")
+    assert in_chat.evaluate("w => getComputedStyle(w).borderRadius") == "0px"
+    assert in_chat.evaluate("w => getComputedStyle(w).borderTopWidth") == "1px"  # among messages: its frame
+    app.show("results")
+    pane = app.page.locator('[data-pane="results"]')
+    tab = pane.locator(".widget")
+    tab.wait_for()
+    edges = tab.evaluate(
+        """w => { const p = w.closest('[data-pane]').getBoundingClientRect(), r = w.getBoundingClientRect();
+                  const border = getComputedStyle(w).borderTopWidth;
+                  return [r.left - p.left, p.right - r.right, p.bottom - r.bottom, border]; }"""
+    )
+    assert edges == [0, 0, 0, "0px"]  # no gap to the pane's edges, and the pane's lines are its frame
+
+
+def test_the_config_tabs_edit_shows_the_config_widget_in_the_debug_panel_not_in_results(app: App) -> None:
+    # nothing is run (an e2e test makes no lasting change): only where the widget shows
+    app.page.click('[data-toggle="debug"]')
+    app.page.click('.dbg-tab:has-text("Config")')
+    edit = app.page.locator('.debug-panel button:text-is("Edit")')
+    edit.click()
+    widget = app.page.locator(".debug-panel .config-edit .widget")
+    widget.wait_for()
+    assert widget.locator(".out-kind").inner_text() == "Config"
+    assert widget.locator(".form-label").all_inner_texts() == ["background", "allow ai"]
+    assert "results" not in app.shown()  # no tab was made for it
+    edit.click()  # again: it closes
+    widget.wait_for(state="detached")

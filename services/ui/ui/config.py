@@ -8,7 +8,9 @@
 #          debug panel's Config tab.
 # To add a setting: in Config, `self.__name: T | None = None` in __init__ and
 #          `@property def name(self) -> T:` with a docstring (the form's help text) returning
-#          `self.__name or <default>`. Optional: `def check_name(self, value: T) -> None` that
+#          `self.__name or <default>` (an on/off setting, `-> bool`: `<default> if self.__name
+#          is None else self.__name`; it is a checkbox in the form, and a value that equals the
+#          default is kept as not set). Optional: `def check_name(self, value: T) -> None` that
 #          raises ValueError to refuse a value. Then use `config.name` where it matters.
 # Usage: config.background / config.set_background("~/pics/x.png") /
 #        set_config(background=None)
@@ -61,6 +63,7 @@ class Setting:
 class Config:
     def __init__(self) -> None:
         self.__background: Path | None = None
+        self.__allow_ai: bool | None = None
 
     @property
     def background(self) -> Path:
@@ -72,6 +75,13 @@ class Config:
     def check_background(self, value: Path) -> None:
         if not value.is_file():
             raise ValueError(f"no such file: {value}")
+
+    @property
+    def allow_ai(self) -> bool:
+        """Use the AI: the chat's answers, the inline chat (Alt+I) and /assign. Unticked: the
+        app sends nothing to a model, and the AI's buttons, model and meters aren't shown.
+        """
+        return True if self.__allow_ai is None else self.__allow_ai
 
     # -- generic: nothing below is edited for a new setting -------------------------------
 
@@ -133,12 +143,20 @@ class Config:
             for name in _NAMES
         ]
 
-    def stored(self) -> dict[str, str]:
+    def stored(self) -> dict[str, Any]:
         """What is set, as text ("" for a setting on its default): what the widget's form
-        starts with, so running it unchanged changes nothing.
+        starts with, so running it unchanged changes nothing. An on/off setting is its value in
+        use (True / False): a checkbox has no "not set".
         """
         self.load()
-        return {name: "" if self._stored(name) is None else _text(self._stored(name)) for name in _NAMES}
+        return {
+            name: object.__getattribute__(self, name)
+            if _TYPES[name] is bool
+            else ""
+            if self._stored(name) is None
+            else _text(self._stored(name))
+            for name in _NAMES
+        }
 
     def texts(self) -> dict[str, str]:
         """Every setting's value in use, as text: what the page keeps (State.config)."""
@@ -189,6 +207,11 @@ def _typed(name: str, value: Any) -> Any:
 
 
 config = Config()
+# An on/off setting's default (read from a Config with nothing set): what its checkbox starts
+# on, and the value kept as "not set".
+_BOOL_DEFAULTS: dict[str, bool] = {
+    name: member.fget(Config()) for name, member in _PROPERTIES.items() if _TYPES[name] is bool
+}
 
 # What set_config gives back: every setting's value in use, as text (a model, so it shows as
 # the Fields widget and the Config widget's form finds it).
@@ -210,23 +233,31 @@ def set_config(**changes: Any) -> BaseModel:
         raise ValueError("; ".join(problems))
     config.load()
     for name, value in typed.items():
-        config._set(name, value)  # noqa: SLF001  # this module's own class
+        # an on/off setting on its default is "not set": the key stays out of the file
+        kept = None if name in _BOOL_DEFAULTS and value == _BOOL_DEFAULTS[name] else value
+        config._set(name, kept)  # noqa: SLF001  # this module's own class
     config.save()
     return ConfigValues(**config.texts())
 
 
-# set_config's inputs are the settings: one optional parameter each, described by its
-# property's docstring. tool_forms.ToolForm reads this signature as it does an agent tool's,
-# which gives the Config widget its form (and the inline AI its output shape) with no code
-# per setting.
+# set_config's inputs are the settings: one optional parameter each (an on/off setting: a
+# bool with its default, so the form shows a checkbox), described by its property's
+# docstring. tool_forms.ToolForm reads this signature as it does an agent tool's, which
+# gives the Config widget its form (and the inline AI its output shape) with no code per
+# setting.
 set_config.__signature__ = inspect.Signature(  # type: ignore[attr-defined]
     [
-        inspect.Parameter(name, inspect.Parameter.KEYWORD_ONLY, default=None, annotation=_TYPES[name] | None)
+        inspect.Parameter(name, inspect.Parameter.KEYWORD_ONLY, default=_BOOL_DEFAULTS[name], annotation=bool)
+        if name in _BOOL_DEFAULTS
+        else inspect.Parameter(name, inspect.Parameter.KEYWORD_ONLY, default=None, annotation=_TYPES[name] | None)
         for name in _NAMES
     ],
     return_annotation=ConfigValues,
 )
-set_config.__annotations__ = {**{name: _TYPES[name] | None for name in _NAMES}, "return": ConfigValues}
+set_config.__annotations__ = {
+    **{name: bool if name in _BOOL_DEFAULTS else _TYPES[name] | None for name in _NAMES},
+    "return": ConfigValues,
+}
 set_config.__doc__ = "\n".join(
     [
         "Change the app's settings. An input left empty puts that setting back on its default.",

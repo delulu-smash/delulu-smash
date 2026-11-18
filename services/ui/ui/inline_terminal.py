@@ -20,6 +20,7 @@ from pydantic import BaseModel, Field
 from pydantic_ai import Agent, capture_run_messages
 
 from ui import logs
+from ui.ai_switch import require_ai
 from ui.session import find_session, log_usage
 
 __all__ = ["MAX_SCREEN_CHARS", "Command", "ask", "command_agent", "prompt"]
@@ -83,6 +84,7 @@ async def ask(body: dict[str, Any]) -> dict[str, str]:
     ):
         answer: dict[str, str] = {}
         try:
+            require_ai()
             result = await command_agent.run(
                 prompt(str(body.get("screen") or ""), instruction), message_history=history
             )

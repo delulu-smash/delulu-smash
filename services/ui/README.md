@@ -531,7 +531,9 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   setting is fetched at once and a theme change shows on the next reload. A machine without the
   file gets a 404 and the plain dark background. Nothing shows behind an open panel.
 - **Config: the app's settings** (`ui/config.py`, `services/ui/config.toml`): a `Config` class read from a
-  TOML file in the repo, changed while the app runs. Today one setting, `background`.
+  TOML file in the repo, changed while the app runs. Today two settings: `background`, and `allow_ai` (on/off:
+  see "The app works without the AI" in `spec/services/ui/README.md`; unticked, or with no AI key stored,
+  the app runs without the AI: its controls aren't shown and nothing is sent to a model; `ui/ai_switch.py`).
   - **A setting is a private variable and a property**: `self.__background: Path | None = None` (None = not
     set) and `@property def background(self) -> Path`, which returns it or its default. The property's
     return type is the input's type and its docstring the help text. An optional `check_<name>(value)`
@@ -552,7 +554,8 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
     `~` so it works on every machine. A value that is refused changes nothing. A file that can't be read, a
     refused value in it or an unknown key leaves the defaults in use, and the Config tab says why.
   - **Debug panel → Config** (`Alt+D`): every setting with its value in use, `set` or `default`, type and
-    what it is. Read-only; `Edit` opens the widget.
+    what it is. `Edit` shows the Config widget in the tab itself, above the list (again: it closes): the
+    same widget, placed in the panel, so a change shows in the list under it; it makes no Results tab.
 - **Variables** (`Alt+V`, the bottom bar's fourth toggle; `ui/variables.py`; what must hold is in
   `spec/services/ui/variables.md`): a pane at the right of Results / Python listing the
   session's Python names that are data: the agent's results (`r1`, …), a SmashDb console's saves (`q1`, …),

@@ -697,9 +697,11 @@ def chat_pane() -> rx.Component:
             rx.el.span(ai_icon(), class_name="composer-icon"),
             rx.el.textarea(
                 name="prompt",
-                placeholder=" ".join(
+                # the same hint with or without the AI: only its first words are the AI's
+                placeholder=rx.cond(State.ai_on, "Ask the agent…  ", "")
+                + " ".join(
                     [
-                        f"Ask the agent…  ({Shortcut.SEND.keys} to send,",
+                        f"({Shortcut.SEND.keys} to send,",
                         f"{Shortcut.NEW_LINE.keys} for a new line, / for commands, @ for variables)",
                     ]
                 ),
@@ -950,9 +952,9 @@ def debug_panel() -> rx.Component:
                     "config",
                     rx.el.button(
                         "Edit",
-                        on_click=State.add_widget("config"),
-                        title="Open the Config widget (also /config, or + in Results): change a setting and run",
-                        class_name="act",
+                        on_click=State.edit_config,
+                        title="Change a setting here: the Config widget, above the list (again: close it)",
+                        class_name=rx.cond(State.config_widget.kind != "", "act is-active", "act"),
                     ),
                 ),
                 (
@@ -1013,9 +1015,14 @@ def debug_panel() -> rx.Component:
 
 def config_view() -> rx.Component:
     """The Config tab (config.py): every setting with the value in use and whether it is set
-    or on its default. Read-only: Edit opens the Config widget, where a setting is changed.
+    or on its default. Edit shows the Config widget above the list (State.edit_config), where
+    a setting is changed: the same widget as in Results, placed here.
     """
     return rx.el.div(
+        rx.cond(
+            State.config_widget.kind != "",
+            rx.el.div(render_component(State.config_widget, State.view_event, compact=True), class_name="config-edit"),
+        ),
         rx.cond(State.config_problem != "", rx.el.div(State.config_problem, class_name="config-problem")),
         rx.el.table(
             rx.el.thead(rx.el.tr(*[rx.el.th(head) for head in ("setting", "value", "", "type", "what it is")])),
@@ -2071,7 +2078,7 @@ def tables_pane() -> rx.Component:
                 rx.cond(~State.has_objects, rx.el.span("no open results", class_name="tab dim")),
                 rx.el.button(
                     "+",
-                    title="Add a result by hand (eg a match video search, a SmashDb console)",
+                    title=Shortcut.NEW_TAB.hint("Add a result by hand (eg a match video search, a SmashDb console)"),
                     on_click=State.open_add_menu,
                     class_name="tab-add",
                 ),
@@ -2235,6 +2242,9 @@ def index() -> rx.Component:
         # inline_edit.jsx clicks it after an inline chat,
         # so the title bar's context meter adds its cost
         rx.el.button(on_click=State.refresh_usage, hidden=True, custom_attrs={"data-usage-refresh": ""}),
+        # without the AI (ai_switch.py) its controls aren't shown: one rule in app.css, and the
+        # inline chat's key does nothing (panes.js, frame_ask.js)
+        custom_attrs={"data-ai": rx.cond(State.ai_on, "on", "off")},
         class_name="page",
     )
 

@@ -66,6 +66,10 @@ class Shortcut(Enum):
     ZOOM_TERMINAL = Binding(
         "Alt+Shift+`", "anywhere", "Full screen the Terminal pane (again: restore panes)", also="Alt+Shift+Enter"
     )
+    # Alt+T as a browser's Ctrl+T (the app's keys are Alt): the tab bar's "+" menu, at the "+"
+    NEW_TAB = Binding(
+        "Alt+T", "Results pane", 'New tab: the tab bar\'s "+" menu of widgets (type to filter, arrows, Enter)'
+    )
     HELP = Binding("Alt+H", "anywhere", "Show or hide this help")
     PALETTE = Binding(
         "Alt+P", "anywhere", "Command palette: run anything by name, eg add a widget (type to filter, arrows, Enter)"
@@ -152,6 +156,7 @@ BROWSER_SHORTCUTS = (
     Shortcut.ZOOM_PYTHON,
     Shortcut.ZOOM_VARIABLES,
     Shortcut.ZOOM_TERMINAL,
+    Shortcut.NEW_TAB,
     Shortcut.HELP,
     Shortcut.PALETTE,
     Shortcut.KEYS,

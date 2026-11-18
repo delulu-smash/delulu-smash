@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 
 import keyring
+from keyring.errors import KeyringError
 from pydantic import BaseModel, SecretStr
 
 __all__ = ["get_settings"]
@@ -59,21 +60,29 @@ def set_settings(
     SETTINGS = init_settings()
 
 
+def _stored(name: str) -> str | None:
+    """A key from the keyring; None when it isn't stored, or the machine has no keyring service
+    at all (then no key is: everything that needs none still works).
+    """
+    try:
+        return keyring.get_password(KEYRING_SERVICE_NAME, name)
+    except KeyringError:
+        return None
+
+
 def init_settings() -> Settings:
     """Getting & Initializing settings  (eg setting ones to proper cli env variables)"""
-    pydantic_project_api_key = keyring.get_password(KEYRING_SERVICE_NAME, "PYDANTIC_PROJECT_API_KEY")
+    pydantic_project_api_key = _stored("PYDANTIC_PROJECT_API_KEY")
     if pydantic_project_api_key:
         # pydantic-ai's `gateway/...` models read the key from this variable
         os.environ["PYDANTIC_AI_GATEWAY_API_KEY"] = pydantic_project_api_key
     # setdefault so an explicitly exported URL (eg another region) still wins
     os.environ.setdefault("PYDANTIC_AI_GATEWAY_BASE_URL", GATEWAY_BASE_URL)
     # an exported STARTGG_API_TOKEN wins over the keyring (eg CI, a one-off shell)
-    startgg_api_token = os.environ.get("STARTGG_API_TOKEN") or keyring.get_password(
-        KEYRING_SERVICE_NAME, "STARTGG_API_TOKEN"
-    )
+    startgg_api_token = os.environ.get("STARTGG_API_TOKEN") or _stored("STARTGG_API_TOKEN")
     return Settings(
         pydantic_project_api_key=pydantic_project_api_key or None,
-        pydantic_org_api_key=keyring.get_password(KEYRING_SERVICE_NAME, "PYDANTIC_ORG_API_KEY") or None,
+        pydantic_org_api_key=_stored("PYDANTIC_ORG_API_KEY") or None,
         startgg_api_token=startgg_api_token or None,
     )
 

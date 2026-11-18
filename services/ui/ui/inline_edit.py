@@ -27,6 +27,7 @@ from pydantic import BaseModel, Field
 from pydantic_ai import Agent, ModelRetry, RunContext, capture_run_messages
 
 from ui import logs, mentions
+from ui.ai_switch import require_ai
 from ui.format import format_python
 from ui.session import BUILTIN_NAMES, find_session, log_usage
 
@@ -297,6 +298,7 @@ async def edit(body: dict[str, Any]) -> dict[str, str]:
         answer: dict[str, str] = {}
         call["added"] = mentioned
         try:
+            require_ai()
             result = await edit_agent.run(text, message_history=history, deps=run)
             code = result.output.code
             # Python comes back as ruff formats it (off the event loop: it runs ruff)

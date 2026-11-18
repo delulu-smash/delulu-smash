@@ -41,6 +41,11 @@ Design rules that follow from the difference:
   line up when several are open.
 - **A widget is self-contained and the same wherever it is placed** (a Results tab, the chat, under a cell):
   it keeps its own frame and brings its controls with it. See the README's "Rendering" design rule.
+- **Widgets are flush and square too**, as the Omarchy desktop (gaps 0, rounding 0; Nov 2026): no space
+  around a widget in any place, and square corners (`--widget-gap` / `--widget-radius` in `assets/app.css`,
+  the one setting for every place). Its frame is a 1px line, **except where it fills a place** (a Results
+  tab): there the place's lines frame it, so there is one line, as between panels. Under a cell it keeps its
+  indent, lined up with the code.
 - A new region of the window is a panel; a new way to show a value is a widget. Don't give a panel a widget's
   frame, or build a widget that only works in one panel.
 - **Toggles don't move the content.** Opening or closing something (a box, a row, a status) never shifts what
@@ -173,6 +178,28 @@ The app's settings are one `Config` class (`services/ui/ui/config.py`) read from
   come from it. The user runs a change; the chat agent has no tool for it.
 - **Hot reload, no cache**: a setting is read from the file on each use; a change shows without a restart.
 - **A bad value changes nothing**, and a file that can't be used leaves the defaults and says why.
+- **An on/off setting** (`-> bool`) is a checkbox in the form; while it equals its default it is "not set"
+  (its key stays out of the file).
+
+## The app works without the AI
+
+The user's rule (Nov 2026): the app works without the AI. Everything that isn't the AI (SmashDb, tables,
+VODs, the Python cells, the Terminal, the slash commands) must run without it, and with no key at all.
+
+- **Kept simple** (the user's rule): no second mode of the app and no wording of its own for "the AI is
+  off". What is the AI's is just not on the page, and a shared string is written once with its AI words
+  left out (eg the chat box's hint). Don't add a branch, a label or a message per feature for this.
+- **One question, one guard** (`services/ui/ui/ai_switch.py`): `ai_problem()` is "" when the AI may be
+  used, else why not (the `allow_ai` setting isn't ticked, or no AI key is stored: the same thing to the
+  app). `require_ai()` raises it, and every place that calls a model runs it first, so nothing is sent; the
+  error shows where the user asked, as any failed call does. A new place that calls a model starts with it.
+- **One rule hides the AI's controls**: the page's `data-ai` (from `State.ai_on`) and one CSS rule in
+  `assets/app.css`: the ✨ buttons, the inline chat's boxes, the title bar's model and meters (Logfire
+  isn't asked). `Alt+I` does nothing. The chat box stays: it runs the slash commands; a plain message gets
+  one line saying it wasn't sent, and why.
+- **The app starts without keys**: nothing read at import may need a key or a keyring service
+  (`tests/services/ui/test_ai_switch.py` imports the app with neither).
+- **Not covered**: `ds ai ...` in a terminal, and code a user writes in a cell that calls `ds.ai` itself.
 
 - [omarchy.md](omarchy.md): navigation, keys and many other parts of the app follow Omarchy, the desktop
   it runs on.

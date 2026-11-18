@@ -33,7 +33,7 @@ from pydantic import BaseModel, Field
 from pydantic_ai import Agent, ModelRetry, RunContext, capture_run_messages
 from pydantic_ai.exceptions import ModelAPIError, ModelQuotaExceededError
 
-from ui import mentions
+from ui import ai_switch, mentions
 from ui.inline_edit import context as python_context
 from ui.session import log_usage, trace_parts
 from ui.typeinfo import keep_class_sources
@@ -275,6 +275,7 @@ async def propose(session: Session | None, token: str, text: str) -> Proposal:
     ):
         call["added"] = mentioned
         try:
+            ai_switch.require_ai()
             result = await assign_agent.run(request, message_history=history, deps=asked)
             output = result.output
             answer.name, answer.code, answer.basis = (
@@ -409,6 +410,8 @@ def _run(session: Session, code: str) -> Ran:
     made = Ran()
     if problem := code_problem(code):
         return Ran(error=problem)
+    if "from_url(" in code and (problem := ai_switch.ai_problem()):  # a model reads the page
+        return Ran(error=f"Not assigned: from_url asks the AI, and {problem}")
     name = target(code)
     if problem := session.name_problem(name):
         return Ran(error=problem)

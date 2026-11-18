@@ -23,6 +23,7 @@ from ds.util.text import clean_f_str
 from pydantic_ai import Agent, StructuredDict, capture_run_messages
 
 from ui import mentions
+from ui.ai_switch import require_ai
 from ui.session import log_usage
 
 if TYPE_CHECKING:
@@ -121,6 +122,7 @@ async def fill(
             # a capture per run: one capture only holds its first run's messages
             with capture_run_messages() as captured:
                 try:
+                    require_ai()
                     result = await fill_agent.run(text, message_history=history, output_type=output_type)
                 except Exception as error:  # noqa: BLE001  # shown in the form's AI row, not raised into the event
                     answer.error = f"{type(error).__name__}: {error}"

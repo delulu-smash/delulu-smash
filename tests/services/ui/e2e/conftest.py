@@ -4,7 +4,9 @@
 #          app in a real browser (headless Chromium, Playwright). Each test gets a fresh
 #          browser session, so a fresh app session: nothing is shared with yours or between
 #          tests. Rules (.agents/agents.md, "Testing"): no AI calls, no outside requests, no
-#          lasting changes (eg no Config Run).
+#          lasting changes (eg no Config Run). A test of the AI's own controls (a ✨ button,
+#          an Alt+I box) asks for the `ai_controls` fixture: it is skipped, with the reason,
+#          while the running app doesn't use the AI (the `allow_ai` setting, or no key).
 # Usage: ds test smoke | ds test e2e   (or: uv run pytest -m smoke)
 # ---------------------------------------------------------------------------
 from __future__ import annotations
@@ -195,3 +197,12 @@ def app(browser: Browser, app_url: str) -> Iterator[App]:
     yield App(page)
     context.close()
     assert not errors, f"JavaScript errors on the page: {json.dumps(errors[:3])}"
+
+
+@pytest.fixture
+def ai_controls(app: App) -> None:
+    """The AI's controls are on the page. Skips the test while the running app doesn't use
+    the AI: they aren't shown then (ui/ai_switch.py), and a test can't change the setting.
+    """
+    if app.page.locator('[data-ai="off"]').count():
+        pytest.skip("the running app doesn't use the AI (allow_ai in /config, or no AI key): its controls aren't shown")

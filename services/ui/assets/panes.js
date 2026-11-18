@@ -8,7 +8,7 @@
 //          command palette (a search box over every command: type to filter, arrows, Enter; the ones run last come
 //          first); in a menu, arrows move between its rows. window.smashPress(keys) runs a shortcut as if its key
 //          were pressed where you were (the palette's and the keybindings list's way to run one). TOGGLE_CHAT / TOGGLE_RESULTS / TOGGLE_PYTHON / TOGGLE_VARIABLES / HELP / DEBUG click the
-//          bottom bar's pane toggles, ZOOM_CHAT / ZOOM_RESULTS / ZOOM_PYTHON / ZOOM_VARIABLES hidden buttons (data-toggle="zoom-<pane>"), and the title bar's ? and bug icon (data-toggle). A view's float button (render.float_button) and
+//          bottom bar's pane toggles, ZOOM_CHAT / ZOOM_RESULTS / ZOOM_PYTHON / ZOOM_VARIABLES hidden buttons (data-toggle="zoom-<pane>"), and the title bar's ? and bug icon (data-toggle). NEW_TAB, in the Results pane, clicks its tab bar's "+". A view's float button (render.float_button) and
 //          a click outside a floating view work too. reveal(id) scrolls to a chat row, result tab or
 //          cell and flashes it (State.reveal). INLINE_EDIT outside a code editor, in a view with a tool
 //          form, clicks that view's AI button (render.ai_toggle): the form's "Ask AI" row; CLOSE in
@@ -528,7 +528,19 @@
       }
       return;
     }
+    // in the Results pane: its tab bar's "+", clicked where it is (the menu opens at the pointer)
+    if (pressed(event, "NEW_TAB")) {
+      const add = activePane()?.dataset.pane === "results" && activePane().querySelector(".tab-add");
+      if (!add || !shown(add)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const box = add.getBoundingClientRect();
+      add.dispatchEvent(new MouseEvent("click", { bubbles: true, clientX: box.left, clientY: box.bottom }));
+      return;
+    }
     if (SHORTCUTS.INLINE_EDIT && matches(event, SHORTCUTS.INLINE_EDIT)) {
+      // without the AI (the page's data-ai, State.ai_on) the key does nothing, in an editor too
+      if (document.querySelector('[data-ai="off"]')) return event.stopPropagation();
       // in a code editor it is the editor's own key (inline_edit.jsx); elsewhere, in a view with a
       // tool form, it opens that form's "Ask AI" row
       if (event.target instanceof Element && event.target.closest(".cm-editor")) return;

@@ -18,6 +18,7 @@ from ds.data.raw.smashtube import MatchVideos, search_videos
 from ds.util.logging import logger
 
 from ui import agents, assign, logs, mentions, perf, spend, variables
+from ui.ai_switch import ai_problem
 from ui.commands import SLASH, parse_slash
 from ui.config import config as app_config
 from ui.db_console import DbConsole, clean_sql
@@ -208,6 +209,9 @@ PANES = ("chat", "results", "python", "variables", "terminal")
 
 # the name of the one Browser tab a clicked link opens in (State.browse)
 WEB_TAB = "web"
+# where the debug panel's Config tab shows the Config widget (State.edit_config): a slot of its
+# own, kept in Session.outputs under "config" as a cell's result is under its id
+CONFIG_SLOT = "debug:config"
 
 
 class State(rx.State):
@@ -291,6 +295,12 @@ class State(rx.State):
     # the file couldn't be used as it is ("" = fine)
     config_rows: list[dict[str, str]] = []
     config_problem: str = ""
+    # the Config widget shown in that tab (its Edit; slot CONFIG_SLOT), "" kind while closed:
+    # the same widget as /config adds to Results, placed here so the settings change in view
+    config_widget: ViewData = ViewData()
+    # whether the AI may be used (ai_switch.ai_problem: the `allow_ai` setting and the key),
+    # read with the settings: without it the AI's controls aren't on the page (app.css)
+    ai_on: bool = True
     # the panel fills the window (its button, Shortcut.FULL_SCREEN
     # while it is open); kept when it closes
     debug_full: bool = False
@@ -394,6 +404,7 @@ class State(rx.State):
     def _load_config(self) -> None:
         """The settings as they are now: for the page (State.config) and the Config tab."""
         settings = app_config.settings()
+        self.ai_on = not ai_problem()
         self.config = {setting.name: setting.value for setting in settings}
         self.config_problem = app_config.problem
         self.config_rows = [
@@ -488,6 +499,8 @@ class State(rx.State):
         if kind == "tab":
             if key == self.selected:
                 self.view = self._session().show(slot)
+        elif slot == CONFIG_SLOT:
+            self.config_widget = self._session().show(slot, compact=True)
         elif kind == "chat":
             view = self._session().show(slot, compact=True)
             for index, item in enumerate(self.chat):
@@ -628,7 +641,9 @@ class State(rx.State):
             self.chat = [ChatItem(**item) if isinstance(item, dict) else item for item in self.chat]
         self._sync()
         self._sync_usage()  # the context meter shows from the start (0 tokens)
-        return State.load_spend_meters
+        if self.ai_on:  # else there are no meters to fill, so Logfire isn't asked
+            return State.load_spend_meters
+        return None
 
     @event
     def select_object(self, name: str):
@@ -1157,8 +1172,11 @@ class State(rx.State):
             drop_proposal(ui)
         ui.running = False
         self._new_result(slot, ui, replaced=not ui.error)
+        ai_was_on = self.ai_on
         self._load_config()  # the form may be the Config widget's: the page reads its settings
         self._refresh_debug()
+        if self.ai_on and not ai_was_on:  # the AI was just turned on: its spend meters are read now
+            yield State.load_spend_meters
 
     async def _ask_ai(self, slot: str, view: Any, ui: Ui, inputs: dict[str, Any], instruction: str):
         """A form's inline chat (inline_fill.py): the AI turns the instruction into the form's
@@ -1378,6 +1396,32 @@ class State(rx.State):
             session.ui.pop(slot, None)
             if (index := self._cell_index(key)) >= 0:
                 self._update(index, view=ViewData())
+        elif slot == CONFIG_SLOT:
+            self._close_config()
+
+    def _close_config(self) -> None:
+        session = self._session()
+        session.outputs.pop(CONFIG_SLOT.partition(":")[2], None)
+        session.ui.pop(CONFIG_SLOT, None)
+        self.config_widget = ViewData()
+
+    @event
+    def edit_config(self):
+        """The Config tab's Edit: the Config widget in the debug panel, above the settings (the
+        key again closes it). Kept as a cell's result is (Session.outputs), so it makes no
+        Results tab and no variable; its inputs start as what is set now.
+        """
+        session = self._session()
+        key = CONFIG_SLOT.partition(":")[2]
+        if key in session.outputs:
+            self._close_config()
+            return
+        view = to_view(ToolRequest("set_config", inputs=app_config.stored()))
+        if view is None:
+            return
+        session.outputs[key] = view
+        session.ui[CONFIG_SLOT] = Ui(form_open=True)
+        self._show(CONFIG_SLOT)
 
     @event
     def close_glance(self):
@@ -1607,6 +1651,7 @@ class State(rx.State):
     @event
     def clear_outputs(self):
         self._session().outputs.clear()
+        self.config_widget = ViewData()  # the Config tab's widget is kept there too
         for index in range(len(self.cells)):
             self._update(index, stdout="", text="", error="", **_trace_fields([]), view=ViewData())
 
@@ -1990,6 +2035,10 @@ class State(rx.State):
             turn = f"turn-{self.turn_seq}"
             session = self._session()
             self.chat.append(ChatItem(kind="user", text=prompt, key=turn, pieces=mentions.pieces(prompt, session)))
+            if problem := ai_problem():  # nothing is sent: one line, no turn
+                self.chat.append(ChatItem(kind="note", text=f"Not sent to the AI: {problem}"))
+                self.busy = False
+                return
             log_context = self._log_context("chat", turn=turn)
             # "@q1" in the message: the model also gets what the variable holds (mentions.py)
             # built once: a call such as "@q1.sample(5)" gives other rows each time it runs

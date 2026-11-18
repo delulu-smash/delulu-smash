@@ -27,6 +27,7 @@ BACKEND = "http://localhost:8000"
 
 
 @pytest.mark.smoke
+@pytest.mark.usefixtures("ai_controls")
 def test_alt_i_opens_the_box_in_the_strip_and_esc_gives_the_shell_back(app: App) -> None:
     app.show("terminal")
     app.page.click('[data-pane="terminal"] iframe')
@@ -43,6 +44,7 @@ def test_alt_i_opens_the_box_in_the_strip_and_esc_gives_the_shell_back(app: App)
     app.wait_terminal_text("echo back-in-the-shell")
 
 
+@pytest.mark.usefixtures("ai_controls")
 def test_the_strips_ai_button_and_alt_i_again_both_close_the_box(app: App) -> None:
     app.show("terminal")
     button = app.page.locator('[data-pane="terminal"] [data-inline-ai]')
@@ -56,6 +58,7 @@ def test_the_strips_ai_button_and_alt_i_again_both_close_the_box(app: App) -> No
     app.strip_box.wait_for(state="hidden")
 
 
+@pytest.mark.usefixtures("ai_controls")
 def test_an_ask_is_refused_while_a_full_screen_program_has_the_terminal(app: App) -> None:
     # the page refuses before asking the AI: a paste would go into the program, not a prompt
     app.show("terminal")
@@ -129,3 +132,16 @@ def test_the_shell_has_your_theme_colours_and_no_browser_caret(app: App) -> None
         "() => { const c = getComputedStyle(document.getElementById('term')); return [c.caretColor, c.outlineStyle]; }"
     )
     assert style == ["rgba(0, 0, 0, 0)", "none"]
+
+
+def test_the_strips_buttons_stay_at_the_right_whether_the_ai_is_on_or_off(app: App) -> None:
+    # the AI's box in the strip is also the space that pushes the buttons right: hidden whole
+    # (the AI off), they slid to the left
+    app.show("terminal")
+    gap = app.page.evaluate(
+        """() => { const pane = document.querySelector('[data-pane="terminal"]');
+                   const buttons = [...pane.querySelectorAll('.console-head button')];
+                   const close = buttons.filter(b => b.getClientRects().length).pop();
+                   return pane.getBoundingClientRect().right - close.getBoundingClientRect().right; }"""
+    )
+    assert gap < 40, f"the strip's last button is {gap:.0f}px from the panel's right edge"

@@ -43,10 +43,10 @@ def picture(tmp_path: Path) -> Path:
 def test_a_setting_is_its_default_until_set(config_file: Path) -> None:
     assert not config_file.exists()
     assert config.background == config_module.OMARCHY_BACKGROUND
-    (setting,) = config.settings()
+    setting = config.settings()[0]
     assert (setting.name, setting.type, setting.is_default) == ("background", "Path", True)
     assert setting.about.startswith("The picture the window shows when no panel is open.")
-    assert config.stored() == {"background": ""}
+    assert config.stored() == {"background": "", "allow_ai": True}  # an on/off setting: its value in use
 
 
 def test_setting_one_writes_the_file_and_resetting_takes_it_out(config_file: Path, picture: Path) -> None:
@@ -113,11 +113,12 @@ def test_the_widget_starts_with_what_is_set_and_runs_the_same(picture: Path) -> 
     widget = widget_of("config")
     blank = widget.blank(Session())
     assert isinstance(blank, ToolRequest)
-    assert blank.inputs == {"background": str(picture)}
+    assert blank.inputs == {"background": str(picture), "allow_ai": True}
     # run untouched: nothing changes
     result, used = widget.form.run(widget.form.texts(blank.inputs))
     assert config.background == picture
-    assert used == {"background": picture}
+    assert used == {"background": picture, "allow_ai": True}
+    assert "allow_ai" not in tomllib.loads(config_module.CONFIG_FILE.read_text(encoding="utf-8"))  # on: not set
     assert form_for(result) is widget.form  # the result keeps the form
     # an emptied input: back to the default
     widget.form.run({"background": ""})

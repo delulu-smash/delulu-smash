@@ -113,7 +113,8 @@
     if (!event.data) return;
     const pane = [...document.querySelectorAll("[data-pane]")].find((node) => frameOf(node)?.contentWindow === event.source);
     if (!pane) return;
-    if (event.data.type === "delulu-ask-toggle") toggle(pane);
+    // without the AI (the page's data-ai, State.ai_on) Alt+I in the page opens nothing
+    if (event.data.type === "delulu-ask-toggle" && !document.querySelector('[data-ai="off"]')) toggle(pane);
     if (event.data.type === "delulu-ask-answer") answered(pane, event.data);
   });
 
