@@ -14,6 +14,7 @@ from typing import Any
 
 import reflex as rx
 
+from ui import spend
 from ui.agents import AGENTS, DEFERRED, LOAD_TOOL, AgentInfo, CapabilityInfo, ToolInfo
 from ui.api import api
 from ui.commands import ICON_AI as ICON_CHAT
@@ -524,20 +525,22 @@ def context_meter() -> rx.Component:
     """How full the model's context window is and what this session's AI cost so far, in the
     title bar so it shows whichever panels are open: 'context 4% · this session $0.012'.
     Hovering it unveils the tokens in place of the percent ('43k / 1M tokens'; app.css).
+    The cost is left out when it isn't known in dollars (spend.AVAILABLE: a Copilot model).
     """
+    cost = [" · this session ", rx.cond(State.chat_cost != "", State.chat_cost, "$0")] if spend.AVAILABLE else []
+    size_title = "Conversation size (sent again with every request) / the model's context window"
+    title = [f"{size_title},", "and what the AI cost so far this session (chat and inline chats)."]
     return rx.el.div(
         rx.el.span(rx.el.i(style={"width": State.context_pct.to(str) + "%"}), class_name="ctx-bar"),
         rx.el.span(
             "context ",
             rx.el.span(State.context_size, class_name="ctx-pct"),
             rx.el.span(State.context_tokens_text, class_name="ctx-tokens"),
-            " · this session ",
-            rx.cond(State.chat_cost != "", State.chat_cost, "$0"),
+            *cost,
         ),
         title=" ".join(
             [
-                "Conversation size (sent again with every request) / the model's context window,",
-                "and what the AI cost so far this session (chat and inline chats).",
+                *(title if spend.AVAILABLE else [f"{size_title}."]),
                 "Past about half, answers get slower and cost more.",
             ]
         ),
@@ -937,7 +940,12 @@ def debug_panel() -> rx.Component:
             rx.el.span("Debug", class_name="help-title"),
             debug_tab("requests", "Requests", "The outside calls this app made (since the backend started)"),
             debug_tab("system", "System", "Memory, what was slow, sessions and what the app holds (read now)"),
-            debug_tab("spend", "Spend", "AI spend from Logfire (every machine, 30 days)"),
+            # not there for a model whose cost isn't in dollars (spend.AVAILABLE)
+            *(
+                [debug_tab("spend", "Spend", "AI spend from Logfire (every machine, 30 days)")]
+                if spend.AVAILABLE
+                else []
+            ),
             debug_tab(
                 "agents",
                 "Agents",
@@ -2168,7 +2176,7 @@ def index() -> rx.Component:
             # setup is in the debug panel's Agents tab)
             rx.el.span(AGENTS[0].model_name, title=f"Chat model: {AGENTS[0].model}", class_name="chat-model mono"),
             context_meter(),
-            spend_meters(),
+            *([spend_meters()] if spend.AVAILABLE else []),
             rx.el.span(class_name="spacer"),
             rx.el.button(
                 ICON_BUG,

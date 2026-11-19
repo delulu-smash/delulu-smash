@@ -9,14 +9,14 @@ from ds.ai.call_log import ToolCallLog
 from ds.ai.knowledge import knowledge_capability
 from ds.ai.little_mac import little_mac_capability
 from ds.ai.mechanics import mechanics_capability
+from ds.ai.model import ai_model
 from ds.ai.smashdb import smashdb_capability
 from ds.ai.smashtube import smashtube_capability
 from ds.ai.startgg import startgg_capability
 from ds.ai.web import WEB_RULE, web_capability
-from ds.util.const import DEFAULT_AI_MODEL
 
 __all__ = ["agent"]
-# agent = Agent(DEFAULT_AI_MODEL, capabilities=[Coder()])  # noqa: ERA001  # alt config
+# agent = Agent(ai_model(), capabilities=[Coder()])  # noqa: ERA001  # alt config
 # TODO: transfer specific smash ultimate engine items to docs/smashDb (eg 1v1 base multiplier)
 # always-on (capabilities are deferred), so match assumptions apply to every answer
 # ds::docs-source: none yet (no 1v1 multiplier docs page; 1.2 also in ds.calc.modifiers)
@@ -31,16 +31,19 @@ FFA, 3+ players). In 1v1 the game multiplies all damage by 1.2x:
 - If the user mentions doubles, FFA or 3+ players, drop the 1.2x and say so."""
 
 agent = Agent(
-    # via Pydantic AI Gateway (key + URL set in ds.settings; store key: `ds settings sync`)
-    DEFAULT_AI_MODEL,
+    # DEFAULT_AI_MODEL (ds.util.const) through ds.ai.model: a Copilot seat or the Gateway; its
+    # token / key is stored with `ds settings sync`
+    ai_model(),
     # on every Logfire span of its runs (gen_ai.agent.name): splits AI spend by agent
     # (ds.data.raw.logfire); evals run this agent too, so they count as smash-agent
     name="smash-agent",
     # resolve the model at run time, so `import ds.ai` (tests, chat app) works without a key
+    # (a Copilot model is built here, but reads its token only when a request is sent)
     defer_model_check=True,
     # WEB_RULE always-on too: it must steer the model before the deferred web_capability loads
     instructions=[_INSTRUCTIONS, WEB_RULE],
-    # prompt caching (Anthropic 5m TTL, refreshed on each hit): chats are multi-request
+    # prompt caching (Anthropic: 5m TTL, refreshed on each hit; OpenAI ids cache by
+    # themselves and ignore this): chats are multi-request
     # (capability load, tool calls, follow-ups), so later requests read the prefix at ~0.1x
     # cost. Override per run with model_settings={"cache": False}
     model_settings={"cache": True},

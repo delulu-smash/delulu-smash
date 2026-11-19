@@ -26,7 +26,7 @@ from typing import TYPE_CHECKING, Any, Literal
 
 import polars as pl
 from ds.ai import extract, scripts
-from ds.util.const import DEFAULT_AI_MODEL
+from ds.ai.model import ai_model
 from ds.util.logging import log_call
 from ds.util.text import clean_f_str
 from pydantic import BaseModel, Field
@@ -139,7 +139,7 @@ class AssignRun:
 
 
 assign_agent = Agent(
-    DEFAULT_AI_MODEL,
+    ai_model(),
     # on its Logfire spans (gen_ai.agent.name): the debug
     # panel's Spend tab lists it apart from the chat
     name="inline-assign",

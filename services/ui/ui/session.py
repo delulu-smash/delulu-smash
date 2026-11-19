@@ -26,6 +26,7 @@ import ds.ai
 import ds.data
 import jedi
 import polars as pl
+from ds.ai.model import spend_tracked
 from ds.util.df import to_df
 from ds.util.logging import log_call
 from pydantic_ai import capture_run_messages
@@ -126,6 +127,12 @@ def tokens_text(count: int) -> str:
     return f"{count / 1000:.3g}k" if count >= 1000 else str(count)
 
 
+# Whether a request's cost is known in dollars (ds.ai.model.spend_tracked: not for a GitHub
+# Copilot model, which bills premium requests). False: usage is tokens and requests only, and
+# no dollar figure is kept or shown (a list-price estimate would read as money spent).
+DOLLARS: bool = spend_tracked()
+
+
 def cost_text(cost: float | None) -> str:
     """US dollars, enough digits for a fraction of a cent ($0.0011, $0.000025, never
     scientific notation); '$?' when unknown.
@@ -154,7 +161,8 @@ class TurnUsage:
     cache_read_tokens: int = 0
     output_tokens: int = 0
     cost: float | None = None
-    """US dollars; None when no request could be priced."""
+    """US dollars; None when no request could be priced, or costs aren't in dollars
+    (DOLLARS)."""
     unpriced: int = 0
     """Requests with no cost (cost then leaves them out)."""
     context_tokens: int = 0
@@ -175,7 +183,9 @@ class TurnUsage:
             total.input_tokens += usage.input_tokens
             total.cache_read_tokens += usage.cache_read_tokens
             total.output_tokens += usage.output_tokens
-            if usage.cost is None:
+            if not DOLLARS:
+                pass
+            elif usage.cost is None:
                 total.unpriced += 1
             else:
                 total.cost = (total.cost or 0) + float(usage.cost)
@@ -186,7 +196,7 @@ class TurnUsage:
                     [
                         f"{total.requests}. {usage.input_tokens:,} in ({usage.cache_read_tokens:,} cached)",
                         f"{usage.output_tokens:,} out",
-                        cost_text(None if usage.cost is None else float(usage.cost)),
+                        *([cost_text(None if usage.cost is None else float(usage.cost))] if DOLLARS else []),
                         str(response.finish_reason or "?") + (f" → {', '.join(tools)}" if tools else ""),
                     ]
                 )
@@ -201,13 +211,15 @@ class TurnUsage:
 
     def summary(self) -> str:
         """The line under an answer, eg '$0.0011 · 21.3k
-        in (71% cached) · 812 out · 3 requests'.
+        in (71% cached) · 812 out · 3 requests' (without the cost when it isn't in dollars).
         """
         if not self.requests:
             return ""
         cost = cost_text(self.cost) + ("+?" if self.unpriced and self.cost is not None else "")
         cached = f" ({self.cache_read_tokens / self.input_tokens:.0%} cached)" if self.cache_read_tokens else ""
-        parts = [cost, f"{tokens_text(self.input_tokens)} in{cached}", f"{tokens_text(self.output_tokens)} out"]
+        parts = [f"{tokens_text(self.input_tokens)} in{cached}", f"{tokens_text(self.output_tokens)} out"]
+        if DOLLARS:
+            parts.insert(0, cost)
         parts.append(f"{self.requests} request{'s' if self.requests != 1 else ''}")
         return " · ".join(parts)
 

@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 from pydantic_ai import Agent
 from pydantic_ai.messages import ModelMessage, ModelRequest, ModelResponse, TextPart, UserPromptPart
 
+from ds.ai.model import ai_model
 from ds.util.const import DEFAULT_AI_MODEL
 
 if TYPE_CHECKING:
@@ -26,7 +27,7 @@ def chat(
         messages (list[dict]): A list of messages in the format
             [{"role": "user", "content": "Hello"}]. "system" messages become the instructions,
             and the last message must be the "user" prompt.
-        model (str): pydantic-ai model name. Default is DEFAULT_AI_MODEL (via AI Gateway).
+        model (str): a model setting as in DEFAULT_AI_MODEL (the default; see ds.ai.model).
         response_format (type[BaseModel] | None): If provided, the response will be validated
             against this Pydantic model.
 
@@ -46,5 +47,5 @@ def chat(
             history.append(ModelRequest(parts=[UserPromptPart(content=m["content"])]))
         elif m["role"] == "assistant":
             history.append(ModelResponse(parts=[TextPart(content=m["content"])]))
-    agent = Agent(model, name="chat", instructions=instructions, output_type=response_format or str)
+    agent = Agent(ai_model(model), name="chat", instructions=instructions, output_type=response_format or str)
     return agent.run_sync(last["content"], message_history=history or None).output

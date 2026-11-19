@@ -41,12 +41,17 @@ class Settings(BaseModel):
     # start.gg personal API token in keyring; used by ds.data.raw.startgg (create one at
     # https://start.gg/admin/profile/developer)
     startgg_api_token: ApiKey | None = None
+    # GitHub token of an account with a Copilot seat, in keyring: all ds.ai model calls when
+    # DEFAULT_AI_MODEL is a "github-copilot:..." one (ds.ai.model). `ds settings sync` takes it
+    # from the gh CLI's login (`gh auth token`)
+    github_copilot_token: ApiKey | None = None
 
 
 def set_settings(
     pydantic_org_api_key: str | None = None,
     pydantic_project_api_key: str | None = None,
     startgg_api_token: str | None = None,
+    github_copilot_token: str | None = None,
 ) -> None:
     """Set application settings. Secrets (eg api keys) go in keyring; None keeps a value"""
     global SETTINGS  # noqa: PLW0603  # module-level settings by design, read through get_settings()
@@ -56,6 +61,8 @@ def set_settings(
         keyring.set_password(KEYRING_SERVICE_NAME, "PYDANTIC_PROJECT_API_KEY", pydantic_project_api_key)
     if pydantic_org_api_key is not None:
         keyring.set_password(KEYRING_SERVICE_NAME, "PYDANTIC_ORG_API_KEY", pydantic_org_api_key)
+    if github_copilot_token is not None:
+        keyring.set_password(KEYRING_SERVICE_NAME, "GITHUB_COPILOT_TOKEN", github_copilot_token)
     # ensures global setting variable has updates
     SETTINGS = init_settings()
 
@@ -80,10 +87,13 @@ def init_settings() -> Settings:
     os.environ.setdefault("PYDANTIC_AI_GATEWAY_BASE_URL", GATEWAY_BASE_URL)
     # an exported STARTGG_API_TOKEN wins over the keyring (eg CI, a one-off shell)
     startgg_api_token = os.environ.get("STARTGG_API_TOKEN") or _stored("STARTGG_API_TOKEN")
+    # an exported GITHUB_COPILOT_API_KEY (pydantic-ai's own name for it) wins the same way
+    github_copilot_token = os.environ.get("GITHUB_COPILOT_API_KEY") or _stored("GITHUB_COPILOT_TOKEN")
     return Settings(
         pydantic_project_api_key=pydantic_project_api_key or None,
         pydantic_org_api_key=_stored("PYDANTIC_ORG_API_KEY") or None,
         startgg_api_token=startgg_api_token or None,
+        github_copilot_token=github_copilot_token or None,
     )
 
 

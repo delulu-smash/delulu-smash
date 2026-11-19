@@ -42,8 +42,8 @@ from pydantic_ai.exceptions import UnexpectedModelBehavior, UsageLimitExceeded
 from pydantic_ai.usage import UsageLimits
 from pydantic_ai_harness.playwright import PlaywrightBrowser
 
+from ds.ai.model import ai_model
 from ds.util import http
-from ds.util.const import DEFAULT_AI_MODEL
 from ds.util.logging import log_call
 from ds.util.text import clean_f_str
 
@@ -270,7 +270,7 @@ _COPY_RULES = clean_f_str("""
     """)
 
 copy_agent = Agent(
-    DEFAULT_AI_MODEL,
+    ai_model(),
     # on its Logfire spans: the Spend tab lists it apart from the chat
     name="from-url",
     # resolved at run time, so importing ds.ai works without a key (as ds.ai.agent)
@@ -611,7 +611,7 @@ async def _browse(url: str, shape: Any, what: str, report: FromUrlReport) -> Any
     async with system_chromium() as cdp_url:
         browser = _recording_browser(recorder, cdp_url, urlparse(url).hostname or "")
         agent = Agent(
-            DEFAULT_AI_MODEL,
+            ai_model(),
             name="from-url-browser",
             # a recipe that fails check_recipe is sent back this many times
             retries=OUTPUT_FIXES,

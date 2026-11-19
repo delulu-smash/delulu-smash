@@ -10,9 +10,11 @@ Claude Code's own files in `.claude/` (settings, subagents, and `skills`, a syml
 
 When the current branch is `os-windows` (`git branch --show-current`), read
 @.agents/instructions/os_windows.md before any work. The branch makes the repo work on the user's work
-Windows laptop, which has GitHub Copilot as its only AI and can pull but never push. That file says how to
+Windows laptop, which has GitHub Copilot as its only AI and can pull but never push. It is **never merged
+into `main`**: a staging place for porting the code base to that laptop. That file says how to
 tell which machine you are on (`uname -s`), the laptop's constraints, how the laptop takes changes and
-resolves conflicts, and the context of what was done so far.
+resolves conflicts, what may be removed here and how the AI is set up, and the context of what was done
+so far.
 
 - **Commits on `os-windows` carry their context**: a body with `Asked:`, `Why:`, `Decided:` and
   `After pull (Windows):` lines (shape and example in that file), because the laptop's AI has only the commit

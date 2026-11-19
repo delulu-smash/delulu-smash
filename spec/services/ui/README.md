@@ -234,8 +234,9 @@ VODs, the Python cells, the Terminal, the slash commands) must run without it, a
   off". What is the AI's is just not on the page, and a shared string is written once with its AI words
   left out (eg the chat box's hint). Don't add a branch, a label or a message per feature for this.
 - **One question, one guard** (`services/ui/ui/ai_switch.py`): `ai_problem()` is "" when the AI may be
-  used, else why not (the `allow_ai` setting isn't ticked, or no AI key is stored: the same thing to the
-  app). `require_ai()` raises it, and every place that calls a model runs it first, so nothing is sent; the
+  used, else why not (the `allow_ai` setting isn't ticked, or what the model needs isn't stored: the same
+  thing to the app). What the model needs is its own to say (`ds.ai.model.credential_problem`): a GitHub
+  Copilot token for a `github-copilot:` model, the Gateway key for a `gateway/` one. `require_ai()` raises it, and every place that calls a model runs it first, so nothing is sent; the
   error shows where the user asked, as any failed call does. A new place that calls a model starts with it.
 - **One rule hides the AI's controls**: the page's `data-ai` (from `State.ai_on`) and one CSS rule in
   `assets/app.css`: the ✨ buttons, the inline chat's boxes, the title bar's model and meters (Logfire
@@ -244,6 +245,23 @@ VODs, the Python cells, the Terminal, the slash commands) must run without it, a
 - **The app starts without keys**: nothing read at import may need a key or a keyring service
   (`tests/services/ui/test_ai_switch.py` imports the app with neither).
 - **Not covered**: `ds ai ...` in a terminal, and code a user writes in a cell that calls `ds.ai` itself.
+
+## The model: one constant, and what follows from it
+
+The user's rule (Nov 2026, branch `os-windows`): the model of every AI agent is one constant,
+`DEFAULT_AI_MODEL` in `pkgs/ds/util/const.py`, and changing that line is all it takes.
+
+- **One module knows the providers**: `pkgs/ds/ai/model.py`. `ai_model()` is what every `Agent(...)` gets
+  (the chat agent, the inline chats, `/assign`, `from_url`, the script writer, the eval judge). A new agent
+  is built with it, never with a model name of its own.
+- **On `os-windows` the model is a GitHub Copilot one** (`github-copilot:gpt-5.6-luna`): the work laptop
+  has a Copilot seat and nothing else. Its token is stored like the other keys (`ds settings sync`, which
+  reads it from `gh auth token`; `Settings.github_copilot_token`) and read when a request is sent, so the
+  app still starts with nothing stored.
+- **Dollars are shown only where they are real** (`ds.ai.model.spend_tracked`: a `gateway/` model). A
+  Copilot seat bills premium requests, which nothing here reads, so with a Copilot model these are not on
+  the page: the Spend tab, the title bar's spend meters, the session's cost, and the cost in a usage line
+  (it reads "1.2k in · 30 out · 1 request"). The context meter stays. No estimate takes their place.
 
 - [omarchy.md](omarchy.md): navigation, keys and many other parts of the app follow Omarchy, the desktop
   it runs on.

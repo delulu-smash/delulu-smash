@@ -17,7 +17,7 @@ import json
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
-from ds.util.const import DEFAULT_AI_MODEL
+from ds.ai.model import ai_model
 from ds.util.logging import log_call
 from ds.util.text import clean_f_str
 from pydantic_ai import Agent, StructuredDict, capture_run_messages
@@ -46,7 +46,7 @@ _INSTRUCTIONS = clean_f_str("""
     """)
 
 fill_agent = Agent(
-    DEFAULT_AI_MODEL,
+    ai_model(),
     # on its Logfire spans (gen_ai.agent.name): the debug
     # panel's Spend tab lists it apart from the chat
     name="inline-fill",

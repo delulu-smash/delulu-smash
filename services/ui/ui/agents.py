@@ -15,6 +15,8 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
 import ds.ai
+from ds.ai.model import COPILOT_PREFIX, GATEWAY_PREFIX, model_label
+from ds.util.const import DEFAULT_AI_MODEL
 from genai_prices import Usage, calc_price
 from pydantic_ai import Agent
 from pydantic_ai.exceptions import UserError
@@ -71,9 +73,9 @@ class AgentInfo:
     role: str
     defined_in: str
     model: str
-    """The setting as written, eg gateway/anthropic:claude-haiku-5-5."""
+    """The setting as written (DEFAULT_AI_MODEL), eg github-copilot:gpt-5.6-luna."""
     model_name: str
-    """The model alone, eg claude-haiku-5-5 (what the title bar shows)."""
+    """The model alone, eg gpt-5.6-luna (what the title bar shows)."""
     details: list[dict[str, str]] = field(default_factory=list)
     """label / value rows: provider, context window, price, settings, output, retries."""
     instructions: str = ""
@@ -274,15 +276,18 @@ def activity(messages: Iterable[Any]) -> tuple[list[str], list[dict[str, str]]]:
 
 
 def _info(agent: Agent[Any, Any], role: str, defined_in: str) -> AgentInfo:
-    model = str(agent.model)
-    via = " (via the Pydantic AI Gateway)" if model.startswith("gateway/") else ""
+    # every agent is built with ds.ai.model.ai_model(): the setting is the constant, not what
+    # str() of a built model object gives
+    model = DEFAULT_AI_MODEL
+    copilot = model.startswith(COPILOT_PREFIX)
+    via = " (via the Pydantic AI Gateway)" if model.startswith(GATEWAY_PREFIX) else ""
     try:
         resolved = infer_model(agent.model)
     except UserError:
         # a gateway/ model can't be made without its key: the app still starts
         # (ai_switch.ai_problem names the key), with what the setting itself says, eg
         # gateway/anthropic:claude-haiku-5-5
-        provider, _, model_name = model.removeprefix("gateway/").partition(":")
+        provider, model_name = model.removeprefix(GATEWAY_PREFIX).partition(":")[0], model_label(model)
         window = None
     else:
         provider, model_name, window = resolved.system, resolved.model_name, resolved.context_window
@@ -290,7 +295,8 @@ def _info(agent: Agent[Any, Any], role: str, defined_in: str) -> AgentInfo:
     details = [
         {"label": "provider", "value": f"{provider}{via}"},
         {"label": "context window", "value": f"{tokens_text(window)} tokens" if window else "unknown"},
-        {"label": "price", "value": _price(model_name, provider)},
+        # a Copilot seat bills premium requests, not tokens: a list price would mislead
+        {"label": "price", "value": "Copilot premium requests" if copilot else _price(model_name, provider)},
         {"label": "model settings", "value": str(agent.model_settings or "defaults")},
         {"label": "output", "value": "text" if output == "str" else output},
         {

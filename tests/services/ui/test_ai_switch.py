@@ -13,7 +13,6 @@ import os
 import subprocess
 import sys
 from pathlib import Path
-from types import SimpleNamespace
 
 import pytest
 from pydantic_ai.models.test import TestModel
@@ -37,9 +36,11 @@ def test_the_setting_unticked_says_where_to_tick_it() -> None:
         ai_switch.require_ai()
 
 
-def test_no_key_has_its_own_reason(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(ai_switch, "get_settings", lambda: SimpleNamespace(pydantic_project_api_key=None))
-    assert ai_switch.ai_problem() == "no AI key is stored (run `ds settings sync`)"
+def test_a_missing_token_or_key_has_its_own_reason(monkeypatch: pytest.MonkeyPatch) -> None:
+    # the reason is the model's own (ds.ai.model.credential_problem; tests/ds/ai/test_model.py)
+    reason = "no GitHub Copilot token is stored (run `ds settings sync`)"
+    monkeypatch.setattr(ai_switch, "credential_problem", lambda: reason)
+    assert ai_switch.ai_problem() == reason
 
 
 def test_the_setting_is_a_checkbox_kept_out_of_the_file_while_on(
@@ -86,7 +87,7 @@ def test_without_the_ai_from_url_in_assigned_code_is_refused() -> None:
 def test_the_app_imports_with_no_keys(backend: str) -> None:
     # null: a keyring with nothing stored; fail: no keyring service on the machine. In a
     # process of its own, since settings and the agents are read when the modules load.
-    drop = ("PYDANTIC_AI_GATEWAY_API_KEY", "STARTGG_API_TOKEN")
+    drop = ("PYDANTIC_AI_GATEWAY_API_KEY", "STARTGG_API_TOKEN", "GITHUB_COPILOT_API_KEY")
     env = {name: value for name, value in os.environ.items() if name not in drop}
     # the whole app, then what reads a key when the page opens: the spend meters say "setup"
     code = "; ".join(
@@ -94,6 +95,9 @@ def test_the_app_imports_with_no_keys(backend: str) -> None:
             "import ui.ui, ui.ai_switch as s",
             "from ui import spend",
             "assert spend.load(top=False).status == 'setup'",
+            # every agent is built at import, a Copilot model included, with no token to read
+            "from ui.agents import AGENTS",
+            "assert AGENTS[0].model_name",
             "print(s.ai_problem())",
         ]
     )

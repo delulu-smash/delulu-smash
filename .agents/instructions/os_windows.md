@@ -10,9 +10,36 @@ the rules the code follows to stay cross platform are in `spec/services/ui/READM
 
 ## What this branch is for
 
-Make delulu-smash work on the user's **work Windows laptop**, without breaking it on Omarchy (Arch Linux),
-where it is built. `main` stays the Linux line until the Windows work is done; then `os-windows` is merged
-into `main` (no pull request).
+Make delulu-smash work on the user's **work Windows laptop** and fit how it is used there.
+
+**This branch is never merged into `main`.** It is a staging place for porting and transforming the code
+base for that laptop, and it lives next to `main` for good. So:
+
+- A change here may make the repo differ from `main` on purpose (eg the AI runs on a GitHub Copilot seat
+  here, on the Pydantic AI Gateway on `main`). Don't shape a change so that it can go back to `main`.
+- Never merge, rebase or cherry-pick `os-windows` into `main`, and don't suggest it. A change wanted on
+  `main` too is made there separately, when the user asks.
+- Changes from `main` come in only when the user asks, on the Linux machine (`main` merged into
+  `os-windows`).
+- The Linux machine still has to run this branch: it is where the changes are written and tested before the
+  laptop pulls them.
+
+### A feature that can't work on the laptop may be removed here
+
+On `main` every feature has to keep working. Here, a feature that can't meet on the laptop what it does on
+the Linux machine (it needs a service, a key or a program the laptop doesn't have, and there is no
+equivalent) may be taken out of the app on this branch.
+
+- **Confirm with the user first**, each time: name the feature, why it can't work there, and whether an
+  equivalent exists (eg "the Spend tab reads dollars from Logfire and the Gateway; Copilot has no such
+  figure"). Remove it only on their yes.
+- Prefer taking it off the page with one switch to deleting its code (`spend.AVAILABLE`,
+  `terminal.AVAILABLE`): less to conflict with when `main` is merged in.
+- Add a row to the table below.
+
+| Removed on this branch | Why | Switch | Confirmed |
+| --- | --- | --- | --- |
+| Spend tab, the title bar's spend meters, the session's cost, the cost in usage lines | They are dollars from Logfire and the Gateway; a Copilot seat bills premium requests, which nothing reads | `ds.ai.model.spend_tracked()` (`spend.AVAILABLE`, `session.DOLLARS`) | 2026-11-19 |
 
 The work is done on two machines that play different roles:
 
@@ -42,9 +69,10 @@ Don't ask the user; run one command at the start of a session:
 Each one is a reason behind something on this branch. Don't "fix" what they explain.
 
 - **Pull only.** Never run `git push`, and don't suggest it. Local commits are fine and expected.
-- **GitHub Copilot is the only AI.** No Claude Code, no model API keys, no Gateway key. So:
+- **GitHub Copilot is the only AI.** No Claude Code, no model API keys, no Gateway key, no Logfire. So:
   - the app must start and be useful with no keys ("The app works without the AI" in the spec);
-  - an AI feature there can only go through the Copilot seat: see `experimental/copilot_agent/` below;
+  - the repo's own AI (`ds.ai`, the app's chat and inline chats) runs on the Copilot seat: see "The AI
+    runs on the Copilot seat" below;
   - Claude Code's own files (`CLAUDE.md` imports, `.claude/`, hooks, skills) do nothing there. Copilot is
     pointed here by `.github/copilot-instructions.md`.
 - **No Git LFS.** The laptop can't fetch LFS files, so the parquet tables and fonts are plain git files on
@@ -57,6 +85,33 @@ Each one is a reason behind something on this branch. Don't "fix" what they expl
 - **Omarchy things don't exist there**: `.os/`, `os sync`, Hyprland, systemd. The laptop never edits `.os/**`.
 
 A constraint found on the laptop that isn't listed: tell the user, so it is added here from the Linux machine.
+
+## The AI runs on the Copilot seat
+
+Every AI agent in the repo uses one model, set by one constant:
+
+```python
+# pkgs/ds/util/const.py
+DEFAULT_AI_MODEL: str = "github-copilot:gpt-5.6-luna"
+```
+
+- **To change the model, change that line** and nothing else. `pkgs/ds/ai/model.py` is the only module that
+  knows about providers: `ai_model()` is what every `Agent(...)` gets. Build a new agent with it, never
+  with a model name of its own. GPT ids go to Copilot's Responses endpoint and the others to chat
+  completions (`COPILOT_RESPONSES_PREFIXES` there).
+- **The token** is a GitHub token of the account with the Copilot seat, stored like the other keys
+  (`Settings.github_copilot_token` in `pkgs/ds/settings`). Once per machine, and again after a new
+  `gh auth login`:
+
+  ```bash
+  gh auth login                 # the account with the Copilot seat
+  ds settings sync --manual     # reads the token from `gh auth token`; Enter skips the other keys
+  ```
+
+- **Nothing stored**: the app starts, and the AI's controls aren't on the page (as with `allow_ai` unticked).
+- **No dollars**: see the "Removed on this branch" table above. Each chat question is about 3 Copilot
+  premium requests, an inline chat 1.
+- **Which models the seat serves**: `uv run experimental/copilot_agent/copilot_agent.py models`.
 
 ## On the laptop: taking new changes
 
@@ -136,6 +191,8 @@ Later work is in the commit messages only: this section is not kept up to date.
 
 ### The Copilot trial (`experimental/copilot_agent/`)
 
+This trial is what led to "The AI runs on the Copilot seat" above; the script is kept as the seat's check.
+
 **The question**: the laptop has no Claude Code and no API keys, only a work GitHub Copilot seat. Can that
 seat run the repo's own AI agent (`ds.ai`, built on Pydantic AI)? If yes, the app's AI features could work
 there after all.
@@ -146,8 +203,7 @@ there after all.
 - The `ds.ai` smash agent answered through Copilot with its tools working, on `claude-haiku-4.5`,
   `claude-sonnet-5.5` and `gpt-6-luna`.
 - Copilot serves Claude and Gemini ids on chat completions and GPT ids only on its Responses endpoint, so
-  the script picks the model class from Copilot's own model list. `gpt-6-luna` is the default, at the
-  user's request.
+  the script picks the model class from Copilot's own model list. Its default is the repo's model.
 - Each question costs Copilot premium requests (the smash agent makes about 3 per question).
 
 **Not known yet, and the reason this is on the laptop**: whether the **work** seat allows it. An

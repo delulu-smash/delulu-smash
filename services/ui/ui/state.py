@@ -641,7 +641,8 @@ class State(rx.State):
             self.chat = [ChatItem(**item) if isinstance(item, dict) else item for item in self.chat]
         self._sync()
         self._sync_usage()  # the context meter shows from the start (0 tokens)
-        if self.ai_on:  # else there are no meters to fill, so Logfire isn't asked
+        # else there are no meters to fill, so Logfire isn't asked
+        if self.ai_on and spend.AVAILABLE:
             return State.load_spend_meters
         return None
 
@@ -1175,7 +1176,8 @@ class State(rx.State):
         ai_was_on = self.ai_on
         self._load_config()  # the form may be the Config widget's: the page reads its settings
         self._refresh_debug()
-        if self.ai_on and not ai_was_on:  # the AI was just turned on: its spend meters are read now
+        # the AI was just turned on: its spend meters are read now
+        if self.ai_on and not ai_was_on and spend.AVAILABLE:
             yield State.load_spend_meters
 
     async def _ask_ai(self, slot: str, view: Any, ui: Ui, inputs: dict[str, Any], instruction: str):

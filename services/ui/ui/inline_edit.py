@@ -19,8 +19,8 @@ from dataclasses import dataclass
 from typing import Any, Literal
 
 import polars as pl
+from ds.ai.model import ai_model
 from ds.ai.smashdb import DATA_NOTES, MOVE_ALIASES
-from ds.util.const import DEFAULT_AI_MODEL
 from ds.util.logging import log_call, logger
 from ds.util.text import clean_f_str
 from pydantic import BaseModel, Field
@@ -95,7 +95,7 @@ class EditRun:
 
 
 edit_agent = Agent(
-    DEFAULT_AI_MODEL,
+    ai_model(),
     # on its Logfire spans (gen_ai.agent.name): the debug
     # panel's Spend tab lists it apart from the chat
     name="inline-edit",

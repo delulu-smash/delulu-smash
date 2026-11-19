@@ -18,11 +18,15 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import polars as pl
+from ds.ai.model import spend_tracked
 from ds.data.raw.gateway import GatewayScopeError, SpendingLimits, spending_limits
 from ds.data.raw.logfire import LogfireKeyMissingError, ai_spend
 
 from ui.session import cost_text, tokens_text
 
+# False while the model is a GitHub Copilot one (ds.ai.model): its cost isn't in dollars, so
+# the Spend tab, the title bar's spend meters and the session's cost aren't on the page (ui.py)
+AVAILABLE: bool = spend_tracked()
 DAYS = 30
 WARN_AT, DANGER_AT = 0.75, 0.9  # share of a limit where the meter turns warning / danger
 

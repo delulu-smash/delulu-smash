@@ -29,7 +29,8 @@ from pydantic import BaseModel, Field, TypeAdapter
 from pydantic_ai import Agent, ModelRetry, RunContext
 
 from ds.ai import extract
-from ds.util.const import DEFAULT_AI_MODEL, REPO_DIR
+from ds.ai.model import ai_model
+from ds.util.const import REPO_DIR
 from ds.util.logging import log_call
 from ds.util.text import clean_f_str
 
@@ -617,7 +618,7 @@ _DRAFT_RULES = clean_f_str("""
 _DRAFT_RULES = "\n".join([_DRAFT_RULES, _EXAMPLE])
 
 draft_agent = Agent(
-    DEFAULT_AI_MODEL,
+    ai_model(),
     # on its Logfire spans: the Spend tab lists it apart from the chat
     name="script-writer",
     # resolved at run time, so importing ds.ai works without a key (as ds.ai.agent)
