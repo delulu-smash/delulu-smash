@@ -6,6 +6,20 @@ The instructions for Claude Code in this repo, loaded by the root `CLAUDE.md` (a
 `@.agents/agents.md` import). Everything else lives under `.agents/` (scoped guidance, skills, hooks), with
 Claude Code's own files in `.claude/` (settings, subagents, and `skills`, a symlink to `.agents/skills`).
 
+## Branch `os-windows`: Read This First There
+
+When the current branch is `os-windows` (`git branch --show-current`), read
+@.agents/instructions/os_windows.md before any work. The branch makes the repo work on the user's work
+Windows laptop, which has GitHub Copilot as its only AI and can pull but never push. That file says how to
+tell which machine you are on (`uname -s`), the laptop's constraints, how the laptop takes changes and
+resolves conflicts, and the context of what was done so far.
+
+- **Commits on `os-windows` carry their context**: a body with `Asked:`, `Why:`, `Decided:` and
+  `After pull (Windows):` lines (shape and example in that file), because the laptop's AI has only the commit
+  message to understand a change.
+- GitHub Copilot is pointed to these instructions by `.github/copilot-instructions.md`: keep it a short
+  pointer, with the rules themselves here and in `.agents/instructions/`.
+
 ## Attribution Policy (Strict)
 
 When generating or modifying any file content in this workspace, use a single attribution comment at the top of

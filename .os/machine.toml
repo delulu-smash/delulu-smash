@@ -132,7 +132,25 @@ terminal = "kitty"
 [toggles]
 # Omarchy's Hyprland toggles: name = "on" / "off" (`omarchy hyprland toggle <name> on|off`).
 # Names: the files in /usr/share/omarchy/default/hypr/toggles/ (not flags.lua, a placeholder).
-g".config/hypr/autostart.lua" = "always"
+# window-no-gaps: no gaps, borders or rounded corners (SUPER + SHIFT + BACKSPACE flips it).
+"window-no-gaps" = "on"
+
+[plugins]
+# Omarchy plugins: id = git URL (`omarchy plugin add <git URL>`).
+"quickshell.spotify" = "https://github.com/stappmus/Omarchy-Spotify.git"
+"io.github.erikburdett.diskspace" = "https://github.com/ErikBurdett/omarchy-diskspace.git"
+"netmojo.omdrop" = "https://github.com/netmojo-systems/omdrop-plugin.git"
+"stappmus.activity-monitor" = "https://github.com/stappmus/omarchy-activity-monitor.git"
+
+[files]
+# Files copied between $HOME/<path> and .os/files/<path>. To track another file, add a line and
+# run `os sync`. Value: "always", or "lspci:<text>" for only the machines whose `lspci` output
+# contains <text> (hostname is no use: every fresh Omarchy install is named "omarchy").
+".config/hypr/bindings.lua" = "always"
+# AMD VP9 decode workaround, only for the desktop's Raphael iGPU.
+".config/chromium-flags.conf" = "lspci:Raphael"
+".config/zed/settings.json" = "always"
+".config/hypr/autostart.lua" = "always"
 ".config/systemd/user/delulu-smash.service" = "always"
 ".claude/settings.json" = "always"
 
