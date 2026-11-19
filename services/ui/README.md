@@ -34,8 +34,15 @@ a minute). It's also in the app launcher as the delulu-smash web app. All of thi
 ```sh
 ds ui restart                              # eg after changing dependencies (`ds settings sync` runs it itself)
 ds ui status                               # up / down
-journalctl --user -u delulu-smash -f       # server logs
+ds ui logs -f                              # server logs (journalctl here)
 ```
+
+On **Windows**, `ds ui install` (once per machine, in Git Bash, no admin) sets up the same thing: a Task
+Scheduler task that runs `ds ui run` at logon with no console window and restarts it if it crashes, plus a
+**delulu-smash** icon on the desktop and in the Start Menu. The icon, or **Ctrl+Alt+J**, runs the same
+launcher, which opens an Edge app window or focuses the open one. `ds ui restart` / `status` / `logs` work
+the same; the log is `%LOCALAPPDATA%\delulu-smash\ui.log`. If Windows refuses the task, `install` uses the
+Startup folder instead (no restart on a crash). `ds ui uninstall` removes it all. Details: `.os_windows.md`.
 
 The service runs `ds ui run` (`reflex run` in dev mode), so code edits hot-reload in the open window. Stop it
 before running the app by hand (both use ports 3000 and 8000).

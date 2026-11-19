@@ -10,7 +10,10 @@
   `tests/services/ui/e2e/`, run with `uv run ds test smoke` / `e2e`: see "Testing" in `.agents/agents.md`).
   What is built is documented in `services/ui/README.md`.
 - How the app runs is `ds ui` (`pkgs/ds/cli/ui.py`): `run` (the server, what the service runs), `restart`,
-  `status`. The Omarchy window (SUPER+SHIFT+J) is `.os/scripts/keybindings/delulu-smash.py`, which calls
+  `status`, `logs`, `fonts` (updates the bundled Nerd Font: `spec/services/ui/dependencies.md`), and on
+  Windows `install` / `uninstall`. What keeps it running per platform (systemd on
+  Omarchy, a Task Scheduler task on Windows) is `pkgs/ds/cli/ui_service.py`. The window (SUPER+SHIFT+J on
+  Omarchy, the icon / Ctrl+Alt+J on Windows) is `.os/scripts/keybindings/delulu-smash.py`, which calls
   `ds ui status` / `restart` rather than repeating them. After changing the app's dependencies, restart it
   with `uv run ds ui restart` (`ds settings sync` restarts it itself after storing keys); the dev server reloads plain code edits by itself.
 - **Cross platform**: the app runs on Omarchy (Arch Linux) and on Windows (`uv run reflex run`). Before

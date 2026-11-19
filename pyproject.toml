@@ -53,6 +53,7 @@ ds = "ds.cli.__main__:app"
 # developer-only tooling (installed by default with `uv sync`, skipped with `--no-dev`)
 [dependency-groups]
 dev = [
+    "fonttools[woff]>=4.68.0",
     "pre-commit>=4.5.1",
     "pytest>=9.1.1",
     "pytest-recording>=0.14.1",

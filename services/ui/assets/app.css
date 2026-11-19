@@ -2,6 +2,14 @@
 /* Purpose: all styling for delulu-smash. Palette is Everforest dark, medium
    contrast (same values as experimental/textual-kernel's theme.py). */
 
+/* The mono font and its icons ship with the app (assets/nerd_fonts/, OFL), so a fresh clone needs no
+   font installed. Same family name as the installed font, so --mono and cell_editor.jsx are
+   unchanged and every machine draws the bundled copy. 600 (headings) uses the bold file. */
+@font-face { font-family: "JetBrainsMono Nerd Font"; font-weight: 400; font-display: block;
+  src: url("/nerd_fonts/JetBrainsMonoNerdFont-Regular.woff2") format("woff2"); }
+@font-face { font-family: "JetBrainsMono Nerd Font"; font-weight: 700; font-display: block;
+  src: url("/nerd_fonts/JetBrainsMonoNerdFont-Bold.woff2") format("woff2"); }
+
 :root {
   /* the strip at the top of every panel (Chat's title, Results' tab bar, Python's and Variables' heads): one
      height, so the panels line up when several are open */

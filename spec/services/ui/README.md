@@ -114,6 +114,10 @@ Font). **Don't use an SVG for an icon** (nor a PNG, nor an icon from another lib
 when it would be easier to centre (the user's rule, Nov 2026, after the AI icon was tried as an SVG and
 taken out again).
 
+**The font ships with the app** (`services/ui/assets/nerd_fonts/`, updated with `ds ui fonts`), so a
+fresh clone draws every icon with no font installed, and a new icon needs no extra step: the whole font
+is there. Why and how: `spec/services/ui/dependencies.md`.
+
 Why:
 
 - **One look.** The glyphs come from one family (mostly its Material Design set, `nf-md-*`), so they share
@@ -171,8 +175,10 @@ The chat can answer how to use the app (`services/ui/guide.md`, loaded by the ch
 ## Platforms: Omarchy (Arch Linux) and Windows
 
 The user's rule (Nov 2026): the app is cross platform. It must run on **Omarchy (Arch Linux)**, where it is
-built and has its window and service, and on **Windows**, started by hand with `uv run reflex run` in
-`services/ui`. macOS is not a target: don't break it knowingly, but when it conflicts with the other two,
+built and has its window and service, and on **Windows**, where `ds ui install` gives it the same: a
+Task Scheduler task at logon (per user, no admin), a desktop / Start Menu icon and Ctrl+Alt+J that open an
+Edge app window (the user's choice, Nov 2026; before it was started by hand with `uv run reflex run`,
+which still works). macOS is not a target: don't break it knowingly, but when it conflicts with the other two,
 they win.
 
 - **What "runs" means on Windows today**: `uv sync`, then `uv run reflex run`, and the page works: chat,
@@ -199,7 +205,8 @@ they win.
   | `from_url`'s browser fallback | looks for Chromium at `/usr/bin/chromium` only |
   | Spend view's days | start at UTC midnight (the local zone is read from `/etc/localtime`) |
   | Debug panel, System tab | no memory or open-file numbers (read from `/proc`) |
-  | `ds ui restart` / `status`, the SUPER+SHIFT+J window, `os sync` | Omarchy's: not there |
+  | `os sync` | Omarchy's: not there (run `ds ui install` once per Windows machine instead) |
+  | The window's hotkey | Ctrl+Alt+J (a shortcut's own hotkey: Windows allows Ctrl+Alt only), not SUPER+SHIFT+J |
 
 - **How it is checked**: on Linux, by tests that stand in for Windows (the app imported with the Unix-only
   modules blocked for this repo's code) and a dry run that every locked package has a Windows build. That is

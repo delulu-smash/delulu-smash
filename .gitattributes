@@ -7,3 +7,7 @@
 *.sqlite filter=lfs diff=lfs merge=lfs -text
 *.sqlite3 filter=lfs diff=lfs merge=lfs -text
 *.db filter=lfs diff=lfs merge=lfs -text
+
+# web fonts the app ships (services/ui/assets/nerd_fonts/, spec/services/ui/dependencies.md): ~1 MB
+# each, over the commit hook's 300 KB limit, and binary, so stored via lfs too
+*.woff2 filter=lfs diff=lfs merge=lfs -text

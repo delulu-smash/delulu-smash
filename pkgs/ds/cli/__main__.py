@@ -36,3 +36,6 @@ app.add_typer(data_app, name="data")
 app.add_typer(ai_app, name="ai")
 app.add_typer(lint_app, name="lint")
 app.add_typer(test_app, name="test")
+
+if __name__ == "__main__":  # `python -m ds.cli`: how the Windows task runs it (pythonw, no console)
+    app()
