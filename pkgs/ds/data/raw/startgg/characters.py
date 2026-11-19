@@ -141,12 +141,12 @@ def _source(characters: dict[int, Character]) -> str:
 
 def write_startgg_characters(characters: dict[int, Character], module: Path = Path(__file__)) -> bool:
     """Rewrite this file's generated dict from `videogame_characters()`; True if changed"""
-    source = module.read_text()
+    source = module.read_text(encoding="utf-8")
     # at a line's start: the markers' own definitions above aren't the block
     start = source.index("\n" + _BEGIN) + 1
     end = source.index("\n" + _END) + 1 + len(_END)
     updated = source[:start] + _source(characters) + source[end:]
     if updated == source:
         return False
-    module.write_text(updated)
+    module.write_text(updated, encoding="utf-8")
     return True

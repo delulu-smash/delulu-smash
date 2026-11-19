@@ -200,7 +200,7 @@ def _status_kb(name: str) -> int:
     ...) in bytes; 0 where there is no /proc.
     """
     with contextlib.suppress(OSError, ValueError, IndexError):
-        for line in Path("/proc/self/status").read_text().splitlines():
+        for line in Path("/proc/self/status").read_text(encoding="utf-8").splitlines():
             if line.startswith(f"{name}:"):
                 return int(line.split()[1]) * 1024
     return 0

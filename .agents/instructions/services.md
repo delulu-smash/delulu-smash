@@ -13,6 +13,9 @@
   `status`. The Omarchy window (SUPER+SHIFT+J) is `.os/scripts/keybindings/delulu-smash.py`, which calls
   `ds ui status` / `restart` rather than repeating them. After changing the app's dependencies, restart it
   with `uv run ds ui restart` (`ds settings sync` restarts it itself after storing keys); the dev server reloads plain code edits by itself.
+- **Cross platform**: the app runs on Omarchy (Arch Linux) and on Windows (`uv run reflex run`). Before
+  using a Unix-only module, a fixed system path, an outside program or a file without `encoding="utf-8"`,
+  read "Platforms" in `spec/services/ui/README.md`; `tests/test_cross_platform.py` enforces part of it.
 - Keep UI logic apart from supporting utilities, and follow the Reflex conventions already in the app
   rather than introducing unrelated patterns.
 - Linted like the rest of the repo, with app-code relaxations (no required docstrings or annotations,

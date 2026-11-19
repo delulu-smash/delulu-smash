@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import datetime as dt
 import json
-import resource
 import sys
 import threading
 import time
@@ -28,6 +27,11 @@ from ds.util.logging import enable_call_logs, logger
 from pydantic import BaseModel
 
 from ui.session import cost_text
+
+try:  # peak memory where there is no /proc (macOS); Windows has neither
+    import resource
+except ImportError:
+    resource = None
 
 # ~2.5 KB a record (measured Nov 2026; mostly the request headers, a GraphQL query text is
 # shared with queries.py, not copied): 2000 is about 5 MB, bounded however long it runs
@@ -356,9 +360,11 @@ def _rss_bytes() -> tuple[int, str]:
     """(bytes, label) of the backend's memory: current RSS on Linux, else the peak."""
     status = Path("/proc/self/status")
     if status.exists():
-        for line in status.read_text().splitlines():
+        for line in status.read_text(encoding="utf-8").splitlines():
             if line.startswith("VmRSS:"):
                 return int(line.split()[1]) * 1024, "memory"
+    if resource is None:  # Windows: no /proc and no resource module; the number is left out
+        return 0, "memory"
     peak = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
     return (peak if sys.platform == "darwin" else peak * 1024), "peak memory"
 

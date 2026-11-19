@@ -19,7 +19,8 @@ from ds.cli.ui import ui_app
 # polars (imported by ds.cli.data) installs a native SIGINT handler that restarts blocking
 # reads, so Ctrl+C at any prompt (eg `ds settings sync`) did nothing. Interrupting the read
 # lets Python raise KeyboardInterrupt; polars' handler stays, so queries still stop on Ctrl+C.
-signal.siginterrupt(signal.SIGINT, True)  # noqa: FBT003 -- stdlib signature takes no keyword
+if hasattr(signal, "siginterrupt"):  # Unix only: Windows has no such call (and no such problem)
+    signal.siginterrupt(signal.SIGINT, True)  # noqa: FBT003 -- stdlib signature takes no keyword
 
 app = typer.Typer(
     # some locals contains user passwrods so want ensure dont

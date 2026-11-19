@@ -79,7 +79,7 @@ def file(
 
 def _ruff_version() -> str:
     """Ruff version pinned for the pre-commit hook, so this never drifts from `ds lint run`"""
-    config = yaml.safe_load(PRE_COMMIT_CONFIG.read_text())
+    config = yaml.safe_load(PRE_COMMIT_CONFIG.read_text(encoding="utf-8"))
     for repo in config["repos"]:
         if repo["repo"].rstrip("/").removesuffix(".git").endswith("astral-sh/ruff-pre-commit"):
             return repo["rev"].removeprefix("v")

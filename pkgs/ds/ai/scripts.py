@@ -242,7 +242,7 @@ def _path(script_id: str) -> Path:
 
 
 def _info(path: Path) -> ScriptInfo:
-    code, script_id = path.read_text(), path.stem
+    code, script_id = path.read_text(encoding="utf-8"), path.stem
     if problem := script_problem(code, script_id):
         return ScriptInfo(script_id, "", "", len(code.encode()), problem)
     tree = ast.parse(code)
@@ -287,7 +287,7 @@ def registry_text() -> str:
 def write_registry() -> None:
     """Rebuild registry.md from the script files."""
     SCRIPTS_DIR.mkdir(parents=True, exist_ok=True)
-    (SCRIPTS_DIR / REGISTRY_NAME).write_text(registry_text())
+    (SCRIPTS_DIR / REGISTRY_NAME).write_text(registry_text(), encoding="utf-8")
 
 
 def save(script_id: str, code: str) -> Path:
@@ -298,7 +298,7 @@ def save(script_id: str, code: str) -> Path:
         raise ValueError(f"not saved: {problem}")
     SCRIPTS_DIR.mkdir(parents=True, exist_ok=True)
     path = _path(script_id)
-    path.write_text(code.rstrip() + "\n")
+    path.write_text(code.rstrip() + "\n", encoding="utf-8")
     write_registry()
     return path
 
@@ -380,7 +380,7 @@ def _record(made: ScriptRun) -> None:
     line |= {"kwargs": made.kwargs, "why": made.why, "seconds": round(made.seconds, 1), "rows": made.rows}
     try:
         RUNS_FILE.parent.mkdir(parents=True, exist_ok=True)
-        with RUNS_FILE.open("a") as out:
+        with RUNS_FILE.open("a", encoding="utf-8") as out:
             out.write(json.dumps(line, default=str) + "\n")
     except OSError:
         pass  # history is a nicety: never fail a run over it
@@ -388,7 +388,7 @@ def _record(made: ScriptRun) -> None:
 
 def _history() -> list[dict[str, Any]]:
     try:
-        return [json.loads(line) for line in RUNS_FILE.read_text().splitlines() if line.strip()]
+        return [json.loads(line) for line in RUNS_FILE.read_text(encoding="utf-8").splitlines() if line.strip()]
     except (OSError, ValueError):
         return []
 
@@ -448,7 +448,7 @@ def run(script_id: str, **kwargs: Any) -> Any:
     start = time.monotonic()
     try:
         with log_call("tool", SOURCE, name=f"script {script_id}", kwargs=kwargs) as call:
-            code = _path(script_id).read_text() if _path(script_id).is_file() else ""
+            code = _path(script_id).read_text(encoding="utf-8") if _path(script_id).is_file() else ""
             value = _call(code, script_id, kwargs)
             made.ok, made.rows = True, len(value) if isinstance(value, list) else None
             call["rows"] = made.rows
@@ -492,7 +492,7 @@ def _fallback(script_id: str, kwargs: dict[str, Any], failed: ScriptFailed) -> A
     if not path.is_file():
         raise failed
     try:
-        namespace = _load(path.read_text(), script_id)
+        namespace = _load(path.read_text(encoding="utf-8"), script_id)
         url = namespace["_url"](**kwargs)
         shape = typing.get_type_hints(namespace[script_id])["return"]
     except Exception:  # noqa: BLE001  # no usable _url: there is nothing to fall back to
@@ -692,7 +692,7 @@ class Drafted:
 def _existing_for(url: str) -> list[ScriptInfo]:
     """Saved scripts that read the same site (their code names its host)."""
     host = (urlparse(url).hostname or "").removeprefix("www.")
-    return [info for info in registry() if host and host in _path(info.id).read_text()]
+    return [info for info in registry() if host and host in _path(info.id).read_text(encoding="utf-8")]
 
 
 async def draft(report: extract.FromUrlReport, shape_code: str, expected: list[Any] | None, name: str = "") -> Drafted:
@@ -714,7 +714,7 @@ async def draft(report: extract.FromUrlReport, shape_code: str, expected: list[A
     for info in _existing_for(report.url):
         role = "FAILED and must be repaired (keep its id)" if info.id == report.repairs else "reads the same site"
         parts.append(f"Existing script `{info.id}` ({role}); its past calls: {past_calls(info.id)}; its file:")
-        parts.append(_path(info.id).read_text())
+        parts.append(_path(info.id).read_text(encoding="utf-8"))
     drafting = _Drafting(expected=expected)
     made = Drafted()
     with log_call("agent", SOURCE, name="script draft", url=report.url) as call:

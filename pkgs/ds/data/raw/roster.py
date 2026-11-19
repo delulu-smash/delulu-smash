@@ -92,10 +92,10 @@ def char_enum_source(char_df: pl.DataFrame) -> str:
 
 def write_char_enums(char_df: pl.DataFrame) -> bool:
     """Rewrite the generated part of ds/data/chars.py from a char table; True if changed"""
-    source = CHARS_MODULE.read_text()
+    source = CHARS_MODULE.read_text(encoding="utf-8")
     start, end = source.index(_BEGIN), source.index(_END) + len(_END)
     updated = source[:start] + char_enum_source(char_df) + source[end:]
     if updated == source:
         return False
-    CHARS_MODULE.write_text(updated)
+    CHARS_MODULE.write_text(updated, encoding="utf-8")
     return True

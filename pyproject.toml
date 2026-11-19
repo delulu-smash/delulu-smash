@@ -30,6 +30,7 @@ dependencies = [
     "reflex>=0.8.28",
     "ruff>=0.17.5",
     "typer>=0.21.1",
+    "tzdata>=2025.2 ; sys_platform == 'win32'",
 ]
 
 # TODO: look into how uv does this (as think has own build system)

@@ -9,24 +9,33 @@
 # Usage: Alt+` shows / hides the Terminal pane (as VS Code's Ctrl+`), Alt+Shift+` full screen.
 #          Alt+I in it is the inline chat (inline_terminal.py): the AI's command is typed at
 #          the prompt, not run.
+# Platforms: the shell runs in a Unix pseudo-terminal (Linux, macOS). On Windows there is none
+#          (AVAILABLE is False): the pane's page says so and no shell is started; the rest of
+#          the app is unaffected (spec/services/ui/README.md, "Platforms").
 # ---------------------------------------------------------------------------
 from __future__ import annotations
 
 import asyncio
 import codecs
 import contextlib
-import fcntl
 import json
 import os
-import pty
 import signal
 import struct
-import termios
 from pathlib import Path
 from typing import TYPE_CHECKING
 from urllib.parse import urlsplit
 
 from starlette.responses import HTMLResponse
+
+try:  # a Unix pseudo-terminal: Windows has none of these modules
+    import fcntl
+    import pty
+    import termios
+except ImportError:
+    AVAILABLE = False
+else:
+    AVAILABLE = True
 
 if TYPE_CHECKING:
     from starlette.websockets import WebSocket
@@ -252,7 +261,7 @@ def terminal_font_pt() -> float:
         path = Path.home() / ".config" / name
         if not path.is_file():
             continue
-        for line in path.read_text(errors="replace").splitlines():
+        for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
             found, _, value = line.replace("=", " ").strip().partition(" ")
             if found == key:
                 with contextlib.suppress(ValueError):
@@ -287,7 +296,7 @@ def read_ghostty_theme(path: Path) -> dict[str, str]:
     theme: dict[str, str] = {}
     if not path.is_file():
         return theme
-    for line in path.read_text(errors="replace").splitlines():
+    for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
         key, _, value = (part.strip() for part in line.partition("="))
         if key == "palette":
             index, _, color = value.partition("=")
@@ -321,11 +330,22 @@ async def screen_scale() -> float:
     return 1.0
 
 
+# What the pane shows where there is no pseudo-terminal (Windows), in the terminal's colours.
+UNAVAILABLE_PAGE = """<!doctype html>
+<html><body style="margin:0;padding:12px;background:THEME_BACKGROUND;color:THEME_FOREGROUND;font:13px monospace">
+The Terminal needs a Unix shell (Linux, macOS, WSL): it isn't available on Windows yet.
+</body></html>"""
+
+
 async def page(_request: object) -> HTMLResponse:
     """GET /terminal: the page the Terminal pane frames, its text sized and coloured as your
-    terminal.
+    terminal (where there is no pseudo-terminal: a line saying so).
     """
     theme = terminal_theme()
+    if not AVAILABLE:
+        html = UNAVAILABLE_PAGE.replace("THEME_BACKGROUND", theme["background"])
+        html = html.replace("THEME_FOREGROUND", theme["foreground"])
+        return HTMLResponse(html, headers={"Content-Security-Policy": FRAME_ANCESTORS})
     sizes = {
         "FONT_PT": str(terminal_font_pt()),
         "SCREEN_SCALE": str(await screen_scale()),
@@ -355,8 +375,8 @@ async def shell_socket(ws: WebSocket) -> None:
     The shell is hung up when the page goes (the widget closed or re-mounted).
     """
     client = ws.client.host if ws.client else ""
-    if not allowed_origin(ws.headers.get("origin", ""), client):
-        await ws.close(code=1008)  # policy violation: not from this machine's pages
+    if not AVAILABLE or not allowed_origin(ws.headers.get("origin", ""), client):
+        await ws.close(code=1008)  # policy violation: not from this machine's pages (or no pty)
         return
     await ws.accept()
     # no fork of this (threaded) server running Python in the child: util-linux's `setsid

@@ -168,6 +168,43 @@ The chat can answer how to use the app (`services/ui/guide.md`, loaded by the ch
 - Lists that exist as data (slash commands, keys) are added from the code, never retyped in the guide.
 - The agent answers app questions from the guide only, and says when the guide doesn't cover something.
 
+## Platforms: Omarchy (Arch Linux) and Windows
+
+The user's rule (Nov 2026): the app is cross platform. It must run on **Omarchy (Arch Linux)**, where it is
+built and has its window and service, and on **Windows**, started by hand with `uv run reflex run` in
+`services/ui`. macOS is not a target: don't break it knowingly, but when it conflicts with the other two,
+they win.
+
+- **What "runs" means on Windows today**: `uv sync`, then `uv run reflex run`, and the page works: chat,
+  Results, SmashDb, VODs, the Python cells, Variables, Config, the debug panel. With no keys stored it runs
+  without the AI ("The app works without the AI" above).
+- **Linux-only parts are extras, never requirements.** What comes from Omarchy (the wallpaper, the ghostty
+  theme, `hyprctl`, the systemd service, `ds ui restart`, `.os/`) is used when it is there and skipped in
+  silence when it isn't: a default, not an error.
+- **A feature that can't work on a platform says so in its own place** and nothing else changes: no second
+  layout, no hidden controls. Today: the **Terminal** panel on Windows (it needs a Unix pseudo-terminal):
+  its page is one line saying so (`terminal.AVAILABLE`).
+- **Rules for the code** (`pkgs/ds`, `services/ui/ui`; `tests/test_cross_platform.py` checks the first three):
+  - Text files are read and written with `encoding="utf-8"` by name: Windows' default isn't UTF-8.
+  - A Unix-only stdlib module (`fcntl`, `pty`, `termios`, `resource`, `pwd`, ...) is imported only inside
+    `try: ... except ImportError`, with its absence handled; the whole app must import without them.
+  - A package only Windows needs is a dependency with `sys_platform == 'win32'` (today `tzdata`).
+  - Paths are built with `pathlib` from `Path.home()` or the repo, never a fixed `/usr/...` that must exist;
+    an outside program is looked up and its absence handled.
+- **Known gaps on Windows** (each fails in its own place; none stops the app):
+
+  | What | On Windows |
+  | --- | --- |
+  | Terminal panel | not available: needs a pseudo-terminal backend for Windows (eg ConPTY) |
+  | `from_url`'s browser fallback | looks for Chromium at `/usr/bin/chromium` only |
+  | Spend view's days | start at UTC midnight (the local zone is read from `/etc/localtime`) |
+  | Debug panel, System tab | no memory or open-file numbers (read from `/proc`) |
+  | `ds ui restart` / `status`, the SUPER+SHIFT+J window, `os sync` | Omarchy's: not there |
+
+- **How it is checked**: on Linux, by tests that stand in for Windows (the app imported with the Unix-only
+  modules blocked for this repo's code) and a dry run that every locked package has a Windows build. That is
+  not a run on Windows: say so, and say what was really run there, when reporting such work.
+
 ## Settings
 
 The app's settings are one `Config` class (`services/ui/ui/config.py`) read from `services/ui/config.toml`.
