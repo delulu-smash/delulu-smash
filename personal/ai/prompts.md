@@ -81,4 +81,4 @@ anything that has tab use alt+shift+left right arrow to toggle between
 
 adding excel import and edit tool/component
 
-adding @file:<path> as convention to reference an actual file (color code the drop down better, only auot complete when hit colon, tab to get that )
+adding @file:<path> as convention to reference an actual file (color code the drop down better, only auot complete when hit colon, tab to get that)
