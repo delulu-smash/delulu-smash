@@ -398,9 +398,9 @@ ones. `CREATE TABLE x AS SELECT ...` works and shows up in completion
 immediately, but only lives in memory for the session — the parquet files
 are never written.
 
-The parquet files are stored in Git LFS — without `git lfs pull` they're
-just pointer files, and every query fails with a parquet read error (and
-autocomplete offers no tables, since unreadable tables are skipped).
+The parquet files are plain git files (they were in Git LFS until Nov 2026;
+an old checkout without `git lfs pull` has pointer files instead, and every
+query fails with a parquet read error).
 
 ## Display
 

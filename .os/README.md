@@ -19,8 +19,7 @@ git clone <repo> ~/repos/delulu-smash && ~/repos/delulu-smash/.os/install.sh
 ```
 
 `install.sh` gives the machine both the delulu-smash framework and the OS setup. It installs `uv`, runs the
-root `.install.sh` (Python environment with `uv sync`, the pre-commit git hook, git-lfs and the LFS data
-files, then `ds settings sync`, which asks for the Pydantic AI Gateway key; `Ctrl+D` skips it and
+root `.install.sh` (Python environment with `uv sync`, the pre-commit git hook, then `ds settings sync`, which asks for the Pydantic AI Gateway key; `Ctrl+D` skips it and
 `ds settings sync` stores it later), then runs `os sync`. If the framework step fails it stops there; fix
 the cause and run it again. On a machine that has never synced, `os sync`:
 

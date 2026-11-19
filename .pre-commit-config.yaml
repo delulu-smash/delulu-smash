@@ -25,6 +25,9 @@ repos:
     # especially given Github has soft 1GB limit and hard 5GB limit
     - id: check-added-large-files
       args: ['--maxkb=300']
+      # the only big files allowed, as plain git files (no LFS: see .gitattributes): the SmashDb
+      # tables and the app's bundled fonts (spec/services/ui/dependencies.md)
+      exclude: ^(pkgs/ds/data/smash_db/parquet/.*\.parquet|services/ui/assets/nerd_fonts/.*\.woff2)$
   ##########################################
   # LINTERS & FORMATTERS
   ##########################################

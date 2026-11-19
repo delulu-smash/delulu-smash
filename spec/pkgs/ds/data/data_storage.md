@@ -32,4 +32,5 @@ table, named by table (eg `char.parquet` â†’ table `char`, `framedata.parquet` â
 - Code finds the folder through `ds.data.paths.PARQUET_DIR` (or `SmashDb`), never by building the path itself, so
   the tables can move again with one change.
 - Writers should store real column types (numbers as numeric, not strings) so schema lookup is meaningful.
-- Parquet files are stored via Git LFS (`.gitattributes`).
+- Parquet files are plain git files, not Git LFS (the user's decision, Nov 2026: a computer the repo is
+  used on can't fetch LFS files; see `.gitattributes`). The commit hook's size limit exempts their folder.

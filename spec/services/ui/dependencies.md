@@ -18,7 +18,8 @@ The user's decision (Nov 2026): the app ships its mono font, so a clone draws th
 
 - **What**: the whole JetBrainsMono Nerd Font, regular and bold, as woff2 (about 1 MB each), with its
   license (`OFL.txt`: the SIL Open Font License allows shipping it, with the license next to it) and
-  `VERSION`, the Nerd Fonts release it comes from (eg `v3.5.1`).
+  `VERSION`, the Nerd Fonts release it comes from (eg `v3.5.1`). Plain git files, not Git LFS (one of
+  the user's computers can't fetch LFS files; see `.gitattributes`).
 - **Whole, not a subset**: a subset of only the glyphs used (a few KB) was the alternative. The whole font
   means a new icon needs no rebuild step: pick it from the Nerd Fonts cheat sheet and it draws.
 - **How the page loads it**: two `@font-face` rules at the top of `assets/app.css`, under the installed

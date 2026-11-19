@@ -35,9 +35,9 @@ about a SQL table (primary key, foreign keys, grain), not as an arbitrary data d
   and `char_group` for a character-select pick, both from `char.parquet`, `char_icon`, UTC datetimes, shared field names), never a site's own ids. Read
   `spec/pkgs/ds/data/external_sources.md` before adding or changing a source; it has the rules for mapping a
   site's character names to `char_id` and a table of where each source stands.
-- `pkgs/ds/data/smash_db/parquet/*.parquet` are tracked via Git LFS (see root `.gitattributes`, `*.parquet filter=lfs diff=lfs
-  merge=lfs -text`), not committed as regular git blobs. Requires `git-lfs` installed (`brew install git-lfs` +
-  `git lfs install`) on any machine that will commit/pull these files.
+- `pkgs/ds/data/smash_db/parquet/*.parquet` are plain git files, **not Git LFS** (the user's decision, Nov 2026:
+  a computer the repo is used on can't fetch LFS files, and the tables are small). The commit hook's 300 KB
+  limit exempts that folder (`.pre-commit-config.yaml`); don't add LFS rules back to `.gitattributes`.
 - Parquet is preferred over CSV for these tables: it's typed (no schema re-inference on read) and, for this mostly
   string/repetitive data, compresses far smaller than CSV (verified: `framedata.csv` at 431KB became a 104KB
   `framedata.parquet` — about 4x smaller; feather/Arrow IPC was tried too but came out *larger* than CSV since it's
