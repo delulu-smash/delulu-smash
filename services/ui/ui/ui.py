@@ -14,7 +14,7 @@ from typing import Any
 
 import reflex as rx
 
-from ui import spend
+from ui import copilot_usage, spend
 from ui.agents import AGENTS, DEFERRED, LOAD_TOOL, AgentInfo, CapabilityInfo, ToolInfo
 from ui.api import api
 from ui.commands import ICON_AI as ICON_CHAT
@@ -22,6 +22,7 @@ from ui.commands import (
     ICON_BUG,
     ICON_CLOSE,
     ICON_PY,
+    ICON_REFRESH,
     ICON_TERMINAL,
     ICON_VARIABLE,
     PALETTE,
@@ -578,6 +579,48 @@ def spend_meters() -> rx.Component:
             class_name="spend-as-of",
         ),
         class_name="spend-box mono",
+    )
+
+
+def copilot_meter() -> rx.Component:
+    """The Copilot seat's premium quota (State.copilot_meter, copilot_usage.py) where a Gateway
+    model has its month of dollars: 'premium 4% · resets 12/01', '--%' before it is read.
+    Hovering unveils the count in place of the percent ('22 / 7,000 credits'), as the context
+    meter does. Its button reads it again: the figures are GitHub's as of then, not live.
+    """
+    m = State.copilot_meter
+    return rx.el.div(
+        rx.el.div(
+            rx.el.span(
+                rx.el.i(style={"width": m["meter"]}, custom_attrs={"data-level": m["level"]}), class_name="ctx-bar"
+            ),
+            rx.el.span(
+                "premium ",
+                rx.el.span(m["percent"], class_name="ctx-pct"),
+                rx.el.span(m["detail"], class_name="ctx-tokens"),
+                rx.cond(m["resets"] != "", rx.el.span(" · ", m["resets"])),
+            ),
+            title=m["title"],
+            class_name="ctx-meter copilot-meter mono",
+            custom_attrs={"data-level": m["level"]},
+        ),
+        # 'as of --' until read, so the box keeps its shape
+        rx.el.span(
+            "as of ",
+            rx.cond(m["as_of"] != "", m["as_of"], "--"),
+            title="When the seat's usage was read from GitHub (it isn't live).",
+            class_name="spend-as-of",
+        ),
+        rx.el.button(
+            ICON_REFRESH,
+            on_click=State.load_copilot_meter,
+            disabled=State.copilot_loading,
+            title="Read the Copilot seat's usage again (1 request to GitHub)",
+            aria_label="Refresh Copilot usage",
+            type="button",
+            class_name=rx.cond(State.copilot_loading, "copilot-refresh mono is-loading", "copilot-refresh mono"),
+        ),
+        class_name="spend-box copilot-box mono",
     )
 
 
@@ -2177,6 +2220,7 @@ def index() -> rx.Component:
             rx.el.span(AGENTS[0].model_name, title=f"Chat model: {AGENTS[0].model}", class_name="chat-model mono"),
             context_meter(),
             *([spend_meters()] if spend.AVAILABLE else []),
+            *([copilot_meter()] if copilot_usage.AVAILABLE else []),
             rx.el.span(class_name="spacer"),
             rx.el.button(
                 ICON_BUG,

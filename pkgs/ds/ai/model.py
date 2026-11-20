@@ -4,26 +4,60 @@
 #          and that knows what each provider needs: the Pydantic AI Gateway (a key) or a GitHub
 #          Copilot seat (a token). Every agent in pkgs/ and services/ui is built with
 #          ai_model().
-# Usage: Agent(ai_model(), ...); credential_problem() -> "" or what to run; spend_tracked().
+# Usage: Agent(ai_model(), ...); credential_problem() -> "" or what to run; spend_tracked(),
+#        seat_usage_tracked().
 #        Change the model in one line: DEFAULT_AI_MODEL in pkgs/ds/util/const.py.
 # ---------------------------------------------------------------------------
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+import re
+from typing import TYPE_CHECKING, Any
+
+import httpx2
 
 from ds.settings import get_settings
 from ds.util.const import DEFAULT_AI_MODEL
+from ds.util.logging import current_call
 
 if TYPE_CHECKING:
+    from collections.abc import AsyncIterator
+
     from pydantic_ai.models import Model
 
-__all__ = ["CopilotTokenMissingError", "ai_model", "credential_problem", "model_label", "spend_tracked"]
+__all__ = [
+    "NANO_AIU_PER_CREDIT",
+    "SEAT_CREDITS_FIELD",
+    "SEAT_QUOTA_FIELD",
+    "SEAT_QUOTA_HEADER",
+    "CopilotTokenMissingError",
+    "ai_model",
+    "credential_problem",
+    "model_label",
+    "seat_usage_tracked",
+    "spend_tracked",
+]
 
 GATEWAY_PREFIX = "gateway/"
 COPILOT_PREFIX = "github-copilot:"
 # Copilot serves these ids on its Responses endpoint only (its model list: GET /models,
 # `supported_endpoints`); every other id is on chat completions
 COPILOT_RESPONSES_PREFIXES = ("gpt-", "grok-")
+# ds::external-source: checked 2026-11-20 https://api.githubcopilot.com (a /responses answer)
+#   not documented; seen on a plain and a streamed answer: one header per quota, eg
+#   x-quota-snapshot-premium_interactions: ent=7000&ov=0.0&ovPerm=false&rem=99.4&rst=<date>
+SEAT_QUOTA_HEADER = "x-quota-snapshot-"
+SEAT_QUOTA_FIELD = "seat_quota"  # where _note_seat_use leaves them on a log_call record
+# ds::external-source: checked 2026-11-20 https://api.githubcopilot.com (a /responses answer)
+#   not documented; an answer's body ends with what it cost, on a seat with token based
+#   billing: "copilot_usage": {"token_details": [...], "total_nano_aiu": 780000} (in a streamed
+#   answer, on its response.completed event). A billionth of an "AIU"; 1 AIU taken to be 1
+#   credit of the premium quota (measured against GET /copilot_internal/user, see
+#   personal/ai/findings/github_copilot_api.md)
+SEAT_CREDITS_FIELD = "credits"
+NANO_AIU_PER_CREDIT = 1_000_000_000
+# the figure must be followed by something: one cut by the end of a chunk isn't taken yet
+_NANO_AIU = re.compile(rb'"total_nano_aiu"\s*:\s*(\d+)(?=\D)')
+_NANO_AIU_KEPT = 48  # bytes: longer than the name and any figure
 _STORE_HINT = "run `ds settings sync`"
 
 
@@ -46,6 +80,50 @@ async def _copilot_token_for_request() -> str:
     return _copilot_token()
 
 
+class _CostWatch(httpx2.AsyncByteStream):
+    """An answer's body, passed on unchanged while its `total_nano_aiu` (what the answer cost)
+    is added to a log_call record as SEAT_CREDITS_FIELD. Plain and streamed answers alike.
+    """
+
+    def __init__(self, stream: Any, call: dict[str, Any]) -> None:
+        self._stream, self._call = stream, call
+
+    async def __aiter__(self) -> AsyncIterator[bytes]:
+        kept = b""  # the end of the last chunk: the figure may be cut in two
+        async for chunk in self._stream:
+            data, end = kept + chunk, 0
+            for found in _NANO_AIU.finditer(data):
+                cost = int(found[1]) / NANO_AIU_PER_CREDIT
+                self._call[SEAT_CREDITS_FIELD] = self._call.get(SEAT_CREDITS_FIELD, 0) + cost
+                end = found.end()
+            kept = data[max(end, len(data) - _NANO_AIU_KEPT) :]
+            yield chunk
+
+    async def aclose(self) -> None:
+        await self._stream.aclose()
+
+
+async def _note_seat_use(response: httpx2.Response) -> None:
+    """What a Copilot answer says about the seat, put on the log_call record the request was
+    sent in, so it is known after each answer with no request of its own:
+
+    - SEAT_QUOTA_FIELD: its `x-quota-snapshot-*` headers ({name: value}; read by
+      ds.data.raw.copilot.usage_from_headers): what is left, as a percent with one decimal.
+    - SEAT_CREDITS_FIELD: what the answer cost in credits, summed over the call's requests
+      (from its body, _CostWatch). Not looked for in a compressed body.
+
+    Outside a log_call block nothing is kept.
+    """
+    call = current_call()
+    if call is None:
+        return
+    seen = {name: value for name, value in response.headers.items() if name.startswith(SEAT_QUOTA_HEADER)}
+    if seen:
+        call[SEAT_QUOTA_FIELD] = seen
+    if response.is_success and "content-encoding" not in response.headers:
+        response.stream = _CostWatch(response.stream, call)
+
+
 def _copilot_model(model_id: str) -> Model:
     from pydantic_ai.models.github_copilot import (
         GitHubCopilotModel,  # pulls in openai: only for Copilot
@@ -56,6 +134,10 @@ def _copilot_model(model_id: str) -> Model:
     # the provider sets up Copilot's URL and client headers; its client is then copied with the
     # token as a function, so nothing is read until a request goes out
     client = GitHubCopilotProvider(api_key="read-at-request-time").client.copy(api_key=_copilot_token_for_request)
+    # every answer says what is left of the seat's quotas and what it cost: noted on the
+    # running call
+    # (the OpenAI client has no public way to add a hook to the http client it made)
+    client._client.event_hooks["response"].append(_note_seat_use)  # noqa: SLF001
     provider = GitHubCopilotProvider(openai_client=client)
     if model_id.startswith(COPILOT_RESPONSES_PREFIXES):
         return OpenAIResponsesModel(model_id, provider=provider)
@@ -88,9 +170,17 @@ def credential_problem(name: str = DEFAULT_AI_MODEL) -> str:
 
 def spend_tracked(name: str = DEFAULT_AI_MODEL) -> bool:
     """Whether the model's cost is known in dollars: only through the Gateway (Logfire's traces
-    and the Gateway's limits). A Copilot seat bills premium requests, which nothing here reads.
+    and the Gateway's limits). A Copilot seat bills against a premium quota, not dollars
+    (seat_usage_tracked).
     """
     return name.startswith(GATEWAY_PREFIX)
+
+
+def seat_usage_tracked(name: str = DEFAULT_AI_MODEL) -> bool:
+    """Whether the model runs on a GitHub Copilot seat, whose quota use GitHub reports
+    (ds.data.raw.copilot): the title bar shows it in place of dollars.
+    """
+    return name.startswith(COPILOT_PREFIX)
 
 
 def model_label(name: str = DEFAULT_AI_MODEL) -> str:

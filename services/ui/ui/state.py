@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import dataclasses
+import datetime as dt
 import json
 import traceback
 from typing import Any
@@ -17,7 +18,7 @@ from ds.ai import scripts
 from ds.data.raw.smashtube import MatchVideos, search_videos
 from ds.util.logging import logger
 
-from ui import agents, assign, logs, mentions, perf, spend, variables
+from ui import agents, assign, copilot_usage, logs, mentions, perf, spend, variables
 from ui.ai_switch import ai_problem
 from ui.commands import SLASH, parse_slash
 from ui.config import config as app_config
@@ -329,6 +330,10 @@ class State(rx.State):
     glance_from: dict[str, str] = {}
     spend_meters: list[dict[str, str]] = spend.placeholder_meters()
     spend_as_of: str = ""  # when they were read, eg '11/17 15:42'; '' until then
+    # the title bar's Copilot meter (copilot_usage.CopilotMeter, as a dict): read when the app
+    # opens and by its refresh button; a failed read keeps the last figures
+    copilot_meter: dict[str, Any] = dataclasses.asdict(copilot_usage.CopilotMeter())
+    copilot_loading: bool = False
     # the System tab (perf.py): read when the tab opens or on Refresh; tables are rows of text
     perf_tiles: list[dict[str, str]] = []
     perf_memory: list[dict[str, str]] = []
@@ -644,6 +649,8 @@ class State(rx.State):
         # else there are no meters to fill, so Logfire isn't asked
         if self.ai_on and spend.AVAILABLE:
             return State.load_spend_meters
+        if self.ai_on and copilot_usage.AVAILABLE:
+            return State.load_copilot_meter
         return None
 
     @event
@@ -922,6 +929,13 @@ class State(rx.State):
         self.context_tokens = session.chat_tokens
         self.context_max = context_window() or 0
         self.chat_cost = cost_text(session.ai_cost)
+        # a Copilot answer said what the seat has left: the meter follows, with no request
+        if session.seat_quota and copilot_usage.AVAILABLE:
+            now = dt.datetime.now().astimezone()
+            spent = session.seat_credits
+            if meter := copilot_usage.from_answer(session.seat_quota, spent, self.copilot_meter, now):
+                self.copilot_meter = dataclasses.asdict(meter)
+            session.seat_quota, session.seat_credits = {}, 0.0
 
     @event
     def refresh_usage(self):
@@ -1023,6 +1037,30 @@ class State(rx.State):
             view = await asyncio.to_thread(spend.load, spend.DAYS, top=False)
         async with self:
             self._set_meters(view)
+
+    @rx.event(background=True)
+    async def load_copilot_meter(self):
+        """The title bar's Copilot meter, when the app opens and from its refresh button: 1
+        GitHub request, off the event loop. A failed read keeps the figures and says why in
+        the tooltip.
+        """
+        async with self:
+            if self.copilot_loading:
+                return
+            self.copilot_loading = True
+            log_context = self._log_context("title bar")
+        with log_context:
+            meter = await asyncio.to_thread(copilot_usage.load)
+        async with self:
+            self.copilot_loading = False
+            if meter.ok:
+                self.copilot_meter = dataclasses.asdict(meter)
+                return
+            kept = dict(self.copilot_meter)
+            if not kept["as_of"]:  # nothing was ever read: say so in the bar itself
+                kept["percent"], kept["detail"] = "usage unknown", meter.problem
+            kept["title"] = f"Last read failed: {meter.problem}"
+            self.copilot_meter = kept
 
     @event
     def open_spend(self):
@@ -1179,6 +1217,8 @@ class State(rx.State):
         # the AI was just turned on: its spend meters are read now
         if self.ai_on and not ai_was_on and spend.AVAILABLE:
             yield State.load_spend_meters
+        if self.ai_on and not ai_was_on and copilot_usage.AVAILABLE:
+            yield State.load_copilot_meter
 
     async def _ask_ai(self, slot: str, view: Any, ui: Ui, inputs: dict[str, Any], instruction: str):
         """A form's inline chat (inline_fill.py): the AI turns the instruction into the form's

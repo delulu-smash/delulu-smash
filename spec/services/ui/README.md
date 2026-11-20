@@ -261,7 +261,22 @@ The user's rule (Nov 2026, branch `os-windows`): the model of every AI agent is 
 - **Dollars are shown only where they are real** (`ds.ai.model.spend_tracked`: a `gateway/` model). A
   Copilot seat bills premium requests, which nothing here reads, so with a Copilot model these are not on
   the page: the Spend tab, the title bar's spend meters, the session's cost, and the cost in a usage line
-  (it reads "1.2k in · 30 out · 1 request"). The context meter stays. No estimate takes their place.
+  (it reads "0.12 credits · 1.2k in · 30 out · 1 request": the credits are what the turn's answers said
+  they cost, left out when they didn't say). The context meter stays. No estimate takes their place.
+- **A Copilot model shows its seat's premium quota in the title bar** (`ds.ai.model.seat_usage_tracked`),
+  where a Gateway model has its month of dollars: `premium 4% · resets 12/01   as of 11/20 10:33 ⟳`. Like
+  the context meter it shows a percent, and hovering unveils the count in its place (`22 / 7,000 credits`).
+  It is GitHub's figure as of when it was read (`ds.data.raw.copilot`, 1 request): when the app opens, and
+  by its own refresh button (⟳), which is the only thing that sends that request again. A refusal (no seat, an
+  organization's policy) reads `premium usage unknown` with GitHub's message on hover; a later failed read
+  keeps the last figures. There is no Spend tab for it: the quota is all GitHub gives the token.
+  After each of the app's own AI answers (a chat turn, an inline chat) the meter moves by itself, and **no
+  request is ever sent just to update it**: what the answer says it cost (`total_nano_aiu` in its body,
+  `ds.ai.model`) is added to the count shown, so the count stays exact (`41.3 / 7,000 credits`). The
+  answer's `x-quota-snapshot-*` headers (a percent, to a thousandth of the limit) take over, with a rounded
+  count (`about 140 / 7,000 credits`), only when the answers don't say what they cost, nothing was read
+  yet, or the two disagree by more than that rounding (the seat was used elsewhere, eg in VS Code): ⟳
+  then reads the exact one. Each call's cost is also on its record in the debug log (`credits`).
 
 - [omarchy.md](omarchy.md): navigation, keys and many other parts of the app follow Omarchy, the desktop
   it runs on.

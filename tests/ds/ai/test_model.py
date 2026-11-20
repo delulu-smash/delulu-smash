@@ -8,13 +8,16 @@
 # ---------------------------------------------------------------------------
 from __future__ import annotations
 
+import asyncio
 from types import SimpleNamespace
 
+import httpx2
 import pytest
 from ds import settings as settings_module
 from ds.ai import model
 from ds.settings import ApiKey
 from ds.util.const import DEFAULT_AI_MODEL
+from ds.util.logging import log_call
 from pydantic_ai.models.github_copilot import GitHubCopilotModel
 from pydantic_ai.models.openai import OpenAIResponsesModel
 
@@ -99,3 +102,56 @@ def test_an_exported_copilot_token_wins_over_the_keyring(monkeypatch: pytest.Mon
     assert settings_module.init_settings().github_copilot_token.get_secret_value() == "gho_keyring"
     monkeypatch.setenv("GITHUB_COPILOT_API_KEY", "gho_exported")
     assert settings_module.init_settings().github_copilot_token.get_secret_value() == "gho_exported"
+
+
+class _Body(httpx2.AsyncByteStream):
+    def __init__(self, chunks: list[bytes]) -> None:
+        self.chunks = chunks
+
+    async def __aiter__(self):
+        for chunk in self.chunks:
+            yield chunk
+
+
+def _answer(chunks: list[bytes], **headers: str) -> httpx2.Response:
+    return httpx2.Response(200, headers=headers, stream=_Body(chunks))
+
+
+async def _noted(response: httpx2.Response) -> bytes:
+    await model._note_seat_use(response)  # the client's response hook
+    return await response.aread()
+
+
+def test_a_copilot_answers_quota_headers_land_on_the_running_call() -> None:
+    quota = {"x-quota-snapshot-premium_interactions": "ent=300&rem=75.0"}
+    with log_call("agent", "test") as call:
+        asyncio.run(_noted(_answer([b"{}"], **quota, **{"x-request-id": "1"})))
+    assert call[model.SEAT_QUOTA_FIELD] == quota
+    assert model.SEAT_CREDITS_FIELD not in call  # the body named no cost
+    asyncio.run(_noted(_answer([b"{}"], **quota)))  # outside a call: nothing kept, no error
+
+
+def test_what_each_answer_cost_is_summed_on_the_call_and_the_body_is_untouched() -> None:
+    # a streamed answer's last event, cut inside the figure, then a second request of the run
+    chunks = [b'data: {"copilot_usage": {"total_nano_', b'aiu": 45000', b'00000}, "type": "response.completed"}']
+    with log_call("agent", "test") as call:
+        body = asyncio.run(_noted(_answer(chunks)))
+        asyncio.run(_noted(_answer([b'{"copilot_usage":{"total_nano_aiu":500000000}}'])))
+    assert body == b"".join(chunks)
+    assert call[model.SEAT_CREDITS_FIELD] == pytest.approx(5.0)
+
+
+def test_a_compressed_or_failed_answer_is_left_alone() -> None:
+    with log_call("agent", "test") as call:
+        packed = _answer([b"x"], **{"content-encoding": "gzip"})
+        asyncio.run(model._note_seat_use(packed))
+        refused = httpx2.Response(403, stream=_Body([b'{"total_nano_aiu": 1}']))
+        asyncio.run(_noted(refused))
+    assert isinstance(packed.stream, _Body)
+    assert model.SEAT_CREDITS_FIELD not in call
+
+
+def test_the_copilot_client_notes_the_seats_use_of_every_answer() -> None:
+    built = model.ai_model("github-copilot:gpt-5.6-luna")
+    hooks = built.client._client.event_hooks["response"]  # where _copilot_model adds it
+    assert model._note_seat_use in hooks

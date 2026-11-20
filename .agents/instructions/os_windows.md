@@ -39,7 +39,20 @@ equivalent) may be taken out of the app on this branch.
 
 | Removed on this branch | Why | Switch | Confirmed |
 | --- | --- | --- | --- |
-| Spend tab, the title bar's spend meters, the session's cost, the cost in usage lines | They are dollars from Logfire and the Gateway; a Copilot seat bills premium requests, which nothing reads | `ds.ai.model.spend_tracked()` (`spend.AVAILABLE`, `session.DOLLARS`) | 2026-11-19 |
+| Spend tab, the title bar's month of dollars, the session's cost, the cost in usage lines | They are dollars from Logfire and the Gateway; a Copilot seat bills against a premium quota, not dollars | `ds.ai.model.spend_tracked()` (`spend.AVAILABLE`, `session.DOLLARS`) | 2026-11-19 |
+
+**In the title bar's place: the seat's premium quota** (2026-11-20), eg `premium 4% · resets 12/01   as of
+11/20 10:33 ⟳`, with the count on hover (`22 / 7,000 credits`). It is read from GitHub when the app opens
+and by its refresh button (`ds.data.raw.copilot`, `ui/copilot_usage.py`; on the page while
+`ds.ai.model.seat_usage_tracked()`). After each of the app's own AI answers it follows that answer's
+headers, with no request of its own (see "Nice To Have"). The Spend tab stays off: the quota is all GitHub gives this token
+(its billing reports by model need a `user` scope, and an organization's admin on a business seat).
+
+- Everything GitHub gives the seat's token (every field, with an example) is written up in
+  `personal/ai/findings/github_copilot_api.md`.
+- GitHub's endpoint for it is undocumented, and a work seat's organization may refuse it: the meter then
+  reads `premium usage unknown` with GitHub's message on hover. Report that to the user; don't look for
+  another way in.
 
 The work is done on two machines that play different roles:
 
@@ -64,9 +77,14 @@ Don't ask the user; run one command at the start of a session:
   (`.os_windows.md`, "In the Omarchy Windows VM"), which is a test box on the Linux machine.
 - Say in a line which machine you found, the first time it matters in a session.
 
-## Constraints of the work laptop
+## Windows Constraints (must haves)
 
-Each one is a reason behind something on this branch. Don't "fix" what they explain.
+What the work laptop is and allows. Every change on this branch has to work within all of them: they are
+**must haves**, not preferences (the other kind is "Nice To Have" below). Each one is also a reason behind
+something on this branch, so don't "fix" what they explain.
+
+- **Must have**: if a change can't meet one, stop and tell the user before building it. Never trade one
+  away for a feature, and never meet it "mostly".
 
 - **Pull only.** Never run `git push`, and don't suggest it. Local commits are fine and expected.
 - **GitHub Copilot is the only AI.** No Claude Code, no model API keys, no Gateway key, no Logfire. So:
@@ -75,6 +93,20 @@ Each one is a reason behind something on this branch. Don't "fix" what they expl
     runs on the Copilot seat" below;
   - Claude Code's own files (`CLAUDE.md` imports, `.claude/`, hooks, skills) do nothing there. Copilot is
     pointed here by `.github/copilot-instructions.md`.
+- **The seat is GitHub Copilot Business**, given by the user's employer's organization (the Linux machine
+  tests with the user's personal `individual_pro` seat, which is not the same thing). So on the laptop:
+  - the organization decides which models and which clients the seat may use, and can change that at any
+    time; a refusal (HTTP 401 / 403) is the policy's answer, not a bug to work around;
+  - **the models it offers there are the GPT ones: Codex, Sol, Luna and Terra** (told by the user
+    2026-11-20; the exact ids and versions aren't known yet: `copilot_agent.py models` on the laptop
+    lists them). So `DEFAULT_AI_MODEL` has to be one of those families: no Claude, Gemini or Astra id,
+    even though the personal seat on the Linux machine serves them. Today's `gpt-5.6-luna` is a Luna, but
+    whether the laptop has that version is unverified;
+  - its quota is the organization's (a different limit, and it may count requests where the personal
+    seat counts credits), so never hardcode a limit, a unit or a plan name: read them from GitHub;
+  - billing and usage reports belong to the organization's admins: the seat's own token can't read them;
+  - an answer from GitHub seen only on the personal seat is unverified for the laptop: read its fields as
+    optional, and say in the commit message what is to be checked there.
 - **No Git LFS.** The laptop can't fetch LFS files, so the parquet tables and fonts are plain git files on
   this branch. Don't re-add LFS tracking.
 - **It is a managed work machine.** No admin rights are assumed; a policy may refuse things (eg the Task
@@ -85,6 +117,25 @@ Each one is a reason behind something on this branch. Don't "fix" what they expl
 - **Omarchy things don't exist there**: `.os/`, `os sync`, Hyprland, systemd. The laptop never edits `.os/**`.
 
 A constraint found on the laptop that isn't listed: tell the user, so it is added here from the Linux machine.
+
+## Nice To Have
+
+What the user would like on this branch but can do without. A must have is met or the work stops; a nice
+to have is worth some effort, never a cost the user didn't agree to.
+
+- **When the user gives a requirement, know which kind it is.** They often say ("must", "it has to" vs
+  "nice to have", "would be nice", "if it's easy"). When it isn't clear and the two readings lead to
+  different work, ask.
+- **Try to meet it**, within what it is worth: no extra outside requests, spend, dependency or lasting
+  complexity just for a nice to have, unless the user said so.
+- **If it won't be met (or only in part), check with the user before finishing**: say what isn't met, why,
+  and what meeting it would cost, and ask whether that is ok. Don't drop it silently, and don't report the
+  work as done without it.
+- Add one to the table when the user names it; `Met` says how it stands.
+
+| Nice to have | Asked | Met |
+| --- | --- | --- |
+| The title bar's Copilot quota follows the app's own AI use, as VS Code's does, **with no request made just to update the figure** | 2026-11-20 | Yes: each AI answer's body says what it cost (`total_nano_aiu`), which is added to the count shown (`ds.ai.model`); checked against GitHub's own count with a real chat. Not verified on a business seat: if its answers don't say what they cost, the count follows the answer's headers instead, rounded ("about 42") |
 
 ## The AI runs on the Copilot seat
 
@@ -109,7 +160,8 @@ DEFAULT_AI_MODEL: str = "github-copilot:gpt-5.6-luna"
   ```
 
 - **Nothing stored**: the app starts, and the AI's controls aren't on the page (as with `allow_ai` unticked).
-- **No dollars**: see the "Removed on this branch" table above. Each chat question is about 3 Copilot
+- **No dollars**: see the "Removed on this branch" table above; the title bar shows the seat's premium
+  quota instead. Each chat question is about 3 Copilot
   premium requests, an inline chat 1.
 - **Which models the seat serves**: `uv run experimental/copilot_agent/copilot_agent.py models`.
 

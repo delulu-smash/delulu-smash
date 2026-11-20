@@ -36,3 +36,24 @@ def test_with_dollars_the_cost_leads_the_line() -> None:
 def test_the_switches_follow_the_model_setting() -> None:
     # read once at import from DEFAULT_AI_MODEL: the Spend tab, its meters, the usage lines
     assert spend.AVAILABLE is spend_tracked(DEFAULT_AI_MODEL)
+
+
+def test_a_copilot_turn_leads_its_line_with_the_credits_its_answers_cost(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(session, "DOLLARS", False)
+    usage = TurnUsage.of(ANSWER)
+    usage.log_to({"credits": 0.1234})  # left on the call's record by ds.ai.model
+    assert usage.summary() == "0.12 credits · 1.2k in · 30 out · 1 request"
+
+
+@pytest.mark.parametrize(
+    ("spent", "text"),
+    [
+        (0, "0 credits"),
+        (0.00078, "0.00078 credits"),
+        (0.1234, "0.12 credits"),
+        (4.5, "4.5 credits"),
+        (12, "12 credits"),
+    ],
+)
+def test_credits_keep_two_digits_under_one(spent: float, text: str) -> None:
+    assert session.credits_text(spent) == text

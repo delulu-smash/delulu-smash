@@ -34,6 +34,7 @@ ICON_FULL_SCREEN, ICON_PLUS, ICON_PLAY, ICON_ERASER, ICON_CLOSE = (
 ICON_VIDEO, ICON_PLAYER, ICON_DATABASE = "\U000f0567", "\U000f0004", "\U000f01bc"
 # the memory chip (md-memory): the Variables pane is "what is in memory"
 ICON_VARIABLE, ICON_UNDO = "\U000f035b", "\U000f054c"
+ICON_REFRESH = "\U000f0450"  # nf-md-refresh
 # A widget added by hand, by its kind (widgets.WIDGETS); any other gets the table.
 WIDGET_ICONS = {"vods": ICON_VIDEO, "usage": ICON_PLAYER, "smashdb": ICON_DATABASE}
 # Other words that find a widget in the palette and the slash list, by its kind.

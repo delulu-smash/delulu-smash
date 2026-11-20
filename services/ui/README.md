@@ -82,6 +82,14 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   in a thin box ending with when they were read, eg `as of 11/17 15:42`: they aren't live. Read once when the app
   opens (1 Logfire query, its project info, 3 limit lookups) and again on the Spend tab's Refresh;
   a click opens that tab. A failed read keeps the last numbers and says so in the tooltip.
+  With a GitHub Copilot model (branch `os-windows`) there are no dollars: in that box's place is the seat's
+  premium quota, eg `premium 4% · resets 12/01   as of 11/20 10:33 ⟳` (hovering shows the count in place of
+  the percent, eg `22 / 7,000 credits`; the tooltip has what remains, the plan and the other quotas). Read
+  from GitHub once when the app opens (1 request) and again by its ⟳ button (`ui/copilot_usage.py`,
+  `ds.data.raw.copilot`); `premium usage unknown` when GitHub refuses, with its message in the tooltip.
+  After each AI answer in the app it moves by itself with no request of its own: what the answer says it
+  cost is added to the count. Use made elsewhere (eg VS Code) shows as a rounded count (`about 140 / 7,000
+  credits`) until ⟳ reads the exact one.
 - **Debug log** (bug icon in the title bar, `Alt+D`): every outside call the app made, newest first:
   start.gg GraphQL requests (operation, page, status, time, start.gg's object count), other HTTP fetches
   (supermajor search, smash-tube), agent turns (time, tool calls, tokens, cost; a `model requests` section lists each model request's tokens, cost, why it stopped and the tools it called) and tool steps (a tool step has a `tool response` section, folded

@@ -16,7 +16,7 @@ from typing import Any
 
 from loguru import logger
 
-__all__ = ["CALL_LOGGER", "enable_call_logs", "log_call", "log_event", "log_group"]
+__all__ = ["CALL_LOGGER", "current_call", "enable_call_logs", "log_call", "log_event", "log_group"]
 
 # Records are emitted from this module, so this is the name to enable / disable them by.
 # Disabled on import (loguru's recipe for libraries): a script using ds prints none of them.
@@ -26,6 +26,8 @@ logger.disable(CALL_LOGGER)
 # the group the records being made now belong to (see log_group); follows asyncio tasks and
 # asyncio.to_thread like loguru's own context
 _group: ContextVar[str | None] = ContextVar("log_group", default=None)
+# the record of the log_call block running now (see current_call)
+_call: ContextVar[dict[str, Any] | None] = ContextVar("log_call", default=None)
 
 
 def enable_call_logs() -> None:
@@ -50,14 +52,24 @@ def log_call(kind: str, source: str, **fields: Any) -> Iterator[dict[str, Any]]:
     """
     call = dict(fields)
     start = time.perf_counter()
+    token = _call.set(call)
     try:
         yield call
     except BaseException as e:
         call["error"] = f"{type(e).__name__}: {e}"
         raise
     finally:
+        _call.reset(token)
         call["ms"] = round((time.perf_counter() - start) * 1000)
         log_event(kind, source, **call)
+
+
+def current_call() -> dict[str, Any] | None:
+    """The record of the innermost log_call block running now (None outside one), for code that
+    is called from inside it without being handed the record, eg an HTTP client's response
+    hook. Follows asyncio tasks and asyncio.to_thread, as the session and origin do.
+    """
+    return _call.get()
 
 
 @contextmanager

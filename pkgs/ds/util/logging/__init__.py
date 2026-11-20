@@ -5,10 +5,20 @@ from __future__ import annotations
 # on top of the loguru library
 from loguru import logger
 
-from ds.util.logging.calls import enable_call_logs, log_call, log_event, log_group
+from ds.util.logging.calls import current_call, enable_call_logs, log_call, log_event, log_group
 from ds.util.logging.util import log, timeit, toggle_logger
 
-__all__ = ["enable_call_logs", "log", "log_call", "log_event", "log_group", "logger", "timeit", "toggle_logger"]
+__all__ = [
+    "current_call",
+    "enable_call_logs",
+    "log",
+    "log_call",
+    "log_event",
+    "log_group",
+    "logger",
+    "timeit",
+    "toggle_logger",
+]
 
 # TODO: decide if this good idea
 logger.toggle = toggle_logger

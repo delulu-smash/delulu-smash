@@ -937,6 +937,14 @@ input, textarea { caret-color: var(--blue); }
 .ctx-bar i[data-level="warn"] { background: var(--yellow); }
 .ctx-bar i[data-level="danger"] { background: var(--red); }
 .spend-meter-btn[data-level="danger"] { color: var(--red); }
+/* the Copilot seat's meter (ui.copilot_meter): the spend box with a refresh button at its end */
+.copilot-meter[data-level="danger"] { color: var(--red); }
+.copilot-box { gap: 8px; }
+.copilot-refresh { background: none; border: 0; padding: 0 2px; font-size: 13px; line-height: 1; color: var(--grey1); cursor: pointer; }
+.copilot-refresh:hover { color: var(--fg); }
+.copilot-refresh:disabled { cursor: default; }
+.copilot-refresh.is-loading { animation: copilot-spin 0.8s linear infinite; }
+@keyframes copilot-spin { to { transform: rotate(360deg); } }
 /* the debug panel's Config tab (ui.config_view): the settings, read-only */
 .config-view { padding: 8px 10px; overflow: auto; font-size: 12px; }
 /* the Config widget in the tab (its Edit): as wide as the panel, with no indent of a cell's output */

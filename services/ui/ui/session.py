@@ -26,7 +26,7 @@ import ds.ai
 import ds.data
 import jedi
 import polars as pl
-from ds.ai.model import spend_tracked
+from ds.ai.model import SEAT_CREDITS_FIELD, SEAT_QUOTA_FIELD, spend_tracked
 from ds.util.df import to_df
 from ds.util.logging import log_call
 from pydantic_ai import capture_run_messages
@@ -148,6 +148,17 @@ def cost_text(cost: float | None) -> str:
     return f"${cost:.{1 - math.floor(math.log10(cost))}f}".rstrip("0")
 
 
+def credits_text(spent: float) -> str:
+    """A Copilot seat's credits, two significant digits under 1 as cost_text does:
+    '4.5 credits', '0.12 credits', '0.00078 credits', '0 credits'.
+    """
+    if spent <= 0:
+        return "0 credits"
+    if spent >= 1:
+        return f"{spent:,.1f}".removesuffix(".0") + " credits"
+    return f"{spent:.{1 - math.floor(math.log10(spent))}f}".rstrip("0") + " credits"
+
+
 @dataclass
 class TurnUsage:
     """What one agent turn used, summed from each model request's usage (pydantic-ai's
@@ -165,6 +176,9 @@ class TurnUsage:
     (DOLLARS)."""
     unpriced: int = 0
     """Requests with no cost (cost then leaves them out)."""
+    seat_credits: float | None = None
+    """What the turn cost in the Copilot seat's credits, as its answers said themselves
+    (ds.ai.model.SEAT_CREDITS_FIELD); None when they didn't (eg a Gateway model)."""
     context_tokens: int = 0
     """The last request's input + output: how big the conversation
     is now (what the next turn sends)."""
@@ -204,14 +218,19 @@ class TurnUsage:
         return total
 
     def log_to(self, call: dict[str, Any]) -> None:
-        """Put the usage on an "agent" debug-log record (logs._agent shows it)."""
+        """Put the usage on an "agent" debug-log record (logs._agent shows it), and take from
+        it what only the record knows: the Copilot credits the answers cost.
+        """
         call["input_tokens"], call["output_tokens"] = self.input_tokens, self.output_tokens
         call["cache_read_tokens"], call["cost"] = self.cache_read_tokens, self.cost
         call["model_requests"] = self.lines
+        # the other way round: what the answers said they cost is on the record already
+        self.seat_credits = call.get(SEAT_CREDITS_FIELD)
 
     def summary(self) -> str:
         """The line under an answer, eg '$0.0011 · 21.3k
         in (71% cached) · 812 out · 3 requests' (without the cost when it isn't in dollars).
+        A Copilot model's leads with its credits: '0.12 credits · 1.19k in · ...'.
         """
         if not self.requests:
             return ""
@@ -220,6 +239,8 @@ class TurnUsage:
         parts = [f"{tokens_text(self.input_tokens)} in{cached}", f"{tokens_text(self.output_tokens)} out"]
         if DOLLARS:
             parts.insert(0, cost)
+        if self.seat_credits is not None:
+            parts.insert(0, credits_text(self.seat_credits))
         parts.append(f"{self.requests} request{'s' if self.requests != 1 else ''}")
         return " · ".join(parts)
 
@@ -230,8 +251,12 @@ def log_usage(call: dict[str, Any], session: Any, messages: Iterable[Any]) -> Tu
     """
     usage = TurnUsage.of(messages)
     usage.log_to(call)
+    seat_quota = call.pop(SEAT_QUOTA_FIELD, None)  # header strings: not worth a log field
     if session is not None:
         session.ai_cost += usage.cost or 0
+        if seat_quota:
+            session.seat_quota = seat_quota
+            session.seat_credits = getattr(session, "seat_credits", 0.0) + call.get(SEAT_CREDITS_FIELD, 0.0)
     return usage
 
 
@@ -386,6 +411,12 @@ class Session:
         # what the AI cost so far, chat turns and inline chats, in US dollars (TurnUsage.cost;
         # unpriced requests left out)
         self.ai_cost: float = 0.0
+        # what the last AI answer's headers said is left of the Copilot seat's quotas
+        # (ds.ai.model.SEAT_QUOTA_FIELD), {} before one: the title bar's meter follows it
+        self.seat_quota: dict[str, str] = {}
+        # what the AI answers since the meter last followed them cost, in the seat's credits
+        # (ds.ai.model.SEAT_CREDITS_FIELD; the debug log's record keeps each call's own)
+        self.seat_credits: float = 0.0
         # the chat's size: its last model request's input + output (TurnUsage.context_tokens),
         # what the next turn sends again. An inline chat reads the chat but doesn't add to it.
         self.chat_tokens: int = 0
@@ -745,6 +776,8 @@ class Session:
             if usage.requests:
                 self.chat_tokens = usage.context_tokens
             usage.log_to(call)
+            self.seat_quota = call.pop(SEAT_QUOTA_FIELD, None) or self.seat_quota
+            self.seat_credits += call.get(SEAT_CREDITS_FIELD, 0.0)
         return result
 
     def _steps(self, messages: list[Any]) -> list[ToolStep]:
