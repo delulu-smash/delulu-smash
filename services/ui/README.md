@@ -15,8 +15,7 @@ Jupyter-style Python cells where those names are plain Python objects (tables ar
 Drag the chat strip's or the tables pane's bottom-right corner to resize them. The bottom bar shows or hides each pane.
 
 ```sh
-cd services/ui
-uv run reflex run
+uv run ds ui run   # from the repo root
 # -> http://localhost:3000
 ```
 

@@ -56,8 +56,13 @@ uv lock --upgrade
 ## How to run the delulu-smash app locally
 
 ```bash
-cd services/ui && uv run reflex run   # or SUPER+SHIFT+J, which runs it as a service
+uv run ds ui run       # from the repo root; -> http://localhost:3000
+uv run ds ui status    # up / down
+uv run ds ui restart   # restart the background service (what SUPER+SHIFT+J starts)
 ```
+
+`ds ui run` is the server in the foreground. Stop the service first (`systemctl --user stop delulu-smash`),
+since both use ports 3000 and 8000. More in [`services/ui/README.md`](services/ui/README.md).
 
 ## How to run docs
 
