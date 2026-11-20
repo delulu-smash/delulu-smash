@@ -272,8 +272,11 @@ Three real questions each, 2026-11-20 (a small sample):
 - `gpt-6-luna` made more tool calls, and on the armor question that cost more than its lower price saved.
 - Reviews elsewhere (forums, third-party benchmark sites) read it as a price cut with a small quality dip,
   good for lookups and chat, weak for coding agents and long tool chains.
-- The user chose `gpt-6-luna` as `DEFAULT_AI_MODEL` on this basis. Not tried: a lower reasoning effort to
-  curb the extra tool calls.
+- The user chose `gpt-6-luna` as `DEFAULT_AI_MODEL` on this basis, then went back to `gpt-5.6-luna` the
+  same day: pydantic-ai's bundled data (2.71.0, genai-prices 0.2.5) has no context window for `gpt-6-luna`,
+  `gpt-6-sol` or `gpt-6.1-terra` on Copilot (the model list says 400,000), so the title bar's context meter
+  lost its percent. The switch is a TODO next to the constant. Not tried: a lower reasoning effort to curb
+  the extra tool calls.
 
 ## 3. The models: `GET <Copilot API>/models`
 

@@ -73,3 +73,15 @@ def test_the_context_bar_has_no_fill_before_anything_is_sent(app: App) -> None:
     fill = app.page.locator(".titlebar > .ctx-meter .ctx-bar i")
     assert fill.get_attribute("data-empty") == "true"  # a fresh session: 0 tokens
     assert fill.bounding_box()["width"] == 0
+
+
+@pytest.mark.smoke
+@pytest.mark.usefixtures("ai_controls")
+def test_the_context_meter_is_a_percent_with_the_tokens_on_hover(app: App) -> None:
+    meter = app.page.locator(".titlebar > .ctx-meter")
+    assert meter.locator(".ctx-pct").inner_text() == "0%"  # a fresh session
+    meter.hover()
+    shown = meter.locator(".ctx-tokens")
+    assert shown.is_visible()
+    assert " / " in shown.inner_text()  # '0 / 400k tokens': the model's window is known
+    assert shown.inner_text().endswith(" tokens")

@@ -155,3 +155,11 @@ def test_the_copilot_client_notes_the_seats_use_of_every_answer() -> None:
     built = model.ai_model("github-copilot:gpt-5.6-luna")
     hooks = built.client._client.event_hooks["response"]  # where _copilot_model adds it
     assert model._note_seat_use in hooks
+
+
+def test_the_repos_model_has_a_context_window() -> None:
+    # without one the title bar's context meter has no percent and nothing to show on hover
+    # (pydantic-ai's bundled data has none for some Copilot ids, eg gpt-6-luna on 2026-11-20)
+    from pydantic_ai.models import infer_model
+
+    assert infer_model(model.ai_model()).context_window, f"pydantic-ai has no context window for {DEFAULT_AI_MODEL}"
