@@ -100,7 +100,7 @@ something on this branch, so don't "fix" what they explain.
   - **the models it offers there are the GPT ones: Codex, Sol, Luna and Terra** (told by the user
     2026-11-20; the exact ids and versions aren't known yet: `copilot_agent.py models` on the laptop
     lists them). So `DEFAULT_AI_MODEL` has to be one of those families: no Claude, Gemini or Astra id,
-    even though the personal seat on the Linux machine serves them. Today's `gpt-5.6-luna` is a Luna, but
+    even though the personal seat on the Linux machine serves them. Today's `gpt-6-luna` is a Luna, but
     whether the laptop has that version is unverified;
   - its quota is the organization's (a different limit, and it may count requests where the personal
     seat counts credits), so never hardcode a limit, a unit or a plan name: read them from GitHub;
@@ -143,7 +143,7 @@ Every AI agent in the repo uses one model, set by one constant:
 
 ```python
 # pkgs/ds/util/const.py
-DEFAULT_AI_MODEL: str = "github-copilot:gpt-5.6-luna"
+DEFAULT_AI_MODEL: str = "github-copilot:gpt-6-luna"
 ```
 
 - **To change the model, change that line** and nothing else. `pkgs/ds/ai/model.py` is the only module that

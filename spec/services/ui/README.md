@@ -254,7 +254,7 @@ The user's rule (Nov 2026, branch `os-windows`): the model of every AI agent is 
 - **One module knows the providers**: `pkgs/ds/ai/model.py`. `ai_model()` is what every `Agent(...)` gets
   (the chat agent, the inline chats, `/assign`, `from_url`, the script writer, the eval judge). A new agent
   is built with it, never with a model name of its own.
-- **On `os-windows` the model is a GitHub Copilot one** (`github-copilot:gpt-5.6-luna`): the work laptop
+- **On `os-windows` the model is a GitHub Copilot one** (`github-copilot:gpt-6-luna`): the work laptop
   has a Copilot seat and nothing else. Its token is stored like the other keys (`ds settings sync`, which
   reads it from `gh auth token`; `Settings.github_copilot_token`) and read when a request is sent, so the
   app still starts with nothing stored.
