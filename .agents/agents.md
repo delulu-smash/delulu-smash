@@ -6,6 +6,17 @@ The instructions for Claude Code in this repo, loaded by the root `CLAUDE.md` (a
 `@.agents/agents.md` import). Everything else lives under `.agents/` (scoped guidance, skills, hooks), with
 Claude Code's own files in `.claude/` (settings, subagents, and `skills`, a symlink to `.agents/skills`).
 
+## Windows Work Goes on Branch `os-windows`: Check First
+
+Work for the user's Windows laptop (running the app on Windows, the GitHub Copilot seat as the AI, anything
+"for Windows" or "for the work laptop") is done on branch `os-windows`, never on `main`. That branch is
+never merged into `main`, and carries its own guide (`.agents/instructions/os_windows.md`, only there).
+
+- At the start of such a task, run `git branch --show-current`. On `main` (or any other branch): **ask to
+  switch to `os-windows` before changing anything**, with the question tool.
+- When it isn't clear whether a task is for Windows, ask too: switching is the better default to offer.
+- A change wanted on both is made on each branch separately, when the user asks for it.
+
 ## Attribution Policy (Strict)
 
 When generating or modifying any file content in this workspace, use a single attribution comment at the top of
