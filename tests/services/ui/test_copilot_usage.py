@@ -128,3 +128,9 @@ def test_an_answer_that_says_nothing_new_leaves_the_meter_alone() -> None:
     shown = dataclasses.asdict(copilot_usage.build(_usage(40), NOW))
     assert copilot_usage.from_answer({}, 4.5, shown, LATER) is None  # no quota headers
     assert copilot_usage.from_answer(_headers(99.4), 0, shown, LATER) is None  # no cost, same share
+
+
+def test_the_bar_is_empty_only_when_nothing_is_used() -> None:
+    assert copilot_usage.build(_usage(0), NOW).empty is True
+    assert copilot_usage.build(_usage(0.5), NOW).empty is False  # a part credit still shows
+    assert copilot_usage.CopilotMeter().empty is True  # before it is read

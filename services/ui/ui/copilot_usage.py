@@ -38,6 +38,8 @@ class CopilotMeter:
     resets: str = ""
     """'resets 12/01', '' when GitHub gave no day."""
     meter: str = "0%"
+    empty: bool = True
+    """Nothing of the quota is used (or it isn't known): the bar shows no fill at all."""
     level: str = ""
     title: str = "Reading the Copilot seat's usage…"
     as_of: str = ""
@@ -112,6 +114,7 @@ def build(usage: CopilotUsage, now: dt.datetime, *, rounded: bool = False) -> Co
         used = f"about {premium.used:,.0f}" if rounded else _number(premium.used)
         out.detail = f"{used} / {_number(premium.limit)} {usage.unit}"
         out.meter = f"{min(100.0, premium.percent_used):.1f}%"
+        out.empty = premium.used <= 0
         out.level = "danger" if share >= DANGER_AT else "warn" if share >= WARN_AT else "ok"
     return out
 

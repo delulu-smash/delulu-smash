@@ -65,3 +65,11 @@ def test_a_copilot_model_shows_the_seats_premium_quota_with_a_refresh_button(app
     # its own button reads it again (not clicked here: that is a request to GitHub)
     assert box.locator('button[aria-label="Refresh Copilot usage"]').count() == 1
     assert box.locator(".spend-as-of").inner_text().startswith("as of ")
+
+
+@pytest.mark.smoke
+@pytest.mark.usefixtures("ai_controls")
+def test_the_context_bar_has_no_fill_before_anything_is_sent(app: App) -> None:
+    fill = app.page.locator(".titlebar > .ctx-meter .ctx-bar i")
+    assert fill.get_attribute("data-empty") == "true"  # a fresh session: 0 tokens
+    assert fill.bounding_box()["width"] == 0

@@ -532,7 +532,14 @@ def context_meter() -> rx.Component:
     size_title = "Conversation size (sent again with every request) / the model's context window"
     title = [f"{size_title},", "and what the AI cost so far this session (chat and inline chats)."]
     return rx.el.div(
-        rx.el.span(rx.el.i(style={"width": State.context_pct.to(str) + "%"}), class_name="ctx-bar"),
+        rx.el.span(
+            # no sliver while nothing was sent yet (app.css gives a used bar a 2px minimum)
+            rx.el.i(
+                style={"width": State.context_pct.to(str) + "%"},
+                custom_attrs={"data-empty": rx.cond(State.context_tokens == 0, "true", "false")},
+            ),
+            class_name="ctx-bar",
+        ),
         rx.el.span(
             "context ",
             rx.el.span(State.context_size, class_name="ctx-pct"),
@@ -592,7 +599,11 @@ def copilot_meter() -> rx.Component:
     return rx.el.div(
         rx.el.div(
             rx.el.span(
-                rx.el.i(style={"width": m["meter"]}, custom_attrs={"data-level": m["level"]}), class_name="ctx-bar"
+                rx.el.i(
+                    style={"width": m["meter"]},
+                    custom_attrs={"data-level": m["level"], "data-empty": rx.cond(m["empty"], "true", "false")},
+                ),
+                class_name="ctx-bar",
             ),
             rx.el.span(
                 "premium ",
