@@ -7,14 +7,14 @@
 - This folder is not Smash-specific product code by default.
 - Prefer placing keybinding-target scripts under `.os/scripts/keybindings/` to make intent discoverable.
 - Machine setup is one list, `.os/machine.toml` (packages, Omarchy settings, bar options, Hyprland toggles,
-  plugins, files, web apps), plus the real files in `.os/files/`. `os sync` makes the machine and the list
+  dconf keys, plugins, files, web apps), plus the real files in `.os/files/`. `os sync` makes the machine and the list
   the same in both directions: it asks what to do with each change made on the machine (keep = save to the
   list, discard = undo here), applies what came from the list, then commits and pushes `.os/`. See
   `.os/README.md`.
 - After changing something `os sync` tracks (eg `$HOME/.config/hypr/bindings.lua`, an installed or removed
   package, a web app, the theme, a toggle), record it right away with
   `uv run .os/cli.py save --no-commit <kind>:<name> ...` (kinds: `package`, `plugin`, `webapp`, `file`,
-  `setting`, `toggle`, `bar`; `--dry-run` previews). It is the no-questions form of answering "keep" in
+  `setting`, `toggle`, `bar`, `dconf`; `--dry-run` previews). It is the no-questions form of answering "keep" in
   `os sync`: it saves this machine's current state of the named things into `.os/machine.toml` /
   `.os/files/`, and with `--no-commit` does nothing else (without it, `save` asks to commit and push). Always name the things: a bare `os save` saves every
   change on the machine (for the user to run themselves). Prefer it over editing those by hand. Then tell the user what was
@@ -31,7 +31,9 @@
   package to the shared list; move it to a role's section by hand when the user wants it on one role only.
   Without a role, `save` stops (it can't ask from an agent's shell): tell the user to run `os role <role>`.
 - `os sync` applies through the Omarchy CLI (`omarchy pkg add`, `omarchy webapp install`, `omarchy theme set`,
-  ...) and only copies plain files for the user-owned ones listed under `[files]`. Keep it that way: don't
+  ...) and only copies plain files for the user-owned ones listed under `[files]`. A GNOME app's own setting
+  (eg the file manager's default view) is a `dconf` item, `"<schema> <key>"` under `[dconf]`, read and set
+  with `gsettings`: `save dconf:"org.gnome.nautilus.preferences default-sort-order"`. Keep it that way: don't
   write Omarchy's own state files directly, and never edit `/usr/share/omarchy/`.
 - Packages: `[packages]` in `.os/machine.toml` (`pacman` or `aur`). `[ignore]` lists packages and web apps
   that are never synced (hardware-specific, part of Omarchy, or wanted on one machine only).
