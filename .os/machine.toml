@@ -54,6 +54,11 @@ pacman = [
     "wl-clipboard",
     "libnotify",
     "owe-lockfeed",
+    "claude-desktop",
+    "freerdp",
+    "git-delta",
+    "omazed",
+    "zed",
 ]
 aur = [
     "eden-bin",
@@ -135,6 +140,14 @@ terminal = "kitty"
 # window-no-gaps: no gaps, borders or rounded corners (SUPER + SHIFT + BACKSPACE flips it).
 "window-no-gaps" = "on"
 
+[dconf]
+# GNOME app settings kept in dconf: "<schema> <key>" = the value as `gsettings get <schema> <key>`
+# prints it. Only the keys named here are synced; add one with `os save dconf:"<schema> <key>"`.
+# The file manager (SUPER + SHIFT + F) opens folders as a list, newest change first.
+"org.gnome.nautilus.preferences default-folder-viewer" = "'list-view'"
+"org.gnome.nautilus.preferences default-sort-order" = "'mtime'"
+"org.gnome.nautilus.preferences default-sort-in-reverse-order" = "true"
+
 [plugins]
 # Omarchy plugins: id = git URL (`omarchy plugin add <git URL>`).
 "quickshell.spotify" = "https://github.com/stappmus/Omarchy-Spotify.git"
@@ -175,3 +188,4 @@ terminal = "kitty"
 "Ultimate Frame Data" = "https://ultimateframedata.com/smash"
 delulu-smash = "http://localhost:3000"
 "OmniRCM (Switch Mod)" = "https://omnircm.nintendohomebrew.com/web/"
+Coinbase = "https://www.coinbase.com/home"
