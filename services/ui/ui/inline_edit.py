@@ -5,7 +5,9 @@
 #          SQL box: an instruction plus the editor's code
 #                   (and selection) in, the rewritten code out.
 #          The model gets the SmashDb tables (columns, first rows, notes on how values are
-#          written) and, for Python, the session's live variables.
+#          written) and, for Python, the session's live variables: sent as reference, not
+#          kept in the chat's history. An inline turn of the chat (inline.py, Session.ask):
+#          the same agent and history, no tools.
 # Usage: POST /inline_edit (api.py), called from inline_edit.jsx; each call is one "agent"
 #        debug-log record, with the same usage (tokens, cost, model requests)
 #        as a chat turn, its cost added to the session's.
@@ -20,24 +22,22 @@ from typing import Any, Literal
 
 import polars as pl
 from ds.ai.smashdb import DATA_NOTES, MOVE_ALIASES
-from ds.util.const import DEFAULT_AI_MODEL
-from ds.util.logging import log_call, logger
+from ds.util.logging import logger
 from ds.util.text import clean_f_str
 from pydantic import BaseModel, Field
-from pydantic_ai import Agent, ModelRetry, RunContext, capture_run_messages
 
 from ui import logs, mentions
 from ui.format import format_python
-from ui.session import BUILTIN_NAMES, find_session, log_usage
+from ui.inline import Inline, asked_in
+from ui.session import BUILTIN_NAMES, Session, find_session
 
 # Context sent to the model is capped, so a namespace full of tables can't blow up the prompt.
 MAX_VARIABLES = 40
 MAX_COLUMNS = 30
 SAMPLE_ROWS = 3  # rows shown of each table and DataFrame
 MAX_VALUE_CHARS = 60  # a text value in those rows
-# times a proposal that fails its check (check_proposal) is sent back to the model to fix;
-# after that it is shown as it is
-MAX_FIXES = 2
+# a proposal that fails its check (proposal_problem) is sent back to the model to fix, up to
+# inline.MAX_FIXES times; after that it is shown as it is
 
 Language = Literal["python", "sql"]
 
@@ -46,7 +46,7 @@ class InlineEdit(BaseModel):
     code: str = Field(description="The replacement code only: no explanation, no Markdown fences.")
 
 
-_INSTRUCTIONS = clean_f_str("""
+RULES = clean_f_str("""
     You edit code inside a small editor in a Super Smash Bros. Ultimate data app, as an inline code
     assistant (like Copilot's inline chat). You get the editor's code, the user's instruction and the
     data the code can use. Return only the code that replaces the target: the selected part when one is
@@ -90,21 +90,6 @@ class EditRun:
     """The proposal is the editor's whole text (not a replacement for a selection)."""
     db: Any = None
     """The session's SmashDb, to try a query on."""
-    fixes: int = 0
-
-
-edit_agent = Agent(
-    DEFAULT_AI_MODEL,
-    # on its Logfire spans (gen_ai.agent.name): the debug
-    # panel's Spend tab lists it apart from the chat
-    name="inline-edit",
-    # resolved at run time, so importing the app works without a key (as ds.ai.agent)
-    defer_model_check=True,
-    instructions=_INSTRUCTIONS,
-    output_type=InlineEdit,
-    deps_type=EditRun,
-    retries=MAX_FIXES,
-)
 
 
 def proposal_problem(run: EditRun, code: str) -> str:
@@ -135,26 +120,9 @@ def proposal_problem(run: EditRun, code: str) -> str:
     return ""
 
 
-@edit_agent.instructions
-def sql_format(ctx: RunContext[EditRun]) -> str:
-    """The query layout, for a SQL editor only (SQL_FORMAT)."""
-    return SQL_FORMAT if ctx.deps.language == "sql" else ""
-
-
-@edit_agent.output_validator
-async def check_proposal(ctx: RunContext[EditRun], output: InlineEdit) -> InlineEdit:
-    """Send a proposal that doesn't work back to the model,
-    up to MAX_FIXES times; then show it anyway.
-    """
-    run = ctx.deps
-    if run.fixes >= MAX_FIXES:
-        return output
-    # off the event loop: a query can take a moment
-    problem = await asyncio.to_thread(proposal_problem, run, output.code)
-    if problem:
-        run.fixes += 1
-        raise ModelRetry(f"{problem} Send the corrected code.")
-    return output
+def rules(language: Language) -> str:
+    """The mode's instructions: for a SQL editor, with the query layout (SQL_FORMAT)."""
+    return "\n\n".join([RULES, SQL_FORMAT]) if language == "sql" else RULES
 
 
 def _columns(columns: dict[str, Any] | list[str]) -> str:
@@ -284,29 +252,38 @@ async def edit(body: dict[str, Any]) -> dict[str, str]:
     # goes along (mentions.py; no tools here).
     # Built once: a call such as "@q1.sample(5)" gives other rows each time it runs
     mentioned = mentions.context(instruction, session)
-    text = "\n\n".join(filter(None, [context(language, token, body.get("schema")), request, mentioned]))
-    # the chat so far goes along (read only: the inline call is not added to the chat)
-    history = list(session.ai_history) if session else []
     run = EditRun(language=language, whole=not selected, db=session.db if session else None)
-    name = f"inline edit ({language})"
-    with (
-        logger.contextualize(session=logs.session_id(token), origin="inline edit"),
-        log_call("agent", "inline-edit", name=name, prompt=instruction) as call,
-        capture_run_messages() as captured,
-    ):
-        answer: dict[str, str] = {}
-        call["added"] = mentioned
-        try:
-            result = await edit_agent.run(text, message_history=history, deps=run)
-            code = result.output.code
-            # Python comes back as ruff formats it (off the event loop: it runs ruff)
-            answer["code"] = await asyncio.to_thread(format_python, code) if language == "python" else code
-        except Exception as error:  # noqa: BLE001  # shown in the inline box, not raised into the request
-            call["error"] = answer["error"] = f"{type(error).__name__}: {error}"
-        # from the messages, as a chat turn does (Session.ask),
-        # so a failed call still shows what it spent
-        usage = log_usage(call, session, captured[len(history) :])
-        call["fixes"] = run.fixes  # proposals sent back to the model because they failed the check
-        if usage.requests:
-            answer["usage"] = usage.summary()
+
+    async def problem(output: InlineEdit) -> str:
+        # off the event loop: a query can take a moment
+        found = await asyncio.to_thread(proposal_problem, run, output.code)
+        return f"{found} Send the corrected code." if found else ""
+
+    where = "the SQL box" if language == "sql" else "a Python cell"
+    asked = Inline(
+        label="edit",
+        output_type=InlineEdit,
+        rules=rules(language),
+        instruction=instruction,
+        where=where,
+        answer=lambda output: output.code.strip(),
+        # what the code can use: reference for this turn, not kept in the chat's history
+        context=context(language, token, body.get("schema")),
+        check=problem,
+        name=f"inline edit ({language})",
+        added=mentioned,
+    )
+    message = "\n\n".join(filter(None, [asked_in(where), request, mentioned]))
+    with logger.contextualize(session=logs.session_id(token), origin="inline edit"):
+        # a browser tab the backend doesn't know (it restarted): asked, remembered nowhere
+        result = await (session or Session()).ask(message, inline=asked)
+    answer: dict[str, str] = {}
+    if result.error:
+        answer["error"] = result.error
+    else:
+        code = result.output.code
+        # Python comes back as ruff formats it (off the event loop: it runs ruff)
+        answer["code"] = await asyncio.to_thread(format_python, code) if language == "python" else code
+    if result.used:
+        answer["usage"] = result.used
     return answer

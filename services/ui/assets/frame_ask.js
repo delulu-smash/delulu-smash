@@ -114,7 +114,12 @@
     const pane = [...document.querySelectorAll("[data-pane]")].find((node) => frameOf(node)?.contentWindow === event.source);
     if (!pane) return;
     if (event.data.type === "delulu-ask-toggle") toggle(pane);
-    if (event.data.type === "delulu-ask-answer") answered(pane, event.data);
+    if (event.data.type === "delulu-ask-answer") {
+      answered(pane, event.data);
+      // the turn's cost on the title bar's context meter and its row in the chat
+      // (State.refresh_usage), as inline_edit.jsx does after an edit
+      document.querySelector("[data-usage-refresh]")?.click();
+    }
   });
 
   window.smashFrameAsk = { toggle };

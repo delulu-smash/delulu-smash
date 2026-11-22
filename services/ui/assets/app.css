@@ -90,14 +90,18 @@ button { font: inherit; color: inherit; }
 .pane-title { display: flex; align-items: center; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--grey1);
   flex: none; height: var(--panel-head); box-sizing: border-box; padding: 0 0 0 2px; }
 .chat-scroll { flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column-reverse; }
-/* the scroll area plus the "jump to the newest message" button over its bottom edge, shown once
-   you have scrolled up (assets/panes.js sets .is-scrolled) */
+/* the scroll area plus the two round buttons over its bottom edge (assets/panes.js): ↑ while
+   there is chat above (.can-up), dim until the mouse is on the chat or you have scrolled up;
+   ↓ "jump to the newest message" once you have scrolled up (.is-scrolled) */
 .chat-body { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; }
-.chat-bottom { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); width: 30px; height: 30px; border-radius: 50%;
-  border: 1px solid var(--bg4); background: var(--bg1); color: var(--fg); cursor: pointer; font-size: 15px; line-height: 1; padding: 0;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4); opacity: 0; pointer-events: none; transition: opacity 0.15s; }
-.chat-bottom:hover { border-color: var(--blue); color: var(--blue); }
-.chat-body.is-scrolled .chat-bottom { opacity: 1; pointer-events: auto; }
+.chat-jump { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); display: flex; gap: 8px; pointer-events: none; }
+.chat-bottom, .chat-up { display: none; width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--bg4);
+  background: var(--bg1); color: var(--fg); cursor: pointer; font-size: 15px; line-height: 1; padding: 0;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4); pointer-events: auto; transition: opacity 0.15s; }
+.chat-bottom:hover, .chat-up:hover { border-color: var(--blue); color: var(--blue); }
+.chat-body.is-scrolled .chat-bottom, .chat-body.can-up .chat-up { display: block; }
+.chat-up { opacity: 0; }
+.chat-body:hover .chat-up, .chat-body.is-scrolled .chat-up, .chat-up:focus-visible { opacity: 1; }
 .chat-items { display: flex; flex-direction: column; gap: 8px; padding-bottom: 10px; }
 .bubble { background: var(--bg0); border: 1px solid var(--bg2); border-radius: 8px; padding: 8px 10px; font-size: 13.5px; }
 .bubble.is-user { align-self: flex-end; max-width: 88%; background: var(--bg2); border-color: var(--bg3); white-space: pre-wrap; }
@@ -1037,3 +1041,8 @@ input, textarea { caret-color: var(--blue); }
 /* a narrow grid's bar wraps its controls onto a second line rather than cutting them
    (a long label, eg list[DailyClose]) */
 .cell-widget .viewer-bar { flex-wrap: wrap; }
+
+/* an inline turn's row in the chat (ui.inline_item): quieter than a tool call's */
+.inline-row { opacity: 0.6; font-size: 0.92em; }
+.inline-row:hover { opacity: 1; }
+.inline-label { color: var(--grey1); font-style: italic; margin-right: 0.6em; }

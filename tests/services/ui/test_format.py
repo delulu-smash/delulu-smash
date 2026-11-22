@@ -7,12 +7,7 @@
 from __future__ import annotations
 
 from ui.format import LINE_LENGTH, format_python
-from ui.inline_edit import SQL_FORMAT, EditRun, sql_format
-
-
-class _Ctx:
-    def __init__(self, language: str) -> None:
-        self.deps = EditRun(language=language, whole=True)  # type: ignore[arg-type]
+from ui.inline_edit import SQL_FORMAT, rules
 
 
 def test_formats_as_ruff() -> None:
@@ -42,6 +37,6 @@ def test_what_ruff_cannot_format_is_unchanged() -> None:
 
 
 def test_sql_layout_is_told_for_sql_only() -> None:
-    assert sql_format(_Ctx("sql")) == SQL_FORMAT  # type: ignore[arg-type]
-    assert sql_format(_Ctx("python")) == ""  # type: ignore[arg-type]
+    assert SQL_FORMAT in rules("sql")
+    assert SQL_FORMAT not in rules("python")
     assert "SELECT\n  character,\n  move," in SQL_FORMAT  # the example keeps its indent

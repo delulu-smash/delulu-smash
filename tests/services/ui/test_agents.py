@@ -70,9 +70,10 @@ def test_how_it_loads_says_what_is_hidden_in_pydantic_ais_words() -> None:
     assert "`id` and `description`" in loading["capabilities with defer_loading=True (8)"]
     assert "(15 tools in all)" in loading["hidden until loaded"]
     assert "load_capability" in loading["loading"]
-    # an agent with nothing deferred says so instead
-    plain = {row["label"]: row["value"] for row in agents.AGENTS[1].loading}
-    assert plain["capabilities with defer_loading=True"].startswith("none")
+    # an inline label is a turn of the same agent with its rules added and every tool hidden
+    mode = {row["label"]: row["value"] for row in agents.AGENTS[1].loading}
+    assert mode["runs as"].startswith("a turn of smash-agent")
+    assert mode["tools"].startswith("none")
 
 
 def test_the_setup_as_text_has_every_capability_and_tool() -> None:

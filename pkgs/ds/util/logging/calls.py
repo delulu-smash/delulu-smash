@@ -4,6 +4,10 @@
 # an HTTP fetch, an agent turn, a tool step), timed, with the same shape everywhere.
 # Usage: `with log_call("graphql", "startgg", op="PlayerSets", variables=v) as call: ...;
 #         call["status"] = 200`. Off by default; an app turns it on with `enable_call_logs()`.
+# Two fields say where a record goes when an app keeps both a panel and a log file
+# (delulu-smash: the Alt+D panel and local/logs/ui/ui.jsonl): `panel=False` keeps the whole
+# record out of the panel, `full={...}` holds extra fields for the file only. `for_panel` /
+# `for_file` apply them.
 # ---------------------------------------------------------------------------
 from __future__ import annotations
 
@@ -16,7 +20,7 @@ from typing import Any
 
 from loguru import logger
 
-__all__ = ["CALL_LOGGER", "enable_call_logs", "log_call", "log_event", "log_group"]
+__all__ = ["CALL_LOGGER", "enable_call_logs", "for_file", "for_panel", "log_call", "log_event", "log_group"]
 
 # Records are emitted from this module, so this is the name to enable / disable them by.
 # Disabled on import (loguru's recipe for libraries): a script using ds prints none of them.
@@ -26,6 +30,22 @@ logger.disable(CALL_LOGGER)
 # the group the records being made now belong to (see log_group); follows asyncio tasks and
 # asyncio.to_thread like loguru's own context
 _group: ContextVar[str | None] = ContextVar("log_group", default=None)
+
+
+def for_panel(fields: dict[str, Any]) -> dict[str, Any] | None:
+    """A record's fields as an app's panel keeps them: None for a `panel=False` record (the
+    log file's only), else the fields without `full` (the file's extra detail).
+    """
+    if fields.get("panel") is False:
+        return None
+    return {name: value for name, value in fields.items() if name not in ("panel", "full")}
+
+
+def for_file(fields: dict[str, Any]) -> dict[str, Any]:
+    """A record's fields as a log file keeps them: everything, `full`'s fields among them."""
+    kept = {name: value for name, value in fields.items() if name not in ("panel", "full")}
+    full = fields.get("full")
+    return kept | full if isinstance(full, dict) else kept
 
 
 def enable_call_logs() -> None:

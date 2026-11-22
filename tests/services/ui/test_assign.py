@@ -24,6 +24,7 @@ from pydantic_ai.models.function import AgentInfo, FunctionModel
 APP_DIR = Path(__file__).resolve().parents[3] / "services" / "ui"
 sys.path.insert(0, str(APP_DIR))
 
+import ds.ai  # noqa: E402
 from ui import assign  # noqa: E402
 from ui.commands import SLASH  # noqa: E402
 from ui.session import Session  # noqa: E402
@@ -71,9 +72,7 @@ def test_the_name_is_the_users_when_given() -> None:
 
 def test_the_ai_is_told_how_to_name_by_type() -> None:
     """A name the AI picks follows assign.NAMING (a date ends in _date, ...)."""
-    instructions = assign.assign_agent._instructions[0]  # no public getter
-    text = getattr(instructions, "instruction", instructions)
-    assert assign.NAMING in text
+    assert assign.NAMING in assign.rules()
     for convention in ("_date", "_at", "is_", "n_"):
         assert convention in assign.NAMING
 
@@ -212,7 +211,7 @@ def answering(answers: list[dict[str, str]], seen: list[str]) -> FunctionModel:
 
 
 def propose(session: Session, text: str, answers: list[dict[str, str]], seen: list[str]) -> assign.Proposal:
-    with assign.assign_agent.override(model=answering(answers, seen)):
+    with ds.ai.agent.override(model=answering(answers, seen)):
         return asyncio.run(assign.propose(session, "no-such-token", text))
 
 

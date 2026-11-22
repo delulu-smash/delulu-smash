@@ -8,13 +8,22 @@ Claude Code's own files in `.claude/` (settings, subagents, and `skills`, a syml
 
 ## Windows Work Goes on Branch `os-windows`: Check First
 
-Work for the user's Windows laptop (running the app on Windows, the GitHub Copilot seat as the AI, anything
-"for Windows" or "for the work laptop") is done on branch `os-windows`, never on `main`. That branch is
-never merged into `main`, and carries its own guide (`.agents/instructions/os_windows.md`, only there).
+Work for the user's Windows laptop (running the app on Windows, anything "for Windows") is done on branch
+`os-windows`, never on `main`. That branch is never merged into `main`, and carries its own guide
+(`.agents/instructions/os_windows.md`, only there).
 
-- At the start of such a task, run `git branch --show-current`. On `main` (or any other branch): **ask to
-  switch to `os-windows` before changing anything**, with the question tool.
-- When it isn't clear whether a task is for Windows, ask too: switching is the better default to offer.
+- **The OS you run on decides the default**, not a guess from the topic. At the start of a task that
+  changes files, check it with `uv run python -c "import platform; print(platform.system())"` (Claude Code
+  also shows it as "Platform" in its environment info), then `git branch --show-current`:
+
+  | OS        | Default branch | Ask (question tool) when                                                     |
+  | --------- | -------------- | ---------------------------------------------------------------------------- |
+  | `Windows` | `os-windows`   | on any other branch: ask to switch before changing anything                  |
+  | `Linux`   | `main`         | the task is about Windows (eg port a script to Windows)                      |
+
+- On Linux, the topic alone (eg a monitoring tool like New Relic) is not a reason to suspect Windows:
+  recommend `main`. Ask only when the request itself mentions Windows, and then still recommend `main`
+  unless the work is clearly for Windows.
 - A change wanted on both is made on each branch separately, when the user asks for it.
 
 ## Attribution Policy (Strict)
@@ -518,6 +527,27 @@ default.
 - **Say which tiers ran** in the summary of finished work (eg "unit and smoke pass; full e2e not run"), and
   which of the "things to try" an e2e test now covers.
 - Tests against outside APIs replay recordings: `.agents/instructions/pkgs.md` ("Tests Against External APIs").
+
+## Debugging the App: Read Its Session Log First
+
+When the user reports something that happened in delulu-smash (`services/ui`), or asks about a previous
+session or its logs (eg "the last answer was wrong", "/assign did nothing", "it froze", "what did I ask
+earlier", "check the logs"), run `uv run ds ui debug` **before** asking them to paste anything or guessing
+from the code. The app writes what happened to `local/logs/ui/ui.jsonl`: chat rows, cell runs, AI turns, tool
+calls, start.gg / HTTP requests, browser and backend errors.
+
+| To see | Run |
+|---|---|
+| The newest session, a line per thing that happened | `uv run ds ui debug` |
+| One chat turn in full (prompt, tool arguments and responses, reply, traceback) | `uv run ds ui debug --turn <n>` |
+| The sessions in the log, to pick an earlier one | `uv run ds ui debug --list`, then `--session <id>` |
+| Every session's last half hour | `uv run ds ui debug --since 30m` |
+
+- A field the timeline doesn't print (eg a request's headers) is in the file itself: grep `local/logs/ui/ui.jsonl`.
+- A backend that died is only in `journalctl --user -u delulu-smash.service`. The raw request sent to the
+  model (system prompt, history) is only in Logfire.
+- Say what the log showed (the turn, the row, the error) when answering. Details: `services/ui/README.md`
+  ("Session log") and `.agents/instructions/services.md`.
 
 ## Repo Tag Prefix (`ds::`)
 

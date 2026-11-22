@@ -3,7 +3,8 @@
 # Purpose: inline chat in the Terminal pane (Alt+I, with the chat so far; as inline_edit.py's
 #          in a cell): the AI turns what you ask into one shell command, from the text on the
 #          terminal's screen. The command is typed at the prompt, never run (you press Enter).
-#          No tools; the chat is read, nothing is added to it.
+#          An inline turn of the chat (inline.py, Session.ask): the same agent and history,
+#          no tools; the screen is sent as reference and not kept in the history.
 # Usage: POST /inline_terminal (api.py), called from the Terminal's page (terminal.PAGE); each
 #        call is one "agent" record in the debug log (origin "inline terminal"), costed as a
 #        chat turn, its cost added to the session's.
@@ -13,16 +14,15 @@ from __future__ import annotations
 
 from typing import Any
 
-from ds.util.const import DEFAULT_AI_MODEL
-from ds.util.logging import log_call, logger
+from ds.util.logging import logger
 from ds.util.text import clean_f_str
 from pydantic import BaseModel, Field
-from pydantic_ai import Agent, capture_run_messages
 
 from ui import logs
-from ui.session import find_session, log_usage
+from ui.inline import Inline, asked_in
+from ui.session import Session, find_session
 
-__all__ = ["MAX_SCREEN_CHARS", "Command", "ask", "command_agent", "prompt"]
+__all__ = ["MAX_SCREEN_CHARS", "RULES", "Command", "ask", "screen_text"]
 
 MAX_SCREEN_CHARS = 20_000  # a screen is a few thousand; more is not a screen
 
@@ -34,7 +34,7 @@ class Command(BaseModel):
     note: str = Field(default="", description="Only when command is empty: the answer, in one or two short sentences.")
 
 
-_INSTRUCTIONS = clean_f_str("""
+RULES = clean_f_str("""
     You write shell commands inside the terminal of a Super Smash Bros. Ultimate data app, as an inline
     assistant (like an editor's inline chat, for a shell). You get what the terminal's screen shows now
     (the prompt, the folder, the last commands and their output) and the user's instruction. Return one
@@ -45,22 +45,11 @@ _INSTRUCTIONS = clean_f_str("""
     understand what the user means.
     """)
 
-command_agent = Agent(
-    DEFAULT_AI_MODEL,
-    # on its Logfire spans (gen_ai.agent.name): the debug
-    # panel's Spend tab lists it apart from the chat
-    name="inline-terminal",
-    # resolved at run time, so importing the app works without a key (as ds.ai.agent)
-    defer_model_check=True,
-    instructions=_INSTRUCTIONS,
-    output_type=Command,
-)
 
-
-def prompt(screen: str, instruction: str) -> str:
-    """What the model gets: the screen's text (its end, when huge) and the instruction."""
+def screen_text(screen: str) -> str:
+    """The terminal's screen as the turn's reference (sent, not kept in the chat's history)."""
     shown = screen[-MAX_SCREEN_CHARS:].strip() or "(nothing on screen)"
-    return f"Terminal screen:\n```\n{shown}\n```\n\nInstruction: {instruction}"
+    return f"Terminal screen now:\n```\n{shown}\n```"
 
 
 async def ask(body: dict[str, Any]) -> dict[str, str]:
@@ -73,31 +62,38 @@ async def ask(body: dict[str, Any]) -> dict[str, str]:
     instruction = str(body.get("instruction", "")).strip()
     if not instruction:
         return {"error": "Type what you want first."}
-    session = find_session(token)
-    # the chat so far goes along (read only: the inline call is not added to the chat)
-    history = list(session.ai_history) if session else []
-    with (
-        logger.contextualize(session=logs.session_id(token), origin="inline terminal"),
-        log_call("agent", "inline-terminal", name="inline terminal", prompt=instruction) as call,
-        capture_run_messages() as captured,
-    ):
-        answer: dict[str, str] = {}
-        try:
-            result = await command_agent.run(
-                prompt(str(body.get("screen") or ""), instruction), message_history=history
-            )
-            command = result.output.command.strip().removeprefix("$ ")
-            if "\n" in command:
-                answer["error"] = "The AI wrote several lines, which are not typed: ask for one command."
-            elif command:
-                answer["command"] = command
-            else:
-                answer["note"] = result.output.note.strip() or "No command for that."
-        except Exception as error:  # noqa: BLE001  # shown in the inline box, not raised into the request
-            call["error"] = answer["error"] = f"{type(error).__name__}: {error}"
-        # from the messages, as a chat turn does (Session.ask),
-        # so a failed call still shows what it spent
-        usage = log_usage(call, session, captured[len(history) :])
-        if usage.requests:
-            answer["usage"] = usage.summary()
+    # a browser tab the backend doesn't know (it restarted): asked, remembered nowhere
+    session = find_session(token) or Session()
+    where = "the Terminal"
+    asked = Inline(
+        label="terminal",
+        output_type=Command,
+        rules=RULES,
+        instruction=instruction,
+        where=where,
+        answer=_answer,
+        context=screen_text(str(body.get("screen") or "")),
+        name="inline terminal",
+    )
+    with logger.contextualize(session=logs.session_id(token), origin="inline terminal"):
+        result = await session.ask(f"{asked_in(where)}\n\nInstruction: {instruction}", inline=asked)
+    answer: dict[str, str] = {}
+    if result.error:
+        answer["error"] = result.error
+    else:
+        command = result.output.command.strip().removeprefix("$ ")
+        if "\n" in command:
+            answer["error"] = "The AI wrote several lines, which are not typed: ask for one command."
+        elif command:
+            answer["command"] = command
+        else:
+            answer["note"] = result.output.note.strip() or "No command for that."
+    if result.used:
+        answer["usage"] = result.used
     return answer
+
+
+def _answer(output: Command) -> str:
+    """The answer as text (the chat row's fold, the session log)."""
+    command = output.command.strip().removeprefix("$ ")
+    return f"typed at the prompt, not run: {command}" if command else output.note.strip()

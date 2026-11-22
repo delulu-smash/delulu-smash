@@ -49,6 +49,12 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   (`assets/history.js`: localStorage, the newest 100, a message sent twice in a row once). Tool calls are listed above each reply. While the agent works,
   light sweeps across the chat box (as over the code in an inline chat).
   Scroll up and a round ↓ button appears over the bottom of the chat: it jumps back to the newest message.
+  Beside it, while there is chat above, a round ↑ (shown with the mouse on the chat, or once scrolled up):
+  each click goes up to the message you sent before, with its tool calls and answer under it; past the
+  first one, to the top of the chat (Shift+click: straight there). The keys, while the chat is the pane
+  you are in: Alt+Up / Alt+Down go a row at a time (`Shortcut.CHAT_UP` / `CHAT_DOWN`: a message, a tool
+  call, a result, a reply), Alt+Shift+Up / Alt+Shift+Down a message you sent at a time
+  (`Shortcut.CHAT_TURN_UP` / `CHAT_TURN_DOWN`); past the last one, the newest message.
   Hover a message for its copy button on the top-right corner (a reply copies as its markdown source).
   A code block in a reply is the app's own dark block (`ui.markdown_code`, `.md-code`: as the help panel's
   snippets, not `rx.markdown`'s light highlighter; plain text, no syntax colours), with its own copy button
@@ -97,6 +103,32 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
   `ds.util.http` / `ds.util.graphql` and are kept in memory only (`ui/logs.py`, newest 2000, gone on restart);
   the panel loads them when opened, on Refresh and when a turn, form or cell finishes, never while closed.
   A new kind of record is one function in `logs.LOG_FORMATS`.
+- **Inline turns in the chat**: an `Alt+I` ask (a cell, the SQL box, a widget's form, the Terminal) is a
+  turn of the chat, so the chat pane shows it: one dim line, quieter than a tool call, with its label
+  (`inline edit (python)`), where it was asked and what you typed; its caret shows the answer. You can then
+  ask the chat about it ("why did you sort it that way?"), and the next `Alt+I` knows the last. The rows
+  appear when the browser reports back after the call (`State.refresh_usage` → `_show_inline`).
+- **Session log** (`ds ui debug`): a file for debugging what just happened, read by an AI asked to look into
+  a bug (or by you). `local/logs/ui/ui.jsonl` (git-ignored) gets one JSON line per record, written as it
+  happens: everything the debug log above holds, plus what only the file gets: each **chat row** as it
+  appeared or changed (your message, the answer, a slash command's row, a note, each stage of an `/assign`),
+  each **cell run** (code, output, error), **browser and backend errors** (Reflex's exception handlers, which
+  still show the toast and print to the journal) and each backend start. It is not a cache: the app only
+  writes it. `ds ui debug` prints the newest session as a timeline (what you saw flush left, the calls made
+  for it indented); `--turn 3` one chat turn with every field in full (prompt, tool arguments and responses,
+  the reply, the traceback); `--list` the sessions; `--since 30m` every session's last half hour;
+  `--session <id>` another one. Kept to 3 files of 20 MB (`ui.jsonl`, `ui.1.jsonl`, `ui.2.jsonl`); a value
+  over 20,000 characters is cut; secrets are already filtered from the records. Prompts, answers and cell
+  code are in it as plain text.
+  - **One rule decides what goes where** (`ds.util.logging.calls`): a record logged with `panel=False` is the
+    file's only, and a record's `full={...}` holds extra fields for the file only (an agent turn's `reply`
+    and `traceback`). The panel takes `for_panel(record)`, the file `for_file(record)`; nothing else knows.
+  - **Chat rows and cells are logged from one place**, `State.get_delta` (what Reflex sends the browser):
+    `debug_log.rows_changed` logs the rows that are new or show something else than when last logged, so no
+    place that adds a row has to remember to. After a backend restart a session's rows are logged once more
+    (marked `resent`); `ds ui debug` leaves those out.
+  - Code: `ui/debug_log.py` (the writer), `pkgs/ds/cli/ui_debug.py` (the reader, no app imports),
+    `ds.util.const.UI_LOG_FILE` (the path).
   The panel goes full screen with the arrows at its top right, or `Alt+F` while it is open (Esc goes back to
   the side panel first, then closes it); it reopens the way you left it.
   Four tabs: **Requests** (the log above), **System**, **Spend** and **Agents**:
@@ -153,8 +185,11 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
       without a working organization key it shows spend and says why the limits are missing. Only priced, traced calls count (a model the Gateway
       has no price for counts as $0, and the note says how many).
     The agents' info needs no request (read from the Agent objects; prices from genai-prices' bundled data).
-  - **Agents** (`ui/agents.py`): each agent the app runs (`smash-agent` for the chat and `ds ai eval`,
-    `inline-edit` for Alt+I in an editor, `inline-fill` for Alt+I in a widget's form) with its model, provider, context window, list price per 1M tokens (genai-prices),
+  - **Agents** (`ui/agents.py`): the app's one agent (`smash-agent`: the chat, and `ds ai eval`) and the
+    inline turns it also answers, by label (`inline-edit` for Alt+I in an editor, `inline-fill` in a widget's
+    form, `inline-terminal`, `inline-assign`: chat turns of the same agent and history, asked through the
+    same `Session.ask`, with the place's rules added and no tools, `ui/inline.py`;
+    spec: `spec/services/ui/inline_ai.md`, "Inline is a category"), each with its model, provider, context window, list price per 1M tokens (genai-prices),
     model settings, output type and retries, then what the model is actually given, named as pydantic-ai
     names it: the agent's `instructions` (its prompt), and each capability with whether it is deferred
     (`defer_loading=True`) or always-on, its `description`, its own `instructions` and its `tools` (each
@@ -615,8 +650,8 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
     the shell. The box is in the pane's title strip, left of its buttons, so it never covers the shell (the
     "Inline AI" rule for a framed pane, `spec/services/ui/README.md`); Enter sends what you typed and the text
     of the visible screen to
-    `POST /inline_terminal` (agent `inline-terminal`: no tools, one request, knowing the chat so far and adding
-    nothing to it). The command is pasted at the prompt and **never run**: you press Enter. Nothing is typed,
+    `POST /inline_terminal` (a chat turn labelled `inline-terminal`: no tools, one request, in the chat's own
+    history; the screen is sent as the turn's reference and not kept). The command is pasted at the prompt and **never run**: you press Enter. Nothing is typed,
     and the box says why, when the ask was not for a command (the AI's short answer shows in the box), the
     command has several lines, the call failed, or a full-screen program (vim, less) has the terminal. Esc
     closes the box. Each call is an "agent" record in the debug log (origin "inline terminal") and is added to
@@ -710,5 +745,5 @@ Runs from the repo's root venv (no own `pyproject.toml`); needs the AI Gateway k
 
 Layout: `ui/session.py` (namespace, agent, completion; no UI), `render.py` (Python value -> view -> component), `state.py` (Reflex
 state), `ui.py` (components), `editor.py` + `cell_editor.jsx` (CodeMirror wrapper),
-`api.py` (`POST /complete`), `logs.py` / `spend.py` / `agents.py` / `perf.py` (the debug panel's tabs), `assets/app.css` (Everforest). Design mockups this came from:
+`api.py` (`POST /complete`), `inline.py` (what makes a chat turn an inline one: the answer's form, its rules, its label), `logs.py` / `spend.py` / `agents.py` / `perf.py` (the debug panel's tabs), `debug_log.py` (the session log `ds ui debug` reads), `assets/app.css` (Everforest). Design mockups this came from:
 `experimental/design_poc` (`/split`).

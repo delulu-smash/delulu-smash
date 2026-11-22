@@ -4,6 +4,22 @@
 `Alt+I` asks the AI to change the thing you are in, in place, without going through the chat. This says what
 must hold for it; `services/ui/README.md` says what is built.
 
+## Inline is a category, not a second AI
+
+The app has one AI agent (`ds.ai.agent`, `smash-agent`), one history (`Session.ai_history`) and one way to ask
+(`Session.ask`). An inline turn is a chat turn asked from a place in the app instead of the chat box: think
+of a slash command in the chat box that makes the answer come back in a set form. "Inline" survives only as:
+
+| What | Why it can't go |
+| --- | --- |
+| **The answer's form** (`Inline.output_type`), with the rules, reference and check for writing it | it depends on the place: Python for a cell, SQL for the SmashDb box, one command for the Terminal, and for a widget the tool's own inputs (built from its schema, never per widget) |
+| **A label** (`inline-edit`, `inline-fill`, `inline-terminal`, `inline-assign`) | categorical: the debug log's record, the Spend tab's split, the Agents tab's card, the quiet row in the chat |
+
+Everything else is the chat's. There is no second agent with its own instructions, model or memory, no
+separate runner, and no summary written into the history in place of the turn. A new inline place is an
+`Inline(...)` passed to `Session.ask` (and a row in `inline.LABELS`), never a new `Agent(...)`.
+Decided 2026-11-22.
+
 ## A widget is a function
 
 A widget that has a tool (`Widget.tool` in `ui/widgets.py`) is a function: inputs in, a result
@@ -40,8 +56,24 @@ three by its row in `WIDGETS`.
   answers (`ui/format.py`; what ruff can't format, eg part of a statement, is shown as written). SQL has no
   formatter: the model is told the layout (UPPERCASE keywords, a clause per line; `SQL_FORMAT` in
   `ui/inline_edit.py`), so it is a request and not a guarantee.
-- **It reads the chat and adds nothing to it.** Each call is logged and costed like a chat turn.
-- **No tools.** The inline AI answers in one request from what it is given. Looking things up is the chat's job.
+- **Its real messages join the chat's history**, as a chat turn's do: the message (where it was asked, what
+  the place shows, the instruction) and the answer as the model gave it. So the chat can be asked about an
+  inline turn, and the next inline turn knows the last. A failed turn adds nothing. (Until 2026-11-22 the
+  rule was "adds nothing to it".)
+- **Bulky reference is sent, not kept.** What the answer needs but the conversation doesn't (table schemas
+  and first rows, the session's variables, the Terminal's screen) goes as instructions for that turn
+  (`Inline.context`), which are not part of the history: it is not sent again with every later turn. The
+  message itself stays small.
+- **The chat pane shows it as a quiet row** (kind `inline`): its label, where it was asked and the
+  instruction on one dim line, quieter than a tool call; the answer folds open. "/assign" keeps its own row.
+- **Nothing records what became of a proposal**: accepting or dropping one happens in the browser, and the
+  backend isn't told. The history holds what was proposed.
+- **Each turn is logged and costed like any chat turn**, under its label: the debug log's record, the Spend
+  tab's split by agent, the title bar's context meter (it is part of the chat's size).
+- **No tools.** The inline AI answers in one request from what it is given. Looking things up is the chat's
+  job. The agent's tools are hidden for the turn (`InlineMode`), the ones a capability loaded in the chat
+  too. It is one flag of the turn, not a different agent.
+- **The answer arrives whole**, not streamed word by word: it has a form to be checked against.
 
 ## Adding a widget: ask about inline chat
 

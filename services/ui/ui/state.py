@@ -17,7 +17,7 @@ from ds.ai import scripts
 from ds.data.raw.smashtube import MatchVideos, search_videos
 from ds.util.logging import logger
 
-from ui import agents, assign, logs, mentions, perf, spend, variables
+from ui import agents, assign, debug_log, logs, mentions, perf, spend, variables
 from ui.commands import SLASH, parse_slash
 from ui.config import config as app_config
 from ui.db_console import DbConsole, clean_sql
@@ -40,6 +40,7 @@ from ui.web import WebPage, frameable, normalize
 from ui.widgets import form_for, widget_of
 
 logs.install()
+debug_log.install()
 
 
 # Cell result grids are compact: short rows, a few visible, scroll for the rest.
@@ -85,7 +86,9 @@ class ChatItem:
     | assign (a "/assign" proposal, assign.py: text is its code, name the variable, status
     where it is) | output (the result of a message that was only an "@" mention, shown as a
     cell shows its result: its key is the id it is kept under in Session.outputs, slot
-    "cell:<key>"). None of the last five is sent to the agent.
+    "cell:<key>") | inline (a turn asked from a place in the app, Alt+I: its name is the label,
+    eg 'inline edit (sql)', text where and what was asked, detail the answer, folded). None of
+    note, slash, mention, assign and output is sent to the agent.
     """
 
     kind: str
@@ -213,6 +216,8 @@ WEB_TAB = "web"
 class State(rx.State):
     # Chat is a flat list so it renders with one foreach.
     chat: list[ChatItem] = []
+    # numbers the inline turns' rows (their keys, _show_inline)
+    inline_seq: int = 0
     streaming: str = ""
     busy: bool = False
     # the title bar's context meter: the conversation's size (the last model request's
@@ -357,6 +362,22 @@ class State(rx.State):
 
     def _session(self) -> Session:
         return get_session(self.router.session.client_token)
+
+    def get_delta(self) -> Any:
+        """What Reflex sends the browser after a change. When the chat or the cells are in
+        it, their new or changed rows go to the session log (debug_log.rows_changed): the one
+        place every row passes, however it was added.
+        """
+        if self.dirty_vars & {"chat", "cells"}:
+            try:
+                session = logs.session_id(self.router.session.client_token)
+                debug_log.rows_changed(session, list(self.chat), list(self.cells))
+            except Exception:  # noqa: BLE001  # the log must never break what the user sees
+                logger.opt(exception=True).warning("session log: rows not logged")
+        return super().get_delta()
+
+    # Reflex refuses a State method named as one of its own unless it is marked as meant
+    get_delta.__override_base_method__ = True  # type: ignore[attr-defined]
 
     def _log_context(self, origin: str, **where: str) -> Any:
         """Tag the log records of what runs inside with this tab's session and where it started
@@ -913,6 +934,26 @@ class State(rx.State):
         [data-usage-refresh] button): its cost.
         """
         self._sync_usage()
+        self._show_inline()
+
+    def _show_inline(self) -> None:
+        """Add the inline turns that ended since the last look to the chat pane, a quiet row
+        each (kind inline): its label, where it was asked and the instruction; the answer
+        folds open. They are chat turns (Session.ask's inline), so the pane shows them.
+        """
+        session = self._session()
+        rows, session.inline_rows = session.inline_rows, []
+        for row in rows:
+            self.inline_seq += 1
+            self.chat.append(
+                ChatItem(
+                    kind="inline",
+                    name=row["name"],
+                    text=" · ".join(filter(None, [row["where"], row["text"]])),
+                    detail=row["detail"],
+                    key=f"inline-{self.inline_seq}",
+                )
+            )
 
     @event
     def open_requests(self):
@@ -1176,6 +1217,7 @@ class State(rx.State):
         session = self._session()
         with self._log_context("inline fill", slot=slot):
             answer = await fill_inputs(session, form, inputs, instruction, note=view.note or view.summary)
+        self._show_inline()
         ui.ai_busy = False
         if answer.error:
             ui.ai_error, ui.ai_note = answer.error, answer.usage
@@ -1931,7 +1973,7 @@ class State(rx.State):
     def toggle_mention(self, key: str):
         """A mention row's caret: show or fold the text under it."""
         for index, item in enumerate(self.chat):
-            if item.kind == "mention" and item.key == key:
+            if item.kind in ("mention", "inline") and item.key == key:
                 self.chat[index] = dataclasses.replace(item, open=not item.open)
 
     @event

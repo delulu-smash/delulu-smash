@@ -14,6 +14,7 @@ from typing import Any
 
 import reflex as rx
 
+from ui import debug_log
 from ui.agents import AGENTS, DEFERRED, LOAD_TOOL, AgentInfo, CapabilityInfo, ToolInfo
 from ui.api import api
 from ui.commands import ICON_AI as ICON_CHAT
@@ -294,6 +295,8 @@ def chat_item(item: rx.Var) -> rx.Component:
         ),
         ("assign", assign_item(item)),
         ("output", output_item(item)),
+        # a turn asked from a place in the app (Alt+I): quieter than a tool call's row
+        ("inline", inline_item(item)),
         # the app's own line, eg a slash command that isn't one
         (
             "note",
@@ -394,6 +397,25 @@ def mention_item(item: rx.Var) -> rx.Component:
             ),
         ),
         rx.cond((item.detail != "") & item.open, rx.el.pre(item.detail, class_name="mention-detail mono")),
+        class_name="chat-ref",
+    )
+
+
+def inline_item(item: rx.Var) -> rx.Component:
+    """An inline turn (Alt+I in a cell, a form, the Terminal): one dim line with its label,
+    where it was asked and the instruction; its caret shows the answer.
+    """
+    return rx.el.div(
+        rx.el.div(
+            rx.el.span(rx.cond(item.open, "▾", "▸"), class_name="ref-caret dim"),
+            rx.el.span(item.name, class_name="inline-label"),
+            rx.el.span(item.text, class_name="tool-args"),
+            on_click=State.toggle_mention(item.key),
+            title=rx.cond(item.open, "Hide the answer", "Show the answer"),
+            id=item.key,
+            class_name="tool-step mono mention-row is-fold inline-row",
+        ),
+        rx.cond(item.open, rx.el.pre(item.detail, class_name="mention-detail mono")),
         class_name="chat-ref",
     )
 
@@ -676,15 +698,29 @@ def chat_pane() -> rx.Component:
                 ),
                 class_name="chat-scroll",
             ),
-            # shown once you scroll up (assets/panes.js adds
-            # .is-scrolled): back to the newest message
-            rx.el.button(
-                "↓",
-                title="Jump to the newest message",
-                aria_label="Jump to the newest message",
-                type="button",
-                custom_attrs={"data-chat-bottom": ""},
-                class_name="chat-bottom",
+            # over the bottom of the chat (assets/panes.js): ↑ while there is chat above
+            # (.can-up), up to the message you sent before, Shift+click to the top; ↓ once
+            # you scroll up (.is-scrolled), back to the newest message
+            rx.el.div(
+                rx.el.button(
+                    "↑",
+                    title=Shortcut.CHAT_TURN_UP.hint(
+                        "Up to the message you sent before · Shift+click: top of the chat"
+                    ),
+                    aria_label="Up to the message you sent before",
+                    type="button",
+                    custom_attrs={"data-chat-up": ""},
+                    class_name="chat-up",
+                ),
+                rx.el.button(
+                    "↓",
+                    title="Jump to the newest message",
+                    aria_label="Jump to the newest message",
+                    type="button",
+                    custom_attrs={"data-chat-bottom": ""},
+                    class_name="chat-bottom",
+                ),
+                class_name="chat-jump",
             ),
             class_name="chat-body",
         ),
@@ -2244,6 +2280,9 @@ app = rx.App(
     theme=None,
     stylesheets=["/app.css"],
     api_transformer=api,
+    # browser errors and uncaught handler errors also go to the session log (debug_log.py)
+    frontend_exception_handler=debug_log.frontend_error,
+    backend_exception_handler=debug_log.backend_error,
     head_components=[
         rx.el.link(rel="icon", href="/favicon.png", type="image/png"),
         rx.el.link(rel="apple-touch-icon", href="/apple-touch-icon.png"),

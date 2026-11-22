@@ -337,7 +337,7 @@ def test_the_form_ai_gets_the_block(session: Session) -> None:
         seen.extend(part.content for part in messages[-1].parts if isinstance(part, UserPromptPart))
         return ModelResponse(parts=[ToolCallPart(info.output_tools[0].name, {"player": "p2", "sets": 30})])
 
-    with inline_fill.fill_agent.override(model=FunctionModel(respond)):
+    with ds.ai.agent.override(model=FunctionModel(respond)):
         answer = asyncio.run(inline_fill.fill(session, form, {}, "the player with most wins in @q1"))
     assert not answer.error
     assert session.namespace["q1"].write_csv() in seen[0]

@@ -13,7 +13,23 @@
   `status`. The Omarchy window (SUPER+SHIFT+J) is `.os/scripts/keybindings/delulu-smash.py`, which calls
   `ds ui status` / `restart` rather than repeating them. After changing the app's dependencies, restart it
   with `uv run ds ui restart` (`ds settings sync` restarts it itself after storing keys); the dev server reloads plain code edits by itself.
+- **Debugging something that happened in the app: run `uv run ds ui debug` first.** The app writes a session
+  log (`local/logs/ui/ui.jsonl`: chat rows, cell runs, AI turns, tool calls, start.gg / HTTP requests, browser
+  and backend errors), so when the user reports a bug ("the last answer was wrong", "/assign did nothing"),
+  read what happened instead of asking them to paste it: `uv run ds ui debug` (the newest session as a
+  timeline), `--turn <n>` (one chat turn in full), `--list`, `--since 30m`. A backend that died is only in
+  `journalctl --user -u delulu-smash.service`. A record meant for the file only is logged with
+  `panel=False`; extra detail for the file goes in a record's `full={...}` (`ds.util.logging.calls`;
+  `services/ui/README.md`, "Session log").
 - Keep UI logic apart from supporting utilities, and follow the Reflex conventions already in the app
   rather than introducing unrelated patterns.
 - Linted like the rest of the repo, with app-code relaxations (no required docstrings or annotations,
   Reflex class attributes) in `pyproject.toml` under `"services/ui/**/*.py"`.
+- **Reflex can use any React component from npm**, so look for a third-party one before building a widget's
+  view by hand (an editor, a grid, a JSON tree, a chart). The app already does this: `ui/editor.py` wraps
+  CodeMirror 6 (`rx.NoSSRComponent` with `library`, `tag` and `lib_dependencies`, the npm packages Reflex
+  installs at build), and `rx.data_editor` (Glide Data Grid) draws the tables. A component that needs the
+  browser's DOM is an `rx.NoSSRComponent`; one of our own `.jsx` files is linked with
+  `rx.asset("./x.jsx", shared=True)`. The data still comes from the Reflex backend: the browser never talks to a
+  database or an outside API itself. Name the package (and its licence and weekly downloads) in the plan, since a
+  new npm dependency is the user's call.

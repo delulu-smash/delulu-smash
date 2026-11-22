@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import ast
+import asyncio
 import contextlib
 import gc
 import io
@@ -35,6 +36,7 @@ from pydantic_ai.models import infer_model
 from ui import perf
 from ui.app_guide import app_guide_capability
 from ui.config import config
+from ui.inline import MAX_FIXES, Inline, InlineMode
 from ui.render import Ui, View, ViewData, to_view
 from ui.typeinfo import keep_class_sources
 
@@ -117,6 +119,16 @@ class AiResult:
     """The same traceback as styled parts (see trace_parts), as a cell's error has."""
     steps: list[ToolStep] = field(default_factory=list)
     usage: TurnUsage = field(default_factory=lambda: TurnUsage())
+    output: Any = None
+    """An inline turn's answer, as its output type (inline.Inline); None for a chat turn, and
+    when the turn failed. Its error is one line, not a traceback."""
+    fixes: int = 0
+    """An inline turn's answers sent back to the model because they failed the check."""
+
+    @property
+    def used(self) -> str:
+        """What the turn used, as one line ("" when it never reached the model)."""
+        return self.usage.summary() if self.usage.requests else ""
 
 
 def tokens_text(count: int) -> str:
@@ -210,17 +222,6 @@ class TurnUsage:
         parts = [cost, f"{tokens_text(self.input_tokens)} in{cached}", f"{tokens_text(self.output_tokens)} out"]
         parts.append(f"{self.requests} request{'s' if self.requests != 1 else ''}")
         return " · ".join(parts)
-
-
-def log_usage(call: dict[str, Any], session: Any, messages: Iterable[Any]) -> TurnUsage:
-    """What an inline chat's model requests used: put on its "agent" debug-log record and added
-    to the session's AI cost (as a chat turn does in Session.ask). session may be None.
-    """
-    usage = TurnUsage.of(messages)
-    usage.log_to(call)
-    if session is not None:
-        session.ai_cost += usage.cost or 0
-    return usage
 
 
 def context_window() -> int | None:
@@ -371,6 +372,9 @@ class Session:
             "config": config,
         }
         self.ai_history: list[Any] = []
+        # inline turns not yet shown in the chat pane (_ask_inline): State takes them
+        # (State._show_inline) when the browser reports back after the call
+        self.inline_rows: list[dict[str, str]] = []
         # what the AI cost so far, chat turns and inline chats, in US dollars (TurnUsage.cost;
         # unpriced requests left out)
         self.ai_cost: float = 0.0
@@ -687,19 +691,33 @@ class Session:
     # -- agent ------------------------------------------------------------------
 
     async def ask(
-        self, prompt: str, on_delta: Callable[[str], Awaitable[None]], sent: str = "", toolsets: Any = None
+        self,
+        prompt: str,
+        on_delta: Callable[[str], Awaitable[None]] | None = None,
+        sent: str = "",
+        toolsets: Any = None,
+        inline: Inline | None = None,
     ) -> AiResult:
-        """One agent turn. Text streams through on_delta; tool results
-        with a view (tables, videos, models) become r1, r2, ...
+        """One agent turn: the one way the app asks the AI. Text streams through on_delta;
+        tool results with a view (tables, videos, models) become r1, r2, ...
 
         sent: the message as the model gets it, when that is more than what the user typed (the
         variables it mentions, mentions.with_context). toolsets: tools the app adds for this
         run (mentions.toolset), on top of the agent's own. The app's guide
         (app_guide_capability) is added to every run too.
+
+        inline: the turn was asked from a place in the app (Alt+I, "/assign"; inline.py). It
+        is the same agent and the same history; the answer comes back whole in the form the
+        place needs (result.output), with no tools (see _ask_inline).
         """
+        if inline is not None:
+            return await self._ask_inline(prompt, inline)
         result = AiResult()
         # one "agent" record per turn (the debug panel, logs.py); each tool call logs its own
         # "tool" record, tagged with its tool_call_id (ds.ai.call_log.ToolCallLog)
+        # what the history holds as the turn starts: an inline turn that ends while this one
+        # runs adds its messages after this, and this turn's own must not drop them
+        before = len(self.ai_history)
         with log_call("agent", "smash-agent", name="turn", prompt=prompt) as call, capture_run_messages() as captured:
             if sent and sent != prompt:
                 # what the model got on top of the typed prompt
@@ -715,14 +733,15 @@ class Session:
                     capabilities=[app_guide_capability],
                 ) as stream:
                     async for delta in stream.stream_text(delta=True):
-                        await on_delta(delta)
+                        if on_delta is not None:
+                            await on_delta(delta)
                     result.text = str(await stream.get_output())
                     new_messages = stream.new_messages()
-                    self.ai_history = stream.all_messages()
+                    self.ai_history = [*stream.all_messages(), *self.ai_history[before:]]
             except Exception as error:  # noqa: BLE001  # model/tool failures are shown in the chat
                 result.error = "".join(traceback.format_exception(error))
                 result.trace = trace_parts(error, error.__traceback__)
-                new_messages = captured[len(self.ai_history) :]
+                new_messages = captured[before:]
                 call["error"] = f"{type(error).__name__}: {error}"
             result.steps = self._steps(new_messages)
             call["steps"] = len(result.steps)
@@ -733,6 +752,65 @@ class Session:
             if usage.requests:
                 self.chat_tokens = usage.context_tokens
             usage.log_to(call)
+            # for the session log only (debug_log.py), not the debug panel: how the turn ended
+            call["full"] = {"reply": result.text, "traceback": result.error}
+        return result
+
+    async def _ask_inline(self, prompt: str, inline: Inline) -> AiResult:
+        """An inline turn (ask's `inline`): the chat's agent and history, with what the place
+        adds for this turn only: its rules and reference (as instructions, so they are not
+        kept in the history), the form of the answer, no tools, and the answer's check.
+
+        The turn's real messages join the chat's history, as a chat turn's do: prompt (the
+        instruction and what the place shows, kept small by the caller) and the answer. A
+        failed turn adds nothing. Logged and costed under the label's name (inline-edit, ...);
+        a row for the chat pane waits in inline_rows (State shows it).
+        """
+        result = AiResult()
+        before = len(self.ai_history)
+        history = list(self.ai_history)
+        mode = InlineMode(check=inline.check)
+        with (
+            log_call("agent", inline.agent_name, name=inline.title, prompt=inline.instruction) as call,
+            capture_run_messages() as captured,
+        ):
+            call["added"] = inline.added
+            try:
+                # the label's name on the run's Logfire spans: the Spend tab splits by it
+                with ds.ai.agent.override(name=inline.agent_name):
+                    run = await ds.ai.agent.run(
+                        prompt,
+                        message_history=history,
+                        output_type=inline.output_type,
+                        instructions=inline.instructions(),
+                        capabilities=[mode],
+                        # room for every fix: the check stops asking after inline.MAX_FIXES
+                        retries=MAX_FIXES,
+                    )
+                result.output = run.output
+                new_messages = run.new_messages()
+                # after what a chat turn that ended meanwhile added (see ask)
+                self.ai_history = [*self.ai_history, *new_messages]
+            except asyncio.CancelledError:
+                raise
+            except Exception as error:  # noqa: BLE001  # shown where the user asked, not raised into the request
+                call["error"] = result.error = f"{type(error).__name__}: {error}"
+                new_messages = captured[before:]
+            result.fixes = call["fixes"] = mode.fixes
+            # from the messages, as a chat turn, so a failed one still shows what it spent
+            result.usage = usage = TurnUsage.of(new_messages)
+            self.ai_cost += usage.cost or 0
+            usage.log_to(call)
+            if result.output is not None:
+                if usage.requests:
+                    self.chat_tokens = usage.context_tokens  # it is part of the chat now
+                answer = inline.answer(result.output)
+                # for the session log only (debug_log.py): what came back
+                call["full"] = {"reply": answer}
+                if inline.row:
+                    self.inline_rows.append(
+                        {"name": inline.title, "where": inline.where, "text": inline.instruction, "detail": answer}
+                    )
         return result
 
     def _steps(self, messages: list[Any]) -> list[ToolStep]:

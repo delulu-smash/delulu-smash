@@ -11,7 +11,6 @@ from __future__ import annotations
 import asyncio
 import sys
 from pathlib import Path
-from types import SimpleNamespace
 from typing import Any
 
 import pytest
@@ -22,8 +21,10 @@ from pydantic_ai.models.function import AgentInfo, FunctionModel
 APP_DIR = Path(__file__).resolve().parents[3] / "services" / "ui"
 sys.path.insert(0, str(APP_DIR))
 
-from ui import inline_fill  # noqa: E402
+import ds.ai  # noqa: E402
+from ui import inline, inline_fill  # noqa: E402
 from ui.render import Ui, apply_event, to_view  # noqa: E402
+from ui.session import Session  # noqa: E402
 from ui.tool_forms import ToolRequest  # noqa: E402
 from ui.widgets import TOOL_FORMS, form_by_key  # noqa: E402
 
@@ -47,7 +48,7 @@ def answering(answers: list[dict[str, Any]], calls: list[tuple[list[ModelMessage
 
 def ask(form: Any, answers: list[dict[str, Any]], shown: dict[str, Any] | None = None, session: Any = None) -> tuple:
     calls: list[tuple[list[ModelMessage], AgentInfo]] = []
-    with inline_fill.fill_agent.override(model=answering(answers, calls)):
+    with ds.ai.agent.override(model=answering(answers, calls)):
         answer = asyncio.run(inline_fill.fill(session, form, shown or {}, "sparg0 vs steve offline, 90 sets"))
     return answer, calls
 
@@ -104,7 +105,7 @@ def test_an_answer_that_never_validates_fails_instead_of_filling_the_form():
     answer, calls = ask(USAGE, [GOOD | {"sets": 31}])
     assert answer.inputs == {}
     assert "don't pass Player usage's check" in answer.error
-    assert len(calls) == inline_fill.MAX_FIXES + 1
+    assert len(calls) == inline.MAX_FIXES + 1
 
 
 def test_it_needs_an_instruction():
@@ -113,12 +114,15 @@ def test_it_needs_an_instruction():
     assert answer.usage == ""
 
 
-def test_the_chat_goes_along_unchanged_and_the_cost_is_added():
+def test_the_chat_goes_along_and_the_turn_joins_it():
     history = [ModelRequest(parts=[UserPromptPart("who won Kagaribi?")]), ModelResponse(parts=[TextPart("acola")])]
-    session = SimpleNamespace(ai_history=history, ai_cost=0.0)
+    session = Session()
+    session.ai_history = list(history)
     _, calls = ask(USAGE, [GOOD], session=session)
     assert calls[0][0][: len(history)] == history
-    assert session.ai_history == history  # read only: the inline call is not added to the chat
+    # a turn of the chat: its messages come after the chat's own
+    assert session.ai_history[: len(history)] == history
+    assert len(session.ai_history) > len(history)
     # the stand-in model has no price: the session's total stays (unpriced requests don't add)
     assert session.ai_cost == 0.0
 

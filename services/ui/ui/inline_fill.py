@@ -5,7 +5,8 @@
 #          inputs out. The AI only fills the form; the user runs it. Generic: the answer's
 #          shape is the tool's own parameter schema (ToolForm.fill_schema) and it must pass the
 #          tool's own validator (ToolForm.check), so any widget with a tool gets this with no
-#          code of its own. The model also reads the chat so far, and has no tools.
+#          code of its own. An inline turn of the chat (inline.py, Session.ask): the same
+#          agent and history, no tools.
 # Usage: await fill(session, form, shown, instruction) -> Fill, called by State.view_event when
 #        the form's "Ask AI" row is submitted (Shortcut.INLINE_EDIT opens that row). Each call
 #        is one "agent" debug-log record with its usage; its cost is added to the session's.
@@ -17,23 +18,17 @@ import json
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
-from ds.util.const import DEFAULT_AI_MODEL
-from ds.util.logging import log_call
 from ds.util.text import clean_f_str
-from pydantic_ai import Agent, StructuredDict, capture_run_messages
+from pydantic_ai import StructuredDict
 
 from ui import mentions
-from ui.session import log_usage
+from ui.inline import Inline, asked_in
+from ui.session import Session
 
 if TYPE_CHECKING:
-    from ui.session import Session
     from ui.tool_forms import ToolForm
 
-# times an answer that fails the tool's validator is sent back to the model to fix; after that
-# the call fails (unlike code, inputs that don't validate can't be shown in the form)
-MAX_FIXES = 2
-
-_INSTRUCTIONS = clean_f_str("""
+RULES = clean_f_str("""
     You fill in the inputs of one tool of a Super Smash Bros. Ultimate data app, as an inline
     assistant inside the widget that shows the tool's result. You get the tool's description, the
     inputs as the form shows them now, and the user's instruction. Answer with every input: change
@@ -43,16 +38,6 @@ _INSTRUCTIONS = clean_f_str("""
     any, are the user's chat with the app's assistant (its answers and tool results): use them to
     understand what the user means, eg "the player we just looked at".
     """)
-
-fill_agent = Agent(
-    DEFAULT_AI_MODEL,
-    # on its Logfire spans (gen_ai.agent.name): the debug
-    # panel's Spend tab lists it apart from the chat
-    name="inline-fill",
-    # resolved at run time, so importing the app works without a key (as ds.ai.agent)
-    defer_model_check=True,
-    instructions=_INSTRUCTIONS,
-)
 
 
 @dataclass
@@ -98,7 +83,7 @@ async def fill(
     shown: the inputs as the form has them now (a submitted form), so what the user typed but
     hasn't run counts, and a second instruction refines the last proposal. note: the result's
     one-line summary. An answer the tool's validator refuses goes back to the model, up to
-    MAX_FIXES times, then the call fails.
+    inline.MAX_FIXES times (inline.py), then the call fails.
     """
     instruction = instruction.strip()
     if not instruction:
@@ -111,34 +96,33 @@ async def fill(
     # Built once: a call such as "@q1.sample(5)" gives other rows each time it runs
     mentioned = mentions.context(instruction, session)
     text = "\n\n".join(filter(None, [prompt(form, form.texts(shown), instruction, note), mentioned]))
-    # the chat so far goes along (read only: the inline call is not added to the chat)
-    history = list(session.ai_history) if session else []
-    answer = Fill()
-    used: list[Any] = []
-    with log_call("agent", "inline-fill", name=f"inline fill ({form.key})", prompt=instruction) as call:
-        call["added"] = mentioned
-        for _ in range(MAX_FIXES + 1):
-            # a capture per run: one capture only holds its first run's messages
-            with capture_run_messages() as captured:
-                try:
-                    result = await fill_agent.run(text, message_history=history, output_type=output_type)
-                except Exception as error:  # noqa: BLE001  # shown in the form's AI row, not raised into the event
-                    answer.error = f"{type(error).__name__}: {error}"
-                    used += captured[len(history) :]
-                    break
-            used += result.new_messages()
-            history = result.all_messages()
-            try:
-                answer.inputs, answer.error = form.texts(form.check(dict(result.output))), ""
-                break
-            except ValueError as error:
-                answer.error = f"The AI's inputs don't pass {form.title}'s check: {error}"
-                answer.fixes += 1
-                text = f"Those inputs fail the tool's check: {error}. Send every input again, corrected."
-        if answer.error:
-            call["error"] = answer.error
-        call["fixes"] = answer.fixes
-        usage = log_usage(call, session, used)
-        if usage.requests:
-            answer.usage = usage.summary()
+
+    def problem(output: Any) -> str:
+        """Why the tool's own validator refuses these inputs, as sent back to the model."""
+        try:
+            form.check(dict(output))
+        except ValueError as error:
+            return f"Those inputs fail the tool's check: {error}. Send every input again, corrected."
+        return ""
+
+    where = f"the {form.title} form"
+    asked = Inline(
+        label="fill",
+        output_type=output_type,
+        rules=RULES,
+        instruction=instruction,
+        where=where,
+        answer=lambda output: json.dumps(dict(output), ensure_ascii=False),
+        check=problem,
+        name=f"inline fill ({form.key})",
+        added=mentioned,
+    )
+    result = await (session or Session()).ask(f"{asked_in(where)}\n\n{text}", inline=asked)
+    answer = Fill(error=result.error, usage=result.used, fixes=result.fixes)
+    if result.output is not None:
+        try:
+            # unlike code, inputs that don't validate can't be shown in the form
+            answer.inputs = form.texts(form.check(dict(result.output)))
+        except ValueError as error:
+            answer.error = f"The AI's inputs don't pass {form.title}'s check: {error}"
     return answer

@@ -24,7 +24,7 @@ from typing import Any
 import polars as pl
 from ds.data.raw.startgg.client import MAX_REQUESTS_PER_MINUTE
 from ds.util.http import curl_command
-from ds.util.logging import enable_call_logs, logger
+from ds.util.logging import enable_call_logs, for_panel, logger
 from pydantic import BaseModel
 
 from ui.session import cost_text
@@ -56,6 +56,11 @@ def _sink(message: Any) -> None:
     extra = record["extra"]
     if "kind" not in extra:
         return
+    # the panel's share of the record: none of a `panel=False` one (chat rows, cell runs: the
+    # session log's only, debug_log.py), and no `full` detail
+    fields = for_panel(extra)
+    if fields is None:
+        return
     with _lock:
         _seq += 1
         _records.append(
@@ -65,7 +70,7 @@ def _sink(message: Any) -> None:
                 "level": record["level"].name,
                 "message": record["message"],
             }
-            | extra
+            | fields
         )
 
 

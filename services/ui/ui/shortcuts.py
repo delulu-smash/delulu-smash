@@ -82,6 +82,18 @@ class Shortcut(Enum):
         "chat (empty box)",
         "The last message you sent, then the ones before; ArrowDown goes forward again",
     )
+    # Handled by assets/panes.js while the chat is the pane you are in: moving up and down the
+    # chat, as CELL_UP / CELL_DOWN move between cells (the same keys, in the Python pane).
+    CHAT_UP = Binding("Alt+ArrowUp", "chat", "Go up one row of the chat: a message, a tool call, a result, a reply")
+    CHAT_DOWN = Binding("Alt+ArrowDown", "chat", "Go down one row of the chat; after the last one, the newest message")
+    CHAT_TURN_UP = Binding(
+        "Alt+Shift+ArrowUp",
+        "chat",
+        "Go up to the message you sent before (the chat's ↑ button; Shift+click: the top)",
+    )
+    CHAT_TURN_DOWN = Binding(
+        "Alt+Shift+ArrowDown", "chat", "Go down to the next message you sent; after the last one, the newest message"
+    )
     # Handled by the cell editor's keymap (cell_editor.jsx, given by codemirror_keys).
     RUN_AND_ADVANCE = Binding("Shift+Enter", "cell", "Run and go to the next cell")
     RUN = Binding("Ctrl+Enter", "cell", "Run")
@@ -156,6 +168,10 @@ BROWSER_SHORTCUTS = (
     Shortcut.PALETTE,
     Shortcut.KEYS,
     Shortcut.DEBUG,
+    Shortcut.CHAT_UP,
+    Shortcut.CHAT_DOWN,
+    Shortcut.CHAT_TURN_UP,
+    Shortcut.CHAT_TURN_DOWN,
     # an editor's own keys (inline_edit.jsx): panes.js needs them to run one from the palette,
     # and handles this one itself in a result with a tool form
     Shortcut.INLINE_EDIT,

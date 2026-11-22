@@ -123,18 +123,86 @@
     }
   }, true);
 
-  // The chat's "jump to the newest message" button (.chat-bottom): shown once the chat is scrolled
-  // up. The chat scrolls in reverse (column-reverse), so the newest message is scrollTop 0 and
-  // scrolling up goes negative. `scroll` doesn't bubble: listen in the capture phase.
+  // Moving up and down the chat: its two round buttons (.chat-jump in ui.py) and the keys
+  // CHAT_UP / CHAT_DOWN (a row at a time) and CHAT_TURN_UP / CHAT_TURN_DOWN (a message you sent
+  // at a time). The chat scrolls in reverse (column-reverse), so the newest message is scrollTop 0
+  // and scrolling up goes negative. ↓ (.is-scrolled) shows once you scroll up, ↑ (.can-up) while
+  // there is chat above. `scroll` doesn't bubble: listen in the capture phase.
   const SCROLLED_UP = 80;
+  const CHAT_EDGE = 4;   // px: closer than this to a row's top (or the chat's) is "at" it
+  const CHAT_PAD = 14;   // px kept above the row gone to: its hover buttons sit over its top edge
+  const updateJump = (chat) => {
+    const body = chat.parentElement;
+    body.classList.toggle("is-scrolled", Math.abs(chat.scrollTop) > SCROLLED_UP);
+    body.classList.toggle("can-up", chat.scrollHeight - chat.clientHeight - Math.abs(chat.scrollTop) > CHAT_EDGE);
+  };
   document.addEventListener("scroll", (event) => {
-    const chat = event.target instanceof Element && event.target.matches(".chat-scroll") ? event.target : null;
-    if (chat) chat.parentElement.classList.toggle("is-scrolled", Math.abs(chat.scrollTop) > SCROLLED_UP);
+    if (event.target instanceof Element && event.target.matches(".chat-scroll")) updateJump(event.target);
   }, true);
-  document.addEventListener("click", (event) => {
-    const button = event.target instanceof Element && event.target.closest("[data-chat-bottom]");
-    if (button) button.parentElement.querySelector(".chat-scroll").scrollTo({ top: 0, behavior: "smooth" });
+  // an answer growing at the newest message scrolls nothing: watch the chat's size too. The chat
+  // mounts after this script, so it is looked for again on a click or a key
+  const watchedChats = new WeakSet();
+  const watchChats = () => document.querySelectorAll(".chat-scroll").forEach((chat) => {
+    if (watchedChats.has(chat) || !chat.firstElementChild) return;
+    watchedChats.add(chat);
+    const sizes = new ResizeObserver(() => updateJump(chat));
+    sizes.observe(chat);
+    sizes.observe(chat.firstElementChild);
   });
+  document.addEventListener("pointerdown", watchChats, true);
+  document.addEventListener("keydown", watchChats, true);
+  watchChats();
+
+  // the row being scrolled to (or "start" / "end", the chat's two ends): a second press before the scroll ends goes on from it, not from
+  // where the scroll has got to
+  let chatJump = null;
+  let chatJumpTimer = 0;
+  const endChatJump = () => { chatJump = null; };
+  document.addEventListener("scrollend", (event) => {
+    if (event.target instanceof Element && event.target.matches(".chat-scroll")) endChatJump();
+  }, true);
+  // step: -1 up, 1 down. turns: stop only at the messages you sent, else at every row (the line
+  // of what a turn cost is no stop: it is its answer's last line). Past the first: the top of
+  // the chat; past the last: the newest message
+  const chatStep = (chat, step, turns) => {
+    const top = (row) => row.getBoundingClientRect().top - chat.getBoundingClientRect().top;
+    const rows = [...chat.querySelectorAll(turns ? ".chat-items > .bubble.is-user"
+      : ".chat-items > :not(.empty, .turn-usage, .agent-progress)")];
+    // where the view's top edge is, or will be once the scroll under way ends (a row, an end)
+    const items = chat.firstElementChild;
+    let from = CHAT_PAD;
+    if (chatJump === "start") from += top(items);
+    else if (chatJump === "end") from += top(items) + items.offsetHeight - chat.clientHeight;
+    else if (chatJump && chat.contains(chatJump)) from = top(chatJump);
+    const target = step < 0 ? rows.filter((row) => top(row) < from - CHAT_EDGE).pop()
+      : rows.find((row) => top(row) > from + CHAT_EDGE);
+    chatJump = target || (step < 0 ? "start" : "end");
+    clearTimeout(chatJumpTimer);
+    chatJumpTimer = setTimeout(endChatJump, 700);  // a scroll that had nowhere to go ends nothing
+    if (target) chat.scrollTo({ top: chat.scrollTop + top(target) - CHAT_PAD, behavior: "smooth" });
+    else chat.scrollTo({ top: step < 0 ? -chat.scrollHeight : 0, behavior: "smooth" });
+  };
+  document.addEventListener("click", (event) => {
+    const button = event.target instanceof Element && event.target.closest("[data-chat-bottom], [data-chat-up]");
+    if (!button) return;
+    const chat = button.closest(".chat-body").querySelector(".chat-scroll");
+    if (button.matches("[data-chat-bottom]")) chat.scrollTo({ top: 0, behavior: "smooth" });
+    else if (event.shiftKey) chat.scrollTo({ top: -chat.scrollHeight, behavior: "smooth" });
+    else chatStep(chat, -1, true);
+  });
+  // the keys: only while the chat is the pane you are in (in a cell they are the editor's own,
+  // CELL_UP / CELL_DOWN), and nothing is open over the page
+  document.addEventListener("keydown", (event) => {
+    const name = ["CHAT_UP", "CHAT_DOWN", "CHAT_TURN_UP", "CHAT_TURN_DOWN"].find((key) => pressed(event, key));
+    if (!name) return;
+    const pane = document.querySelector('[data-pane="chat"][data-active]');
+    const chat = pane && pane.querySelector(".chat-scroll");
+    if (!chat || !visible(chat) || document.querySelector(".palette-backdrop, .overlay-backdrop")) return;
+    if (event.target instanceof Element && event.target.closest(".cm-editor")) return;
+    event.preventDefault();
+    event.stopPropagation();
+    chatStep(chat, name.endsWith("UP") ? -1 : 1, name.includes("TURN"));
+  }, true);
 
   // copy buttons (copy_button in ui.py): copy data-copy, show a tick for a moment
   document.addEventListener("click", async (event) => {

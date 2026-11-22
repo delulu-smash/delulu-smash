@@ -21,8 +21,10 @@ from pydantic_ai.models.test import TestModel
 APP_DIR = Path(__file__).resolve().parents[3] / "services" / "ui"
 sys.path.insert(0, str(APP_DIR))
 
+import ds.ai  # noqa: E402
 import ds.data  # noqa: E402
-from ui import inline_edit  # noqa: E402
+from ui import inline, inline_edit  # noqa: E402
+from ui.session import Session  # noqa: E402
 from ui.shortcuts import Shortcut, codemirror_key, sql_keys  # noqa: E402
 
 DB = ds.data.init_db()
@@ -91,7 +93,7 @@ def test_variables_show_dataframes_with_columns() -> None:
 
 def test_edit_returns_the_models_code() -> None:
     body = {"language": "sql", "before": "select 1", "instruction": "add a column", "schema": {"char": ["id"]}}
-    with inline_edit.edit_agent.override(model=TestModel(custom_output_args={"code": "select 1, 2"})):
+    with ds.ai.agent.override(model=TestModel(custom_output_args={"code": "select 1, 2"})):
         answer = asyncio.run(inline_edit.edit(body))
     assert answer["code"] == "select 1, 2"
     # what the call used, for the box's status line (session.TurnUsage.summary)
@@ -108,13 +110,17 @@ def test_inline_key_is_alt_i() -> None:
 
 def test_chat_history_goes_along_and_the_cost_is_added(monkeypatch: pytest.MonkeyPatch) -> None:
     history = [ModelRequest(parts=[UserPromptPart("who is ranked first?")]), ModelResponse(parts=[TextPart("Sonix")])]
-    session = SimpleNamespace(ai_history=history, db=DB, namespace={}, ai_cost=0.0)
+    session = Session()
+    session.ai_history = list(history)
     monkeypatch.setattr(inline_edit, "find_session", lambda _token: session)
     body = {"language": "sql", "before": "select 1", "instruction": "that player", "token": "t"}
     calls: list[list[ModelMessage]] = []
-    with inline_edit.edit_agent.override(model=answering("x", calls)):
+    with ds.ai.agent.override(model=answering("x", calls)):
         asyncio.run(inline_edit.edit(body))
     assert calls[0][: len(history)] == history
+    # a turn of the chat: its messages come after the chat's own
+    assert session.ai_history[: len(history)] == history
+    assert len(session.ai_history) > len(history)
     # the stand-in model has no price: the session's total stays (unpriced requests don't add)
     assert session.ai_cost == 0.0
 
@@ -132,15 +138,14 @@ def test_a_whole_proposal_is_checked_before_it_is_shown() -> None:
 
 
 def test_a_failing_proposal_goes_back_to_the_model_then_is_shown_anyway(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(
-        inline_edit, "find_session", lambda _token: SimpleNamespace(ai_history=[], db=DB, namespace={}, ai_cost=0.0)
-    )
+    session = Session()
+    monkeypatch.setattr(inline_edit, "find_session", lambda _token: session)
     body = {"language": "sql", "before": "", "instruction": "anything", "token": "t"}
     calls: list[list[ModelMessage]] = []
-    with inline_edit.edit_agent.override(model=answering("select nope from char", calls)):
+    with ds.ai.agent.override(model=answering("select nope from char", calls)):
         answer = asyncio.run(inline_edit.edit(body))
     assert answer["code"] == "select nope from char"
     # asked once, then once more per fix; each time the model is told what failed
-    assert len(calls) == inline_edit.MAX_FIXES + 1
+    assert len(calls) == inline.MAX_FIXES + 1
     told = [str(part.content) for message in calls[-1] for part in message.parts if part.part_kind != "tool-call"]
-    assert sum("fails in polars SQL" in text for text in told) == inline_edit.MAX_FIXES
+    assert sum("fails in polars SQL" in text for text in told) == inline.MAX_FIXES

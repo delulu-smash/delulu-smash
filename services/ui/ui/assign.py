@@ -10,7 +10,9 @@
 #          writes code rather than the value, so what was computed is exact and how it was made
 #          stays visible; something it only knows is written as a literal. It reads the chat so
 #          far, the session's variables (and "@" mentions)
-#          and the SmashDb tables, and has no tools.
+#          and the SmashDb tables (sent as reference, not kept in the chat's history). An
+#          inline turn of the chat (inline.py, Session.ask): the same agent and history, no
+#          tools.
 # Usage: await propose(session, token, text) -> Proposal; run(session, code) -> Ran, called by
 #        State.assign_ask / assign_run. Each proposal is one "agent" debug-log record.
 # Spec:  spec/services/ui/variables.md ("/assign")
@@ -22,27 +24,22 @@ import datetime as dt
 import re
 import traceback
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 import polars as pl
 from ds.ai import extract, scripts
-from ds.util.const import DEFAULT_AI_MODEL
-from ds.util.logging import log_call
 from ds.util.text import clean_f_str
 from pydantic import BaseModel, Field
-from pydantic_ai import Agent, ModelRetry, RunContext, capture_run_messages
 from pydantic_ai.exceptions import ModelAPIError, ModelQuotaExceededError
 
 from ui import mentions
+from ui.inline import Inline, asked_in
 from ui.inline_edit import context as python_context
-from ui.session import log_usage, trace_parts
+from ui.session import Session, trace_parts
 from ui.typeinfo import keep_class_sources
 
-if TYPE_CHECKING:
-    from ui.session import Session
-
-# times a proposal that fails its check (not Python, assigns nothing) is sent back to the model
-MAX_FIXES = 2
+# a proposal that fails its check (not Python, assigns nothing) is sent back to the model, up
+# to inline.MAX_FIXES times
 SOURCE = "/assign"
 # "name = what it should hold" (not "==", a comparison in the text)
 _NAMED = re.compile(r"\s*([A-Za-z_]\w*)\s*=(?!=)\s*(.+)", re.DOTALL)
@@ -124,7 +121,7 @@ _INSTRUCTIONS = clean_f_str(f"""
     it holds, not one that already exists, following Python's usual conventions for its type:
     """)
 # joined, not inserted: a value of several lines would break clean_f_str's indent stripping
-_INSTRUCTIONS = "\n".join([_INSTRUCTIONS, NAMING])
+RULES = "\n".join([_INSTRUCTIONS, NAMING])
 
 
 @dataclass
@@ -135,21 +132,6 @@ class AssignRun:
     """The name the user gave ("" = the AI picks one)."""
     taken: frozenset[str] = frozenset()
     """Names that exist already: one the AI picks must be new."""
-    fixes: int = 0
-
-
-assign_agent = Agent(
-    DEFAULT_AI_MODEL,
-    # on its Logfire spans (gen_ai.agent.name): the debug
-    # panel's Spend tab lists it apart from the chat
-    name="inline-assign",
-    # resolved at run time, so importing the app works without a key (as ds.ai.agent)
-    defer_model_check=True,
-    instructions=_INSTRUCTIONS,
-    output_type=Assign,
-    deps_type=AssignRun,
-    retries=MAX_FIXES,
-)
 
 
 def split(text: str) -> tuple[str, str]:
@@ -197,7 +179,6 @@ _SCRIPTS_RULE = clean_f_str("""
     """)
 
 
-@assign_agent.instructions
 def saved_scripts() -> str:
     """The saved scripts (ds.ai.scripts), read from their files on every proposal, so a script
     saved or changed a moment ago is offered.
@@ -208,24 +189,23 @@ def saved_scripts() -> str:
     return "\n".join([_SCRIPTS_RULE, *[f"- scripts.{info.signature}: {info.description}" for info in usable]])
 
 
-@assign_agent.output_validator
-async def check_proposal(ctx: RunContext[AssignRun], output: Assign) -> Assign:
-    """Send a proposal that can't be run as an assignment back to the model, up to MAX_FIXES
-    times; then show it anyway (the user can fix the code, and run() refuses what is wrong).
+def rules() -> str:
+    """The mode's instructions: RULES, then the saved scripts as they are now."""
+    return "\n\n".join(filter(None, [RULES, saved_scripts()]))
+
+
+def proposal_problem(asked: AssignRun, output: Assign) -> str:
+    """Why a proposal can't be run as the assignment asked for, as sent back to the model
+    ("" when it can). After inline.MAX_FIXES it is shown anyway (the user can fix the code,
+    and run() refuses what is wrong).
     """
-    asked = ctx.deps
-    if asked.fixes >= MAX_FIXES:
-        return output
     made = target(output.code)
     problem = code_problem(output.code)
     if not problem and asked.name and made != asked.name:
         problem = f"The user named the variable {asked.name}: the code must end by assigning {asked.name}, not {made}."
     if not problem and not asked.name and made in asked.taken:
         problem = f"{made} already exists: pick a name that isn't one of {', '.join(sorted(asked.taken))}."
-    if problem:
-        asked.fixes += 1
-        raise ModelRetry(f"{problem} Send the corrected name and code.")
-    return output
+    return f"{problem} Send the corrected name and code." if problem else ""
 
 
 @dataclass
@@ -254,40 +234,29 @@ async def propose(session: Session | None, token: str, text: str) -> Proposal:
     # such as "@q1.sample(5)" gives other rows each time it runs
     mentioned = mentions.context(what, session)
     wanted = f"Name it {name}." if name else "Pick its name."
-    request = "\n\n".join(
-        filter(
-            None,
-            [
-                python_context("python", token, None),
-                f"The new variable should hold: {what}\n{wanted}",
-                mentioned,
-            ],
-        )
-    )
-    # the chat so far goes along (read only: the call is not added to the chat)
-    history = list(session.ai_history) if session else []
+    where = "/assign"
+    request = "\n\n".join(filter(None, [asked_in(where), f"The new variable should hold: {what}\n{wanted}", mentioned]))
     taken = frozenset(row["name"] for row in mentions.rows(session))
     asked = AssignRun(name=name, taken=taken)
-    answer = Proposal()
-    with (
-        log_call("agent", "inline-assign", name="inline assign", prompt=text) as call,
-        capture_run_messages() as captured,
-    ):
-        call["added"] = mentioned
-        try:
-            result = await assign_agent.run(request, message_history=history, deps=asked)
-            output = result.output
-            answer.name, answer.code, answer.basis = (
-                target(output.code) or output.name,
-                output.code.strip(),
-                output.basis,
-            )
-        except Exception as error:  # noqa: BLE001  # shown in the chat row, not raised into the event
-            call["error"] = answer.error = f"{type(error).__name__}: {error}"
-        call["fixes"] = asked.fixes
-        usage = log_usage(call, session, captured[len(history) :])
-        if usage.requests:
-            answer.usage = usage.summary()
+    made = Inline(
+        label="assign",
+        output_type=Assign,
+        rules=rules(),
+        instruction=text,
+        where=where,
+        answer=lambda output: output.code.strip(),
+        # the variables and tables the code can use: reference, not kept in the chat's history
+        context=python_context("python", token, None),
+        check=lambda output: proposal_problem(asked, output),
+        name="inline assign",
+        added=mentioned,
+        row=False,  # "/assign" has its own row in the chat
+    )
+    result = await (session or Session()).ask(request, inline=made)
+    answer = Proposal(error=result.error, usage=result.used)
+    if result.output is not None:
+        output = result.output
+        answer.name, answer.code, answer.basis = target(output.code) or output.name, output.code.strip(), output.basis
     return answer
 
 

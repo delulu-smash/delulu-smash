@@ -9,33 +9,35 @@ from __future__ import annotations
 
 import asyncio
 from pathlib import Path
-from types import SimpleNamespace
 from typing import TYPE_CHECKING
 
+import ds.ai
 from ds.util.logging import logger
-from pydantic_ai.messages import ModelRequest, ModelResponse, TextPart, UserPromptPart
+from pydantic_ai.messages import ModelMessage, ModelRequest, ModelResponse, TextPart, ToolCallPart, UserPromptPart
+from pydantic_ai.models.function import AgentInfo, FunctionModel
 from pydantic_ai.models.test import TestModel
 from starlette.testclient import TestClient
 from ui import agents, inline_terminal, terminal
 from ui.api import api
+from ui.session import Session
 
 if TYPE_CHECKING:
     import pytest
 
 
 def ask(body: dict[str, str], **output: str) -> dict[str, str]:
-    with inline_terminal.command_agent.override(model=TestModel(custom_output_args=output)):
+    with ds.ai.agent.override(model=TestModel(custom_output_args=output)):
         return asyncio.run(inline_terminal.ask(body))
 
 
-def test_the_model_gets_the_screen_and_the_instruction() -> None:
-    text = inline_terminal.prompt("$ ls\nREADME.md", "count the files")
-    assert text == "Terminal screen:\n```\n$ ls\nREADME.md\n```\n\nInstruction: count the files"
-    assert "(nothing on screen)" in inline_terminal.prompt("  \n", "x")
+def test_the_screen_is_the_turns_reference() -> None:
+    text = inline_terminal.screen_text("$ ls\nREADME.md")
+    assert text == "Terminal screen now:\n```\n$ ls\nREADME.md\n```"
+    assert "(nothing on screen)" in inline_terminal.screen_text("  \n")
 
 
 def test_only_the_end_of_a_huge_screen_is_sent() -> None:
-    text = inline_terminal.prompt("~" * (inline_terminal.MAX_SCREEN_CHARS + 50) + "END", "x")
+    text = inline_terminal.screen_text("~" * (inline_terminal.MAX_SCREEN_CHARS + 50) + "END")
     assert text.count("~") == inline_terminal.MAX_SCREEN_CHARS - 3
     assert "END" in text
 
@@ -62,14 +64,27 @@ def test_it_needs_an_instruction() -> None:
     assert "error" in asyncio.run(inline_terminal.ask({"instruction": "  ", "screen": "$"}))
 
 
-def test_it_reads_the_chat_and_adds_nothing_to_it(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_it_is_a_turn_of_the_chat_and_the_screen_is_not_kept(monkeypatch: pytest.MonkeyPatch) -> None:
     history = [ModelRequest(parts=[UserPromptPart("who is ranked first?")]), ModelResponse(parts=[TextPart("Sonix")])]
-    session = SimpleNamespace(ai_history=list(history), ai_cost=0.0)
+    session = Session()
+    session.ai_history = list(history)
     monkeypatch.setattr(inline_terminal, "find_session", lambda _token: session)
-    model = TestModel(custom_output_args={"command": "ls"})
-    with inline_terminal.command_agent.override(model=model):
-        asyncio.run(inline_terminal.ask({"instruction": "list", "token": "t"}))
-    assert session.ai_history == history
+    seen: list[str] = []
+
+    def respond(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
+        assert messages[: len(history)] == history  # the chat so far goes along
+        seen.append(info.instructions or "")
+        return ModelResponse(parts=[ToolCallPart(info.output_tools[0].name, {"command": "ls"})])
+
+    with ds.ai.agent.override(model=FunctionModel(respond)):
+        asyncio.run(inline_terminal.ask({"instruction": "list", "token": "t", "screen": "$ SCREEN-TEXT"}))
+    assert "SCREEN-TEXT" in seen[0]  # sent, as the turn's reference
+    added = session.ai_history[len(history) :]
+    kept = "\n".join(str(getattr(part, "content", "")) for message in added for part in message.parts)
+    assert "Instruction: list" in kept
+    assert "in the Terminal" in kept
+    assert "SCREEN-TEXT" not in kept  # a screen is not sent again with every later turn
+    assert session.inline_rows[0]["detail"] == "typed at the prompt, not run: ls"
 
 
 def test_the_call_is_logged_as_an_inline_one() -> None:

@@ -9,6 +9,7 @@
 #   1. The server in the foreground (what the service runs):  ds ui run
 #   2. Restart, eg after changing dependencies:              ds ui restart
 #   3. Is it up?                                              ds ui status
+#   4. What just happened in it (its session log):            ds ui debug
 # ---------------------------------------------------------------------------
 from __future__ import annotations
 
@@ -16,8 +17,10 @@ import os
 import time
 import urllib.request
 from http import HTTPStatus
+from typing import Annotated
 
 import typer
+from ds.cli import ui_debug
 from ds.cli.util import run_cmd
 from ds.util.const import REPO_DIR
 
@@ -81,3 +84,29 @@ def status() -> None:
     up = ready()
     typer.echo("up" if up else "down")
     raise typer.Exit(0 if up else 1)
+
+
+@ui_app.command("debug")
+def debug(
+    session: Annotated[str, typer.Option(help="A session's id (see --list); the newest when left out.")] = "",
+    turn: Annotated[int, typer.Option(help="Only this chat turn (turn-<n>), with every field in full.")] = 0,
+    since: Annotated[str, typer.Option(help="Every session, from this long ago: 30m, 2h, 1d.")] = "",
+    list_: Annotated[bool, typer.Option("--list", help="The sessions in the log, the newest last.")] = False,
+    full: Annotated[bool, typer.Option("--full", help="Every field in full under each row.")] = False,
+) -> None:
+    """Show what just happened in delulu-smash, from its session log (local/logs/ui/ui.jsonl)
+
+    A row per thing the user saw (chat rows, cell runs, errors), with the calls made for it
+    indented under it. What to run first when debugging something that happened in the app.
+    """
+    try:
+        start = ui_debug.parse_since(since) if since else None
+    except ValueError as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(2) from error
+    records = ui_debug.read_records(since=start)
+    if list_:
+        lines = ui_debug.list_sessions(records) or ["No sessions in the log."]
+    else:
+        lines = ui_debug.report(records, session, turn, full=full, every=bool(since) and not session)
+    typer.echo("\n".join(lines))
