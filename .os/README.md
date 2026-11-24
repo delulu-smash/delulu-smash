@@ -169,6 +169,63 @@ os save webapp:Twitch setting:theme toggle:window-no-gaps
   - To try later (deliberately; it needs a reboot): first check Mesa release notes for a VCN/VP9 fix. If none,
     boot with the `amd_iommu=off` kernel param (gives up IOMMU device isolation), remove the flag, retest
     playback and `chrome://gpu`. Revert the param if it doesn't help.
+- **Nintendo Switch (OmniRCM): "✗ No Tegra RCM device found" while the log says "RCM device connected".**
+  A permission problem, not the cable: see [FAQ: Nintendo Switch (OmniRCM)](#faq-nintendo-switch-omnircm).
+
+## FAQ: Nintendo Switch (OmniRCM)
+
+OmniRCM sends a payload (eg hekate) to a Switch in RCM (recovery) mode over USB. The binary lives in
+git-ignored `local/omnircm/OmniRCM-linux-x64`, opened from the launcher as "OmniRCM (Switch)" (this laptop
+only: `os sync` tracks neither).
+
+**First time on a machine?** Open OmniRCM, click the red `Setup udev` button, enter the password, then
+restart the computer once (`id` should then list `nintendo_switch`).
+
+**Every time after that:**
+
+1. Open "OmniRCM (Switch)" from the launcher, with the Switch unplugged.
+2. Put the Switch in RCM: hold Power ~12 s until it is fully off, jig in the right Joy-Con rail, hold
+   **Vol+** and press **Power**. The screen stays black (a Nintendo logo means it booted normally: redo it).
+3. Plug it into the laptop directly (not through a hub or the Ethernet adapter).
+4. The log shows "RCM device connected", then auto-injects (or click `Inject Payload`): hekate boots.
+
+**The log says "RCM device connected" but then "✗ No Tegra RCM device found".** The app can *see* the
+Switch (listing USB devices needs no permission) but can't *open* it to send the payload. Linux USB devices
+belong to root unless a udev rule says otherwise; `Setup udev` writes `/etc/udev/rules.d/70-switch.rules`
+(the Switch's `APX` device → group `nintendo_switch`) and adds you to that group. Until you have logged in
+again, the app doesn't have that group yet, and the open fails. A Mac needs none of this: macOS lets any app
+open a USB device.
+
+**Why does it need a restart (or a log out and back in)?** A process's groups are a list fixed when it
+starts, copied from its parent, and only the login reads `/etc/group` to build the first list. Everything
+after that (Hyprland, kitty, the shell, OmniRCM) inherits a copy. `Setup udev` changed `/etc/group`, but no
+running process re-reads it, so nothing started in that login can get the new group. A new login builds the
+list again, with `nintendo_switch` in it. Check with `id` (your shell's groups) against
+`getent group nintendo_switch` (what's on disk):
+
+```bash
+id                              # this session: no nintendo_switch yet → restart
+getent group nintendo_switch    # on disk: nintendo_switch:x:1003:<you>
+grep Groups /proc/$(pgrep -f OmniRCM-linux)/status   # the running app's groups (need 1003)
+```
+
+**Do I have to restart every time?** No, once. The membership is saved in `/etc/group`, so every later
+login has it. What does repeat: entering RCM on the Switch (off, jig in, hold Vol+, press Power: the screen
+stays black), each time.
+
+**Can I skip the restart?** Usually `newgrp nintendo_switch` (or `sg`) starts a shell with the new group,
+but Arch has no `sg`, and `newgrp` did not add the group here (2026-11-20). Restart.
+
+**Should I click `Setup udev` again?** No: once per machine is enough, and running it again changes
+nothing. `os sync` can't track it (it writes outside `$HOME`), so do it once on each new machine.
+
+**Still "✗ No Tegra RCM device found" after the restart, with `nintendo_switch` in `id`.** The
+permission is fixed; the Switch just isn't there. If the log has no "RCM device connected" line before the ✗,
+the app was injecting into nothing: do steps 2-4 above again (2026-11-20: after the restart, `lsusb` showed no Switch at all).
+
+**Nothing at all happens when plugging in.** Check the Switch shows up: `lsusb | grep 0955` should print
+`0955:7321 NVIDIA Corp. ... recovery mode`. If not, it isn't in RCM (a Nintendo logo means it booted
+normally; RCM also ends after a while, so re-enter it and replug) or the cable carries only power.
 
 ## Ideas / TODO
 
