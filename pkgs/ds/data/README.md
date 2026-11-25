@@ -25,7 +25,7 @@ little_mac_moves = framedata_df.join(char_df, left_on="char_id", right_on="id").
 
 ## `char.parquet`
 
-Character roster. Synced via `ds data roster` (see [raw/roster.py](raw/roster.py)), scraped from
+Character roster. Synced via `ds data roster` (see [raw/ultimateframedata/roster.py](raw/ultimateframedata/roster.py)), scraped from
 [ultimateframedata.com/smash](https://ultimateframedata.com/smash).
 
 - **Primary key:** `id`
@@ -53,7 +53,7 @@ character-select screen. They are the same thing except for two picks that are s
   rows carry the pick (eg `ds.data.startgg.PlayerUsage`'s `char_group` field). `char_group_id` is not unique in
   this table: joining on it gives one row per fighter of the pick, which is what you want when going on to frame data.
 - The groups are defined in `ds.data.CHAR_GROUPS`; `ds data roster` writes the column
-  ([raw/roster.py](raw/roster.py), `with_char_group`).
+  ([raw/ultimateframedata/roster.py](raw/ultimateframedata/roster.py), `with_char_group`).
 
 ```python
 import polars as pl
@@ -90,7 +90,7 @@ ds.data.char_icon_by_name("Pac-Man")  # "char_icons/pac_man.png": by a display n
 ## `framedata.parquet`
 
 Per-move frame data for one or all characters. Synced via `ds data framedata [character]` (see
-[raw/framedata.py](raw/framedata.py)), scraped from each character's ultimateframedata.com page.
+[raw/ultimateframedata/framedata.py](raw/ultimateframedata/framedata.py)), scraped from each character's ultimateframedata.com page.
 
 - **Primary key:** (`char_id`, `category`, `move`)
 - **Foreign key:** `char_id` -> `char.parquet.id`
@@ -117,6 +117,67 @@ Per-move frame data for one or all characters. Synced via `ds data framedata [ch
 
 _NOTE: most fields are stored as raw strings (not parsed numerics) since the site uses `--`, `**`, and slash-separated
 multi-hitbox values (eg `10/17`) that don't cleanly coerce to a single numeric type._
+
+## `char_stats.parquet`
+
+Character attributes (movement, jumps, weight, ledge options, out of shield). Synced via `ds data stats`
+(see [raw/ultimateframedata/stats.py](raw/ultimateframedata/stats.py)), scraped from [ultimateframedata.com/stats](https://ultimateframedata.com/stats).
+
+- **Grain:** one row per fighter (`variant` null), plus one row per **variant** where the site gives a fighter
+  several values: Olimar's grab range per Pikmin (`r/b/y +1`, `white`, `white +2`, `purple`, ...; the main row is
+  red/blue/yellow), Ice Climbers' `nana` (Popo / the leader is the main row), Rosalina's `no luma`. A variant row
+  fills only the columns that differ; the rest are null.
+- **Primary key:** (`char_id`, `variant`)
+- **Foreign key:** `char_id` -> `char.parquet.id`
+- Values are numbers (null where the site has `**` / `??`, or no row for that fighter: several DLC fighters are
+  missing from the older sections). Speeds and heights are the game's units; frame columns are frames.
+
+| column(s) | description |
+| --- | --- |
+| `char_id`, `variant` | Fighter, and the variant (null = main row) |
+| `air_accel_base`, `air_accel_additional`, `air_accel_max` | Air acceleration |
+| `air_speed`, `fall_speed`, `fast_fall_speed`, `gravity` | Air speed, fall speeds, gravity |
+| `full_hop_height`, `short_hop_height`, `air_jump_height` | Jump heights |
+| `short_hop_frames`, `full_hop_frames`, `sh_fast_fall_frames`, `fh_fast_fall_frames` | Airtime of each jump, frames |
+| `weight` | Weight |
+| `hard_landing_frames`, `soft_landing_frames` | Landing lag of a plain landing |
+| `walk_speed`, `initial_dash_speed`, `run_speed`, `dash_frames`, `pivot_dash_frames` | Ground movement |
+| `grab_range` | Standing grab range (the site marks tether-like grabs as approximate) |
+| `ledge_attack_range` | The site's grade of the ledge attack's range (`S+` best ... `F-`) |
+| `ledge_attack_intangible`, `ledge_attack_total`, `ledge_attack_on_shield` | Ledge attack: intangible frames 1–N, total frames, frame advantage on shield |
+| `ledge_getup_*`, `ledge_roll_*`, `ledge_jump_*` (`_intangible`, `_total`) | Neutral getup, ledge roll, ledge jump |
+| `oos_1_frame`, `oos_1_moves` ... `oos_3_frame`, `oos_3_moves` | Fastest out of shield options: frame, and the move(s) as the site writes them (eg `UpB`, `Nair, Fair`) |
+| `oos_grab`, `oos_grab_post_shieldstun` | Grab out of shield |
+| `oos_item_throw_forward`, `oos_item_throw_back`, `oos_zdrop_front`, `oos_zdrop_behind` | Item options out of shield |
+
+Not stored: the site's dodge and roll sections (`framedata.parquet` has each character's dodges), Dash Turnaround
+(mostly unknown on the site), and rank columns (work them out with `order by`).
+
+```python
+import polars as pl
+from ds.data import init_db
+
+db = init_db()
+db.sql("select c.name, s.weight, s.oos_1_frame from char_stats s join char c on c.id = s.char_id where s.variant is null order by s.weight desc")
+db.sql("select variant, grab_range from char_stats where char_id = 'olimar'")  # every Pikmin
+```
+
+## `reflector.parquet`
+
+Moves that reflect projectiles. Synced with `char_stats.parquet` by `ds data stats`, from the same page.
+
+- **Grain:** one row per reflecting move per fighter (the site's shared `Pit & Dark Pit` rows are stored for each)
+- **Primary key:** (`char_id`, `move`)
+- **Foreign key:** `char_id` -> `char.parquet.id`
+
+| column | description |
+| --- | --- |
+| `char_id` | Fighter |
+| `move` | Move name as the site writes it (eg `Cape`, `PSI Magnet`, `Reversal Slash (XXX2)`) |
+| `active_frames`, `hitbox_frames` | When the reflector and the move's hitbox are out, text (eg `9 - 20`, `4 -`, `7-34 (Detection), 1-45 (Reflect Barrier)`) |
+| `damage_mult`, `speed_mult`, `lifetime_mult` | Multipliers on the reflected projectile (`1.5x` -> 1.5; null for `N/A`) |
+| `break_threshold_pct` | Damage % at which the reflector breaks (`50%` -> 50.0) |
+| `notes` | The site's notes |
 
 ## `char_ranking.parquet`
 

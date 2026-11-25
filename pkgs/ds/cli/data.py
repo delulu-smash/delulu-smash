@@ -14,10 +14,15 @@ import typer
 from ds.cli.util import run_cmd
 from ds.data.char_icons import CHAR_ICON_DIR
 from ds.data.raw import char_ranking
-from ds.data.raw.framedata import scrape_framedata
-from ds.data.raw.roster import CHARS_MODULE, scrape_character_roster, write_char_enums
 from ds.data.raw.smashmate import SITE_CHAR_ICON, char_icon_file, scrape_char_icons
 from ds.data.raw.startgg import videogame_characters, write_startgg_characters
+from ds.data.raw.ultimateframedata import (
+    CHARS_MODULE,
+    scrape_character_roster,
+    scrape_framedata,
+    scrape_stats,
+    write_char_enums,
+)
 
 # TODO: consider consolidating to one command for syncing raw
 # (ie temp and converting), so can do by file type or entire data
@@ -33,6 +38,9 @@ PARQUET_DIR = ds.data.paths.PARQUET_DIR
 CHAR_PARQUET_PATH = PARQUET_DIR / "char.parquet"
 # the "database" of move frame data synced from ultimateframedata.com
 FRAMEDATA_PARQUET_PATH = PARQUET_DIR / "framedata.parquet"
+# character attributes (weight, jumps, ledge, out of shield) and reflectors, from /stats
+CHAR_STATS_PARQUET_PATH = PARQUET_DIR / "char_stats.parquet"
+REFLECTOR_PARQUET_PATH = PARQUET_DIR / "reflector.parquet"
 
 
 BYTES_PER_KB = 1024
@@ -88,6 +96,26 @@ def framedata(
     if typer.confirm(f"Overwrite {FRAMEDATA_PARQUET_PATH} with these {df.height} moves?"):
         df.write_parquet(FRAMEDATA_PARQUET_PATH)
         print(f"Wrote {df.height} moves to {FRAMEDATA_PARQUET_PATH}")
+    else:
+        print("Skipped write.")
+
+
+@data_app.command("stats")
+def stats() -> None:
+    """Scrape ultimateframedata.com/stats into the char_stats and reflector tables."""
+    page = scrape_stats()
+    with pl.Config(tbl_cols=8):
+        print(page.char_stats)
+        print(page.reflector)
+    variants = page.char_stats.filter(pl.col("variant").is_not_null())
+    fighters = page.char_stats.height - variants.height
+    print(f"{fighters} fighters, {variants.height} variant rows, {page.reflector.height} reflectors")
+    if page.unmatched:
+        print(f"Not matched to a fighter (skipped): {page.unmatched}")
+    if typer.confirm(f"Overwrite {CHAR_STATS_PARQUET_PATH.name} and {REFLECTOR_PARQUET_PATH.name}?"):
+        page.char_stats.write_parquet(CHAR_STATS_PARQUET_PATH)
+        page.reflector.write_parquet(REFLECTOR_PARQUET_PATH)
+        print(f"Wrote {CHAR_STATS_PARQUET_PATH} and {REFLECTOR_PARQUET_PATH}")
     else:
         print("Skipped write.")
 

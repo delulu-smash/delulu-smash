@@ -9,7 +9,7 @@ import ds.data
 import polars as pl
 from ds.data.paths import PARQUET_DIR
 from ds.data.raw.char_ranking import CHAR_GROUP_DTYPE
-from ds.data.raw.roster import with_char_group
+from ds.data.raw.ultimateframedata import with_char_group
 
 
 def test_char_group_id_has_one_type_in_every_table():

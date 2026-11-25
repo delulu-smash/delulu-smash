@@ -84,7 +84,11 @@ DATA_NOTES = """\
 basedamage is listed WITHOUT the 1v1 damage multiplier (x1.2 in 1v1 matches).
 Frame data values are strings: '--' means not applicable, 'a/b' lists per-hitbox values (see
 whichhitbox), and activeframes like '5—7' are frame ranges. 'advantage' is frame advantage on
-shield (negative = punishable)."""
+shield (negative = punishable).
+char_stats holds character attributes (weight, fall_speed, jumps, ledge_*, oos_* out of shield) as
+real numbers, one row per fighter where variant IS NULL; extra rows with a variant hold the values
+that differ (Olimar's grab range per Pikmin, Ice Climbers 'nana', Rosalina 'no luma'), so filter on
+variant IS NULL unless the variant matters. reflector lists reflecting moves and their multipliers."""
 
 _INSTRUCTIONS = """\
 You answer Super Smash Bros. Ultimate questions using SmashDb (frame data scraped from
@@ -95,7 +99,7 @@ aggregate questions.
 get_move_framedata / query_smashdb return a TableResult: read its `csv` (header + rows) and check
 `truncated`. {notes}
 
-SmashDb tables (framedata.char_id -> char.id):
+SmashDb tables (framedata / char_stats / reflector .char_id -> char.id):
 {schema}"""
 
 
@@ -220,7 +224,7 @@ def _instructions() -> str:
 
 smashdb_capability = Capability(
     id="smashdb",
-    description="Smash Ultimate database: character roster and per-move frame data.",
+    description="Smash Ultimate database: character roster, per-move frame data, character stats.",
     instructions=_instructions,
     # fixed-shape results -> models; tables -> TableResult (compact CSV, .to_df() later)
     # see .agents/instructions/pkgs.md, pydantic-ai section

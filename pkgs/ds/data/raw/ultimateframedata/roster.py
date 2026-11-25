@@ -7,12 +7,11 @@
 # ---------------------------------------------------------------------------
 from __future__ import annotations
 
-from pathlib import Path
-
 import polars as pl
 from bs4 import BeautifulSoup
 
-from ds.data.raw.framedata import BASE_URL
+from ds.data.paths import DATA_DIR
+from ds.data.raw.ultimateframedata.framedata import BASE_URL
 from ds.util import http
 
 ROSTER_URL = "https://ultimateframedata.com/smash"
@@ -59,7 +58,7 @@ def with_char_group(char_df: pl.DataFrame) -> pl.DataFrame:
     return char_df.with_columns(char_group_id=groups.cast(picks))
 
 
-CHARS_MODULE = Path(__file__).resolve().parents[1] / "chars.py"
+CHARS_MODULE = DATA_DIR / "chars.py"
 _BEGIN = "# --- generated from char.parquet by `ds data char_enum` (do not edit by hand): begin ---"
 _END = "# --- generated from char.parquet by `ds data char_enum` (do not edit by hand): end ---"
 

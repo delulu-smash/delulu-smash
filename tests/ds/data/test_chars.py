@@ -10,7 +10,7 @@ import polars as pl
 import pytest
 from ds.cli.data import CHAR_PARQUET_PATH, DATA_DIR
 from ds.data import CHAR_GROUP_NAMES, CHAR_GROUPS, CharEnum, CharGroup, CharId
-from ds.data.raw.roster import CHARS_MODULE, char_enum_source, write_char_enums
+from ds.data.raw.ultimateframedata.roster import CHARS_MODULE, char_enum_source, write_char_enums
 from pydantic import BaseModel, ValidationError
 
 CHARS = pl.read_parquet(CHAR_PARQUET_PATH)
@@ -27,7 +27,7 @@ def test_generated_enums_match_char_parquet():
 def test_regenerating_changes_nothing_and_a_new_fighter_would(tmp_path, monkeypatch):
     copy = tmp_path / "chars.py"
     copy.write_text(CHARS_MODULE.read_text())
-    monkeypatch.setattr("ds.data.raw.roster.CHARS_MODULE", copy)
+    monkeypatch.setattr("ds.data.raw.ultimateframedata.roster.CHARS_MODULE", copy)
     assert write_char_enums(CHARS) is False
     # as text: the column is an Enum of today's picks, which a new one isn't in
     chars = CHARS.with_columns(pl.col("char_group_id").cast(pl.String))

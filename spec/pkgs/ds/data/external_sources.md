@@ -68,7 +68,8 @@ ids, icon file names). The translation belongs to the site's module and is the m
 
 | Source | Module | Characters | State |
 |---|---|---|---|
-| ultimateframedata.com | `raw/framedata.py`, `raw/roster.py` | site slug is the origin of `char.parquet` ids | normalized (defines the standard) |
+| ultimateframedata.com | `raw/ultimateframedata/` (`framedata.py`, `roster.py`) | site slug is the origin of `char.parquet` ids | normalized (defines the standard) |
+| ultimateframedata.com/stats | `raw/ultimateframedata/stats.py` | name match + `SITE_CHARACTER` (site name -> fighters and variant: `Rosalina`, `DK`, `P.T. [Squirtle]`, `Olimar (white +2)`), shared rows (`Marth/Lucina`) split per fighter | normalized |
 | nasmashmate.com (icons) | `raw/smashmate.py` | `SITE_CHAR_ICON`: `char_id` -> site icon name | normalized |
 | smash-tube.com | `raw/smashtube.py` | `SITE_CHARACTER`: `char_id` -> Japanese name; inputs are `char_id` | normalized on input |
 | start.gg | `raw/startgg/` | name match + `api.SITE_CHARACTER` (Rosalina, Simon Belmont); `Character.char_group` + `char_icon`, site `id` kept; ids kept in code, `raw/startgg/characters.py` (not a SmashDb table) | normalized (picks, so `char_group`) |
